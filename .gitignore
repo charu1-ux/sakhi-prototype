@@ -1,0 +1,25 @@
+# Dependencies
+node_modules
+
+# Build outputs
+.next
+out
+dist
+
+# Turbo / build caches
+.turbo
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# Environment — never commit secrets
+.env.local
+.env*.local
+
+# macOS
+.DS_Store
+
+# Editor
+.cursor
+
+# Local toolchains (node, etc.)
+.tools
