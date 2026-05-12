@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+dist
+build
+.cache
+.tools
+storybook-static
+docs/cowork/dist
+package-lock.json
+public/icons
+public/sw.js
+public/sw.js.map
+public/workbox-*.js
+*.svg

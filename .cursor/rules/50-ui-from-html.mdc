@@ -1,0 +1,31 @@
+---
+description: Convert pasted HTML/CSS or screenshots into a Radix + Tailwind component
+alwaysApply: false
+---
+
+# Generate component from HTML / CSS / screenshot reference
+
+When the user pastes HTML, CSS, or a screenshot and asks for a component:
+
+## Output contract
+
+1. Pick the correct atomic folder: `atoms`, `molecules`, `organisms`, or `templates`.
+2. If interactive (button, dialog, dropdown, switch, tooltip, menu, tabs, accordion, slider, popover, toast, separator, progress, avatar) — base on the matching primitive in `src/components/primitives/`. Do **not** introduce a new Radix wrapper here.
+3. Style with Tailwind utility classes only. No `*.module.css`, no `styled-components`, no inline `style={...}` (single carve-out: GSAP-driven dynamic transforms).
+4. Snap every visual value to a token utility:
+   - colors → `bg-bg`, `bg-surface`, `bg-surface-elevated`, `bg-primary`, `text-fg`, `text-fg-muted`, `border-border`, etc.
+   - spacing → 8pt scale (`gap-2`, `p-4`, `px-6`).
+   - radii → `rounded-{sm,md,lg,full}`.
+   - shadows → `shadow-{low,mid,high}`.
+5. Use `React.forwardRef` if it wraps a native interactive element.
+6. Use `cn()` from `@/lib/cn` and accept a `className` prop last.
+7. Give the component a stable `displayName`.
+8. Include a colocated `Component.stories.tsx` covering at least default + a variant.
+
+## Don't
+
+- Don't preserve the source's hex codes or pixel values.
+- Don't add new global CSS.
+- Don't import `@radix-ui/*` outside `primitives/`.
+
+When the design references something we don't have a primitive for yet, list the missing primitive in your reply instead of silently inlining Radix in atoms/molecules.

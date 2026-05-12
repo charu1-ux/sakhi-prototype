@@ -1,0 +1,29 @@
+---
+description: GSAP motion conventions
+globs: src/lib/motion/**
+alwaysApply: false
+---
+
+# Motion (GSAP)
+
+- All animations originate from `@/lib/motion`. Components do **not** import `gsap` directly.
+- Compose presets from `presets.ts`; override surgically per call-site.
+- Durations and easings come from `tokens.motion` — never inline raw numbers like `0.4` or `"power1.in"`.
+- Use `useGSAP()` from `@gsap/react` inside Client Components. It scopes selectors and handles cleanup automatically.
+
+## Concrete usage
+
+```tsx
+"use client";
+import { useGSAP, gsap, slideUp } from "@/lib/motion";
+
+export function HeroIntro() {
+  const ref = React.useRef<HTMLDivElement>(null);
+  useGSAP(() => {
+    gsap.from(ref.current!.children, { ...slideUp, stagger: 0.06 });
+  }, { scope: ref });
+  return <div ref={ref}>{/* … */}</div>;
+}
+```
+
+- Respect `prefers-reduced-motion` (already wired in `globals.css`). Never bypass it.

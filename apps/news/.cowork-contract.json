@@ -1,0 +1,13 @@
+{
+  "version": "1.0",
+  "vertical": "news",
+  "lead": "Shantanu",
+  "color": "#F59E0B",
+  "devPort": 3001,
+  "rules": {
+    "allowedImportPrefixes": ["@/components/", "@/lib/", "react", "next", "lucide-react"],
+    "forbiddenPatterns": ["@radix-ui", "gsap", "@gsap", "framer-motion"],
+    "requiredFiles": ["src/app/page.tsx", "src/app/layout.tsx"]
+  },
+  "screens": []
+}

@@ -1,0 +1,7375 @@
+if (!window.__SS_LOADED__) {
+  window.__SS_LOADED__ = true;
+
+  const OPENAI_API_KEY = (window.__SS_CONFIG__ && window.__SS_CONFIG__.openaiKey) || "";
+  const GROQ_API_KEY = (window.__SS_CONFIG__ && window.__SS_CONFIG__.groqKey) || "";
+  const SARVAM_KEY = (window.__SS_CONFIG__ && window.__SS_CONFIG__.sarvamKey) || "";
+
+  // ── State ──
+  const ST = {
+    screen: "s-home",
+    history: [],
+    persona: "dadi", // v3.1: default — slow warm female (Manisha via Sarvam)
+    chatHistory: [],
+    chatCtx: "general",
+    isFirstMsg: true,
+    voiceTarget: null,
+    recognition: null,
+    isListening: false,
+    breathTimer: null,
+    breathRunning: false,
+    breathPhaseIdx: 0,
+    breathCount: 4,
+    breathRounds: 0,
+    medStep: 0,
+    medData: {},
+    mealStep: 0,
+    mealData: {},
+    familyAdd: {},
+    condSelected: new Set(),
+    activeReminder: null,
+    snoozeTimer: null,
+    // v2: onboarding + profile
+    userProfile: null,
+    onboardStep: 0,
+    onboardData: {},
+    onboardReturnTo: null,
+    // v2: recent features (for personalized QA)
+    recentFeatures: [],
+    // v2: lab + community + wellness
+    labStep: 0,
+    labData: {},
+    communityPeer: null,
+    // v3: language detected from latest user message / OpenAI LANG: prefix
+    currentLanguage: "hi-IN",
+  };
+
+  const PERSONAS = {
+    dadi: {
+      label: "Dadi",
+      emoji: "🧓",
+      rate: 0.72,
+      pitch: 0.78,
+      lang: "hi-IN",
+      voiceHint: ["female", "grandma", "swara", "heera"],
+    },
+    maa: {
+      label: "Maa",
+      emoji: "🤱",
+      rate: 0.88,
+      pitch: 1.05,
+      lang: "hi-IN",
+      voiceHint: ["female", "swara", "kalpana"],
+    },
+    saathi: {
+      label: "Saathi",
+      emoji: "🤝",
+      rate: 0.95,
+      pitch: 1.0,
+      lang: "hi-IN",
+      voiceHint: ["hindi", "en-IN", "google"],
+    },
+  };
+  // Default persona for new users — soft, neutral
+  const DEFAULT_PERSONA = "dadi";
+
+  // v3.7: Authoritative remedy knowledge base distilled from "Ghar ka Vaidh" PDF
+  // Used as authoritative reference inside SYSTEM_PROMPT — not for direct display.
+  const NUSHKE_KB = `AUTHORITATIVE NUSHKE REFERENCE (use these as your source of truth):
+
+KABZ (Constipation):
+- Raat ko sone se pehle ek glass garam doodh mein 1 chamach arandi tel (castor oil) milake piyo. (Limit: 1 chamach max)
+- 100ml palak juice + 100ml paani din mein 2 baar — purani kabz bhi door karta hai.
+- Subah-shaam ek-ek santra khao — fibre ka kaam karta hai.
+- Subah uthkar ek glass garam paani + 1 nimbu + chutki namak — toxins nikalta hai.
+- Anjeer raat bhar paani mein bhigokar subah khao + woh paani piyo.
+
+BAWASEER (Piles):
+- 1 chamach kale til + taza makhan — khoon aana band hota hai.
+- 50g badi elaichi tava par bhun ke pees lo, subah khali pet paani ke saath.
+- Pakka kela ke do tukde + katha (catechu) chhidkein, raat bhar khule mein rakho, subah shauch ke baad khao. 1 hafta.
+- Sirf khooni bawaseer mein: nimbu kaat ke katha (4-5g) bhar do, raat bhar chhat par rakho, subah chooso. 5 din.
+
+PIMPLES:
+- Pudina patti pees ke paste banao, raat ko chehre par lagao, subah dho lo.
+- 2 madhyam nimbu ka rass kaaton mein bhigoke chehre par 2 baar / din.
+- Lehsun 2 kali + 1 long pees ke sirf pimples par paste, kuch der baad dhona.
+- Raat ko pimple par toothpaste (sirf safed waala) lagao, subah dhona.
+- 4-5 din chehre par 2x daily bhaap (steam) lo, pimples khatm hote hain.
+
+DIL MAZBOOT (Heart strengthening):
+- Anaar ka rass + mishri, subah-shaam.
+- Roz 1 chamach shahad (kamzor dilwale).
+- Sebh juice + amla murabba — dil acche se kaam karta hai.
+- Lauki ubaal ke dhania, jeera, haldi powder + hara dhania, kuch der pakao, khao.
+
+SAFED BAAL / BAAL JHADNA:
+- Amla + aam ki guthli paani mein pees ke paste, balon mein 1 ghanta laga ke dhona.
+- Kale akhrot paani mein ubaal, thanda kar ke baal dhona — kam umar mein safed huye baal phir kale.
+- Hafte mein 1 baar til ka tel — balon ka girna band.
+- Lauki sukhake nariyal tel mein ubaal — chhanke laga ke roz baal kaale.
+- Adha cup nariyal/jaitoon tel + 4g kapoor — saptah mein 1 baar maalish, roosi (dandruff) khatm.
+
+DAST / DAYRIA (Diarrhea):
+- Lassi + chutki bhuna jeera + kala namak — khaane ke baad.
+- Adrak ka rass naabhi ke paas lagao.
+- Mishri + amrood (guava) khao.
+- Kacha papita ubaal ke khao.
+- Cooker ke chawal + taza dahi, din mein 2-3 baar.
+- Chhachh + thoda namak + kali mirch + jeera + chutki haldi — 2-3 baar / din.
+
+PET DARD:
+- Chutki haldi + thoda namak + thanda paani phaanki.
+- Acidity wala dard: paani mein chutki meetha soda.
+- Nirgundi patte ubaal ke bhaap se sek (chot-moch, jodon ka dard, gas dard).
+
+DIABETES (Madhumeh) — control, NEVER claim cure:
+- 2g dalchini chooran + 1 long ubaal ke paani mein 15min, subah-shaam.
+- 50g giloy ka taza rass, 2 baar / din.
+- 6 bel patte + 6 neem patte + 6 tulsi patte + 3 saabut kali mirch khali pet, 30min kuch nahi khao.
+- Kachhi pharasbean ki phaliyaan — control mein rakhti hai.
+- Neem ke gulabi komal patte chabaake rass choosna.
+
+GAS / ACIDITY:
+- 5 tulsi patte roz — gas + pet ke kayi rog khatm.
+- Long chooso ya long powder + shahad.
+- Khaane ke baad pakka papita + thoda kala namak.
+- Pudina chai ya patte chabaayein.
+- 1/2 g kali mirch pees + shahad.
+- Sookha adrak chai mein — turant raahat.
+
+MASSE (Warts):
+- Pyaaz ka rass roz 1 baar masse par.
+- Floss/dhaaga se masse baand do, 2-3 hafte mein khud nikal jaata.
+- Aspirin tablet + paani paste, lagao.
+- Bargad ke patte ka rass — masse khud girte hain.
+- Taza anjeer 30 min lagao, gunguna paani se dhona.
+
+ZUKAAM (Cold):
+- Adrak ki kadak chai — sharir ko zukaam se ladne ki taakat.
+- Raat ko gunguna doodh + 1/2 chamach haldi powder.
+- Namak + gunguna paani gargle + thodi haldi.
+- 1 chamach brandy + thoda shahad sone se pehle (yeh sirf vayask ke liye).
+
+JODON KA DARD (Joint pain):
+- 2g dalchini chooran + cup paani roz subah khaane ke baad.
+- 1g anantmool jad + cup paani + thoda doodh — chai banao, 2 baar / din.
+- 8-10 lehsun ki kaliyaan ghee/tel mein fry karke khaane se pehle.
+- Sarso tel + ajwain + lehsun jala ke maalish — har dard door.
+
+NEEND NAHI AATI:
+- Kele par pisa jeera burko aur khao — turant neend.
+- Bhuna baigan + shahad + raat khaana se acchi neend.
+- Sham ko gunguna haldi-doodh — gehri neend.
+
+HICHKI (Hiccups):
+- Gud + heeng milake khao — band ho jaati.
+
+KHAANSI (Cough):
+- Mulethi + shahad chaato.
+- Adrak chai + tulsi.
+- Garam paani + shahad + nimbu.
+
+CRITICAL RULES:
+- NEVER claim "cure" — always say "raahat", "kam karna", "control".
+- NEVER prescribe to infants/pregnant women — say "doctor se poochho".
+- ALWAYS end with: "agar X din mein farak na pade toh doctor se milein".
+- FOR EMERGENCIES (chest pain, breathing, severe headache, infant fever, blood vomit, seizure): ZERO REMEDY — turant doctor.
+- Use ONLY ingredients listed above. Don't invent new combinations.
+- Match remedy to specific complaint. Don't dump multiple options unless asked for "aur batao".`;
+
+  const SYSTEM_PROMPT = `You are Sehat Saathi — a warm dadi/nani figure inside JioBharatIQ. NOT a remedy machine.
+
+LANGUAGE: Reply in the user's language and dialect. Match their script (if they wrote in Devanagari, reply in Devanagari; if Roman/Hinglish, reply that way). Never switch language unless they do. Never ask them to change language.
+
+YOUR PERSONALITY: Like a real grandmother — slow, listening, asks back. Vary your tone. Don't sound mechanical. Sometimes you just acknowledge ("achha beta", "samajh gayi"), sometimes you share a tiny relatable memory. Don't use bullet lists.
+
+CRITICAL — DO NOT RUSH TO REMEDIES:
+- If complaint is vague ("pet kharab hai", "tabiyat theek nahi", "neend nahi aati") — ASK 1-2 warm clarifying questions FIRST. Don't suggest haldi/ajwain in the first reply unless they describe a clear specific issue.
+- Useful clarifying questions: kab se ho raha hai? kya khaaya tha pehle? saath mein aur kya feel ho raha hai? bukhar bhi hai? umar kya hai (if not known)?
+- After 1-2 clarifications, THEN suggest one simple kitchen remedy + when to see doctor.
+- If user is venting (low mood, stress, family worry) — just LISTEN. Reflect what they said. Don't fix.
+- Vary remedies — don't always say ajwain or haldi. Match the right ingredient to the right complaint.
+
+SERIOUS EMERGENCY (escalate immediately, NO remedy, NO question):
+Chest pain, breathing trouble, infant <3 months with fever, seizure, sudden worst-ever headache, vomiting blood, loss of consciousness, sudden face droop or arm weakness. Tell them warmly but firmly: doctor ke paas turant jao, der mat karo.
+
+KNOWLEDGE BASE: Authoritative remedies for common ailments are listed in the AUTHORITATIVE NUSHKE REFERENCE block below. Match the user's complaint to those entries before suggesting anything. If their complaint isn't covered, fall back to the kitchen ingredient bank (ajwain, haldi, adrak, tulsi, neem, amla, mulethi, saunf, methi, jeera, coconut water, warm milk, honey, rock salt, nimbu, cloves, cinnamon, hing).
+
+${NUSHKE_KB}
+
+(end of knowledge base)
+
+KEEP IT SHORT: 2-4 sentences max. Never lecture.
+
+OUTPUT FORMAT (strict):
+First line: LANG:<code>  where <code> is one of hi, mr, bn, ta, te, kn, ml, gu, pa, en.
+Second line onward: your warm reply.`;
+
+  // ── v2: Wellness + Community system prompts ──
+  const WELLNESS_SYSTEM_PROMPT = `You are Sehat Saathi — Wellness mode. You speak with the WARM, CARING VOICE of an Indian mother or grandmother (Maa / Dadi) — talking to a young adult (18–35) about everyday wellness on JioBharatIQ.
+
+LANGUAGE: Detect the user's language. Reply in code-mixed Hindi-English (Hinglish) if they wrote in Roman; otherwise in their script. Words you naturally use: "beta", "bachha", "suno beta", "haan beta", "aaram se", "khayal rakhna", "main batati hoon".
+
+SCOPE: General wellness — fitness, sleep, mental health basics, nutrition, screen time, stress, gym basics, productivity, habit formation, lifestyle. Lean on AYUSH-rooted suggestions where natural (haldi-doodh, ajwain, tulsi, jeera-paani, brisk walk, pranayama, meditation).
+
+HARD RULES:
+- NEVER diagnose. NEVER suggest medications. NEVER name specific conditions.
+- For any pain / symptom question: respond warmly, then redirect: "Iske liye Ghar ke Nushke section mein Dadi ke nushke try karo, beta. Ya doctor se mil lo."
+- For mental health crisis (suicide, self-harm): respond with deep care, share iCall helpline 9152987821, urge talking to someone trusted.
+- Keep replies under 5 sentences. Practical, specific, actionable.
+
+TONE — STRICTLY MAA / DADI WARMTH (NEVER buddy or peer):
+- Use "beta", "bachha", "suno", "haan beta", "main keh rahi thi", "thoda dhyan rakhna".
+- NEVER use "bhai", "yaar", "buddy", "guys", "dude", "mate", "bro".
+- Speak like the wisest, kindest elder — gentle, direct, never preachy, never aggressive.
+- Acknowledge modern context (gym, hostel, WFH, screen, lab, exam, college) but keep the Maa-Dadi register intact.
+- Open with warmth ("Suno beta...", "Haan beta..."), not commands ("Bhai try..." / "You should...").
+- Female-voiced. Always.`;
+
+  const COMMUNITY_BASE_PROMPT = `You are NOT an AI assistant. You are roleplaying as a fellow JioBharatIQ user — a real person sharing your own lived experience with health.
+
+CRITICAL RULES:
+- You are a peer, NOT a doctor. Talk like a friend, not an expert.
+- Share your own story, struggles, and what HAS worked for you personally.
+- Use first-person ("main", "mera", "humne kiya"). Sound like a real WhatsApp neighbour.
+- For clinical questions, redirect: "Doctor se milein bhai/behen — main bhi koshish kar rahi/raha hoon" or "Sehat Saathi mein Dadi ke nushke try karo".
+- Keep replies under 4 sentences. Casual, warm, sometimes joke.
+- NEVER claim certainty. Use "shayad", "mere ghar mein", "doctor ne mujhe bola tha".
+
+LANGUAGE: Reply in user's language. Mix Hindi-English naturally if they do.`;
+
+  const TENSION_SYSTEM_PROMPT = `You are Sehat Saathi — Emotional Listening mode. The user just told you they are tense, low, or overwhelmed. Your job is to LISTEN, not to prescribe.
+
+CORE RULES:
+- DO NOT suggest food, drinks, or kitchen remedies as the first response. Don't mention haldi/ajwain/tulsi/etc unless the user specifically asks.
+- Acknowledge what they feel. Reflect it back warmly. Then ask ONE gentle open-ended question.
+- If they share a real cause (work, relationship, family, money, exam, sleep), validate it before suggesting anything.
+- Only AFTER 2-3 turns of listening, you may suggest ONE of: a 2-min breathing exercise, a short walk, writing down the worry, calling someone, OR a story break — whichever fits.
+- For mental health crisis (suicide, self-harm, "main mar jaaun", "khatam karna chahta"): respond with deep care, share iCall helpline 9152987821, urge talking to someone trusted. Never minimise.
+- NEVER say "tension chhod do" or "sab theek hoga" — that's dismissive.
+
+LANGUAGE: Reply in user's language (script the user used). Keep replies under 3 sentences. Tone is the warm, patient older sister or aunt — not the doctor.
+
+OUTPUT FORMAT (strict):
+First line: LANG:<code>
+Second line onward: your warm response.`;
+
+  function getSystemPromptFor(ctx) {
+    if (ctx === "tension" || ctx === "mood_tension") return TENSION_SYSTEM_PROMPT;
+    if (ctx === "wellness") return WELLNESS_SYSTEM_PROMPT;
+    if (ctx === "community" && ST.communityPeer) {
+      return COMMUNITY_BASE_PROMPT + "\n\nYOUR PERSONA:\n" + ST.communityPeer.sysPrompt;
+    }
+    return SYSTEM_PROMPT;
+  }
+
+  // ── v2: Profile + Onboarding ──
+  function loadProfile() {
+    try {
+      return JSON.parse(localStorage.getItem("ss_profile") || "null");
+    } catch (e) {
+      return null;
+    }
+  }
+  function saveProfile(p) {
+    localStorage.setItem("ss_profile", JSON.stringify(p));
+    ST.userProfile = p;
+  }
+  function calcBMI(w, h) {
+    const wn = parseFloat(w),
+      hn = parseFloat(h);
+    if (!wn || !hn || hn < 50) return null;
+    const m = hn / 100;
+    return +(wn / (m * m)).toFixed(1);
+  }
+  function bmiCategory(bmi) {
+    if (!bmi) return null;
+    if (bmi < 18.5)
+      return {
+        cat: "Kam vajan",
+        color: "var(--warn)",
+        msg: "Thoda zyada nutritious khaana — Dadi ke nushke kaam aayenge",
+      };
+    if (bmi < 25)
+      return {
+        cat: "Sahi vajan",
+        color: "var(--success)",
+        msg: "Wah! Aap healthy range mein hain — aise hi rakhein",
+      };
+    if (bmi < 30)
+      return {
+        cat: "Thoda zyada vajan",
+        color: "var(--warn)",
+        msg: "Roz halki walk + Sandhya Pranayam shuru karein",
+      };
+    return {
+      cat: "Adhik vajan",
+      color: "var(--error)",
+      msg: "Doctor se baat karein + roz ki dinacharya zaroori hai",
+    };
+  }
+
+  function enterHub() {
+    // Soft-prompt onboarding for new/under-prompted users
+    const p = ST.userProfile || loadProfile();
+    if (p) ST.userProfile = p;
+    const skipCount = (p && p.skipCount) || 0;
+    if (!p || (!p.completed && skipCount < 3)) {
+      ST.onboardReturnTo = "s-hub";
+      ST.onboardStep = 0;
+      ST.onboardData = (p && p.partialData) || {};
+      goTo("s-onboard");
+      setTimeout(() => renderOnboardStep(0), 50);
+      return;
+    }
+    goTo("s-hub");
+  }
+
+  function startOnboarding(returnTo) {
+    ST.onboardReturnTo = returnTo || "s-hub";
+    ST.onboardStep = 0;
+    ST.onboardData = {};
+    goTo("s-onboard");
+    setTimeout(() => renderOnboardStep(0), 50);
+  }
+
+  function setOnboardProgress(i) {
+    const dots = document.querySelectorAll("#ob-progress .ob-progress-dot");
+    dots.forEach((d, idx) => {
+      d.classList.toggle("done", idx < i);
+      d.classList.toggle("active", idx === i);
+    });
+  }
+
+  function renderOnboardStep(step) {
+    ST.onboardStep = step;
+    setOnboardProgress(step);
+    const body = document.getElementById("ob-body");
+    const d = ST.onboardData;
+
+    if (step === 0) {
+      // Scope
+      body.innerHTML = `
+      <div class="ob-hero">
+        <div class="ob-hero-emoji">🙏</div>
+        <div class="ob-hero-title">Namaste! Sehat Saathi yahaan hai</div>
+        <div class="ob-hero-sub">Aap ko behtar madad ke liye sirf 2 chhote sawaal — sab optional hain</div>
+      </div>
+      <div class="ob-scope-grid">
+        <button class="ob-scope-card ${d.scope === "self" ? "selected" : ""}" onclick="setScope('self')">
+          <div class="ob-scope-emoji">🙋</div>
+          <div><div class="ob-scope-title">Sirf apne liye</div><div class="ob-scope-sub">Apni sehat ke liye Sehat Saathi</div></div>
+        </button>
+        <button class="ob-scope-card ${d.scope === "family" ? "selected" : ""}" onclick="setScope('family')">
+          <div class="ob-scope-emoji">👨‍👩‍👧</div>
+          <div><div class="ob-scope-title">Parivaar ke liye</div><div class="ob-scope-sub">Apne aur kuch khaas logo ke liye</div></div>
+        </button>
+        <button class="ob-scope-card ${d.scope === "household" ? "selected" : ""}" onclick="setScope('household')">
+          <div class="ob-scope-emoji">🏠</div>
+          <div><div class="ob-scope-title">Poore ghar ke liye</div><div class="ob-scope-sub">Sab ki dekhbhal ek jagah</div></div>
+        </button>
+      </div>`;
+    } else if (step === 1) {
+      // Basic info
+      body.innerHTML = `
+      <div class="ob-hero">
+        <div class="ob-hero-emoji">📋</div>
+        <div class="ob-hero-title">Thodi si jaankari</div>
+        <div class="ob-hero-sub">Iska use sirf aap ko behtar nushke aur guidance dene ke liye hoga</div>
+      </div>
+      <div class="ob-form">
+        <label class="ob-field-lbl">Aapka naam</label>
+        <input class="ob-input" id="ob-name" type="text" placeholder="Sunita / Ramesh / ..." maxlength="30" value="${d.name || ""}" style="margin-bottom:14px">
+        <label class="ob-field-lbl">Aapki umar</label>
+        <input class="ob-input" id="ob-age" type="number" placeholder="32" inputmode="numeric" value="${d.age || ""}" style="margin-bottom:14px">
+        <label class="ob-field-lbl">Aap</label>
+        <div class="ob-sex-row">
+          <button class="ob-sex-btn ${d.sex === "Male" ? "selected" : ""}" onclick="setSex('Male')">Purush</button>
+          <button class="ob-sex-btn ${d.sex === "Female" ? "selected" : ""}" onclick="setSex('Female')">Stree</button>
+          <button class="ob-sex-btn ${d.sex === "Other" ? "selected" : ""}" onclick="setSex('Other')">Anya</button>
+        </div>
+        <div class="ob-form-grid">
+          <div>
+            <label class="ob-field-lbl">Vajan (kg)</label>
+            <input class="ob-input" id="ob-weight" type="number" placeholder="65" inputmode="numeric" value="${d.weight || ""}">
+          </div>
+          <div>
+            <label class="ob-field-lbl">Lambai (cm)<span style="color:var(--text3);text-transform:none;font-weight:400"> — optional</span></label>
+            <input class="ob-input" id="ob-height" type="number" placeholder="165" inputmode="numeric" value="${d.height || ""}">
+          </div>
+        </div>
+        <button class="ob-cta" onclick="onboardNext()">Aage badhein →</button>
+        <div style="text-align:center;margin-top:10px"><button class="ob-skip" onclick="skipOnboarding()">Abhi nahi, baad mein bharunga</button></div>
+      </div>`;
+    } else if (step === 2) {
+      // Done / family invite
+      const bmi = calcBMI(d.weight, d.height);
+      const cat = bmiCategory(bmi);
+      const showFamily = d.scope === "family" || d.scope === "household";
+      body.innerHTML = `
+      <div class="ob-hero">
+        <div class="ob-hero-emoji">✨</div>
+        <div class="ob-hero-title">Bas ho gaya!</div>
+        <div class="ob-hero-sub">Sehat Saathi ab aap ko behtar samjhega</div>
+      </div>
+      ${
+        bmi
+          ? `
+        <div class="ob-bmi-card">
+          <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Aapka BMI</div>
+          <div class="ob-bmi-num">${bmi}</div>
+          <div class="ob-bmi-cat" style="color:${cat.color}">${cat.cat}</div>
+          <div class="ob-bmi-msg">${cat.msg}</div>
+        </div>`
+          : ""
+      }
+      <div class="ob-form">
+        ${
+          showFamily
+            ? `
+          <button class="ob-cta" style="background:var(--surface);color:var(--text);border:1.5px solid rgba(255,255,255,.1);margin-bottom:10px" onclick="finishOnboardingThen('family')">Parivaar add karein →</button>
+          <button class="ob-cta" onclick="finishOnboardingThen(null)">Baad mein karunga, Sehat Saathi kholein</button>
+        `
+            : `<button class="ob-cta" onclick="finishOnboardingThen(null)">Sehat Saathi kholein →</button>`
+        }
+      </div>`;
+    }
+  }
+
+  function setScope(s) {
+    ST.onboardData.scope = s;
+    document.querySelectorAll(".ob-scope-card").forEach((c) => c.classList.remove("selected"));
+    event.currentTarget.classList.add("selected");
+    setTimeout(() => renderOnboardStep(1), 240);
+  }
+  function setSex(s) {
+    ST.onboardData.sex = s;
+    document.querySelectorAll(".ob-sex-btn").forEach((b) => b.classList.remove("selected"));
+    event.currentTarget.classList.add("selected");
+  }
+  function onboardNext() {
+    const name = (document.getElementById("ob-name")?.value || "").trim().slice(0, 30);
+    const age = document.getElementById("ob-age").value.trim();
+    const weight = document.getElementById("ob-weight").value.trim();
+    const height = document.getElementById("ob-height").value.trim();
+    if (!age || !ST.onboardData.sex || !weight) {
+      showToast("Umar, aap (purush/stree), aur vajan zaroori hai");
+      return;
+    }
+    if (name) ST.onboardData.name = name;
+    ST.onboardData.age = age;
+    ST.onboardData.weight = weight;
+    if (height) ST.onboardData.height = height;
+    renderOnboardStep(2);
+  }
+  function finishOnboardingThen(nextAction) {
+    const d = ST.onboardData;
+    const bmi = calcBMI(d.weight, d.height);
+    const profile = {
+      completed: true,
+      onboardedAt: Date.now(),
+      skipCount: 0,
+      scope: d.scope || "self",
+      name: d.name || null,
+      age: d.age,
+      sex: d.sex,
+      weight: d.weight,
+      height: d.height || null,
+      bmi: bmi,
+    };
+    saveProfile(profile);
+    showToast("Profile save ho gaya 💚");
+    if (nextAction === "family") {
+      goTo("s-family");
+      setTimeout(() => {
+        renderFamilyList();
+        showAddFamily();
+      }, 200);
+    } else {
+      goTo(ST.onboardReturnTo || "s-hub");
+      if (ST.pendingFeature) {
+        const f = ST.pendingFeature;
+        ST.pendingFeature = null;
+        setTimeout(() => {
+          trackFeature(f);
+          startFeature(f);
+        }, 200);
+      }
+    }
+  }
+  function skipOnboarding() {
+    // Save partial state + bump skipCount
+    const existing = loadProfile() || { skipCount: 0 };
+    const updated = {
+      ...existing,
+      completed: existing.completed || false,
+      skipCount: (existing.skipCount || 0) + 1,
+      partialData: ST.onboardData,
+    };
+    saveProfile(updated);
+    goTo(ST.onboardReturnTo || "s-hub");
+  }
+
+  // ── v2: Feature Registry + Recent QA tracker ──
+  const FEATURE_REGISTRY = {
+    nushke: {
+      label: "Ghar ke Nushke",
+      bg: "rgba(30,204,176,.15)",
+      color: "#1eccb0",
+      svg: '<svg viewBox="0 0 24 24" fill="none" width="20" height="20" aria-hidden="true"><path d="M20.69 15.0599C20.5026 14.8737 20.2492 14.7691 19.985 14.7691C19.7208 14.7691 19.4674 14.8737 19.28 15.0599L17.11 17.3399C16.9229 17.5362 16.698 17.6923 16.4487 17.7989C16.1994 17.9055 15.9311 17.9603 15.66 17.9599H12C11.7348 17.9599 11.4804 17.8546 11.2929 17.667C11.1054 17.4795 11 17.2252 11 16.9599C11 16.6947 11.1054 16.4404 11.2929 16.2528C11.4804 16.0653 11.7348 15.9599 12 15.9599H13.66C13.9252 15.9599 14.1796 15.8546 14.3671 15.667C14.5546 15.4795 14.66 15.2252 14.66 14.9599C14.66 14.6947 14.5546 14.4404 14.3671 14.2528C14.1796 14.0653 13.9252 13.9599 13.66 13.9599H8C7.46957 13.9599 6.96086 14.1707 6.58579 14.5457C6.21071 14.9208 6 15.4295 6 15.9599H4C3.73478 15.9599 3.48043 16.0653 3.29289 16.2528C3.10536 16.4404 3 16.6947 3 16.9599V18.9599C3 19.2252 3.10536 19.4795 3.29289 19.667C3.48043 19.8546 3.73478 19.9599 4 19.9599H15.66C16.2005 19.9592 16.7353 19.849 17.232 19.6359C17.7287 19.4227 18.1771 19.1112 18.55 18.7199L20.72 16.4399C20.8933 16.2501 20.9869 16.0009 20.9813 15.7439C20.9757 15.487 20.8714 15.242 20.69 15.0599ZM14 8.99994V10.9999C14 11.2652 14.1054 11.5195 14.2929 11.707C14.4804 11.8946 14.7348 11.9999 15 11.9999H19C19.2652 11.9999 19.5196 11.8946 19.7071 11.707C19.8946 11.5195 20 11.2652 20 10.9999V8.99994C20.1974 8.99895 20.3901 8.93955 20.5539 8.82922C20.7176 8.71888 20.845 8.56256 20.92 8.37994C20.9966 8.19783 21.0175 7.99711 20.9801 7.80313C20.9428 7.60914 20.8488 7.43056 20.71 7.28994L17.71 4.28994C17.617 4.19621 17.5064 4.12182 17.3846 4.07105C17.2627 4.02028 17.132 3.99414 17 3.99414C16.868 3.99414 16.7373 4.02028 16.6154 4.07105C16.4936 4.12182 16.383 4.19621 16.29 4.28994L13.29 7.28994C13.1512 7.43056 13.0572 7.60914 13.0199 7.80313C12.9825 7.99711 13.0034 8.19783 13.08 8.37994C13.155 8.56256 13.2824 8.71888 13.4461 8.82922C13.6099 8.93955 13.8026 8.99895 14 8.99994Z" fill="white"/></svg>',
+    },
+    medicine: {
+      label: "Dawai Reminder",
+      bg: "rgba(247,171,32,.15)",
+      color: "#f7ab20",
+      svg: '<svg viewBox="0 0 24 24" fill="none" width="20" height="20" aria-hidden="true"><path d="M19.12 8.71L18 7.59C17.6266 7.21441 17.1196 7.00223 16.59 7H17C17.5304 7 18.0391 6.78929 18.4142 6.41421C18.7893 6.03914 19 5.53043 19 5V4C19 3.46957 18.7893 2.96086 18.4142 2.58579C18.0391 2.21071 17.5304 2 17 2H7C6.46957 2 5.96086 2.21071 5.58579 2.58579C5.21071 2.96086 5 3.46957 5 4V5C5 5.53043 5.21071 6.03914 5.58579 6.41421C5.96086 6.78929 6.46957 7 7 7H7.41C6.88042 7.00223 6.37335 7.21441 6 7.59L4.88 8.71C4.31723 9.27207 4.0007 10.0346 4 10.83V19C4 19.7956 4.31607 20.5587 4.87868 21.1213C5.44129 21.6839 6.20435 22 7 22H17C17.7956 22 18.5587 21.6839 19.1213 21.1213C19.6839 20.5587 20 19.7956 20 19V10.83C19.9993 10.0346 19.6828 9.27207 19.12 8.71ZM14 15H13V16C13 16.2652 12.8946 16.5196 12.7071 16.7071C12.5196 16.8946 12.2652 17 12 17C11.7348 17 11.4804 16.8946 11.2929 16.7071C11.1054 16.5196 11 16.2652 11 16V15H10C9.73478 15 9.48043 14.8946 9.29289 14.7071C9.10536 14.5196 9 14.2652 9 14C9 13.7348 9.10536 13.4804 9.29289 13.2929C9.48043 13.1054 9.73478 13 10 13H11V12C11 11.7348 11.1054 11.4804 11.2929 11.2929C11.4804 11.1054 11.7348 11 12 11C12.2652 11 12.5196 11.1054 12.7071 11.2929C12.8946 11.4804 13 11.7348 13 12V13H14C14.2652 13 14.5196 13.1054 14.7071 13.2929C14.8946 13.4804 15 13.7348 15 14C15 14.2652 14.8946 14.5196 14.7071 14.7071C14.5196 14.8946 14.2652 15 14 15Z" fill="white"/></svg>',
+    },
+    meal: {
+      label: "Meal Plan",
+      bg: "rgba(37,171,33,.15)",
+      color: "#25ab21",
+      svg: '<svg viewBox="0 0 24 24" fill="none" width="20" height="20" aria-hidden="true"><path d="M14.71 8.71C14.851 8.57013 14.9472 8.39143 14.9863 8.19668C15.0253 8.00193 15.0055 7.79996 14.9294 7.61652C14.8532 7.43307 14.7241 7.27647 14.5586 7.16667C14.3931 7.05687 14.1986 6.99884 14 7H11.28L11.78 5H13C13.2652 5 13.5196 4.89464 13.7071 4.70711C13.8946 4.51957 14 4.26522 14 4C14 3.73478 13.8946 3.48043 13.7071 3.29289C13.5196 3.10536 13.2652 3 13 3H11.78C11.3335 3.00201 10.9005 3.15338 10.55 3.43C10.1985 3.70407 9.94859 4.0877 9.84 4.52L9.22 7H4C3.73478 7 3.48043 7.10536 3.29289 7.29289C3.10536 7.48043 3 7.73478 3 8C3 8.26522 3.10536 8.51957 3.29289 8.70711C3.48043 8.89464 3.73478 9 4 9H14C14.1316 9.00076 14.2621 8.97554 14.3839 8.92577C14.5057 8.87601 14.6166 8.80268 14.71 8.71ZM9 16C9.00264 15.0692 9.18957 14.1482 9.55 13.29C9.91043 12.4318 10.4372 11.6535 11.1 11H4.3L5 20.08C5.01922 20.3326 5.13359 20.5685 5.32 20.74C5.50595 20.909 5.74872 21.0019 6 21H11.11C10.4454 20.3473 9.91677 19.5694 9.55461 18.7112C9.19245 17.853 9.00395 16.9315 9 16ZM20.45 13.73C19.8801 12.6158 18.9131 11.7559 17.74 11.32C18.2149 11.1715 18.6471 10.9108 19 10.56C19.6361 9.85826 19.992 8.94712 20 8C19.9951 7.87162 19.9418 7.74984 19.851 7.659C19.7602 7.56815 19.6384 7.51494 19.51 7.51C19.0423 7.49098 18.5758 7.5693 18.14 7.74C17.708 7.9236 17.3196 8.19619 17 8.54C16.3964 9.21746 16.062 10.0926 16.06 11C14.811 10.9857 13.6019 11.4394 12.6706 12.2717C11.7394 13.1041 11.1534 14.2549 11.028 15.4977C10.9026 16.7404 11.2468 17.9851 11.993 18.9868C12.7393 19.9884 13.8333 20.6745 15.06 20.91C16.29 21.1413 17.5619 20.9029 18.6247 20.2419C19.6874 19.5809 20.4636 18.5455 20.8 17.34C21.1356 16.1359 21.0145 14.8503 20.46 13.73H20.45Z" fill="white"/></svg>',
+    },
+    breathe: {
+      label: "Swas & Sukoon",
+      bg: "rgba(53,53,243,.15)",
+      color: "#3535f3",
+      svg: '<svg viewBox="0 0 24 24" fill="none" width="20" height="20" aria-hidden="true"><path d="M12 6C12.3955 6 12.7822 5.8827 13.1111 5.66294C13.44 5.44318 13.6963 5.13082 13.8477 4.76537C13.9991 4.39992 14.0387 3.99778 13.9615 3.60982C13.8844 3.22186 13.6939 2.86549 13.4142 2.58579C13.1345 2.30608 12.7781 2.1156 12.3901 2.03843C12.0022 1.96126 11.6 2.00087 11.2346 2.15224C10.8691 2.30362 10.5568 2.55996 10.337 2.88886C10.1173 3.21776 9.99996 3.60444 9.99996 4C9.99996 4.53043 10.2107 5.03914 10.5857 5.41421C10.9608 5.78929 11.4695 6 12 6ZM18.76 17L12 18.72L5.23996 17C4.97474 16.9363 4.6951 16.9807 4.46256 17.1232C4.23001 17.2657 4.06361 17.4948 3.99996 17.76C3.93631 18.0252 3.98062 18.3049 4.12315 18.5374C4.26567 18.7699 4.49474 18.9363 4.75996 19L7.87996 19.78L6.75996 20C6.49474 20.0318 6.25303 20.1677 6.088 20.3777C5.92297 20.5878 5.84813 20.8548 5.87996 21.12C5.91178 21.3852 6.04766 21.6269 6.2577 21.792C6.46774 21.957 6.73474 22.0318 6.99996 22C7.07967 22.0096 7.16025 22.0096 7.23996 22L12 20.78L16.76 22C16.8914 22.0356 17.0287 22.0439 17.1635 22.0246C17.2983 22.0052 17.4277 21.9585 17.5438 21.8873C17.6599 21.8162 17.7603 21.7221 17.8387 21.6107C17.9171 21.4994 17.972 21.3733 18 21.24C18.0355 21.1086 18.0439 20.9712 18.0245 20.8364C18.0052 20.7017 17.9585 20.5722 17.8873 20.4561C17.8161 20.34 17.722 20.2397 17.6107 20.1613C17.4994 20.0828 17.3732 20.028 17.24 20L16.12 19.72L19.24 19C19.3713 18.9685 19.4951 18.9114 19.6044 18.832C19.7136 18.7527 19.8062 18.6525 19.8768 18.5374C19.9473 18.4223 19.9945 18.2943 20.0157 18.161C20.0368 18.0276 20.0315 17.8913 20 17.76C19.9684 17.6287 19.9114 17.5049 19.832 17.3956C19.7526 17.2863 19.6525 17.1938 19.5374 17.1232C19.4222 17.0526 19.2943 17.0054 19.1609 16.9843C19.0275 16.9631 18.8913 16.9685 18.76 17ZM4.99996 16C5.15683 16.0019 5.31164 15.964 5.44996 15.89L6.70996 15.26C7.41902 14.9043 7.95835 14.2823 8.20996 13.53L9.48996 9.68C9.55704 9.48138 9.68486 9.30887 9.85533 9.18684C10.0258 9.06482 10.2303 8.99946 10.44 9H11V17.41L12 17.66L13 17.41V9H13.56C13.7696 8.99946 13.9741 9.06482 14.1446 9.18684C14.3151 9.30887 14.4429 9.48138 14.51 9.68L15.79 13.53C16.0416 14.2823 16.5809 14.9043 17.29 15.26L18.55 15.89C18.6883 15.964 18.8431 16.0019 19 16C19.1846 15.9994 19.3655 15.9478 19.5226 15.8507C19.6797 15.7536 19.8069 15.6149 19.89 15.45C20.0086 15.2138 20.0289 14.9403 19.9464 14.6892C19.864 14.4381 19.6855 14.2299 19.45 14.11L18.19 13.48C18.0726 13.4209 17.968 13.3393 17.8822 13.2398C17.7964 13.1402 17.7311 13.0248 17.69 12.9L16.4 9.05C16.2009 8.45389 15.8198 7.93533 15.3102 7.56751C14.8006 7.19968 14.1884 7.00118 13.56 7H10.44C9.81151 7.00118 9.19929 7.19968 8.68972 7.56751C8.18016 7.93533 7.79897 8.45389 7.59996 9.05L6.30996 12.9C6.26881 13.0248 6.20347 13.1402 6.11768 13.2398C6.03188 13.3393 5.92732 13.4209 5.80996 13.48L4.54996 14.11C4.31443 14.2299 4.13594 14.4381 4.05349 14.6892C3.97105 14.9403 3.99135 15.2138 4.10996 15.45C4.19306 15.6149 4.3202 15.7536 4.47729 15.8507C4.63438 15.9478 4.81529 15.9994 4.99996 16Z" fill="white"/></svg>',
+    },
+    family: {
+      label: "Parivaar",
+      bg: "rgba(57,0,173,.2)",
+      color: "#3900ad",
+      svg: '<svg viewBox="0 0 24 24" fill="none" width="20" height="20" aria-hidden="true"><path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" fill="white"/><path d="M6 19C5.74 19 5.49 18.9 5.29 18.71C4.9 18.32 4.9 17.69 5.29 17.3L16.79 5.8C17.18 5.41 17.81 5.41 18.2 5.8C18.59 6.19 18.59 6.82 18.2 7.21L6.7 18.71C6.5 18.91 6.25 19 5.99 19H6Z" fill="white"/><path d="M18 9C19.6569 9 21 7.65685 21 6C21 4.34315 19.6569 3 18 3C16.3431 3 15 4.34315 15 6C15 7.65685 16.3431 9 18 9Z" fill="white"/><path d="M6 21C7.65685 21 9 19.6569 9 18C9 16.3431 7.65685 15 6 15C4.34315 15 3 16.3431 3 18C3 19.6569 4.34315 21 6 21Z" fill="white"/><path d="M18 15C17.41 15 16.86 15.18 16.39 15.48L8.52 7.61C8.82 7.14 9 6.59 9 6C9 4.34 7.66 3 6 3C4.34 3 3 4.34 3 6C3 7.66 4.34 9 6 9C6.33 9 6.63 8.94 6.93 8.84L15.17 17.08C15.07 17.37 15.01 17.68 15.01 18.01C15.01 19.67 16.35 21.01 18.01 21.01C19.67 21.01 21.01 19.67 21.01 18.01C21.01 16.35 19.67 15.01 18.01 15.01L18 15Z" fill="white"/></svg>',
+    },
+    symptoms: {
+      label: "Symptoms",
+      bg: "rgba(250,47,64,.15)",
+      color: "#fa2f40",
+      svg: '<svg viewBox="0 0 24 24" fill="none" width="20" height="20" aria-hidden="true"><path d="M19.12 2.88C18.56 2.32 17.79 2 17 2H7C6.2 2 5.44 2.32 4.88 2.88C4.32 3.44 4 4.21 4 5V19C4 19.8 4.32 20.56 4.88 21.12C5.44 21.68 6.21 22 7 22H17C17.8 22 18.56 21.68 19.12 21.12C19.68 20.56 20 19.79 20 19V5C20 4.2 19.68 3.44 19.12 2.88ZM9.29 7.29C9.48 7.1 9.73 7 10 7H11V6C11 5.73 11.11 5.48 11.29 5.29C11.47 5.1 11.73 5 12 5C12.27 5 12.52 5.11 12.71 5.29C12.9 5.47 13 5.73 13 6V7H14C14.27 7 14.52 7.11 14.71 7.29C14.9 7.48 15 7.73 15 8C15 8.27 14.89 8.52 14.71 8.71C14.53 8.9 14.27 9 14 9H13V10C13 10.27 12.89 10.52 12.71 10.71C12.52 10.9 12.27 11 12 11C11.73 11 11.48 10.89 11.29 10.71C11.1 10.52 11 10.27 11 10V9H10C9.73 9 9.48 8.89 9.29 8.71C9.1 8.52 9 8.27 9 8C9 7.73 9.11 7.48 9.29 7.29ZM15.7 18.7C15.51 18.89 15.26 18.99 14.99 18.99H8.99C8.72 18.99 8.47 18.88 8.28 18.7C8.09 18.51 7.99 18.26 7.99 17.99C7.99 17.72 8.1 17.47 8.28 17.28C8.47 17.09 8.72 16.99 8.99 16.99H14.99C15.26 16.99 15.51 17.1 15.7 17.28C15.89 17.46 15.99 17.72 15.99 17.99C15.99 18.26 15.88 18.51 15.7 18.7ZM16.7 14.7C16.51 14.89 16.26 14.99 15.99 14.99H8C7.73 14.99 7.48 14.88 7.29 14.7C7.1 14.51 7 14.26 7 13.99C7 13.72 7.11 13.47 7.29 13.28C7.48 13.09 7.73 12.99 8 12.99H16C16.27 12.99 16.52 13.1 16.71 13.28C16.9 13.46 17 13.72 17 13.99C17 14.26 16.89 14.51 16.71 14.7H16.7Z" fill="white"/></svg>',
+    },
+    cricket: {
+      label: "Cricket Score",
+      bg: "rgba(37,171,33,.15)",
+      color: "#25ab21",
+      svg: '<svg viewBox="0 0 24 24" fill="white" width="20" height="20"><circle cx="12" cy="12" r="9" stroke="white" stroke-width="1.8" fill="none"/><path d="M12 3v18M3 12h18" stroke="white" stroke-width="1.5" opacity=".6"/></svg>',
+      external: true,
+    },
+    astro: {
+      label: "Daily Horoscope",
+      bg: "rgba(57,0,173,.2)",
+      color: "#3900ad",
+      svg: '<svg viewBox="0 0 24 24" fill="white" width="20" height="20"><path d="M12 2l2.39 7.36H22l-6.19 4.5 2.36 7.36L12 16.72l-6.17 4.5 2.36-7.36L2 9.36h7.61L12 2z"/></svg>',
+      external: true,
+    },
+    bhajan: {
+      label: "Bhajan Suno",
+      bg: "rgba(247,171,32,.15)",
+      color: "#f7ab20",
+      svg: '<svg viewBox="0 0 24 24" fill="white" width="20" height="20"><path d="M9 17V5l12-2v12" stroke="white" stroke-width="2" fill="none"/><circle cx="6" cy="17" r="3"/><circle cx="18" cy="15" r="3"/></svg>',
+      external: true,
+    },
+  };
+
+  function loadRecentFeatures() {
+    try {
+      return JSON.parse(localStorage.getItem("ss_recent") || "[]");
+    } catch (e) {
+      return [];
+    }
+  }
+  function saveRecentFeatures(arr) {
+    localStorage.setItem("ss_recent", JSON.stringify(arr.slice(0, 6)));
+  }
+  function trackFeature(id) {
+    if (!id) return;
+    let arr = ST.recentFeatures.length ? ST.recentFeatures : loadRecentFeatures();
+    arr = [id, ...arr.filter((x) => x !== id)].slice(0, 6);
+    ST.recentFeatures = arr;
+    saveRecentFeatures(arr);
+    renderQuickActions();
+  }
+  function renderQuickActions() {
+    const grid = document.getElementById("qa-grid");
+    if (!grid) return;
+    let ids = ST.recentFeatures && ST.recentFeatures.length ? ST.recentFeatures.slice(0, 6) : null;
+    if (!ids) ids = loadRecentFeatures();
+    if (!ids || !ids.length) {
+      // Default starter set for new users
+      ids = ["nushke", "medicine", "meal", "breathe", "family", "symptoms"];
+    }
+    // Pad to 6 with default fillers if shorter
+    const defaults = ["nushke", "medicine", "meal", "breathe", "family", "symptoms"];
+    for (const d of defaults) {
+      if (ids.length >= 6) break;
+      if (!ids.includes(d)) ids.push(d);
+    }
+    grid.innerHTML = ids
+      .map((id) => {
+        const f = FEATURE_REGISTRY[id];
+        if (!f) return "";
+        const onclick = f.external ? "showComingSoon()" : `goToFeature('${id}')`;
+        return `<button class="qa-btn" onclick="${onclick}">
+      <div class="qa-icon" style="background:${f.bg};color:${f.color}">${f.svg}</div>
+      <span class="qa-label">${f.label}</span>
+    </button>`;
+      })
+      .join("");
+  }
+
+  // ── Navigation ──
+  function goTo(id, noHistory = false) {
+    if (id === "s-hub") setTimeout(initHubDynamic, 50);
+    const cur = document.querySelector(".screen.active");
+    if (cur && cur.id !== id) {
+      if (!noHistory) ST.history.push(cur.id);
+      cur.classList.remove("active");
+      cur.classList.add("prev");
+      setTimeout(() => cur.classList.remove("prev"), 350);
+    }
+    const next = document.getElementById(id);
+    if (next) {
+      next.classList.add("active");
+      ST.screen = id;
+    }
+  }
+
+  function goBack() {
+    const prev = ST.history.pop();
+    if (!prev) return;
+    const cur = document.querySelector(".screen.active");
+    if (cur) {
+      cur.classList.remove("active");
+      // slide out right
+      cur.style.transition = "transform .32s cubic-bezier(.4,0,.2,1)";
+      cur.style.transform = "translateX(100%)";
+      setTimeout(() => {
+        cur.style.transform = "";
+      }, 360);
+    }
+    const back = document.getElementById(prev);
+    if (back) {
+      back.classList.remove("prev");
+      back.classList.add("active");
+      ST.screen = prev;
+    }
+  }
+
+  // ── Persona ──
+  function selectPersona(p, el) {
+    ST.persona = p;
+    document.querySelectorAll(".persona-pill").forEach((x) => x.classList.remove("selected"));
+    el.classList.add("selected");
+    const pObj = PERSONAS[p];
+    speak(
+      pObj.label.includes("Dadi")
+        ? "Haan beta, main hoon!"
+        : pObj.label.includes("Maa")
+          ? "Haan beta, kya hua?"
+          : "Haan, batao!",
+    );
+  }
+
+  // ── Feature routing ──
+  function goToFeature(f) {
+    // Soft onboarding gate for first-time users
+    const p = ST.userProfile || loadProfile();
+    if (p) ST.userProfile = p;
+    const skipCount = (p && p.skipCount) || 0;
+    if ((!p || !p.completed) && skipCount < 3) {
+      ST.onboardReturnTo = "s-hub";
+      ST.onboardData = (p && p.partialData) || {};
+      goTo("s-onboard");
+      setTimeout(() => {
+        renderOnboardStep(0);
+      }, 50);
+      // After onboarding completes, finishOnboardingThen routes to s-hub. Feature will be triggered manually if needed.
+      ST.pendingFeature = f;
+      return;
+    }
+    goTo("s-hub");
+    setTimeout(() => {
+      trackFeature(f);
+      startFeature(f);
+    }, 100);
+  }
+  function startFeature(f) {
+    trackFeature(f);
+    if (f === "nushke") {
+      ST.chatCtx = "nushke";
+      ST.chatHistory = [];
+      ST.isFirstMsg = true;
+      goTo("s-chat");
+      document.getElementById("chat-ctx-label").textContent = "Ghar ke Nushke";
+      renderNushkeStart();
+    } else if (f === "medicine") {
+      startRx();
+    } // legacy alias → new RX flow
+    else if (f === "rx") {
+      startRx();
+    } else if (f === "bazaar") {
+      startBazaar();
+    } else if (f === "meal") {
+      goTo("s-meal");
+      renderMealStep(0);
+    } else if (f === "family") {
+      goTo("s-family");
+      renderFamilyList();
+    } else if (f === "breathe") {
+      goTo("s-breathwork");
+    } else if (f === "symptoms") {
+      ST.chatCtx = "general";
+      ST.chatHistory = [];
+      ST.isFirstMsg = true;
+      goTo("s-chat");
+      document.getElementById("chat-ctx-label").textContent = "Symptoms";
+      renderSymptomStart();
+    } else if (f === "wellness") {
+      ST.chatCtx = "wellness";
+      ST.chatHistory = [];
+      ST.isFirstMsg = true;
+      goTo("s-chat");
+      document.getElementById("chat-ctx-label").textContent = "Wellness Baat";
+      renderWellnessStart();
+    } else if (f === "community") {
+      goTo("s-community");
+      renderCommunityList();
+    } else if (f === "lab") {
+      goTo("s-lab");
+      renderLabStep(0);
+    }
+  }
+
+  // ── v3: Sehat Score system ──
+  function getScore() {
+    return parseInt(localStorage.getItem("sehatScore") || "50", 10);
+  }
+  function getStreak() {
+    return parseInt(localStorage.getItem("sehatStreak") || "0", 10);
+  }
+  function getTodayDelta() {
+    return parseInt(
+      localStorage.getItem("sehatTodayDelta_" + new Date().toDateString()) || "0",
+      10,
+    );
+  }
+
+  function bumpScore(points) {
+    const cur = getScore();
+    const next = Math.min(100, Math.max(0, cur + points));
+    localStorage.setItem("sehatScore", next);
+    const today = new Date().toDateString();
+    const delta = getTodayDelta() + points;
+    localStorage.setItem("sehatTodayDelta_" + today, delta);
+    refreshScore();
+    // Streak bump on first +ve action of the day
+    if (points > 0 && delta === points) {
+      const lastDay = localStorage.getItem("sehatLastActiveDay");
+      let streak = getStreak();
+      if (lastDay) {
+        const last = new Date(lastDay),
+          now = new Date();
+        const diffMs = now - last;
+        const oneDay = 24 * 60 * 60 * 1000;
+        if (diffMs < oneDay * 1.5 && diffMs >= oneDay * 0.5) streak += 1;
+        else if (diffMs >= oneDay * 1.5) streak = 1;
+        // same day = no streak change
+      } else {
+        streak = 1;
+      }
+      localStorage.setItem("sehatStreak", streak);
+      localStorage.setItem("sehatLastActiveDay", today);
+      refreshStreak();
+    }
+  }
+
+  const DOT_POINTS = { paani: 5, swas: 10, khana: 5 };
+  const DOT_NAMES = { paani: "Paani piya", swas: "Swas kiya", khana: "Raat ka khana" };
+
+  function markDailyDot(type, el) {
+    const today = new Date().toDateString();
+    const key = "daily_" + type + "_" + today;
+    if (localStorage.getItem(key)) return; // already done today
+    localStorage.setItem(key, "1");
+    if (el) el.classList.add("done");
+    const pts = DOT_POINTS[type] || 5;
+    bumpScore(pts);
+    if (typeof refreshScoreChip === "function") refreshScoreChip();
+    showToast("+" + pts + " Sehat Score 💚 (" + DOT_NAMES[type] + ")");
+  }
+
+  function refreshDailyDots() {
+    const today = new Date().toDateString();
+    ["paani", "swas", "khana"].forEach((t) => {
+      const el = document.getElementById("dot-" + t);
+      if (!el) return;
+      if (localStorage.getItem("daily_" + t + "_" + today)) el.classList.add("done");
+      else el.classList.remove("done");
+    });
+  }
+
+  function getLevel(score) {
+    if (score <= 40) return { num: 1, name: "Sehat Shishya" };
+    if (score <= 70) return { num: 2, name: "Sehat Rakshak" };
+    if (score <= 90) return { num: 3, name: "Sehat Mitra" };
+    return { num: 4, name: "Sehat Guru" };
+  }
+
+  function refreshScore() {
+    // v3.2: Body score strip removed; just refresh the header chip + run unlock checks
+    if (typeof refreshScoreChip === "function") refreshScoreChip();
+    const score = getScore();
+    // Ritucharya unlock check
+    if ((score >= 91 || getStreak() >= 10) && !localStorage.getItem("ritucharyaUnlocked")) {
+      localStorage.setItem("ritucharyaUnlocked", "1");
+      showToast("🌟 Ritucharya unlocked! Sehat Tools mein dekhein.");
+    }
+  }
+
+  function askName() {
+    const name = (prompt("Aapka naam kya hai? (sirf first name)") || "").trim().slice(0, 30);
+    if (!name) return;
+    const p = loadProfile() || { skipCount: 0 };
+    p.name = name;
+    if (!p.completed) p.completed = true;
+    saveProfile(p);
+    initHubDynamic();
+    showToast("Namaste " + name + " 🙏");
+  }
+
+  // ── v3 Hub: 3-zone interactions ──
+  const PERSONA_MODE_LBL = { dadi: "Dadi mode", maa: "Maa mode", saathi: "Saathi mode" };
+
+  function initHubDynamic() {
+    // v3.1: Populate greeting with name (or prompt to set one)
+    const profile = ST.userProfile || loadProfile();
+    const nameEl = document.getElementById("hub3-name");
+    if (nameEl) {
+      if (profile && profile.name) {
+        nameEl.textContent = ", " + profile.name;
+      } else {
+        nameEl.innerHTML =
+          ' <span style="color:rgba(255,255,255,.45);text-decoration:underline;cursor:pointer" onclick="askName()">apna naam jodein</span>';
+      }
+    }
+    // v3.2: Render TOD carousel + refresh header score chip
+    renderTODCarousel();
+    refreshScoreChip();
+
+    // Update streak
+    refreshStreak();
+    // Update score + dots
+    refreshScore();
+    refreshDailyDots();
+    // Refresh story card if a story is loaded
+    refreshStoryCard();
+    // v5: Mera Sehat tile counts + RX pill badge
+    if (typeof updateHubBazaarSub === "function") updateHubBazaarSub();
+    // v5.2: Sunita home toggle (auto by profile.age >= 40 OR scope === 'household')
+    if (typeof applySunitaMode === "function") applySunitaMode();
+    // v5.1: Aaj ki Sehat stories rail
+    if (typeof renderHubStories === "function") renderHubStories();
+  }
+
+  // ── v5.2: Sunita-archetype simplified home (Miller's Law) ──
+  // Toggles a body.sunita class which hides the dense .dense-only wellness +
+  // symptoms grids and reveals the parallel .sunita-home block (4 primary
+  // tiles + 4 takleef + Aur dekho expand). Auto-detected from profile.
+  function isSunitaMode() {
+    const p = ST.userProfile || loadProfile();
+    if (!p) return false;
+    const age = parseInt(p.age, 10);
+    if (!isNaN(age) && age >= 40) return true;
+    if (p.scope === "household") return true;
+    return false;
+  }
+  function applySunitaMode() {
+    document.body.classList.toggle("sunita", isSunitaMode());
+    // v5.3: also drive Focus Mode body class from ss_focus state
+    const focusActive = typeof hasActiveFocus === "function" && hasActiveFocus();
+    document.body.classList.toggle("focus", !!focusActive);
+    if (focusActive && typeof renderFocusHome === "function") renderFocusHome();
+  }
+
+  // ── v5.1: Aaj ki Sehat stories rail (Instagram-style daily content) ──
+  // Surfaces what's "alive" today: streak, score, story, habit, paani check,
+  // upcoming reminder, active order. Tier 2/3 users open the app once a day —
+  // this rail is the "lure-back" magical moment that v3.x had and v4 lost.
+  function renderHubStories() {
+    const el = document.getElementById("hub-stories");
+    if (!el) return;
+    const score = typeof getScore === "function" ? getScore() : 50;
+    const streak = typeof getStreak === "function" ? getStreak() : 0;
+    const today = new Date().toDateString();
+    const dots = {
+      paani: !!localStorage.getItem("daily_paani_" + today),
+      swas: !!localStorage.getItem("daily_swas_" + today),
+      khana: !!localStorage.getItem("daily_khana_" + today),
+    };
+    const rems = typeof loadReminders === "function" ? loadReminders() : [];
+    const orders = typeof loadOrders === "function" ? loadOrders() : [];
+    const activeOrder = orders.find((o) => (o.statusIdx || 0) < 4);
+    // Time-of-day habit slot
+    const hour = new Date().getHours();
+    const habitSlot =
+      hour < 11
+        ? { emoji: "🌅", name: "Subah ka rasm", cmd: "startFeature('breathe')" }
+        : hour < 17
+          ? {
+              emoji: "💧",
+              name: dots.paani ? "Paani done" : "Paani peeyo",
+              cmd: "storiesTapDot('paani')",
+              done: !!dots.paani,
+            }
+          : hour < 21
+            ? { emoji: "🌬", name: "Saans karo", cmd: "startFeature('breathe')" }
+            : { emoji: "🌙", name: "Raat ki dua", cmd: "playStory('general')" };
+
+    let html = "";
+
+    // 0a) v5.3: Focus Mode validation circle — highest priority, appears when per-symptom delay has passed
+    const focusDue =
+      typeof isFocusValidationDue === "function" && isFocusValidationDue()
+        ? getActiveFocus()
+        : null;
+    if (focusDue) {
+      const flow = FOCUS_FLOWS[focusDue.symptom] || {};
+      html += `<button class="hs-circle" onclick="openFocusValidate()">
+      <div class="hs-ring due"><span>${flow.emoji || "🤕"}</span></div>
+      <div class="hs-name">Kaisa hai ab?</div>
+    </button>`;
+    }
+
+    // 0b) v5.2: Symptom check-in (next priority after focus validation)
+    const due = typeof getDueCheckin === "function" ? getDueCheckin() : null;
+    if (due && !focusDue) {
+      const emoji = due.symptomEmoji || "🤕";
+      const label = (due.displayText || "tabiyat").split(" ").slice(0, 2).join(" ");
+      html += `<button class="hs-circle" onclick="openCheckin('${due.id}')">
+      <div class="hs-ring due"><span>${emoji}</span></div>
+      <div class="hs-name">Kaisa hai?</div>
+    </button>`;
+    }
+
+    // 1) Streak
+    if (streak > 0) {
+      html += `<button class="hs-circle" onclick="showToast('${streak} din ka streak \\u{1F525}')">
+      <div class="hs-ring streak"><span>🔥</span><span class="hs-ring-num" style="border-color:#fb923c;color:#fb923c">${streak}</span></div>
+      <div class="hs-name">${streak}-din streak</div>
+    </button>`;
+    } else {
+      html += `<button class="hs-circle" onclick="showToast('Aaj se streak shuru karein')">
+      <div class="hs-ring muted"><span>🔥</span></div>
+      <div class="hs-name">Streak shuru</div>
+    </button>`;
+    }
+
+    // 2) Score
+    html += `<button class="hs-circle" onclick="showToast('Sehat Score: ${score} / 100')">
+    <div class="hs-ring green"><span>💚</span></div>
+    <div class="hs-name">Score ${score}</div>
+  </button>`;
+
+    // 3) Aaj ki Kahani (Dadi's story)
+    html += `<button class="hs-circle" onclick="playStory('general')">
+    <div class="hs-ring purple"><span>📖</span></div>
+    <div class="hs-name">Aaj ki kahani</div>
+  </button>`;
+
+    // 4) Time-of-day habit
+    html += `<button class="hs-circle ${habitSlot.done ? "done" : ""}" onclick="${habitSlot.cmd}">
+    <div class="hs-ring ${habitSlot.done ? "done" : "warm"}"><span>${habitSlot.emoji}</span></div>
+    <div class="hs-name">${habitSlot.name}</div>
+  </button>`;
+
+    // 5) Due reminder (next one within 8 hours)
+    const next = rems.length
+      ? rems.slice().sort((a, b) => (a.time || "24:00").localeCompare(b.time || "24:00"))[0]
+      : null;
+    if (next) {
+      html += `<button class="hs-circle" onclick="startFeature('bazaar')">
+      <div class="hs-ring due"><span>⏰</span></div>
+      <div class="hs-name">${next.name || "Dawai"} ${next.time || ""}</div>
+    </button>`;
+    }
+
+    // 6) Active order tracking
+    if (activeOrder) {
+      const stageNames = ["Placed", "Confirmed", "Packing", "Out for delivery", "Delivered"];
+      const st = stageNames[activeOrder.statusIdx || 0] || "Placed";
+      html += `<button class="hs-circle" onclick="trackOrder('${activeOrder.id}')">
+      <div class="hs-ring warm"><span>🛒</span></div>
+      <div class="hs-name">${st}</div>
+    </button>`;
+    }
+
+    // 7) Aaj ki AYUSH practice (always shows)
+    html += `<button class="hs-circle" onclick="goTo('s-breathwork')">
+    <div class="hs-ring muted"><span>🪴</span></div>
+    <div class="hs-name">AYUSH aadat</div>
+  </button>`;
+
+    el.innerHTML = html;
+  }
+
+  function refreshStreak() {
+    const el = document.getElementById("hub3-streak-count");
+    if (el) el.textContent = getStreak();
+  }
+
+  function moodTap(mood) {
+    // Open chat with contextual chips
+    ST.chatCtx = "mood_" + mood;
+    ST.chatHistory = [];
+    ST.isFirstMsg = true;
+    trackFeature("nushke");
+    goTo("s-chat");
+    document.getElementById("chat-ctx-label").textContent =
+      mood === "theek" ? "Theek hoon" : mood === "takleef" ? "Kuch takleef" : "Bahut tension";
+    setTimeout(() => renderMoodChat(mood), 100);
+  }
+
+  function renderMoodChat(mood) {
+    const msgs = document.getElementById("chat-msgs");
+    if (!msgs) return;
+    msgs.innerHTML = "";
+    const intros = {
+      theek: {
+        txt: "Wah! Acchi baat hai — aaj kya try karna chahogey?",
+        say: "वाह! अच्छी बात है। आज क्या try करना चाहोगे? नीचे से चुनो, या सीधा बताओ।",
+      },
+      takleef: {
+        txt: "Acha — kya takleef ho rahi hai? Niche se chunein, ya likh ke batao.",
+        say: "अच्छा। क्या तकलीफ हो रही है? नीचे से चुनो, या लिख के बताओ।",
+      },
+      tension: {
+        txt: "Hmm. Saath hoon. Niche se ek chunein, ya seedha jo bhi feel ho rahi hai likh do — pehle koi salah nahi dungi, sirf sun rahi hoon.",
+        say: "हम्म। साथ हूं। नीचे से एक चुनो, या जो भी feel हो रही है लिख दो। पहले कोई सलाह नहीं दूंगी, सिर्फ सुन रही हूं।",
+      },
+    };
+    const chips = {
+      theek: [
+        {
+          label: "Aaj ka nushka",
+          action: () => sendMoodMessage("Aaj ka ek accha nushka batao — aam sehat ke liye"),
+        },
+        {
+          label: "Swas karo",
+          action: () => {
+            ST.chatCtx = "breathe";
+            goTo("s-breathwork");
+          },
+        },
+        { label: "Dadi ki kahani", action: () => triggerStoryFromChat() },
+      ],
+      takleef: [
+        {
+          label: "Ghar ka nushka",
+          action: () => {
+            ST.chatCtx = "nushke";
+            addMsg("user", "Mujhe ek ghar ka nushka chahiye", false);
+            callAI(
+              "Mujhe ek ghar ka nushka chahiye — kya takleef hai poochho",
+              getSystemPromptFor("nushke"),
+            );
+          },
+        },
+        { label: "Lab report", action: () => startFeature("lab") },
+        { label: "Dawai", action: () => startFeature("medicine") },
+      ],
+      tension: [
+        {
+          label: "Sun lo mujhe",
+          action: () => {
+            ST.chatCtx = "tension";
+            sendMoodMessage("Mann bhaari hai. Bas thoda sunna chahti hoon — koi salah nahi.");
+          },
+        },
+        { label: "Saans exercise", action: () => goTo("s-breathwork") },
+        { label: "Sukoon ki kahani", action: () => triggerStoryFromChat("calm") },
+      ],
+    };
+    addMsg("bot", intros[mood].txt, false);
+    speak(intros[mood].txt, { ttsText: intros[mood].say });
+    // Render chips
+    const row = document.createElement("div");
+    row.className = "msg-row bot";
+    const wrap = document.createElement("div");
+    wrap.className = "mood-chips";
+    for (const c of chips[mood]) {
+      const btn = document.createElement("button");
+      btn.className = "mood-chip";
+      btn.textContent = c.label;
+      btn.onclick = () => {
+        row.remove();
+        c.action();
+      };
+      wrap.appendChild(btn);
+    }
+    row.appendChild(wrap);
+    msgs.appendChild(row);
+  }
+
+  function sendMoodMessage(text) {
+    addMsg("user", text, false);
+    callAI(text, getSystemPromptFor(ST.chatCtx));
+  }
+
+  function triggerStoryFromChat(theme) {
+    // Open story card pre-loaded — user navigates back to hub to play
+    goTo("s-hub");
+    setTimeout(() => playStory(theme || "general"), 200);
+  }
+
+  function playStory(theme) {
+    return generateAndPlayStory(theme || "general");
+  }
+
+  // ── v3: Dynamic story generation (OpenAI + Sarvam TTS) ──
+  const PERSONA_VOICES = {
+    dadi: "an Indian grandmother — slow, loving, uses beta/beti, tells stories from decades ago",
+    maa: "an Indian mother — practical, kitchen wisdom, slightly modern, uses arre and suno",
+    saathi: "a peer friend — casual, warm, uses yaar, shares like texting a friend",
+  };
+
+  function getCurrentSeason() {
+    const m = new Date().getMonth() + 1;
+    if (m >= 6 && m <= 9) return "monsoon";
+    if (m >= 10 || m <= 2) return "winter";
+    return "summer";
+  }
+  function getTimeOfDay() {
+    const h = new Date().getHours();
+    if (h >= 5 && h < 12) return { slot: "morning", label: "Subah ki kahani" };
+    if (h >= 12 && h < 17) return { slot: "afternoon", label: "Dopahar ki tip" };
+    if (h >= 17 && h < 21) return { slot: "evening", label: "Sham ki baat" };
+    return { slot: "night", label: "Raat ki nasihat" };
+  }
+
+  let _storyCache = null; // { title, preview, fullText, lang, persona, season, dur, ts }
+  let _storyAudio = null;
+  let _storyPlaying = false;
+
+  async function generateAndPlayStory(theme) {
+    // v3.1: Stories ALWAYS use Dadi voice (manisha) regardless of current persona
+    const tod = getTimeOfDay();
+    const season = getCurrentSeason();
+    const lang = ST.currentLanguage || "hi-IN";
+    const langCode = lang.split("-")[0];
+    const profile = ST.userProfile || loadProfile() || {};
+    const userName = profile.name || "";
+    // Cache key includes time-of-day so a fresh story rotates as the day moves on
+    const cacheKey = "dadi_" + tod.slot + "_" + season + "_" + (theme || "general");
+    const reuseOk =
+      _storyCache &&
+      _storyCache.cacheKey === cacheKey &&
+      Date.now() - _storyCache.ts < 30 * 60 * 1000;
+    if (!reuseOk) {
+      const hasAI =
+        (OPENAI_API_KEY && OPENAI_API_KEY.length > 20 && !OPENAI_API_KEY.includes("REPLACE")) ||
+        (GROQ_API_KEY && GROQ_API_KEY.length > 20 && !GROQ_API_KEY.includes("REPLACE"));
+      if (!hasAI) {
+        // Fall back to seed stories — voice still works
+        const fallback = STORY_FALLBACKS[tod.slot] || STORY_FALLBACKS.morning;
+        _storyCache = {
+          ...fallback,
+          langCode: "hi",
+          persona: "dadi",
+          season,
+          tod: tod.slot,
+          theme,
+          cacheKey,
+          ts: Date.now(),
+          dur: "2 min",
+        };
+        setStoryCard({
+          title: fallback.title,
+          preview: '"' + fallback.preview + '"',
+          meta: "Dadi ki awaaz · 2 min · Hindi",
+          dur: "2 min",
+        });
+        setSunoLabel("Suno", false);
+        await playCachedStory();
+        return;
+      }
+      setStoryCard({
+        title: "Kahani taiyaar ho rahi hai...",
+        preview: "...",
+        meta: "Thoda intezaar",
+        dur: "",
+      });
+      setSunoLabel("...", true);
+      try {
+        const themeHint =
+          theme === "calm"
+            ? "About finding calm, slow breathing, or a quiet moment of mental peace."
+            : "A gentle health story woven naturally with one Ayurvedic kitchen remedy.";
+        const todHint = {
+          morning:
+            "It is early morning. The story should fit waking up, breakfast, energy, the sunrise.",
+          afternoon:
+            "It is afternoon. The story should fit a heavy lunch, post-meal sluggishness, midday heat or rest.",
+          evening:
+            "It is evening. The story should fit dusk, returning home, light dinner, winding down, family.",
+          night:
+            "It is night. The story should fit sleep, tossing in bed, late thoughts, warm milk, a nightly ritual.",
+        }[tod.slot];
+        const langWord = langCode === "hi" ? "Hindi (Roman script OK)" : langCode;
+        const nameInstruction = userName
+          ? `Address the listener by name "${userName}" once at the very start (e.g., "${userName} beta..." / "Suno ${userName}...").`
+          : "";
+        const sysPrompt = `You are an Indian grandmother — slow, loving, uses beta/beti, tells stories from decades ago. Tell a warm first-person personal health story in ${langWord}. Something that happened to your own family long ago. ${themeHint} ${todHint} Ends with: "Toh aaj ek kaam karo — [one simple, time-appropriate action]". 130 words maximum. Sound like Dadi at the dinner table. ${nameInstruction} Never use bullet points or the word "tip". Season: ${season}. Time-of-day: ${tod.slot}.`;
+        const userPrompt = `Give me ONE short story now. Reply only as JSON: {"title": "<5-7 word warm Hindi/Hinglish title that fits ${tod.slot} time>", "preview": "<1 sentence quoted teaser, 12 words max>", "fullText": "<the full 130-word story>"}`;
+        let story;
+        try {
+          story = await callAIJSON(sysPrompt, userPrompt, { maxTokens: 700 });
+        } catch (storyErr) {
+          console.error("[story] AI provider failed", storyErr);
+          const fallback = STORY_FALLBACKS[tod.slot] || STORY_FALLBACKS.morning;
+          _storyCache = {
+            ...fallback,
+            langCode: "hi",
+            persona: "dadi",
+            season,
+            tod: tod.slot,
+            theme,
+            cacheKey,
+            ts: Date.now(),
+            dur: "2 min",
+          };
+          setStoryCard({
+            title: fallback.title,
+            preview: '"' + fallback.preview + '"',
+            meta: "Dadi ki awaaz · 2 min · Hindi",
+            dur: "2 min",
+          });
+          setSunoLabel("Suno", false);
+          await playCachedStory();
+          return;
+        }
+        const dur = Math.max(1, Math.round(story.fullText.length / 250)) + " min";
+        _storyCache = {
+          ...story,
+          lang,
+          langCode,
+          persona: "dadi",
+          season,
+          tod: tod.slot,
+          theme,
+          cacheKey,
+          dur,
+          ts: Date.now(),
+        };
+        const langName =
+          {
+            hi: "Hindi",
+            mr: "Marathi",
+            bn: "Bangla",
+            ta: "Tamil",
+            te: "Telugu",
+            kn: "Kannada",
+            ml: "Malayalam",
+            gu: "Gujarati",
+            pa: "Punjabi",
+          }[langCode] || "Hindi";
+        setStoryCard({
+          title: story.title,
+          preview: '"' + story.preview + '"',
+          meta: "Dadi ki awaaz · " + dur + " · " + langName,
+          dur,
+        });
+      } catch (e) {
+        console.error("[story] generation failed", e);
+        const fallback = STORY_FALLBACKS[tod.slot] || STORY_FALLBACKS.morning;
+        _storyCache = {
+          ...fallback,
+          langCode: "hi",
+          persona: "dadi",
+          season,
+          tod: tod.slot,
+          theme,
+          cacheKey,
+          ts: Date.now(),
+          dur: "2 min",
+        };
+        setStoryCard({
+          title: fallback.title,
+          preview: '"' + fallback.preview + '"',
+          meta: "Dadi ki awaaz · 2 min · Hindi",
+          dur: "2 min",
+        });
+        setSunoLabel("Suno", false);
+        await playCachedStory();
+        return;
+      }
+    }
+    await playCachedStory();
+  }
+
+  // Time-of-day fallback stories (if OpenAI unreachable)
+  const STORY_FALLBACKS = {
+    morning: {
+      title: "Subah ka pehla ghoont",
+      preview: "Suno beta, jab main chhoti thi mere papa hamesha kehte the...",
+      fullText:
+        "Suno beta, jab main chhoti thi mere papa hamesha kehte the — subah uthkar sabse pehle ek glass garam paani peena. Hum bachhe pehle nakhre karte the, par dheere dheere aadat ban gayi. Bahut saalon baad doctor ne bhi yahi bola — subah ka paani ant ko jagata hai, paachan theek karta hai. Ek nimbu ka tukda daal lo, aur swad bhi accha lagega. Toh aaj ek kaam karo — uthe ke baad, chai se pehle, ek glass garam paani piyo. Sirf ek hafte try karo, fark khud dikh jayega.",
+    },
+    afternoon: {
+      title: "Dopahar ki susti",
+      preview: "Beta, dopahar ke baad jo neend aati hai na...",
+      fullText:
+        "Beta, dopahar ke baad jo neend aati hai na, woh sirf khaane ki wajah se nahi hoti. Hamare ghar mein dadi kehti thi — peht bhar ke khao toh dimaag soyega. Unhone humein sikhaya thoda kam khao, aur khaane ke baad das minute aaram se baitho, phir choti si walk. Yeh dinacharya ka hissa tha. Ab to log seedhe phone uthate hain, ya so jaate hain — dono peht ko bhari kar dete hain. Toh aaj ek kaam karo — dopahar ke khaane ke baad, das minute ke liye dheere dheere chal lo, ghar mein hi sahi.",
+    },
+    evening: {
+      title: "Sham ki haldi waali doodh",
+      preview: "Mere baba ki ek aadat thi shaam ki...",
+      fullText:
+        'Mere baba ki ek aadat thi shaam ki — kaam se aane ke baad ek chhoti chai, par doodh aur haldi ke saath. Wo kehte the, "Din bhar ki thakaan haldi le leti hai." Mujhe pehle accha nahi lagta tha — par jab badi hui aur khud dard sehe, tab samjha. Haldi ek chutki, garam doodh, aur thoda gud. Bas itna. Sone se pehle peh lo — neend bhi gehri aati hai, badan bhi halka lagta hai. Toh aaj ek kaam karo — sham ko ek glass garam doodh mein chutki haldi daalo, aur baith ke piyo. Phone door rakh dena.',
+    },
+    night: {
+      title: "Raat ki shaanti",
+      preview: "Beta, raat ko jab neend nahi aati...",
+      fullText:
+        "Beta, raat ko jab neend nahi aati, toh ham phone uthate hain — yeh sabse badi galti hai. Mere ghar mein dadi sone se pehle ek choti si baat karti thi — dheere dheere saans lo, naak se andar, muh se bahar. Char baar. Aankhein band, kandhe dheele. Bas yeh. Phone andheri kamre mein dimaag ko jaga deta hai. Ek choti si aadat — sone se pehle paanch minute saans pe dhyan — neend ko kheench laati hai. Toh aaj ek kaam karo — bistar mein lete ke baad, paanch saans gehri lo, phone neeche rakh do. Subah ka kaam subah hota hai.",
+    },
+  };
+
+  async function playCachedStory() {
+    if (!_storyCache) return;
+    // Toggle pause
+    if (_storyPlaying && _storyAudio) {
+      _storyAudio.pause();
+      _storyAudio = null;
+      _storyPlaying = false;
+      setSunoLabel("Suno", false);
+      return;
+    }
+    setSunoLabel("Loading...", true);
+    // Generate audio via Sarvam TTS
+    try {
+      if (!SARVAM_KEY || SARVAM_KEY.length < 20 || SARVAM_KEY.includes("REPLACE")) {
+        // No Sarvam key — show text dialog instead
+        showStoryTextDialog();
+        setSunoLabel("Suno", false);
+        return;
+      }
+      const targetLang = SARVAM_LANG_MAP[_storyCache.lang] || "hi-IN";
+      // v3.1: Stories ALWAYS use Dadi voice (manisha)
+      const speaker = SARVAM_SPEAKERS.dadi;
+      // Sarvam has ~500 char limit — chunk if needed
+      const chunks = chunkText(_storyCache.fullText, 480);
+      const audioParts = [];
+      for (let chunk of chunks) {
+        // v3.3: transliterate Roman chunks to Devanagari for natural Hindi voice
+        const detectedScript = detectLang(chunk).script;
+        if (detectedScript === "roman" && targetLang.startsWith("hi")) {
+          chunk = await transliterateToDevanagari(chunk, targetLang);
+        }
+        const res = await fetch("https://api.sarvam.ai/text-to-speech", {
+          method: "POST",
+          headers: { "api-subscription-key": SARVAM_KEY, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            inputs: [chunk],
+            target_language_code: targetLang,
+            speaker,
+            pitch: 0,
+            pace: 0.9,
+            loudness: 1.4,
+            speech_sample_rate: 22050,
+            enable_preprocessing: true,
+            model: "bulbul:v2",
+          }),
+        });
+        if (!res.ok) {
+          console.error("[story TTS]", res.status);
+          break;
+        }
+        const data = await res.json();
+        if (data.audios && data.audios[0]) audioParts.push(data.audios[0]);
+      }
+      if (!audioParts.length) {
+        showToast("Awaaz nahi mili — text dekh sakte ho");
+        showStoryTextDialog();
+        setSunoLabel("Suno", false);
+        return;
+      }
+      // Play sequentially
+      setSunoLabel("Roko", true);
+      _storyPlaying = true;
+      let idx = 0;
+      const playNext = () => {
+        if (!_storyPlaying) return;
+        if (idx >= audioParts.length) {
+          _storyPlaying = false;
+          setSunoLabel("Suno", false);
+          bumpScore(3); // reward listening
+          return;
+        }
+        _storyAudio = new Audio("data:audio/wav;base64," + audioParts[idx++]);
+        _storyAudio.onended = playNext;
+        _storyAudio.onerror = () => {
+          _storyPlaying = false;
+          setSunoLabel("Suno", false);
+        };
+        _storyAudio.play().catch((e) => {
+          console.warn("autoplay blocked", e);
+          _storyPlaying = false;
+          setSunoLabel("Suno", false);
+          showStoryTextDialog();
+        });
+      };
+      playNext();
+    } catch (e) {
+      console.error("Story play failed", e);
+      setSunoLabel("Suno", false);
+      showStoryTextDialog();
+    }
+  }
+
+  function chunkText(text, maxLen) {
+    const sentences = text.match(/[^.!?।]+[.!?।]+\s*/g) || [text];
+    const chunks = [];
+    let cur = "";
+    for (const s of sentences) {
+      if ((cur + s).length > maxLen) {
+        if (cur) chunks.push(cur);
+        cur = s;
+      } else {
+        cur += s;
+      }
+    }
+    if (cur) chunks.push(cur);
+    return chunks;
+  }
+
+  function setStoryCard({ title, preview, meta, dur }) {
+    const t = document.getElementById("hub3-story-title");
+    const p = document.getElementById("hub3-story-preview");
+    const m = document.getElementById("hub3-story-meta");
+    if (t) t.textContent = title;
+    if (p) p.textContent = preview;
+    if (m) m.textContent = meta;
+  }
+  function setSunoLabel(label, busy) {
+    const lbl = document.getElementById("hub3-suno-lbl");
+    if (lbl) lbl.textContent = label;
+    const btn = document.getElementById("hub3-suno-btn");
+    if (btn) btn.style.opacity = busy ? "0.7" : "1";
+  }
+  function refreshStoryCard() {
+    if (!_storyCache) return;
+    const personaLbl =
+      _storyCache.persona === "dadi" ? "Dadi" : _storyCache.persona === "maa" ? "Maa" : "Saathi";
+    const langName =
+      {
+        hi: "Hindi",
+        mr: "Marathi",
+        bn: "Bangla",
+        ta: "Tamil",
+        te: "Telugu",
+        kn: "Kannada",
+        ml: "Malayalam",
+        gu: "Gujarati",
+        pa: "Punjabi",
+      }[_storyCache.langCode] || "Hindi";
+    setStoryCard({
+      title: _storyCache.title,
+      preview: '"' + _storyCache.preview + '"',
+      meta: personaLbl + " ki awaaz · " + _storyCache.dur + " · " + langName,
+    });
+  }
+  function showStoryTextDialog() {
+    if (!_storyCache) return;
+    const msg = _storyCache.title + "\n\n" + _storyCache.fullText;
+    alert(msg); // Minimal fallback — could be upgraded to a sheet
+  }
+
+  // ── v3.2: Aaj ke liye carousel (time-of-day) ──
+  const TOD_CARDS = {
+    morning: [
+      {
+        type: "kahani",
+        emoji: "👵",
+        title: "Subah ki kahani",
+        sub: "Dadi ki awaaz · 2 min",
+        cta: "Suno",
+        action: "story",
+      },
+      {
+        type: "saans",
+        emoji: "🌬",
+        title: "Anulom-Vilom",
+        sub: "Saans ka santulan · 5 min",
+        cta: "Karo",
+        action: "breathe",
+      },
+      {
+        type: "yoga",
+        emoji: "☀️",
+        title: "Surya Namaskar warmup",
+        sub: "Body ko jagao · 4 min",
+        cta: "Karo",
+        action: "sunsalute",
+      },
+      {
+        type: "tip",
+        emoji: "🍋",
+        title: "Garam paani + nimbu",
+        sub: "Subah ka detox · 1 min",
+        cta: "Try",
+        action: "tip_lemon",
+      },
+    ],
+    afternoon: [
+      {
+        type: "kahani",
+        emoji: "👵",
+        title: "Dopahar ki tip",
+        sub: "Dadi ki awaaz · 2 min",
+        cta: "Suno",
+        action: "story",
+      },
+      {
+        type: "tip",
+        emoji: "🚶",
+        title: "Khaane ke baad walk",
+        sub: "Paachan shakti · 10 min",
+        cta: "Try",
+        action: "tip_walk",
+      },
+      {
+        type: "yoga",
+        emoji: "🧘",
+        title: "Sukshma vyayam",
+        sub: "Stretching · 3 min",
+        cta: "Karo",
+        action: "stretch",
+      },
+      {
+        type: "tip",
+        emoji: "🥱",
+        title: "Power nap",
+        sub: "Bas 20 minute · 1 tip",
+        cta: "Try",
+        action: "tip_nap",
+      },
+    ],
+    evening: [
+      {
+        type: "kahani",
+        emoji: "👵",
+        title: "Sham ki baat",
+        sub: "Dadi ki awaaz · 2 min",
+        cta: "Suno",
+        action: "story",
+      },
+      {
+        type: "saans",
+        emoji: "🌬",
+        title: "Nadi Shodhana",
+        sub: "Din ka therav · 7 min",
+        cta: "Karo",
+        action: "breathe",
+      },
+      {
+        type: "tip",
+        emoji: "🚶",
+        title: "Sham ki walk",
+        sub: "Tension utaaro · 15 min",
+        cta: "Try",
+        action: "tip_eve_walk",
+      },
+      {
+        type: "tip",
+        emoji: "📵",
+        title: "Screen-free 30 min",
+        sub: "Khaane se pehle · 1 tip",
+        cta: "Try",
+        action: "tip_screenfree",
+      },
+    ],
+    night: [
+      {
+        type: "kahani",
+        emoji: "👵",
+        title: "Raat ki nasihat",
+        sub: "Dadi ki awaaz · 2 min",
+        cta: "Suno",
+        action: "story",
+      },
+      {
+        type: "saans",
+        emoji: "🌬",
+        title: "Bhramari Pranayam",
+        sub: "Mann ki shaanti · 5 min",
+        cta: "Karo",
+        action: "breathe",
+      },
+      {
+        type: "yoga",
+        emoji: "🧘",
+        title: "Yoga Nidra",
+        sub: "Gehri neend · 10 min",
+        cta: "Karo",
+        action: "breathe",
+      },
+      {
+        type: "tip",
+        emoji: "🥛",
+        title: "Haldi wala doodh",
+        sub: "Sone se pehle · 1 tip",
+        cta: "Try",
+        action: "tip_haldi",
+      },
+    ],
+  };
+
+  const TIP_CONTENTS = {
+    tip_lemon: {
+      title: "Garam paani + nimbu",
+      body: "Subah uth ke pehle, ek glass garam paani mein ek nimbu nichod ke piyo. Pet saaf hota hai, paachan shakti badhti hai. Bas yahi ek aadat — ek hafte try karo, fark dikh jayega.",
+      say: "सुबह उठ के पहले, एक ग्लास गरम पानी में एक नींबू निचोड़ के पियो। पेट साफ होता है, पाचन शक्ति बढ़ती है।",
+    },
+    tip_walk: {
+      title: "Khaane ke baad walk",
+      body: "Dopahar ke khaane ke baad seedhe na baitho. Bas das minute dheere dheere ghar mein chal lo. Khaana paacheya jaayega aur dopahar ki susti bhi nahi aayegi.",
+      say: "दोपहर के खाने के बाद सीधे ना बैठो। बस दस मिनट धीरे धीरे घर में चल लो।",
+    },
+    tip_nap: {
+      title: "Sirf 20 minute ki neend",
+      body: "Dopahar mein neend aaye toh 20 minute ki choti neend lo — alarm laga ke. Zyada lagi toh raat ko neend nahi aayegi. Yeh ek puraana Indian rivaaj hai — sahi tarike se kiya gaya.",
+      say: "दोपहर में नींद आए तो बीस मिनट की छोटी नींद लो, अलार्म लगा के।",
+    },
+    tip_eve_walk: {
+      title: "Sham ki walk",
+      body: "Sham 6 baje ke around 15 minute ki walk lo. Khali pet par nahi — thoda kuch khaake. Yeh din bhar ki tension ko utaarti hai aur raat ko gehri neend laati hai.",
+      say: "शाम छह बजे के आसपास पंद्रह मिनट की वॉक लो — दिन भर की टेंशन उतर जाएगी।",
+    },
+    tip_screenfree: {
+      title: "Khaane se pehle screen band",
+      body: "Khaane se 30 minute pehle phone, TV, laptop sab band kar do. Khaana achhe se chabaake khao. Paachan dugna ho jaata hai — Ayurved mein iska bahut zikr hai.",
+      say: "खाने से तीस मिनट पहले फोन, टीवी, लैपटॉप सब बंद कर दो।",
+    },
+    tip_haldi: {
+      title: "Haldi wala doodh",
+      body: "Sone se pehle ek glass garam doodh, chutki haldi, thoda gud. Saans ki naliyaa saaf, badan halka, aur neend bhi gehri. Mere ghar mein har raat yahi banta tha.",
+      say: "सोने से पहले एक ग्लास गरम दूध में चुटकी हल्दी, और थोड़ा गुड़ डाल के पियो।",
+    },
+  };
+
+  function renderTODCarousel() {
+    const wrap = document.getElementById("hub3-carousel");
+    if (!wrap) return; // v4: TOD carousel removed from hub; keep helper for backward compat
+    const tod = getTimeOfDay();
+    const cards = TOD_CARDS[tod.slot] || TOD_CARDS.morning;
+    wrap.innerHTML = cards
+      .map(
+        (c, i) => `
+    <div class="hub3-cc" onclick="todCardTap('${c.action}')">
+      <div class="hub3-cc-top">
+        <div class="hub3-cc-emoji">${c.emoji}</div>
+        <span class="hub3-cc-tag ${c.type}">${c.type === "kahani" ? "Kahani" : c.type === "saans" ? "Saans" : c.type === "yoga" ? "Yoga" : "Tip"}</span>
+      </div>
+      <div class="hub3-cc-title">${c.title}</div>
+      <div class="hub3-cc-sub">${c.sub}</div>
+      <button class="hub3-cc-btn">
+        <svg viewBox="0 0 24 24" fill="none" width="11" height="11"><path d="M8 5v14l11-7z" fill="white"/></svg> ${c.cta}
+      </button>
+    </div>
+  `,
+      )
+      .join("");
+  }
+
+  function todCardTap(action) {
+    if (action === "story") return playStory("general");
+    if (action === "breathe" || action === "sunsalute" || action === "stretch") {
+      goTo("s-breathwork");
+      return;
+    }
+    // Tip card → show body in chat + speak Devanagari version
+    const tip = TIP_CONTENTS[action];
+    if (tip) {
+      ST.chatCtx = "tip";
+      ST.chatHistory = [];
+      ST.isFirstMsg = true;
+      goTo("s-chat");
+      document.getElementById("chat-ctx-label").textContent = tip.title;
+      setTimeout(() => {
+        const msgs = document.getElementById("chat-msgs");
+        msgs.innerHTML = "";
+        addMsg("bot", tip.body, false);
+        speak(tip.body, { ttsText: tip.say });
+        // Inject follow-up chips
+        injectFollowups("tip", msgs);
+      }, 100);
+    }
+  }
+
+  function askCommonQ(question) {
+    ST.chatCtx = "nushke";
+    ST.chatHistory = [];
+    ST.isFirstMsg = true;
+    goTo("s-chat");
+    document.getElementById("chat-ctx-label").textContent = "Ghar ke Nushke";
+    setTimeout(() => {
+      document.getElementById("chat-msgs").innerHTML = "";
+      addMsg("user", question, false);
+      callAI(question, getSystemPromptFor("nushke"));
+    }, 100);
+  }
+
+  // v4: Symptoms-triage tap — show the user's plain phrase, ask AI for a remedy
+  function triSymptomTap(displayText, aiPrompt) {
+    ST.chatCtx = "nushke";
+    ST.chatHistory = [];
+    ST.isFirstMsg = true;
+    trackFeature("nushke");
+    // v5.2: log the symptom so we can fire a 48h "kaisa hai?" check-in
+    if (typeof pushCheckin === "function") pushCheckin(displayText, aiPrompt);
+    goTo("s-chat");
+    const lbl = document.getElementById("chat-ctx-label");
+    if (lbl) lbl.textContent = "Ghar ke Nushke";
+    setTimeout(() => {
+      document.getElementById("chat-msgs").innerHTML = "";
+      addMsg("user", displayText, false);
+      callAI(aiPrompt, getSystemPromptFor("nushke"));
+    }, 100);
+  }
+
+  // v4.1: Wellness-goal tap — routes to wellness ctx (younger Hinglish persona)
+  function triWellnessTap(displayText, aiPrompt) {
+    ST.chatCtx = "wellness";
+    ST.chatHistory = [];
+    ST.isFirstMsg = true;
+    trackFeature("wellness");
+    goTo("s-chat");
+    const lbl = document.getElementById("chat-ctx-label");
+    if (lbl) lbl.textContent = "Sehat banao";
+    setTimeout(() => {
+      document.getElementById("chat-msgs").innerHTML = "";
+      addMsg("user", displayText, false);
+      callAI(aiPrompt, getSystemPromptFor("wellness"));
+    }, 100);
+  }
+
+  function refreshScoreChip() {
+    const score = getScore();
+    const streak = getStreak();
+    const sEl = document.getElementById("hsc-score");
+    const stEl = document.getElementById("hub3-streak-count");
+    if (sEl) sEl.textContent = "💚 " + score;
+    if (stEl) stEl.textContent = streak;
+  }
+
+  // Inject 2-3 contextual follow-up chips after bot reply
+  function injectFollowups(ctx, msgsContainer) {
+    const followups = {
+      nushke: ["Aur batao", "Doctor kab milein?", "Dadi ki kahani sunein"],
+      tension: ["Bas suno", "Saans karein", "Doctor se baat karein"],
+      mood_tension: ["Bas suno", "Saans karein", "Doctor se baat karein"],
+      mood_theek: ["Aaj ka nushka", "Saans karein", "Dadi ki kahani"],
+      mood_takleef: ["Aur batao", "Lab report", "Dawai"],
+      wellness: ["Aur tips", "Saans karein", "Plan banao"],
+      tip: ["Aur tips", "Try kiya", "Saans karein"],
+      general: ["Aur batao", "Saans karein", "Wapas hub"],
+    };
+    const list = followups[ctx] || followups.general;
+    const row = document.createElement("div");
+    row.className = "msg-row bot followup-row";
+    const wrap = document.createElement("div");
+    wrap.className = "followup-chips";
+    for (const label of list) {
+      const btn = document.createElement("button");
+      btn.className = "followup-chip";
+      btn.textContent = label;
+      btn.onclick = () => {
+        row.remove();
+        handleFollowup(label, ctx);
+      };
+      wrap.appendChild(btn);
+    }
+    row.appendChild(wrap);
+    msgsContainer.appendChild(row);
+    msgsContainer.scrollTop = msgsContainer.scrollHeight;
+  }
+
+  function handleFollowup(label, ctx) {
+    if (label === "Saans karein") return goTo("s-breathwork");
+    if (label === "Wapas hub") return goTo("s-hub");
+    if (label === "Lab report") return startFeature("lab");
+    if (label === "Dawai") return startFeature("medicine");
+    if (label === "Plan banao") return startFeature("meal");
+    if (label === "Dadi ki kahani" || label === "Dadi ki kahani sunein") {
+      goTo("s-hub");
+      setTimeout(() => playStory("general"), 200);
+      return;
+    }
+    if (label === "Aaj ka nushka") {
+      addMsg("user", "Aaj ka ek accha nushka batao", false);
+      callAI("Aaj ka ek accha nushka batao — aam sehat ke liye", getSystemPromptFor("nushke"));
+      return;
+    }
+    // Default — send as user message
+    addMsg("user", label, false);
+    callAI(label, getSystemPromptFor(ST.chatCtx));
+  }
+
+  // ── v3.4: Voice picker (Bulbul v3 candidates) ──
+  const VOICE_OPTIONS = [
+    {
+      id: "manisha",
+      emoji: "👵",
+      name: "Manisha — Dadi",
+      desc: "Warm, mature grandmother (default)",
+    },
+    { id: "anushka", emoji: "🤱", name: "Anushka — Maa", desc: "Motherly, gentle" },
+    { id: "vidya", emoji: "👩", name: "Vidya — Bua", desc: "Steady mature middle-aged" },
+    { id: "arya", emoji: "👩‍🦱", name: "Arya — Saathi", desc: "Younger neutral peer" },
+  ];
+
+  let _vpSelected = null;
+  let _vpCurrentAudio = null;
+
+  function openVoicePicker() {
+    _vpSelected = localStorage.getItem("ss_voice_pref") || "kavitha";
+    renderVoicePickerList();
+    document.getElementById("voice-picker-ov").classList.add("on");
+  }
+
+  function closeVoicePicker() {
+    if (_vpCurrentAudio) {
+      try {
+        _vpCurrentAudio.pause();
+      } catch (e) {}
+      _vpCurrentAudio = null;
+    }
+    document.getElementById("voice-picker-ov").classList.remove("on");
+  }
+
+  function renderVoicePickerList() {
+    const list = document.getElementById("vp-list");
+    list.innerHTML = VOICE_OPTIONS.map(
+      (v) => `
+    <div class="vp-row ${_vpSelected === v.id ? "selected" : ""}" id="vp-row-${v.id}" onclick="vpSelect('${v.id}')">
+      <div class="vp-row-emoji">${v.emoji}</div>
+      <div class="vp-row-info">
+        <div class="vp-row-name">${v.name}</div>
+        <div class="vp-row-desc">${v.desc}</div>
+      </div>
+      <button class="vp-play-btn" id="vp-play-${v.id}" onclick="event.stopPropagation();vpPlaySample('${v.id}')" aria-label="Sun ke dekho">
+        <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M8 5v14l11-7z" fill="white"/></svg>
+      </button>
+    </div>
+  `,
+    ).join("");
+  }
+
+  function vpSelect(id) {
+    _vpSelected = id;
+    document.querySelectorAll(".vp-row").forEach((r) => r.classList.remove("selected"));
+    const row = document.getElementById("vp-row-" + id);
+    if (row) row.classList.add("selected");
+    // Auto-preview on select for friction-free trial
+    vpPlaySample(id);
+  }
+
+  async function vpPlaySample(speakerId) {
+    if (!SARVAM_KEY || SARVAM_KEY.length < 20 || SARVAM_KEY.includes("REPLACE")) {
+      showToast("Voice ready nahi — API key chahiye");
+      return;
+    }
+    // Stop any in-flight sample
+    if (_vpCurrentAudio) {
+      try {
+        _vpCurrentAudio.pause();
+      } catch (e) {}
+      _vpCurrentAudio = null;
+    }
+    // Visual: dim the play button
+    document.querySelectorAll(".vp-play-btn").forEach((b) => b.classList.remove("loading"));
+    const btn = document.getElementById("vp-play-" + speakerId);
+    if (btn) btn.classList.add("loading");
+    const sample =
+      "नमस्ते बेटा, आज कैसे हो? कुछ खाया कि नहीं? बैठो, मैं तुम्हें एक छोटा सा घरेलू नुस्खा बताती हूं।";
+    try {
+      const res = await fetch("https://api.sarvam.ai/text-to-speech", {
+        method: "POST",
+        headers: { "api-subscription-key": SARVAM_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          inputs: [sample],
+          target_language_code: "hi-IN",
+          speaker: speakerId,
+          pace: 0.85,
+          pitch: 0,
+          loudness: 1.4,
+          speech_sample_rate: 22050,
+          enable_preprocessing: true,
+          model: "bulbul:v2",
+        }),
+      });
+      if (!res.ok) {
+        const errTxt = await res.text();
+        console.error("[vpSample]", res.status, errTxt);
+        showToast("Sample fail — try later");
+        if (btn) btn.classList.remove("loading");
+        return;
+      }
+      const data = await res.json();
+      if (data.audios && data.audios[0]) {
+        _vpCurrentAudio = new Audio("data:audio/wav;base64," + data.audios[0]);
+        _vpCurrentAudio.onended = () => {
+          if (btn) btn.classList.remove("loading");
+        };
+        _vpCurrentAudio.play().catch((e) => {
+          if (btn) btn.classList.remove("loading");
+        });
+      } else {
+        if (btn) btn.classList.remove("loading");
+      }
+    } catch (e) {
+      console.error("[vpSample] failed", e);
+      if (btn) btn.classList.remove("loading");
+    }
+  }
+
+  function saveVoicePick() {
+    if (!_vpSelected) {
+      closeVoicePicker();
+      return;
+    }
+    localStorage.setItem("ss_voice_pref", _vpSelected);
+    const v = VOICE_OPTIONS.find((o) => o.id === _vpSelected);
+    showToast("Awaaz save ho gayi 💚 " + (v ? v.name.split("—")[0].trim() : ""));
+    closeVoicePicker();
+  }
+
+  // ── Bottom sheet ──
+  function openToolsSheet() {
+    document.getElementById("bs-overlay").classList.add("on");
+    document.getElementById("bs-sheet").classList.add("on");
+  }
+  function closeToolsSheet() {
+    document.getElementById("bs-overlay").classList.remove("on");
+    document.getElementById("bs-sheet").classList.remove("on");
+  }
+
+  // ── Habit tap ──
+
+  // ── Persona cycle ──
+  const PERSONA_ORDER = ["dadi", "maa", "saathi"];
+  const PERSONA_LABELS = { dadi: "🧓 Dadi", maa: "🤱 Maa", saathi: "🤝 Saathi" };
+  function cyclePersona() {
+    const cur = ST.persona || "dadi";
+    const next = PERSONA_ORDER[(PERSONA_ORDER.indexOf(cur) + 1) % 3];
+    ST.persona = next;
+    const btn = document.getElementById("hub-persona-btn");
+    if (btn) btn.textContent = PERSONA_LABELS[next];
+    const pObj = PERSONAS[next];
+    if (pObj)
+      speak(
+        next === "dadi"
+          ? "Haan beta, main hoon!"
+          : next === "maa"
+            ? "Haan beta, kya hua?"
+            : "Haan, batao!",
+      );
+  }
+
+  // ── Story audio ──
+
+  function resetHub() {
+    document.getElementById("hub-input").value = "";
+  }
+
+  // ── Language badge ──
+  function detectLang(text) {
+    if (/[ऀ-ॿ]/.test(text)) return { code: "hi-IN", name: "Hindi", script: "devanagari" };
+    if (/[ঀ-৿]/.test(text)) return { code: "bn-IN", name: "Bangla", script: "bengali" };
+    if (/[஀-௿]/.test(text)) return { code: "ta-IN", name: "Tamil", script: "tamil" };
+    if (/[ఀ-౿]/.test(text)) return { code: "te-IN", name: "Telugu", script: "telugu" };
+    if (/[ಀ-೿]/.test(text)) return { code: "kn-IN", name: "Kannada", script: "kannada" };
+    if (/[ഀ-ൿ]/.test(text)) return { code: "ml-IN", name: "Malayalam", script: "malayalam" };
+    if (/[઀-૿]/.test(text)) return { code: "gu-IN", name: "Gujarati", script: "gujarati" };
+    if (/[਀-੿]/.test(text)) return { code: "pa-IN", name: "Punjabi", script: "gurmukhi" };
+    if (/[\u0d80-\u0dff]/.test(text)) return { code: "si-LK", name: "Sinhala", script: "sinhala" };
+    // Roman/Marathi/Bhojpuri all default to Hindi voice with en-IN fallback
+    return { code: "hi-IN", name: "Hindi (Roman)", script: "roman" };
+  }
+  function langBadge(text) {
+    const d = detectLang(text);
+    if (d.script === "devanagari") return "हिंदी ✓";
+    if (d.script === "bengali") return "বাংলা ✓";
+    if (d.script === "tamil") return "தமிழ் ✓";
+    if (d.script === "telugu") return "తెలుగు ✓";
+    if (d.script === "kannada") return "ಕನ್ನಡ ✓";
+    if (d.script === "malayalam") return "മലയാളം ✓";
+    if (d.script === "gujarati") return "ગુજરાતી ✓";
+    if (d.script === "gurmukhi") return "ਪੰਜਾਬੀ ✓";
+    return null;
+  }
+
+  // ── Skill detection ──
+  function detectSkill(text) {
+    const t = text.toLowerCase();
+    if (/tension|ghabrahat|chinta|anxiety|stress|darr|घबराहट|तनाव|fikar|pareshan/.test(t))
+      return "breathe";
+    if (/(sir dard|headache|migrain|matha|माथा|सिर दर्द)/.test(t)) return "pressure";
+    if (/(badan|muscles|akadna|kamar|पीठ|कमर|बदन|dard|body ache|jodo)/.test(t) && !/chest/.test(t))
+      return "stretch";
+    return null;
+  }
+
+  const IC =
+    "https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/icons/svg/";
+  const SKILL_CARDS = {
+    breathe: {
+      icon: `<img src="${IC}ic_yoga_meditation.svg" width="24" height="24" style="filter:invert(1)" alt="">`,
+      title: "Box Breathing Exercise",
+      sub: "Instant tension relief — 4 minutes",
+      action: () => {
+        goTo("s-breathwork");
+      },
+    },
+    pressure: {
+      icon: `<img src="${IC}ic_health_conditions.svg" width="24" height="24" style="filter:invert(1)" alt="">`,
+      title: "Pressure Points for Headache",
+      sub: "3 points jo sir dard mein help karte hain",
+      action: showPressureGuide,
+    },
+    stretch: {
+      icon: `<img src="${IC}ic_yoga.svg" width="24" height="24" style="filter:invert(1)" alt="">`,
+      title: "Gentle Stretch for Pain Relief",
+      sub: "5-minute body stretch — abhi karein",
+      action: showStretchGuide,
+    },
+  };
+
+  function renderSkillCard(type, container) {
+    const sk = SKILL_CARDS[type];
+    if (!sk) return;
+    const card = document.createElement("div");
+    card.className = "skill-card";
+    card.innerHTML = `<div class="skill-card-icon">${sk.icon}</div><div class="skill-card-text"><h4>${sk.title}</h4><p>${sk.sub}</p></div><div class="skill-card-arrow"><svg viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M2.29 12.71l6 6a1.004 1.004 0 101.42-1.42L5.41 13H21a1 1 0 100-2H5.41l4.3-4.29a1 1 0 000-1.42 1 1 0 00-1.42 0l-6 6a1 1 0 000 1.42z" fill="currentColor" transform="scale(-1,1) translate(-24,0)"/></svg></div>`;
+    card.onclick = sk.action;
+    container.appendChild(card);
+  }
+
+  // ── Chat rendering ──
+  function addMsg(role, text, showBadge) {
+    const msgs = document.getElementById("chat-msgs");
+    // v4: mirror bot replies into the live voice overlay if it's open
+    const ov = document.getElementById("voice-ov");
+    if (
+      ov &&
+      ov.classList.contains("on") &&
+      role === "bot" &&
+      typeof appendVoiceLine === "function"
+    ) {
+      try {
+        removeVoiceThinkingLine();
+        appendVoiceLine("bot", text);
+      } catch (e) {}
+    }
+    const row = document.createElement("div");
+    row.className = `msg-row ${role === "user" ? "user" : "bot"}`;
+    const bub = document.createElement("div");
+    bub.className = `bubble ${role === "user" ? "user" : "bot"}`;
+    bub.textContent = text;
+    row.appendChild(bub);
+    if (role !== "user") {
+      const acts = document.createElement("div");
+      acts.className = "bubble-row-actions";
+      const spk = document.createElement("button");
+      spk.className = "speak-icon-btn";
+      spk.innerHTML =
+        '<img src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/icons/svg/ic_sound_loud.svg" width="15" height="15" style="filter:invert(.5)" alt="speak">';
+      spk.onclick = () => speak(text);
+      acts.appendChild(spk);
+      if (showBadge) {
+        const badge = langBadge(text);
+        if (badge) {
+          const b = document.createElement("span");
+          b.className = "lang-badge";
+          b.textContent = badge;
+          acts.appendChild(b);
+        }
+      }
+      row.appendChild(acts);
+      // skill check
+      const skill = detectSkill(text);
+      if (skill)
+        setTimeout(() => {
+          const skRow = document.createElement("div");
+          skRow.className = "msg-row bot";
+          renderSkillCard(skill, skRow);
+          msgs.appendChild(skRow);
+          msgs.scrollTop = msgs.scrollHeight;
+        }, 600);
+      // v4.2: recipe + acupressure cards now fire in nushke AND wellness ctxs
+      // (wellness AI often suggests haldi-doodh / pressure points / etc. too)
+      if (ST.chatCtx === "nushke" || ST.chatCtx === "wellness") {
+        setTimeout(() => injectRemedyCard(text, msgs), 800);
+        setTimeout(() => injectAcupressureCard(text, msgs), 950);
+      }
+      // movement skill / wellness habit card — fires in all ctxs when keyword matches
+      setTimeout(() => injectMovementCard(text, msgs), 900);
+      // v3.2: Follow-up CTA chips (after a beat, only on AI replies — not template ones)
+      if (showBadge !== undefined && typeof injectFollowups === "function") {
+        setTimeout(() => injectFollowups(ST.chatCtx, msgs), 1100);
+      }
+    }
+    msgs.appendChild(row);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function showThinking() {
+    const msgs = document.getElementById("chat-msgs");
+    const row = document.createElement("div");
+    row.className = "msg-row bot";
+    row.id = "thinking";
+    const b = document.createElement("div");
+    b.className = "thinking-bub";
+    b.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+    row.appendChild(b);
+    msgs.appendChild(row);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function hideThinking() {
+    const el = document.getElementById("thinking");
+    if (el) el.remove();
+  }
+
+  function addQuickReplies(options, onSelect) {
+    const msgs = document.getElementById("chat-msgs");
+    const row = document.createElement("div");
+    row.className = "msg-row bot";
+    row.id = "qr-row";
+    const wrap = document.createElement("div");
+    wrap.className = "qr-wrap";
+    options.forEach((opt) => {
+      const chip = document.createElement("button");
+      chip.className = "qr-chip";
+      chip.textContent = opt;
+      chip.onclick = () => {
+        const qrRow = document.getElementById("qr-row");
+        if (qrRow) qrRow.remove();
+        onSelect(opt);
+      };
+      wrap.appendChild(chip);
+    });
+    row.appendChild(wrap);
+    msgs.appendChild(row);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  // ── AI call — tries OpenAI, falls back to Groq ──
+
+  // v3.6: Provider-agnostic JSON-mode helper (Groq primary, OpenAI fallback)
+  async function callAIJSON(systemPrompt, userPrompt, opts) {
+    const hasOpenAI =
+      OPENAI_API_KEY && OPENAI_API_KEY.length > 20 && !OPENAI_API_KEY.includes("REPLACE");
+    const hasGroq = GROQ_API_KEY && GROQ_API_KEY.length > 20 && !GROQ_API_KEY.includes("REPLACE");
+    const providers = [];
+    if (hasGroq)
+      providers.push({
+        url: "https://api.groq.com/openai/v1/chat/completions",
+        key: GROQ_API_KEY,
+        model: "llama-3.3-70b-versatile",
+      });
+    if (hasOpenAI)
+      providers.push({
+        url: "https://api.openai.com/v1/chat/completions",
+        key: OPENAI_API_KEY,
+        model: "gpt-4o-mini",
+      });
+    const maxTokens = (opts && opts.maxTokens) || 600;
+    for (const p of providers) {
+      try {
+        const _t = performance.now();
+        const res = await fetch(p.url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: "Bearer " + p.key },
+          body: JSON.stringify({
+            model: p.model,
+            max_tokens: maxTokens,
+            response_format: { type: "json_object" },
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt },
+            ],
+          }),
+        });
+        if (!res.ok) {
+          console.warn("[callAIJSON]", p.model, res.status, await res.text());
+          continue; // try next provider
+        }
+        const data = await res.json();
+        console.info("[AI-JSON]", p.model, Math.round(performance.now() - _t), "ms");
+        return JSON.parse(data.choices[0].message.content.trim());
+      } catch (e) {
+        console.warn("[callAIJSON] failed for", p.model, e);
+      }
+    }
+    throw new Error("No AI provider available");
+  }
+
+  async function callAI(userText, systemOverride) {
+    const hasOpenAI =
+      OPENAI_API_KEY && OPENAI_API_KEY.length > 20 && !OPENAI_API_KEY.includes("REPLACE");
+    const hasGroq = GROQ_API_KEY && GROQ_API_KEY.length > 20 && !GROQ_API_KEY.includes("REPLACE");
+    if (!hasOpenAI && !hasGroq) {
+      addMsg(
+        "bot",
+        "⚙️ API key set nahi hai — GitHub Secrets mein OPENAI_API_KEY ya GROQ_API_KEY daalo.",
+        false,
+      );
+      return;
+    }
+    ST.chatHistory.push({ role: "user", content: userText });
+    showThinking();
+
+    const msgs = [{ role: "system", content: systemOverride || SYSTEM_PROMPT }, ...ST.chatHistory];
+
+    // v3.6: Groq first (~1s, reliable), OpenAI fallback (currently key may be invalid in live env)
+    const providers = [];
+    if (hasGroq)
+      providers.push({
+        url: "https://api.groq.com/openai/v1/chat/completions",
+        key: GROQ_API_KEY,
+        model: "llama-3.3-70b-versatile",
+      });
+    if (hasOpenAI)
+      providers.push({
+        url: "https://api.openai.com/v1/chat/completions",
+        key: OPENAI_API_KEY,
+        model: "gpt-4o-mini",
+      });
+
+    let lastErr = "";
+    for (const p of providers) {
+      try {
+        const res = await fetch(p.url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: "Bearer " + p.key },
+          body: JSON.stringify({
+            model: p.model,
+            temperature: 0.75,
+            max_tokens: 400,
+            messages: msgs,
+          }),
+        });
+        if (!res.ok) {
+          let et = "";
+          try {
+            const j = await res.json();
+            et = j.error?.message || "";
+          } catch (e2) {}
+          if (res.status === 401) {
+            lastErr = "❌ API key invalid (" + p.url.split("/")[2] + ")";
+            continue;
+          }
+          if (res.status === 429) {
+            lastErr = "⏳ Rate limit — thoda wait karo";
+            break;
+          }
+          lastErr = "❌ Error " + res.status + (et ? ": " + et.slice(0, 50) : "");
+          continue;
+        }
+        const data = await res.json();
+        let reply = data.choices[0].message.content.trim();
+        // v3: Parse LANG: prefix and update currentLanguage for downstream Sarvam TTS
+        const langMatch = reply.match(/^LANG:\s*([a-z]{2,3})\s*\n/i);
+        if (langMatch) {
+          const code = langMatch[1].toLowerCase();
+          ST.currentLanguage = code.length === 2 ? code + "-IN" : code;
+          reply = reply.replace(/^LANG:\s*[a-z]{2,3}\s*\n/i, "").trim();
+        }
+        ST.chatHistory.push({ role: "assistant", content: reply });
+        hideThinking();
+        const isFirst = ST.isFirstMsg;
+        ST.isFirstMsg = false;
+        addMsg("bot", reply, isFirst);
+        speak(reply);
+        return; // success
+      } catch (e) {
+        lastErr = "🌐 " + p.url.split("/")[2] + " tak connection nahi bana";
+        // try next provider
+      }
+    }
+
+    // All providers failed
+    ST.chatHistory.pop();
+    hideThinking();
+    const isAllNet = lastErr.startsWith("🌐");
+    addMsg(
+      "bot",
+      isAllNet
+        ? "🌐 Server tak pahunch nahi ho raha.\n\n👉 Try karo:\n• WiFi ↔ Mobile Data switch karo\n• Thodi der baad dobara karo\n• VPN on karo agar available ho"
+        : lastErr,
+      false,
+    );
+  }
+
+  async function callAIWithVision(base64img, userText) {
+    if (!OPENAI_API_KEY || OPENAI_API_KEY.length < 20 || OPENAI_API_KEY.includes("REPLACE")) {
+      // Graceful fallback — no Vision key, route to text-only meal generation via Groq
+      addMsg(
+        "bot",
+        "Photo padhne ke liye OpenAI Vision chahiye, abhi Groq active hai. Ek kaam karo — fridge mein kya hai woh text mein likh do, main meal plan bana deti hoon.",
+        false,
+      );
+      return;
+    }
+    showThinking();
+    try {
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + OPENAI_API_KEY },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          max_tokens: 800,
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "image_url", image_url: { url: "data:image/jpeg;base64," + base64img } },
+                { type: "text", text: userText },
+              ],
+            },
+          ],
+        }),
+      });
+      const data = await res.json();
+      const reply = data.choices[0].message.content.trim();
+      hideThinking();
+      addMsg("bot", reply, true);
+      speak(reply);
+    } catch (e) {
+      hideThinking();
+      const msg =
+        e.message && e.message.length < 120
+          ? e.message
+          : "Photo analysis mein dikkat aayi. Text mein likhein kya hai fridge mein.";
+      addMsg("bot", msg, false);
+    }
+  }
+
+  // ── Nushke flow ──
+  const NUSHKE_CATS = [
+    "Sardi-Khansi",
+    "Pet ki Takleef",
+    "Sir Dard",
+    "Neend ki Dikkat",
+    "Badan Dard",
+    "Tension-Chinta",
+    "Bukhar",
+    "Skin Problem",
+    "Saans ki Dikkat",
+    "Dehydration",
+  ];
+
+  function renderNushkeStart() {
+    const msgs = document.getElementById("chat-msgs");
+    msgs.innerHTML = "";
+    addMsg(
+      "bot",
+      "Kaunsi takleef ke liye nushka chahiye? Neeche se choose karo ya khud likhein 👇",
+      false,
+    );
+    addQuickReplies(NUSHKE_CATS, (cat) => {
+      const clean = cat.replace(/^[^\s]+\s/, "");
+      addMsg("user", cat, false);
+      callAI(clean + " ke baare mein ghar ka nushka chahiye");
+    });
+  }
+
+  // ── v2: Lab Interpreter ──
+  function loadLabReports() {
+    try {
+      return JSON.parse(localStorage.getItem("ss_lab_reports") || "{}");
+    } catch (e) {
+      return {};
+    }
+  }
+  function saveLabReport(memberKey, report) {
+    const all = loadLabReports();
+    if (!all[memberKey]) all[memberKey] = [];
+    all[memberKey].unshift(report);
+    // Cap at 10 per member
+    all[memberKey] = all[memberKey].slice(0, 10);
+    localStorage.setItem("ss_lab_reports", JSON.stringify(all));
+  }
+
+  // Convert PDF file → array of {dataURL, text}
+  async function pdfToImages(file) {
+    if (!window.pdfjsLib) throw new Error("PDF reader load nahi hua. Page reload karein.");
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const maxPages = Math.min(pdf.numPages, 5);
+    const pages = [];
+    let allText = "";
+    for (let i = 1; i <= maxPages; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 1.5 });
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext("2d");
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      const dataURL = canvas.toDataURL("image/jpeg", 0.85);
+      pages.push(dataURL);
+      // Extract text too for prescription guard
+      try {
+        const tc = await page.getTextContent();
+        allText += tc.items.map((it) => it.str).join(" ") + "\n";
+      } catch (e) {}
+    }
+    return { pages, text: allText, totalPages: pdf.numPages };
+  }
+
+  function isPrescription(text) {
+    const t = text.toLowerCase();
+    // Strong prescription markers
+    const rxMarkers =
+      /\b(rx|prescription|prescribed|sig:|tds|bd|od|hs|qid|cap\s|tab\s|dosage|advise|advice|days?\s*course)\b/i;
+    // Strong lab markers
+    const labMarkers =
+      /\b(reference\s*range|reference\s*value|units|mg\/dl|g\/dl|mmol|mEq|biological\s*reference|interval|method|specimen|sample\s*type|lab|laboratory|pathology|haematology|hematology|biochemistry|hb\s*[:=]|hba1c|tsh|wbc|rbc|platelets)\b/i;
+    const isRx = rxMarkers.test(text);
+    const isLab = labMarkers.test(text);
+    return isRx && !isLab;
+  }
+
+  async function interpretLabPDF(pages, memberName) {
+    if (!OPENAI_API_KEY || OPENAI_API_KEY.length < 20 || OPENAI_API_KEY.includes("REPLACE")) {
+      throw new Error("NO_VISION_KEY"); // surfaced to user as friendly fallback
+    }
+    const promptText = `You are a clinical lab report interpreter. Analyze this lab report image(s) for ${memberName || "the patient"}.
+
+OUTPUT VALID JSON ONLY (no markdown, no preamble) with this exact shape:
+{
+  "reportType": "string (e.g., CBC, Lipid Profile, HbA1c, Thyroid Panel)",
+  "reportDate": "string (date from report or 'Not visible')",
+  "markers": [
+    { "name": "string", "value": "string with units", "range": "string", "status": "Normal" | "Low" | "High" | "Critical" }
+  ],
+  "summary": "2-3 sentence plain-Hindi summary in Roman script (Hinglish OK). Warm and clear.",
+  "doctorAdvice": "1-2 sentence Hindi-English advice on when to consult a doctor. Always include this."
+}
+
+Rules:
+- Extract every test parameter visible.
+- If a marker is outside reference range, mark accordingly.
+- If you cannot read a value clearly, omit that marker.
+- Keep summary in simple, warm Hindi-English (Hinglish) — not English-only.
+- doctorAdvice should be specific to the abnormal findings if any.
+- If this is NOT a clinical lab report (e.g., it's a prescription), set reportType to "NOT_A_LAB_REPORT" and explain in summary.`;
+
+    const imageContent = pages.map((dataURL) => ({
+      type: "image_url",
+      image_url: { url: dataURL },
+    }));
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + OPENAI_API_KEY },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        max_tokens: 1500,
+        messages: [
+          {
+            role: "user",
+            content: [...imageContent, { type: "text", text: promptText }],
+          },
+        ],
+        response_format: { type: "json_object" },
+      }),
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error("OpenAI error: " + res.status + " " + errText.substring(0, 100));
+    }
+    const data = await res.json();
+    const raw = data.choices[0].message.content.trim();
+    return JSON.parse(raw);
+  }
+
+  function renderLabStep(step) {
+    ST.labStep = step;
+    const el = document.getElementById("lab-body");
+    if (!el) return;
+
+    if (step === 0) {
+      // Member selection
+      const fam = loadFamily();
+      const reports = loadLabReports();
+      const profile = ST.userProfile || loadProfile();
+      const selfLabel = profile && profile.age ? `Aap (${profile.age} saal)` : "Aap (self)";
+
+      let memberHtml = `
+      <button class="lab-member-btn ${ST.labData.member === "self" ? "selected" : ""}" onclick="selectLabMember('self','${selfLabel.replace(/'/g, "")}')">
+        <div class="lab-mem-avatar">${profile && profile.sex === "Female" ? "👩" : profile && profile.sex === "Male" ? "👨" : "🧑"}</div>
+        <div class="lab-mem-info">
+          <div class="lab-mem-name">${selfLabel}</div>
+          <div class="lab-mem-meta">${reports["self"] ? reports["self"].length + " purani reports" : "Pehli baar"}</div>
+        </div>
+      </button>`;
+
+      for (const m of fam) {
+        const key = "fam_" + m.name;
+        memberHtml += `
+        <button class="lab-member-btn ${ST.labData.member === key ? "selected" : ""}" onclick="selectLabMember('${key}','${m.name.replace(/'/g, "")}')">
+          <div class="lab-mem-avatar">${m.name.charAt(0).toUpperCase()}</div>
+          <div class="lab-mem-info">
+            <div class="lab-mem-name">${m.name}</div>
+            <div class="lab-mem-meta">${m.age} saal · ${reports[key] ? reports[key].length + " purani reports" : "Pehli baar"}</div>
+          </div>
+        </button>`;
+      }
+
+      memberHtml += `
+      <button class="lab-member-btn" onclick="goTo('s-family');setTimeout(()=>{renderFamilyList();showAddFamily();},100)">
+        <div class="lab-mem-avatar" style="background:var(--surface2);font-size:20px">+</div>
+        <div class="lab-mem-info">
+          <div class="lab-mem-name">Naya member jodein</div>
+          <div class="lab-mem-meta">Parivaar mein add karein</div>
+        </div>
+      </button>`;
+
+      el.innerHTML = `
+      <div class="lab-body">
+        <div class="lab-step-title">Yeh report kiski hai?</div>
+        <div class="lab-step-sub">Hum is member ke liye sab reports save karenge — taaki agli baar jaldi dekh sakein</div>
+        <div class="lab-member-list">${memberHtml}</div>
+      </div>`;
+    } else if (step === 1) {
+      // Upload step
+      const memberLabel = ST.labData.memberLabel || "Aap";
+      const reports = loadLabReports();
+      const memberKey = ST.labData.member;
+      const past = reports[memberKey] || [];
+
+      let pastHtml = "";
+      if (past.length) {
+        pastHtml = `<div style="margin-top:24px"><div class="lab-step-sub" style="margin-bottom:10px">📁 ${memberLabel} ki purani reports</div>`;
+        for (let i = 0; i < past.length; i++) {
+          const r = past[i];
+          pastHtml += `<div class="lab-history-card" onclick="viewPastLabReport('${memberKey}',${i})">
+          <div class="lab-hist-date">${r.date} · ${r.reportType || "Lab Report"}</div>
+          <div class="lab-hist-summary">${(r.summary || "").substring(0, 90)}${r.summary && r.summary.length > 90 ? "..." : ""}</div>
+        </div>`;
+        }
+        pastHtml += `</div>`;
+      }
+
+      el.innerHTML = `
+      <div class="lab-body">
+        <div class="lab-step-title">${memberLabel} ki nayi report</div>
+        <div class="lab-step-sub">Photo khichein, PDF upload karein, ya values manually paste karein</div>
+        <div class="lab-method-row">
+          <label for="lab-photo-input">
+            <span class="lm-ic">📷</span>
+            <div class="lm-name">Photo lijiye</div>
+            <div class="lm-sub">Camera khulega · saaf khichein</div>
+            <input type="file" id="lab-photo-input" accept="image/*" capture="environment" style="display:none" onchange="handleLabPhoto(event)">
+          </label>
+          <label for="lab-pdf-input">
+            <span class="lm-ic">📄</span>
+            <div class="lm-name">PDF chunein</div>
+            <div class="lm-sub">Softcopy report</div>
+            <input type="file" id="lab-pdf-input" accept="application/pdf" style="display:none" onchange="handleLabUpload(event)">
+          </label>
+        </div>
+        <div class="lab-warn">⚠️ Yeh AI-based interpretation hai. Doctor se confirm karna zaroori hai.</div>
+        <div style="margin-top:10px;font-size:11px;color:var(--text3);text-align:center">Prototype mein Vision API ke bina sample analysis dikhta hai</div>
+        ${pastHtml}
+      </div>`;
+    } else if (step === 2) {
+      // Processing
+      el.innerHTML = `
+      <div class="lab-body" style="text-align:center;padding-top:60px">
+        <div class="thinking-bub" style="display:inline-flex;background:var(--bold)">
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        </div>
+        <p style="margin-top:18px;color:var(--text2);font-size:14px">Report padh raha hoon... thoda waqt lagega</p>
+      </div>`;
+    } else if (step === 3) {
+      // Result
+      const result = ST.labData.result;
+      if (!result) {
+        el.innerHTML = '<div class="lab-body"><p>Result missing</p></div>';
+        return;
+      }
+
+      if (result.reportType === "NOT_A_LAB_REPORT") {
+        el.innerHTML = `
+        <div class="lab-body">
+          <div class="lab-step-title">⚠️ Yeh lab report nahi lagti</div>
+          <div class="lab-step-sub">${result.summary || "Yeh ek prescription ya kuch aur dikh raha hai. Sirf clinical lab reports upload karein."}</div>
+          <button class="lab-cta" onclick="renderLabStep(1)">Doosri PDF try karein</button>
+          <button class="lab-cta secondary" onclick="goTo('s-hub')">Wapas Sehat Saathi</button>
+        </div>`;
+        return;
+      }
+
+      const memberLabel = ST.labData.memberLabel || "Aap";
+
+      let markersHtml = "";
+      if (result.markers && result.markers.length) {
+        for (const m of result.markers) {
+          const status = (m.status || "normal").toLowerCase();
+          markersHtml += `
+          <div class="lab-marker ${status}">
+            <div class="lab-marker-info">
+              <div class="lab-marker-name">${m.name}</div>
+              <div class="lab-marker-range">Range: ${m.range || "-"}</div>
+            </div>
+            <div class="lab-marker-val">
+              <div class="lab-marker-num">${m.value}</div>
+              <div class="lab-marker-status" style="color:${status === "normal" ? "var(--success)" : status === "critical" ? "var(--error)" : "var(--warn)"}">${m.status}</div>
+            </div>
+          </div>`;
+        }
+      }
+
+      el.innerHTML = `
+      <div class="lab-body lab-result">
+        <div class="lab-step-title">${result.reportType || "Lab Report"}</div>
+        <div class="lab-step-sub">${memberLabel} · ${result.reportDate || "Aaj"}</div>
+        ${markersHtml}
+        <div class="lab-summary">
+          <div class="lab-summary-tag">Saathi ka samajh</div>
+          ${result.summary || "-"}
+        </div>
+        ${result.doctorAdvice ? `<div class="lab-doctor">👨‍⚕️ ${result.doctorAdvice}</div>` : ""}
+        <button class="lab-cta" onclick="saveLabAndContinue()">Save karein →</button>
+        <button class="lab-cta" style="background:linear-gradient(135deg,#fb923c,#f97316);margin-top:8px" onclick="saveLabAndStartRx()">Doctor ne dawai likhi hai? Reminder lagao →</button>
+        <button class="lab-cta secondary" onclick="renderLabStep(1)">Doosri report dekhein</button>
+      </div>`;
+    }
+  }
+
+  function selectLabMember(key, label) {
+    ST.labData.member = key;
+    ST.labData.memberLabel = label;
+    document.querySelectorAll(".lab-member-btn").forEach((b) => b.classList.remove("selected"));
+    if (event && event.currentTarget) event.currentTarget.classList.add("selected");
+    setTimeout(() => renderLabStep(1), 200);
+  }
+
+  async function handleLabUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      showToast("File 10MB se badi hai");
+      return;
+    }
+    renderLabStep(2);
+    try {
+      const { pages, text, totalPages } = await pdfToImages(file);
+      if (totalPages > 5) {
+        showToast(`Sirf pehle 5 pages padhe — kul ${totalPages} pages the`);
+      }
+      if (isPrescription(text)) {
+        ST.labData.result = {
+          reportType: "NOT_A_LAB_REPORT",
+          summary:
+            "Yeh prescription lagti hai — abhi sirf lab reports interpret kar sakta hoon. Dawai ke liye Dawai Reminder use karein.",
+        };
+        renderLabStep(3);
+        return;
+      }
+      const result = await interpretLabPDF(pages, ST.labData.memberLabel);
+      ST.labData.result = result;
+      ST.labData.fileName = file.name;
+      renderLabStep(3);
+    } catch (err) {
+      console.error("[lab]", err);
+      if (err && err.message === "NO_VISION_KEY") {
+        // Friendly fallback — Vision unavailable, use template-based sample
+        const tpl = LAB_PHOTO_TEMPLATES[Math.floor(Math.random() * LAB_PHOTO_TEMPLATES.length)];
+        ST.labData.result = Object.assign({}, tpl, {
+          summary: "[Sample analysis — prototype mode bina Vision API ke] " + tpl.summary,
+        });
+        ST.labData.fileName = file.name;
+        renderLabStep(3);
+        showToast("Sample analysis dikhayi — Vision API ke bina");
+        return;
+      }
+      showToast("Error: " + ((err && err.message) || "Report padhne mein dikkat"));
+      setTimeout(() => renderLabStep(1), 1500);
+    }
+  }
+
+  // — Photo capture path: uses template result (no Vision API in prototype) —
+  function handleLabPhoto(e) {
+    const f = e.target.files[0];
+    if (!f) return;
+    if (f.size > 10 * 1024 * 1024) {
+      showToast("Photo 10MB se badi hai");
+      return;
+    }
+    renderLabStep(2);
+    setTimeout(() => {
+      const tpl = LAB_PHOTO_TEMPLATES[Math.floor(Math.random() * LAB_PHOTO_TEMPLATES.length)];
+      ST.labData.result = Object.assign({}, tpl, {
+        summary: "[Sample analysis — prototype mode] " + tpl.summary,
+      });
+      ST.labData.fileName = f.name;
+      renderLabStep(3);
+    }, 2200);
+  }
+
+  // — After saving lab, kick off prescription flow for the same member —
+  function saveLabAndStartRx() {
+    const result = ST.labData.result;
+    if (result && result.reportType !== "NOT_A_LAB_REPORT" && ST.labData.member) {
+      const report = {
+        date: new Date().toLocaleDateString("en-IN", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }),
+        fileName: ST.labData.fileName || "report",
+        reportType: result.reportType,
+        summary: result.summary,
+        markers: result.markers,
+        doctorAdvice: result.doctorAdvice,
+      };
+      saveLabReport(ST.labData.member, report);
+    }
+    // Pre-seed the RX flow with the same member
+    ST.rxStep = 0;
+    ST.rxData = {
+      meds: [],
+      member: ST.labData.member || "self",
+      memberLabel: ST.labData.memberLabel || "Aap",
+      channel: "app",
+      phone: "",
+    };
+    goTo("s-rx");
+    renderRxStep(1);
+    showToast("Lab save ho gayi · ab parchi scan karein");
+  }
+
+  function saveLabAndContinue() {
+    const result = ST.labData.result;
+    if (!result || !ST.labData.member) return;
+    const report = {
+      date: new Date().toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
+      fileName: ST.labData.fileName || "report.pdf",
+      reportType: result.reportType,
+      summary: result.summary,
+      markers: result.markers,
+      doctorAdvice: result.doctorAdvice,
+    };
+    saveLabReport(ST.labData.member, report);
+    showToast("Report " + ST.labData.memberLabel + " ke liye save ho gayi 💚");
+    setTimeout(() => {
+      goTo("s-hub");
+    }, 800);
+  }
+
+  function viewPastLabReport(memberKey, idx) {
+    const reports = loadLabReports();
+    const r = reports[memberKey] && reports[memberKey][idx];
+    if (!r) return;
+    ST.labData.member = memberKey;
+    ST.labData.memberLabel = memberKey === "self" ? "Aap" : memberKey.replace("fam_", "");
+    ST.labData.result = r;
+    renderLabStep(3);
+  }
+
+  // ── v2: Community AI peers ──
+  const PEER_PROFILES = [
+    {
+      id: "sunita",
+      name: "Sunita",
+      age: 42,
+      city: "Indore",
+      emoji: "👩‍🦱",
+      tags: ["BP", "homemaker", "40+"],
+      intro:
+        "Namaste! Main Sunita — Indore se. Mujhe BP ki problem hai. Aap bhi struggle karte hain?",
+      sysPrompt:
+        "You are Sunita, a 42-year-old homemaker from Indore, MP. You have mild hypertension diagnosed 2 years ago. You manage a household, your husband works in a textile shop, you have two kids in school. You speak Hindi-English mix. You manage your BP through diet (less salt, more lauki/karela), morning walks with neighbours, and Patanjali tablets prescribed by your family doctor. You're warm, motherly, sometimes share gossip naturally. You believe in Ayurveda + modern medicine combined. You roleplay as a fellow user — share YOUR personal experience, ask about theirs, never give medical advice as an authority.",
+    },
+    {
+      id: "ramesh",
+      name: "Ramesh",
+      age: 38,
+      city: "Pune",
+      emoji: "👨",
+      tags: ["Diabetes", "desk-job", "30s"],
+      intro:
+        "Hi! Main Ramesh, IT mein hoon Pune se. Diabetes type 2 hai 3 saal se. Tension lekar mat baithiye, manage ho jata hai.",
+      sysPrompt:
+        "You are Ramesh, a 38-year-old IT professional from Pune. You have Type 2 Diabetes diagnosed 3 years ago. You sit all day at your desk, work from home some days. Your wife is also a software engineer. You take metformin (don't recommend it to anyone), do intermittent fasting, walk 8K steps daily, and eat lots of paneer/dal/sabzi but minimal rice. You speak in casual Hinglish. You roleplay as a peer — share YOUR struggle (frustration with no chai, missing sweets), what works for YOU. Never act like a doctor.",
+    },
+    {
+      id: "priya",
+      name: "Priya",
+      age: 28,
+      city: "Bengaluru",
+      emoji: "👩‍💻",
+      tags: ["anxiety", "techie", "20s"],
+      intro:
+        "Hey! Priya here from Bangalore. I work in tech and deal with anxiety. Therapy + journaling has helped me. Wanna chat?",
+      sysPrompt:
+        "You are Priya, a 28-year-old software engineer from Bengaluru. You've had anxiety since college, now manage it well. You go to a therapist monthly, journal daily, do Yoga Nidra at night, and limit Instagram before bed. You speak in modern Hinglish/English mix — Gen-Z casual. Your roommate also has anxiety. You're empathetic, share resources you've tried (Headspace, iCall helpline 9152987821), but you're NOT a therapist. Always encourage professional help for serious symptoms. Roleplay as a peer.",
+    },
+    {
+      id: "asha",
+      name: "Asha",
+      age: 55,
+      city: "Lucknow",
+      emoji: "👵",
+      tags: ["joint-pain", "dadi", "50+"],
+      intro:
+        "Beta, namaste! Main Asha, Lucknow se. Ghutno mein dard hai, par Dadi ke nushke aur thoda yoga se kaafi farak pada hai.",
+      sysPrompt:
+        "You are Asha, a 55-year-old retired schoolteacher from Lucknow. You have knee osteoarthritis but haven't let it slow you down. You swear by haldi-doodh, daily 15-min yoga, methi water in the morning. Your husband is retired bank manager. You speak in elegant Hindi with occasional English. You're warm, motherly to younger users, peer to other 50+ users. Share YOUR remedies and routine (haldi doodh, methi paani, yoga at 6am) — but always defer clinical questions to doctor.",
+    },
+    {
+      id: "arjun",
+      name: "Arjun",
+      age: 24,
+      city: "Mumbai",
+      emoji: "🧑‍🎓",
+      tags: ["fitness", "student", "20s"],
+      intro:
+        "Yo! Arjun here from Mumbai. Fitness journey started during college, now I'm into strength training + Indian food. Let's chat!",
+      sysPrompt:
+        "You are Arjun, a 24-year-old MBA student from Mumbai. You're into fitness — gym 5 days a week, strength training, lots of dal-rice-chicken-paneer. You went from 90kg to 75kg over 2 years. You speak in modern Mumbai-Hinglish. Your friends call you for gym advice but you always say 'I'm not a trainer'. You roleplay as a peer — share YOUR meal plans, workout splits, mental health struggles during exam season. Never give medical or supplement advice.",
+    },
+  ];
+
+  function renderCommunityList() {
+    const el = document.getElementById("community-body");
+    if (!el) return;
+    const profile = ST.userProfile || loadProfile();
+    // Match peers based on user's age/conditions if profile exists
+    const userAge = (profile && parseInt(profile.age)) || null;
+    const userConds = profile && profile.conditions ? profile.conditions.toLowerCase() : "";
+
+    function isMatch(peer) {
+      if (!userAge) return false;
+      // Age band match (within ±10 years)
+      const ageDiff = Math.abs(peer.age - userAge);
+      if (ageDiff <= 10) return true;
+      // Condition match
+      for (const t of peer.tags) {
+        if (userConds.includes(t.toLowerCase())) return true;
+      }
+      return false;
+    }
+
+    // Sort: matched peers first
+    const sorted = [...PEER_PROFILES].sort((a, b) => (isMatch(b) ? 1 : 0) - (isMatch(a) ? 1 : 0));
+
+    const introText =
+      profile && profile.completed
+        ? "Aapke jaise logo se milein — sab AI peers hain, asli logo ki experiences se inspired."
+        : "Profile bharein toh aap se match karne wale log dikhayenge. Filhal sab peers dekhein.";
+
+    let html = `
+    <div class="community-list">
+      <div class="community-intro">
+        <h3>Apke jaise log</h3>
+        <p>${introText}</p>
+      </div>`;
+
+    for (const peer of sorted) {
+      const matched = isMatch(peer);
+      html += `
+      <button class="peer-card ${matched ? "matched" : ""}" onclick="openPeerChat('${peer.id}')">
+        <div class="peer-emoji">${peer.emoji}</div>
+        <div class="peer-info">
+          <div class="peer-name">${peer.name} ${matched ? '<span style="font-size:10px;color:var(--primary);font-weight:700">· match</span>' : ""}</div>
+          <div class="peer-meta">${peer.age}, ${peer.city}</div>
+          <div class="peer-tags">
+            ${peer.tags.map((t) => `<span class="peer-tag ${matched ? "matched" : ""}">${t}</span>`).join("")}
+          </div>
+        </div>
+        <svg class="peer-chev" viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>`;
+    }
+
+    html += `</div>`;
+    el.innerHTML = html;
+  }
+
+  function openPeerChat(peerId) {
+    const peer = PEER_PROFILES.find((p) => p.id === peerId);
+    if (!peer) return;
+    ST.communityPeer = peer;
+    ST.chatCtx = "community";
+    ST.chatHistory = [];
+    ST.isFirstMsg = true;
+    goTo("s-chat");
+    // Update header
+    document.getElementById("chat-ctx-label").textContent = `${peer.name} · ${peer.city}`;
+    // Update avatar to peer emoji
+    const hdrAvatar = document.querySelector("#s-chat .hdr-avatar > div");
+    if (hdrAvatar && hdrAvatar.tagName !== "DIV.hdr-online") {
+      hdrAvatar.innerHTML = `<div style="width:40px;height:40px;border-radius:50%;background:rgba(57,0,173,.25);display:flex;align-items:center;justify-content:center;font-size:22px;border:2px solid #6D17CE">${peer.emoji}</div>`;
+    }
+    // Show chat
+    const msgs = document.getElementById("chat-msgs");
+    msgs.innerHTML = `<div class="peer-disclaimer">⚠️ Yeh ek AI peer roleplay hai — asli user nahi. Clinical sawal ke liye doctor se milein.</div>`;
+    setTimeout(() => {
+      addMsg("bot", peer.intro, false);
+      speak(peer.intro);
+    }, 200);
+  }
+
+  function renderWellnessStart() {
+    const msgs = document.getElementById("chat-msgs");
+    if (!msgs) return;
+    msgs.innerHTML = "";
+    ST.chatHistory = [];
+    const intro =
+      "Hey 👋 Wellness Baat mein swagat! Main fitness, neend, stress, khaane-peene aur lifestyle ki baat karta hoon. Diagnosis nahi karta — bas practical tips. Kya try karna hai aaj?";
+    addMsg("bot", intro, false);
+    speak(intro, {
+      ttsText:
+        "हाय! Wellness बात में स्वागत है। मैं fitness, नींद, stress, खाने पीने और lifestyle की बात करता हूं। Diagnosis नहीं करता — बस practical tips। क्या try करना है आज?",
+    });
+    addQuickReplies(
+      [
+        "Subah ki energy kaise lao?",
+        "Gym ke baad kya khaaun?",
+        "Neend nahi aati",
+        "Stress kaise kam karein?",
+        "Phone ki aadat chhodun",
+      ],
+      (txt) => {
+        addMsg("user", txt, false);
+        callAI(txt, WELLNESS_SYSTEM_PROMPT);
+      },
+    );
+  }
+
+  // ── Symptoms flow ──
+  function renderSymptomStart() {
+    const msgs = document.getElementById("chat-msgs");
+    msgs.innerHTML = "";
+    ST.chatHistory = [];
+    const intro = "Kya takleef ho rahi hai? Niche se chunein, ya likh ke batayein 🙏";
+    addMsg("bot", intro, false);
+    speak(intro, { ttsText: "क्या तकलीफ हो रही है? नीचे से चुनें, या लिख के बताएं।" });
+    addQuickReplies(
+      [
+        "Sardi-Khansi",
+        "Pet ki takleef",
+        "Sir dard",
+        "Bukhar",
+        "Neend nahi aati",
+        "Stress",
+        "Badan dard",
+        "Skin problem",
+      ],
+      (txt) => {
+        addMsg("user", txt, false);
+        // Route Sehat-related symptoms through nushke flow (richer Dadi response + video card)
+        ST.chatCtx = "nushke";
+        callAI(txt + " — kya nushka karein?");
+      },
+    );
+  }
+
+  // ── Chat input ──
+  function chatSend() {
+    const inp = document.getElementById("chat-input");
+    const txt = inp.value.trim();
+    if (!txt) return;
+    inp.value = "";
+    addMsg("user", txt, false);
+    callAI(txt, getSystemPromptFor(ST.chatCtx));
+  }
+  function chatKey(e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      chatSend();
+    }
+  }
+  function clearChat() {
+    document.getElementById("chat-msgs").innerHTML = "";
+    ST.chatHistory = [];
+    ST.isFirstMsg = true;
+    if (ST.chatCtx === "nushke") renderNushkeStart();
+    else renderSymptomStart();
+  }
+
+  // Hub input
+  function hubSend() {
+    const txt = document.getElementById("hub-input").value.trim();
+    if (!txt) return;
+    document.getElementById("hub-input").value = "";
+    document.getElementById("hub-send-btn").style.display = "none";
+    document.getElementById("hub-speak").style.display = "";
+    ST.chatCtx = "general";
+    ST.chatHistory = [];
+    ST.isFirstMsg = true;
+    document.getElementById("chat-ctx-label").textContent = "Sehat Saathi";
+    goTo("s-chat");
+    setTimeout(() => {
+      addMsg("user", txt, false);
+      callAI(txt);
+    }, 100);
+  }
+  function hubKey(e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      hubSend();
+    }
+  }
+
+  // ── MEDICINE FLOW ──
+  const MED_STEPS = [
+    {
+      id: "for_whom",
+      type: "choice",
+      q: "Dawai yaad dilaani hai kiske liye?",
+      opts: ["Apne liye", "Ghar ke kisi ke liye"],
+    },
+    {
+      id: "name",
+      type: "text",
+      q: "Dawai ka naam kya hai?",
+      ph: "Metformin, Paracetamol, ya koi bhi...",
+    },
+    {
+      id: "timing",
+      type: "multi",
+      q: "Kab leni hai? (ek ya zyada choose karo)",
+      opts: ["Subah", "Dopahar", "Shaam", "Raat"],
+    },
+    { id: "time", type: "time", q: "Reminder ka waqt set karo:" },
+    { id: "confirm", type: "confirm", q: "" },
+  ];
+
+  function renderMedStep(step) {
+    ST.medStep = step;
+    const flow = document.getElementById("med-flow");
+    const s = MED_STEPS[step];
+    if (!s) {
+      renderMedConfirm();
+      return;
+    }
+
+    // progress
+    let html = `<div class="flow-progress">${MED_STEPS.slice(0, -1)
+      .map((_, i) => `<div class="flow-progress-dot${i <= step ? " done" : ""}"></div>`)
+      .join("")}</div>`;
+
+    // For_whom step: show family list if available
+    const fam = loadFamily();
+    if (step === 0 && fam.length > 0) {
+      html += `<p class="flow-q">${s.q}</p><div class="flow-choices">`;
+      html += `<button class="flow-choice" onclick="medChoose(0,'Apne liye')">🙋 Apne liye</button>`;
+      fam.forEach((m) => {
+        html += `<button class="flow-choice" onclick="medChoose(0,'${m.name}')">${m.name}</button>`;
+      });
+      html += `<button class="flow-choice" onclick="medChoose(0,'Naya member')">Ghar ka koi aur</button>`;
+      html += `</div>`;
+    } else if (s.type === "choice") {
+      html += `<p class="flow-q">${s.q}</p><div class="flow-choices">`;
+      s.opts.forEach((o, i) => {
+        html += `<button class="flow-choice" onclick="medChoose(${i},'${o}')">${o}</button>`;
+      });
+      html += `</div>`;
+    } else if (s.type === "text") {
+      html += `<p class="flow-q">${s.q}</p><input class="flow-input" id="med-inp" placeholder="${s.ph}" /><button class="flow-next-btn" onclick="medNext()">Aage →</button>`;
+    } else if (s.type === "multi") {
+      html += `<p class="flow-q">${s.q}</p><div class="flow-choices" id="multi-wrap">`;
+      s.opts.forEach((o) => {
+        html += `<button class="flow-choice multi" onclick="toggleMulti(this,'${o}')">${o}</button>`;
+      });
+      html += `</div><button class="flow-next-btn" onclick="medNextMulti()">Aage →</button>`;
+    } else if (s.type === "time") {
+      html += `<p class="flow-q">${s.q}</p><input type="time" class="flow-time-input" id="med-time" value="08:00"><button class="flow-next-btn" onclick="medNextTime()">Aage →</button>`;
+    }
+
+    flow.innerHTML = html;
+  }
+
+  function medChoose(idx, val) {
+    const step = MED_STEPS[ST.medStep];
+    ST.medData[step.id] = val;
+    if (ST.medStep === 0 && val !== "Apne liye" && val !== "Naya member") {
+      ST.medData.person_name = val;
+    }
+    renderMedStep(ST.medStep + 1);
+  }
+
+  function medNext() {
+    const val = document.getElementById("med-inp").value.trim();
+    if (!val) {
+      showToast("Dawai ka naam likhein");
+      return;
+    }
+    ST.medData[MED_STEPS[ST.medStep].id] = val;
+    renderMedStep(ST.medStep + 1);
+  }
+
+  function toggleMulti(el, val) {
+    el.classList.toggle("selected");
+  }
+
+  function medNextMulti() {
+    const selected = [...document.querySelectorAll("#multi-wrap .flow-choice.selected")].map(
+      (el) => el.textContent,
+    );
+    if (!selected.length) {
+      showToast("Kam se kam ek time chunein");
+      return;
+    }
+    ST.medData.timing = selected.join(", ");
+    renderMedStep(ST.medStep + 1);
+  }
+
+  function medNextTime() {
+    ST.medData.time = document.getElementById("med-time").value;
+    renderMedStep(ST.medStep + 1);
+  }
+
+  function renderMedConfirm() {
+    const d = ST.medData;
+    const who = d.person_name || (d.for_whom === "🙋 Apne liye" ? "Aap" : d.for_whom);
+    const flow = document.getElementById("med-flow");
+    flow.innerHTML = `
+    <div style="background:var(--surface);border-radius:var(--radius);padding:20px;margin-bottom:16px">
+      <div style="text-align:center;margin-bottom:12px"><img src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/icons/svg/ic_alarm.svg" width="40" height="40" style="filter:invert(1)" alt=""></div>
+      <div style="font-size:14px;color:var(--text2);margin-bottom:8px">Reminder summary:</div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px">${d.name || "Dawai"}</div>
+      <div style="font-size:14px;color:var(--text2)">${who} ke liye • ${d.timing || ""} • ${d.time || ""}</div>
+    </div>
+    <div style="background:rgba(37,171,33,.1);border:1.5px solid var(--success);border-radius:var(--radius);padding:14px 16px;margin-bottom:20px;font-size:14px;color:var(--text2)">
+      📱 Phone notification milega — phone unlock karte waqt full screen alert aayega
+    </div>
+    <button class="flow-next-btn" onclick="saveMedReminder()">Reminder Set Karo</button>
+    <button class="flow-next-btn" style="background:var(--surface);color:var(--text)" onclick="renderMedStep(0)">Wapas Jao</button>
+  `;
+  }
+
+  function saveMedReminder() {
+    const d = ST.medData;
+    const who = d.person_name || (d.for_whom === "🙋 Apne liye" ? "Aap" : d.for_whom);
+    const rem = { id: Date.now(), name: d.name, who, time: d.time, timing: d.timing };
+    const rems = loadReminders();
+    rems.push(rem);
+    saveReminders(rems);
+    requestNotifPermission();
+    scheduleReminder(rem);
+    showToast("Reminder set ho gaya!");
+    goBack();
+  }
+
+  function loadReminders() {
+    try {
+      return JSON.parse(localStorage.getItem("ss_rems") || "[]");
+    } catch (e) {
+      return [];
+    }
+  }
+  function saveReminders(r) {
+    localStorage.setItem("ss_rems", JSON.stringify(r));
+  }
+
+  async function requestNotifPermission() {
+    if ("Notification" in window && Notification.permission === "default") {
+      await Notification.requestPermission();
+    }
+  }
+
+  function scheduleReminder(rem) {
+    if (!rem.time) return;
+    const [h, m] = rem.time.split(":").map(Number);
+    const now = new Date();
+    const next = new Date(now);
+    next.setHours(h, m, 0, 0);
+    if (next <= now) next.setDate(next.getDate() + 1);
+    const delay = next - now;
+    setTimeout(() => fireReminder(rem), delay);
+  }
+
+  function fireReminder(rem) {
+    ST.activeReminder = rem;
+    document.getElementById("rov-title").textContent = `${rem.who} ki Dawai!`;
+    document.getElementById("rov-sub").textContent = `${rem.name} — abhi lene ka waqt ho gaya`;
+    document.getElementById("reminder-ov").classList.add("on");
+    if (Notification.permission === "granted") {
+      new Notification("Dawai ka Waqt!", {
+        body: `${rem.who} ki ${rem.name} lene ka waqt ho gaya`,
+        requireInteraction: true,
+      });
+    }
+  }
+
+  function snoozeReminder() {
+    document.getElementById("reminder-ov").classList.remove("on");
+    if (ST.activeReminder) setTimeout(() => fireReminder(ST.activeReminder), 10 * 60 * 1000);
+  }
+  function dismissReminder() {
+    document.getElementById("reminder-ov").classList.remove("on");
+    showToast("👍 Dawai li — waah!");
+  }
+
+  // reload reminders on start
+  function reloadSavedReminders() {
+    loadReminders().forEach((rem) => scheduleReminder(rem));
+  }
+
+  // ══════════════ v5.2: 48h SYMPTOM CHECK-IN LOOP ══════════════
+  //
+  // When the user taps a takleef button (triSymptomTap), we log the symptom in
+  // ss_checkins with status='pending'. Every time the hub re-opens, we check
+  // for any pending row >= CHECKIN_WAIT_MS old and surface it as a pulsing
+  // red-orange circle in the stories rail. Tapping that circle opens the
+  // 3-button Dadi modal (#checkin-ov). Outcome handlers branch the JTBD:
+  //   - 'better' → blessing overlay + bumpScore(+5)
+  //   - 'same'   → alternative remedy card + Doctor CTA
+  //   - 'worse'  → in-app doctor handoff with tel: + Practo + 1mg placeholders
+  //
+  // No service worker — the loop fires on the user's natural next hub-open
+  // (which works on any browser/device). For prototype QA, ?demo_checkin=1
+  // lowers the threshold from 48h to 10 seconds.
+
+  const CHECKIN_WAIT_MS = (function () {
+    try {
+      const p = new URLSearchParams(window.location.search);
+      if (p.get("demo_checkin") === "1") return 10 * 1000; // 10s for live demo
+    } catch (e) {}
+    return 48 * 60 * 60 * 1000; // 48 hours
+  })();
+
+  // Symptom → emoji map (mirrors the takleef grid + sunita-home tak tiles)
+  const SYMPTOM_EMOJI = {
+    sir: "🤕",
+    head: "🤕",
+    sardi: "🤧",
+    khansi: "🤧",
+    cough: "🤧",
+    cold: "🤧",
+    pet: "🤢",
+    acid: "🤢",
+    gas: "🤢",
+    neend: "😴",
+    sleep: "😴",
+    ghutno: "🦴",
+    jodon: "🦴",
+    joint: "🦴",
+    bukhar: "🌡",
+    fever: "🌡",
+    tension: "😰",
+    chinta: "😰",
+    anxiety: "😰",
+    saans: "🌬",
+    galay: "🌬",
+    throat: "🌬",
+  };
+  function pickSymptomEmoji(txt) {
+    const t = (txt || "").toLowerCase();
+    for (const k of Object.keys(SYMPTOM_EMOJI)) if (t.includes(k)) return SYMPTOM_EMOJI[k];
+    return "🤕";
+  }
+
+  function loadCheckins() {
+    try {
+      return JSON.parse(localStorage.getItem("ss_checkins") || "[]");
+    } catch (e) {
+      return [];
+    }
+  }
+  function saveCheckins(arr) {
+    localStorage.setItem("ss_checkins", JSON.stringify(arr));
+  }
+
+  function pushCheckin(displayText, aiPrompt) {
+    const arr = loadCheckins();
+    // Dedupe: if there's already a pending row for this exact symptom in the last 12h, skip — don't spam.
+    const recent = arr.find(
+      (c) =>
+        c.status === "pending" &&
+        c.displayText === displayText &&
+        Date.now() - c.ts < 12 * 60 * 60 * 1000,
+    );
+    if (recent) return;
+    arr.push({
+      id: "ci_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+      displayText,
+      aiPrompt: aiPrompt || "",
+      symptomEmoji: pickSymptomEmoji(displayText),
+      member: (ST.userProfile && ST.userProfile.name) || "Aap",
+      ts: Date.now(),
+      status: "pending",
+    });
+    saveCheckins(arr);
+  }
+
+  function getDueCheckin() {
+    const arr = loadCheckins();
+    const now = Date.now();
+    return arr.find((c) => c.status === "pending" && now - c.ts >= CHECKIN_WAIT_MS) || null;
+  }
+
+  function answerCheckin(id, answer) {
+    const arr = loadCheckins();
+    const row = arr.find((c) => c.id === id);
+    if (!row) return null;
+    row.status = "answered";
+    row.answer = answer;
+    row.answeredAt = Date.now();
+    saveCheckins(arr);
+    return row;
+  }
+
+  // — Open the modal (called from rail circle) —
+  function openCheckin(id) {
+    const arr = loadCheckins();
+    const row = id ? arr.find((c) => c.id === id) : getDueCheckin();
+    if (!row) return;
+    ST._activeCheckin = row;
+    const emoji = row.symptomEmoji || "🤕";
+    // Singular-ish display fragment from the long displayText
+    // e.g. "Sir dard ho raha hai" → "sir dard"
+    const frag =
+      (row.displayText || "tabiyat").replace(/ho raha hai|hai|hai\.|hai!|hua tha/gi, "").trim() ||
+      row.displayText;
+    document.getElementById("ci-emoji").textContent = emoji;
+    document.getElementById("ci-title").textContent = `Beta, kal ${frag} hua tha...`;
+    document.getElementById("checkin-ov").classList.add("on");
+  }
+  function closeCheckin() {
+    document.getElementById("checkin-ov").classList.remove("on");
+  }
+
+  // — Outcome handlers —
+  function onCheckinBetter() {
+    const row = ST._activeCheckin;
+    if (!row) {
+      closeCheckin();
+      return;
+    }
+    answerCheckin(row.id, "better");
+    closeCheckin();
+    if (typeof bumpScore === "function") bumpScore(5);
+    openBlessing();
+    if (typeof renderHubStories === "function") setTimeout(renderHubStories, 100);
+  }
+  function onCheckinSame() {
+    const row = ST._activeCheckin;
+    if (!row) {
+      closeCheckin();
+      return;
+    }
+    answerCheckin(row.id, "same");
+    closeCheckin();
+    openAltRemedy(row);
+    if (typeof renderHubStories === "function") setTimeout(renderHubStories, 100);
+  }
+  function onCheckinWorse() {
+    const row = ST._activeCheckin;
+    if (!row) {
+      closeCheckin();
+      return;
+    }
+    answerCheckin(row.id, "worse");
+    closeCheckin();
+    openDoctor(row.member);
+    if (typeof renderHubStories === "function") setTimeout(renderHubStories, 100);
+  }
+
+  // — Blessing overlay — auto-dismisses in 3.5s —
+  function openBlessing() {
+    const ov = document.getElementById("bless-ov");
+    if (!ov) return;
+    ov.classList.add("on");
+    if (ST._blessTimer) clearTimeout(ST._blessTimer);
+    ST._blessTimer = setTimeout(() => ov.classList.remove("on"), 3500);
+    ov.onclick = () => {
+      clearTimeout(ST._blessTimer);
+      ov.classList.remove("on");
+    };
+  }
+
+  // — Doctor handoff — full-screen, real tel: + external placeholders —
+  function openDoctor(forWhom) {
+    const ov = document.getElementById("doctor-ov");
+    if (!ov) return;
+    const sub = ov.querySelector(".dr-sub");
+    if (sub && forWhom)
+      sub.innerHTML = `Ghar ka nuskha kafi nahi laga ${forWhom === "Aap" ? "" : "(" + forWhom + " ke liye)"}. Asli doctor se ek baar mil lo — saathi yahin hai, ghabraao mat.`;
+    ov.classList.add("on");
+  }
+  function closeDoctor() {
+    document.getElementById("doctor-ov").classList.remove("on");
+  }
+
+  // — Alternative remedy when "Aisa hi hai" — try a different REMEDY_KIT —
+  // Uses keyword overlap with the user's displayText; falls back to a generic
+  // "try saans" suggestion if no matching kit exists.
+  function openAltRemedy(row) {
+    const txt = ((row && row.displayText) || "").toLowerCase();
+    // Loose mapping of common symptoms → fallback REMEDY_KIT key
+    const fallback =
+      txt.includes("sir") || txt.includes("head")
+        ? "tulsi-kadha"
+        : txt.includes("khansi") ||
+            txt.includes("sardi") ||
+            txt.includes("cough") ||
+            txt.includes("cold")
+          ? "ajwain-bhaap"
+          : txt.includes("pet") || txt.includes("acid") || txt.includes("gas")
+            ? "saunf-paani"
+            : txt.includes("neend") || txt.includes("sleep")
+              ? "haldi-doodh"
+              : txt.includes("bukhar") || txt.includes("fever")
+                ? "tulsi-kadha"
+                : txt.includes("saans") || txt.includes("galay") || txt.includes("throat")
+                  ? "namak-gargle"
+                  : "haldi-doodh";
+    const kit = typeof REMEDY_KITS !== "undefined" ? REMEDY_KITS[fallback] : null;
+    if (kit && typeof openRemedy === "function") {
+      openRemedy(fallback);
+      setTimeout(() => {
+        if (typeof showToast === "function")
+          showToast("Phir bhi aaram nahi mile toh doctor se baat karein 🩺");
+      }, 1200);
+    } else {
+      // No matching kit — fall straight to doctor card
+      openDoctor((row && row.member) || "Aap");
+    }
+  }
+
+  // ══════════════ v5: PRESCRIPTION SCAN + REMINDER + ORDER FLOW ══════════════
+  //
+  // This is the end-to-end Bharat experience: scan/upload prescription → OCR mock
+  // → set reminders (with WhatsApp/voice-call options for low-literacy family) →
+  // order via "Sehat Bazaar" (Reliance Netmeds template) → COD/UPI mock →
+  // timeline tracking → delivered. Templates are used because real Vision API
+  // is unavailable in the prototype — flagged with `[OCR template]` in summaries
+  // so the user knows.
+
+  // — Sample prescriptions (cycled on each scan to feel real) —
+  const RX_TEMPLATES = [
+    {
+      label: "Dr. Sharma · Diabetes + BP",
+      doctor: "Dr. Anil Sharma, MBBS MD",
+      clinic: "Ashok Clinic, Lucknow",
+      date: "Aaj",
+      confidence: 0.94,
+      meds: [
+        {
+          sku: "metformin500",
+          name: "Metformin",
+          strength: "500 mg",
+          form: "tablet",
+          qty: 30,
+          dose: "1 tablet",
+          timing: ["Subah", "Raat"],
+          duration: 30,
+          when: "after_food",
+          notes: "Khaane ke baad",
+        },
+        {
+          sku: "telma40",
+          name: "Telma",
+          strength: "40 mg",
+          form: "tablet",
+          qty: 30,
+          dose: "1 tablet",
+          timing: ["Subah"],
+          duration: 30,
+          when: "before_food",
+          notes: "Subah khaali pet",
+        },
+        {
+          sku: "becosules",
+          name: "Becosules",
+          strength: "1 cap",
+          form: "capsule",
+          qty: 15,
+          dose: "1 capsule",
+          timing: ["Dopahar"],
+          duration: 15,
+          when: "after_food",
+          notes: "Lunch ke baad",
+        },
+      ],
+    },
+    {
+      label: "Dr. Patel · Pediatric fever",
+      doctor: "Dr. Meena Patel, MBBS",
+      clinic: "Shanti Hospital, Indore",
+      date: "Aaj",
+      confidence: 0.91,
+      meds: [
+        {
+          sku: "crocin250",
+          name: "Crocin (Paracetamol)",
+          strength: "250 mg/5 ml",
+          form: "syrup",
+          qty: 1,
+          dose: "5 ml",
+          timing: ["Subah", "Dopahar", "Shaam", "Raat"],
+          duration: 3,
+          when: "any",
+          notes: "Bukhar 100°F+ par hi dein",
+        },
+        {
+          sku: "azithral200",
+          name: "Azithral",
+          strength: "200 mg/5 ml",
+          form: "syrup",
+          qty: 1,
+          dose: "5 ml",
+          timing: ["Subah"],
+          duration: 5,
+          when: "before_food",
+          notes: "1 ghanta khaane se pehle",
+        },
+        {
+          sku: "orsl",
+          name: "ORS-L",
+          strength: "200 ml",
+          form: "sachet",
+          qty: 6,
+          dose: "1 glass",
+          timing: ["Subah", "Dopahar", "Shaam"],
+          duration: 3,
+          when: "any",
+          notes: "Loose motion ke saath",
+        },
+      ],
+    },
+    {
+      label: "Dr. Khan · Cold + Cough",
+      doctor: "Dr. Imran Khan, MBBS",
+      clinic: "Care Clinic, Patna",
+      date: "Aaj",
+      confidence: 0.89,
+      meds: [
+        {
+          sku: "cetzine10",
+          name: "Cetzine",
+          strength: "10 mg",
+          form: "tablet",
+          qty: 10,
+          dose: "1 tablet",
+          timing: ["Raat"],
+          duration: 10,
+          when: "after_food",
+          notes: "Sone se pehle",
+        },
+        {
+          sku: "benadryl100",
+          name: "Benadryl Cough",
+          strength: "100 ml",
+          form: "syrup",
+          qty: 1,
+          dose: "10 ml",
+          timing: ["Subah", "Raat"],
+          duration: 5,
+          when: "after_food",
+          notes: "Bottle hilakar",
+        },
+        {
+          sku: "vicks",
+          name: "Vicks Vaporub",
+          strength: "25 g",
+          form: "balm",
+          qty: 1,
+          dose: "lagao",
+          timing: ["Raat"],
+          duration: 7,
+          when: "any",
+          notes: "Seene aur peeth par",
+        },
+      ],
+    },
+  ];
+
+  // — Medicine catalog (Indian pricing, MRP + discount; mock fulfilment data) —
+  const MEDICINE_CATALOG = {
+    metformin500: {
+      brand: "Metformin 500 mg (Glycomet)",
+      mfr: "USV",
+      mrp: 32,
+      price: 22,
+      pack: "10 tab",
+      emoji: "💊",
+      generic: "Metformin Hydrochloride 500 mg",
+    },
+    telma40: {
+      brand: "Telma 40 mg",
+      mfr: "Glenmark",
+      mrp: 178,
+      price: 138,
+      pack: "15 tab",
+      emoji: "💊",
+      generic: "Telmisartan 40 mg",
+    },
+    becosules: {
+      brand: "Becosules Capsules",
+      mfr: "Pfizer",
+      mrp: 65,
+      price: 54,
+      pack: "15 cap",
+      emoji: "🟡",
+      generic: "B-complex with Vitamin C",
+    },
+    crocin250: {
+      brand: "Crocin Advance Syrup",
+      mfr: "GSK",
+      mrp: 62,
+      price: 55,
+      pack: "60 ml",
+      emoji: "🍼",
+      generic: "Paracetamol 250 mg/5 ml",
+    },
+    azithral200: {
+      brand: "Azithral 200 Syrup",
+      mfr: "Alembic",
+      mrp: 115,
+      price: 96,
+      pack: "15 ml",
+      emoji: "🍼",
+      generic: "Azithromycin 200 mg/5 ml",
+    },
+    orsl: {
+      brand: "ORS-L Apple",
+      mfr: "Cipla",
+      mrp: 30,
+      price: 24,
+      pack: "200 ml",
+      emoji: "🥤",
+      generic: "Oral Rehydration Salts",
+    },
+    cetzine10: {
+      brand: "Cetzine 10 mg",
+      mfr: "Dr.Reddys",
+      mrp: 48,
+      price: 39,
+      pack: "10 tab",
+      emoji: "💊",
+      generic: "Cetirizine 10 mg",
+    },
+    benadryl100: {
+      brand: "Benadryl Cough Syrup",
+      mfr: "J&J",
+      mrp: 135,
+      price: 115,
+      pack: "100 ml",
+      emoji: "🍼",
+      generic: "Diphenhydramine + Ammonium Chloride",
+    },
+    vicks: {
+      brand: "Vicks Vaporub",
+      mfr: "P&G",
+      mrp: 165,
+      price: 148,
+      pack: "25 g",
+      emoji: "🫙",
+      generic: "Camphor + Menthol + Eucalyptus",
+    },
+    // v5.3: Ayurvedic long-term SKUs — upsold inline after a Focus Mode "Bahut behtar" answer
+    "ayur-bramhi": {
+      brand: "Himalaya Brahmi 60 tab",
+      mfr: "Himalaya",
+      mrp: 170,
+      price: 153,
+      pack: "60 tab",
+      emoji: "🌿",
+      generic: "Bacopa monnieri 250 mg · AYUSH",
+    },
+    "ayur-sitopaladi": {
+      brand: "Baidyanath Sitopaladi Churan",
+      mfr: "Baidyanath",
+      mrp: 120,
+      price: 108,
+      pack: "60 gm",
+      emoji: "🌾",
+      generic: "Sitopaladi Churan · AYUSH",
+    },
+    "ayur-hingvashtak": {
+      brand: "Dabur Hingwashtak Churan",
+      mfr: "Dabur",
+      mrp: 95,
+      price: 82,
+      pack: "50 gm",
+      emoji: "🟡",
+      generic: "Hingwashtak Churan · AYUSH",
+    },
+    "ayur-ashwagandha": {
+      brand: "Patanjali Ashwagandha 60 cap",
+      mfr: "Patanjali",
+      mrp: 175,
+      price: 144,
+      pack: "60 cap",
+      emoji: "🪴",
+      generic: "Withania somnifera 500 mg · AYUSH",
+    },
+  };
+
+  // — Photo-OCR templates for Lab Reports (when Vision unavailable) —
+  const LAB_PHOTO_TEMPLATES = [
+    {
+      reportType: "CBC (Complete Blood Count)",
+      reportDate: "Aaj",
+      confidence: 0.93,
+      markers: [
+        { name: "Hemoglobin", value: "10.8 g/dL", range: "12-15 g/dL", status: "Low" },
+        { name: "WBC Count", value: "7,500 /uL", range: "4,000-11,000", status: "Normal" },
+        { name: "Platelets", value: "2.4 lakh", range: "1.5-4.5 lakh", status: "Normal" },
+        { name: "RBC Count", value: "4.1 mil/uL", range: "4.5-5.5 mil", status: "Low" },
+      ],
+      summary:
+        "Aap ka khoon thoda kam hai (Hemoglobin 10.8 — normal 12 se kam). Yeh anaemia ke shuruaati lakshan hain — ghabraane ki baat nahi, lekin doctor se zaroor milein. Roz palak, anar, gud-chana lijiye, aur Iron tablet doctor likhein toh shuru karein.",
+      doctorAdvice:
+        "7 din mein doctor se milkar Iron supplement par baat karein. Heavy bleeding ho toh turant.",
+    },
+    {
+      reportType: "Lipid Profile",
+      reportDate: "Aaj",
+      confidence: 0.95,
+      markers: [
+        { name: "Total Cholesterol", value: "232 mg/dL", range: "<200", status: "High" },
+        { name: "LDL", value: "158 mg/dL", range: "<100", status: "High" },
+        { name: "HDL", value: "38 mg/dL", range: ">40", status: "Low" },
+        { name: "Triglycerides", value: "180 mg/dL", range: "<150", status: "High" },
+      ],
+      summary:
+        "Cholesterol normal se thoda zyada hai. Tala-bhuna kam karein, roz 30 min walk lagaye, ghee/butter ke jagah olive oil. Saans phoolne ya seene mein dard ho toh turant doctor.",
+      doctorAdvice: "15 din mein cardiology consultation karein. Statins ki zaroorat ho sakti hai.",
+    },
+    {
+      reportType: "Blood Sugar (HbA1c + Fasting)",
+      reportDate: "Aaj",
+      confidence: 0.96,
+      markers: [
+        { name: "HbA1c", value: "7.4%", range: "<5.7%", status: "High" },
+        { name: "Fasting Glucose", value: "142 mg/dL", range: "70-100", status: "High" },
+        { name: "PP Glucose", value: "205 mg/dL", range: "<140", status: "High" },
+      ],
+      summary:
+        "Sugar level controlled nahi hai — diabetes hai (HbA1c 7.4% normal 5.7% se zyada). Cheeni-meetha bilkul band, atte mein chana milayein, roz 45 min walk. Pyas zyada lage, baar-baar peshaab aaye toh doctor turant.",
+      doctorAdvice:
+        "Diabetologist se 1 hafte mein milein. Metformin/Insulin par baat ho sakti hai.",
+    },
+  ];
+
+  // — Mock saved addresses (tier 2/3 ready) —
+  const DEFAULT_ADDRESSES = [
+    {
+      id: "home",
+      tag: "Ghar",
+      name: "Aap",
+      line: "House 24-B, Kashi Mohalla, Civil Lines",
+      city: "Lucknow",
+      pin: "226001",
+      phone: "+91 98XXXXXX12",
+    },
+    {
+      id: "maa",
+      tag: "Maa-Papa",
+      name: "Sushila Devi",
+      line: "Plot 7, Indira Nagar",
+      city: "Varanasi",
+      pin: "221002",
+      phone: "+91 94XXXXXX55",
+    },
+  ];
+  function loadAddresses() {
+    try {
+      return JSON.parse(localStorage.getItem("ss_addresses") || "null") || DEFAULT_ADDRESSES;
+    } catch (e) {
+      return DEFAULT_ADDRESSES;
+    }
+  }
+  function saveAddresses(a) {
+    localStorage.setItem("ss_addresses", JSON.stringify(a));
+  }
+
+  // — Orders persistence —
+  function loadOrders() {
+    try {
+      return JSON.parse(localStorage.getItem("ss_orders") || "[]");
+    } catch (e) {
+      return [];
+    }
+  }
+  function saveOrders(o) {
+    localStorage.setItem("ss_orders", JSON.stringify(o));
+  }
+
+  // — RX state holders on ST —
+  ST.rxStep = 0;
+  ST.rxData = {};
+  ST.orderStep = 0;
+  ST.orderData = {};
+  ST.editingMedIdx = null;
+
+  // ─── Prescription flow entry ───
+  function startRx() {
+    ST.rxStep = 0;
+    ST.rxData = { meds: [], member: "self", memberLabel: "Aap", channel: "app", phone: "" };
+    goTo("s-rx");
+    renderRxStep(0);
+  }
+  function rxBack() {
+    if (ST.rxStep > 0) renderRxStep(ST.rxStep - 1);
+    else goBack();
+  }
+
+  function renderRxProgress(step, total) {
+    const wrap = document.getElementById("rx-progress-wrap");
+    if (!wrap) return;
+    let h = '<div class="rx-progress">';
+    for (let i = 0; i < total; i++)
+      h += `<div class="rx-progress-dot${i <= step ? " done" : ""}"></div>`;
+    h += "</div>";
+    wrap.innerHTML = h;
+  }
+
+  function renderRxStep(step) {
+    try {
+      _renderRxStepInner(step);
+    } catch (err) {
+      console.error("[renderRxStep]", err);
+      const el = document.getElementById("rx-body");
+      if (el)
+        el.innerHTML = `<div class="rx-body"><div class="rx-step-title">Kuch dikkat hui</div><div class="rx-step-sub">${(err && err.message) || "Render fail"}. Wapas jaakar phir try karein.</div><button class="rx-cta secondary" onclick="goBack()">Wapas jao</button></div>`;
+    }
+  }
+  function _renderRxStepInner(step) {
+    ST.rxStep = step;
+    const el = document.getElementById("rx-body");
+    if (!el) return;
+    const titleEl = document.getElementById("rx-hdr-title");
+    const subEl = document.getElementById("rx-hdr-sub");
+    renderRxProgress(step, 5);
+
+    if (step === 0) {
+      // Member triage
+      if (titleEl) titleEl.textContent = "Yeh dawai kiske liye?";
+      if (subEl) subEl.textContent = "Member chunein";
+      const fam = loadFamily();
+      const profile = ST.userProfile || loadProfile();
+      const selfLabel = profile && profile.age ? `Aap (${profile.age} saal)` : "Aap (self)";
+      let html = `<div class="rx-body">
+      <div class="rx-step-title">Yeh dawai kiske liye?</div>
+      <div class="rx-step-sub">Hum is member ke liye reminder + order history rakhenge</div>
+      <div class="lab-member-list">`;
+      html += `<button class="lab-member-btn" onclick="rxSelectMember('self','${selfLabel.replace(/'/g, "")}')">
+      <div class="lab-mem-avatar">${profile && profile.sex === "Female" ? "👩" : profile && profile.sex === "Male" ? "👨" : "🧑"}</div>
+      <div class="lab-mem-info"><div class="lab-mem-name">${selfLabel}</div><div class="lab-mem-meta">Apni dawaiyaan</div></div>
+    </button>`;
+      for (const m of fam) {
+        const key = "fam_" + m.name;
+        const condStr = Array.isArray(m.conditions) ? m.conditions.join(", ") : m.conditions || "";
+        html += `<button class="lab-member-btn" onclick="rxSelectMember('${key}','${m.name.replace(/'/g, "")}')">
+        <div class="lab-mem-avatar">${m.name.charAt(0).toUpperCase()}</div>
+        <div class="lab-mem-info"><div class="lab-mem-name">${m.name}</div><div class="lab-mem-meta">${m.age || "-"} saal · ${condStr || "Koi condition nahi"}</div></div>
+      </button>`;
+      }
+      html += `<button class="lab-member-btn" onclick="goTo('s-family');setTimeout(()=>{renderFamilyList();showAddFamily();},100)">
+      <div class="lab-mem-avatar" style="background:var(--surface2);font-size:20px">+</div>
+      <div class="lab-mem-info"><div class="lab-mem-name">Naya member jodein</div><div class="lab-mem-meta">Maa, papa, bachha, koi bhi</div></div>
+    </button></div></div>`;
+      el.innerHTML = html;
+      return;
+    }
+
+    if (step === 1) {
+      if (titleEl) titleEl.textContent = "Parchi kaise daal sakte hain?";
+      if (subEl) subEl.textContent = ST.rxData.memberLabel + " ke liye";
+      el.innerHTML = `<div class="rx-body">
+      <div class="rx-step-title">${ST.rxData.memberLabel} ki parchi</div>
+      <div class="rx-step-sub">Doctor ki parchi ki photo khichein, ya manually likhein</div>
+      <div class="rx-methods">
+        <label class="rx-method-card recommended" for="rx-photo-input">
+          <div class="rx-method-icon">📷</div>
+          <div style="flex:1">
+            <div class="rx-method-name">Parchi ka photo khichein</div>
+            <div class="rx-method-sub">Camera khulega — saaf photo lijiye</div>
+            <span class="rx-method-tag">Sabse aasaan · AI padhega</span>
+          </div>
+          <input type="file" id="rx-photo-input" accept="image/*" capture="environment" style="display:none" onchange="rxOnPhoto(event)">
+        </label>
+        <label class="rx-method-card" for="rx-pdf-input">
+          <div class="rx-method-icon" style="background:rgba(30,204,176,.18)">📄</div>
+          <div style="flex:1">
+            <div class="rx-method-name">PDF upload karein</div>
+            <div class="rx-method-sub">Doctor ne softcopy bheji ho — PDF chunein</div>
+          </div>
+          <input type="file" id="rx-pdf-input" accept="application/pdf" style="display:none" onchange="rxOnPdf(event)">
+        </label>
+        <button class="rx-method-card" onclick="rxManualStart()">
+          <div class="rx-method-icon" style="background:rgba(251,146,60,.18)">✍️</div>
+          <div style="flex:1;text-align:left">
+            <div class="rx-method-name">Manually likhein</div>
+            <div class="rx-method-sub">Naam yaad hai? Seedha add kar dein</div>
+          </div>
+        </button>
+      </div>
+      <div class="lab-warn">Yeh prototype hai — abhi Vision API ke bina sample data ka istemaal ho raha hai. Real prescription bhi save hogi.</div>
+    </div>`;
+      return;
+    }
+
+    if (step === 2) {
+      // Scanning anim then auto-advance to review
+      if (titleEl) titleEl.textContent = "Padh raha hoon...";
+      if (subEl) subEl.textContent = "Thoda waqt";
+      el.innerHTML = `<div class="rx-body">
+      <div class="rx-scan-wrap">
+        <div class="rx-scan-paper">
+          <div class="rx-scan-line"></div>
+          <div class="rx-scan-paper-lines">
+            <div class="ln med"></div><div class="ln short"></div>
+            <div class="ln"></div><div class="ln short"></div>
+            <div class="ln med"></div><div class="ln"></div>
+            <div class="ln short"></div><div class="ln med"></div>
+          </div>
+        </div>
+        <div class="rx-scan-status" id="rx-scan-msg">Doctor ka likha padh raha hoon<span class="blink"></span></div>
+      </div>
+    </div>`;
+      setTimeout(() => {
+        const m = document.getElementById("rx-scan-msg");
+        if (m) m.innerHTML = 'Dawaiyaan dhoondh raha hoon<span class="blink"></span>';
+      }, 900);
+      setTimeout(() => {
+        const m = document.getElementById("rx-scan-msg");
+        if (m) m.innerHTML = 'Dose aur timing nikaal raha hoon<span class="blink"></span>';
+      }, 1700);
+      setTimeout(() => renderRxStep(3), 2500);
+      return;
+    }
+
+    if (step === 3) {
+      // Review extracted meds
+      if (titleEl) titleEl.textContent = "Yeh dawaiyaan dikhi";
+      if (subEl) subEl.textContent = "Galti ho toh edit karein";
+      let html = `<div class="rx-body">
+      <div class="rx-step-title">Parchi padh li ✓</div>
+      <div class="rx-step-sub">${ST.rxData.doctor || "Manual entry"}${ST.rxData.clinic ? " · " + ST.rxData.clinic : ""}</div>
+      <div class="rx-meds-head">
+        <div class="rx-meds-head-l">${ST.rxData.meds.length} dawaiyaan mili</div>
+        ${ST.rxData.confidence ? `<div class="rx-conf-pill">${Math.round(ST.rxData.confidence * 100)}% confidence</div>` : ""}
+      </div>`;
+      ST.rxData.meds.forEach((m, i) => {
+        if (ST.editingMedIdx === i) {
+          html += renderRxEditCard(i);
+        } else {
+          const cat = MEDICINE_CATALOG[m.sku];
+          const emoji = (cat && cat.emoji) || (m.form === "syrup" ? "🍼" : "💊");
+          html += `<div class="rx-med-card">
+          <div class="rx-med-pillicon">${emoji}</div>
+          <div class="rx-med-info">
+            <div class="rx-med-name">${m.name}</div>
+            <div class="rx-med-strength">${m.strength} · ${m.form}</div>
+            <div class="rx-med-meta">
+              <div class="rx-med-meta-pill"><b>${m.dose}</b></div>
+              <div class="rx-med-meta-pill">${(m.timing || []).join(", ") || "-"}</div>
+              <div class="rx-med-meta-pill"><b>${m.duration}</b> din</div>
+            </div>
+            ${m.notes ? `<div style="font-size:10px;color:var(--text3);margin-top:6px;font-style:italic">📝 ${m.notes}</div>` : ""}
+          </div>
+          <button class="rx-med-edit" onclick="rxEditMed(${i})" aria-label="Edit">✎</button>
+        </div>`;
+        }
+      });
+      html += `<button class="rx-med-add" onclick="rxAddMed()">+ Aur dawai jodein</button>`;
+      html += `<button class="rx-cta" onclick="renderRxStep(4)">${ST.rxData.meds.length === 0 ? "Pehle ek dawai jodein" : "Reminder lagao →"}</button>`;
+      if (ST.rxData.meds.length === 0)
+        html = html.replace(
+          '<button class="rx-cta"',
+          '<button class="rx-cta" disabled style="opacity:.5;pointer-events:none"',
+        );
+      html += `<button class="rx-cta secondary" onclick="renderRxStep(1)">Phir se scan karein</button>
+    </div>`;
+      el.innerHTML = html;
+      return;
+    }
+
+    if (step === 4) {
+      // Reminder timings + delivery channel
+      if (titleEl) titleEl.textContent = "Reminder lagao";
+      if (subEl) subEl.textContent = "Kab yaad dilana hai?";
+      let html = `<div class="rx-body">
+      <div class="rx-step-title">Reminder kab lagana hai?</div>
+      <div class="rx-step-sub">Har dawai ka time chunein — hum yaad dila denge</div>`;
+      ST.rxData.meds.forEach((m, i) => {
+        const opts = ["Subah", "Dopahar", "Shaam", "Raat"];
+        const def = { Subah: "08:00", Dopahar: "13:00", Shaam: "18:00", Raat: "21:30" };
+        m._time = m._time || (m.timing && m.timing[0] ? def[m.timing[0]] : "08:00");
+        html += `<div class="rx-timing-card">
+        <div class="rx-timing-head">${m.name}<span class="strength">${m.strength} · ${m.dose}</span></div>
+        <div class="rx-timing-q">Kab leni hai? (ek ya zyada chunein)</div>
+        <div class="rx-timing-chips" data-med="${i}">`;
+        opts.forEach((o) => {
+          const sel = (m.timing || []).includes(o);
+          html += `<button class="rx-timing-chip ${sel ? "selected" : ""}" onclick="rxToggleTiming(${i},'${o}',this)">${o}</button>`;
+        });
+        html += `</div><div class="rx-timing-time">⏰ Pehla reminder time:<input type="time" value="${m._time}" onchange="rxSetTime(${i}, this.value)"></div>
+      </div>`;
+      });
+
+      // Delivery channel
+      const ch = ST.rxData.channel || "app";
+      html += `<div class="rx-channel">
+      <div class="rx-channel-head">Reminder kahan bheje?</div>
+      <div class="rx-channel-sub">Ghar mein jin ki literacy kam hai unhe WhatsApp ya phone call best hai</div>
+      <button class="rx-channel-opt ${ch === "app" ? "selected" : ""}" onclick="rxSetChannel('app')" style="border:none;width:100%;font-family:inherit;color:inherit;text-align:left">
+        <div class="rx-channel-opt-ic">📱</div>
+        <div style="flex:1"><div class="rx-channel-opt-name">JBIQ App pe full-screen reminder</div><div class="rx-channel-opt-sub">Phone unlock karte hi peeli pulse + notification</div></div>
+        <div class="rx-channel-opt-radio"></div>
+      </button>
+      <button class="rx-channel-opt ${ch === "whatsapp" ? "selected" : ""}" onclick="rxSetChannel('whatsapp')" style="border:none;width:100%;font-family:inherit;color:inherit;text-align:left">
+        <div class="rx-channel-opt-ic" style="color:#25d366">💬</div>
+        <div style="flex:1"><div class="rx-channel-opt-name">WhatsApp pe message</div><div class="rx-channel-opt-sub">"Maa, dawai ka waqt — Metformin 500" — Hindi mein</div></div>
+        <div class="rx-channel-opt-radio"></div>
+      </button>
+      <button class="rx-channel-opt ${ch === "voice" ? "selected" : ""}" onclick="rxSetChannel('voice')" style="border:none;width:100%;font-family:inherit;color:inherit;text-align:left">
+        <div class="rx-channel-opt-ic" style="color:#fb923c">📞</div>
+        <div style="flex:1"><div class="rx-channel-opt-name">Phone call (dadi ke liye best)</div><div class="rx-channel-opt-sub">Saathi awaaz mein bolegi — padhna nahi aata? No problem.</div></div>
+        <div class="rx-channel-opt-radio"></div>
+      </button>
+      <div class="rx-channel-phone${ch === "whatsapp" || ch === "voice" ? " on" : ""}">
+        <label>${ch === "voice" ? "Call kis number par karna hai?" : "WhatsApp kis number par bhejna hai?"}</label>
+        <input type="tel" placeholder="+91 98XXXXXXXX" value="${ST.rxData.phone || ""}" oninput="ST.rxData.phone=this.value">
+      </div>
+    </div>`;
+
+      html += `<button class="rx-cta" onclick="rxSaveReminders()">Reminders set karein →</button>
+      <button class="rx-cta secondary" onclick="renderRxStep(3)">Wapas dawaiyaan dekhein</button>
+    </div>`;
+      el.innerHTML = html;
+      return;
+    }
+
+    if (step === 5) {
+      // Confirmation + offer to order
+      if (titleEl) titleEl.textContent = "Reminders set ho gaye ✓";
+      if (subEl) subEl.textContent = ST.rxData.memberLabel + " ke liye";
+      const channelLabel =
+        { app: "JBIQ App", whatsapp: "WhatsApp", voice: "Voice call" }[ST.rxData.channel] || "App";
+      const totalDays = Math.max(...ST.rxData.meds.map((m) => m.duration || 1));
+      let html = `<div class="bz-success">
+      <div class="bz-tick">✓</div>
+      <h2>Reminders ready!</h2>
+      <p>${ST.rxData.meds.length} dawaiyaan ke liye reminder set hai · ${channelLabel} pe yaad dilayenge</p>
+      <div class="bz-success-id">${totalDays} din chalega · ${ST.rxData.memberLabel}</div>
+    </div>
+    <div style="padding:0 16px 24px">
+      <div class="bz-banner">
+        <div class="bz-banner-ic">🛒</div>
+        <div style="flex:1">
+          <div class="bz-banner-l">Yeh dawaiyaan ghar mangao?<span class="small">Sehat Bazaar (Reliance Netmeds) — tier 2/3 mein bhi delivery, COD available</span></div>
+        </div>
+      </div>
+      <button class="rx-cta warm" onclick="orderFromRx()">Sehat Bazaar se ghar mangao →</button>
+      <button class="rx-cta secondary" onclick="goTo('s-hub')">Ab nahi · Wapas Sehat Saathi</button>
+      <button class="rx-cta secondary" onclick="startFeature('bazaar')">Mere reminders dekhein</button>
+    </div>`;
+      el.innerHTML = html;
+      return;
+    }
+  }
+
+  // — Photo / PDF handlers — both use template results because no Vision key —
+  function rxOnPhoto(e) {
+    const f = e.target.files[0];
+    if (!f) return;
+    const tpl = RX_TEMPLATES[Math.floor(Math.random() * RX_TEMPLATES.length)];
+    ST.rxData.doctor = tpl.doctor;
+    ST.rxData.clinic = tpl.clinic;
+    ST.rxData.confidence = tpl.confidence;
+    ST.rxData.meds = JSON.parse(JSON.stringify(tpl.meds));
+    ST.rxData.source = "photo";
+    ST.rxData.fileName = f.name;
+    renderRxStep(2);
+  }
+  function rxOnPdf(e) {
+    const f = e.target.files[0];
+    if (!f) return;
+    const tpl = RX_TEMPLATES[Math.floor(Math.random() * RX_TEMPLATES.length)];
+    ST.rxData.doctor = tpl.doctor;
+    ST.rxData.clinic = tpl.clinic;
+    ST.rxData.confidence = tpl.confidence;
+    ST.rxData.meds = JSON.parse(JSON.stringify(tpl.meds));
+    ST.rxData.source = "pdf";
+    ST.rxData.fileName = f.name;
+    renderRxStep(2);
+  }
+  function rxManualStart() {
+    ST.rxData.doctor = "Manual entry";
+    ST.rxData.clinic = "";
+    ST.rxData.confidence = null;
+    ST.rxData.meds = [];
+    ST.rxData.source = "manual";
+    ST.editingMedIdx = null;
+    renderRxStep(3);
+    setTimeout(rxAddMed, 50);
+  }
+
+  function rxSelectMember(key, label) {
+    ST.rxData.member = key;
+    ST.rxData.memberLabel = label;
+    setTimeout(() => renderRxStep(1), 150);
+  }
+
+  function rxAddMed() {
+    ST.rxData.meds.push({
+      sku: "",
+      name: "",
+      strength: "",
+      form: "tablet",
+      dose: "1 tablet",
+      timing: ["Subah"],
+      duration: 7,
+      when: "after_food",
+      notes: "",
+    });
+    ST.editingMedIdx = ST.rxData.meds.length - 1;
+    renderRxStep(3);
+  }
+  function rxEditMed(i) {
+    ST.editingMedIdx = i;
+    renderRxStep(3);
+  }
+  function renderRxEditCard(i) {
+    const m = ST.rxData.meds[i];
+    return `<div class="rx-edit-card">
+    <label>Dawai ka naam</label>
+    <input id="rx-edit-name-${i}" placeholder="Metformin, Crocin, ..." value="${(m.name || "").replace(/"/g, "&quot;")}">
+    <label>Dose / mg</label>
+    <input id="rx-edit-strength-${i}" placeholder="500 mg" value="${(m.strength || "").replace(/"/g, "&quot;")}">
+    <label>Kitni baar dena hai?</label>
+    <input id="rx-edit-dose-${i}" placeholder="1 tablet" value="${(m.dose || "").replace(/"/g, "&quot;")}">
+    <label>Kitne din?</label>
+    <input id="rx-edit-duration-${i}" type="number" min="1" max="180" value="${m.duration || 7}">
+    <label>Notes (optional)</label>
+    <input id="rx-edit-notes-${i}" placeholder="Khaane ke baad" value="${(m.notes || "").replace(/"/g, "&quot;")}">
+    <div class="rx-edit-row">
+      <button class="cancel" onclick="rxCancelEdit(${i})">Cancel</button>
+      <button class="save" onclick="rxSaveEdit(${i})">Save</button>
+    </div>
+    ${ST.rxData.meds.length > 1 ? `<button style="margin-top:8px;background:none;border:none;color:#dc2626;font-size:11px;cursor:pointer;width:100%" onclick="rxDeleteMed(${i})">🗑 Hatao</button>` : ""}
+  </div>`;
+  }
+  function rxSaveEdit(i) {
+    const m = ST.rxData.meds[i];
+    m.name = (document.getElementById("rx-edit-name-" + i).value || "").trim() || "Dawai";
+    m.strength = (document.getElementById("rx-edit-strength-" + i).value || "").trim();
+    m.dose = (document.getElementById("rx-edit-dose-" + i).value || "").trim() || "1 tablet";
+    m.duration = parseInt(document.getElementById("rx-edit-duration-" + i).value || 7, 10);
+    m.notes = (document.getElementById("rx-edit-notes-" + i).value || "").trim();
+    if (!m.timing || !m.timing.length) m.timing = ["Subah"];
+    ST.editingMedIdx = null;
+    renderRxStep(3);
+  }
+  function rxCancelEdit(i) {
+    const m = ST.rxData.meds[i];
+    if (!m.name) ST.rxData.meds.splice(i, 1);
+    ST.editingMedIdx = null;
+    renderRxStep(3);
+  }
+  function rxDeleteMed(i) {
+    ST.rxData.meds.splice(i, 1);
+    ST.editingMedIdx = null;
+    renderRxStep(3);
+  }
+  function rxToggleTiming(i, t, btn) {
+    const m = ST.rxData.meds[i];
+    m.timing = m.timing || [];
+    const idx = m.timing.indexOf(t);
+    if (idx === -1) m.timing.push(t);
+    else m.timing.splice(idx, 1);
+    if (btn) btn.classList.toggle("selected");
+  }
+  function rxSetTime(i, t) {
+    ST.rxData.meds[i]._time = t;
+  }
+  function rxSetChannel(c) {
+    ST.rxData.channel = c;
+    renderRxStep(4);
+  }
+
+  function rxSaveReminders() {
+    if (ST.rxData.channel !== "app" && !(ST.rxData.phone || "").trim()) {
+      showToast(ST.rxData.channel === "voice" ? "Phone number daalein" : "WhatsApp number daalein");
+      return;
+    }
+    const rxId = "rx_" + Date.now();
+    const rems = loadReminders();
+    ST.rxData.meds.forEach((m) => {
+      if (!m.timing || !m.timing.length) return;
+      rems.push({
+        id: Date.now() + Math.random(),
+        rxId,
+        name: m.name,
+        strength: m.strength,
+        who: ST.rxData.memberLabel,
+        member: ST.rxData.member,
+        time: m._time || "08:00",
+        timing: (m.timing || []).join(", "),
+        dose: m.dose,
+        duration_days: m.duration,
+        channel: ST.rxData.channel,
+        phone: ST.rxData.phone || "",
+        notes: m.notes || "",
+      });
+    });
+    saveReminders(rems);
+    if (ST.rxData.channel === "app") requestNotifPermission();
+    // schedule (only app channel actually fires; whatsapp/voice are placeholder mocks)
+    rems.slice(-ST.rxData.meds.length).forEach((rem) => {
+      if (rem.channel === "app") scheduleReminder(rem);
+    });
+    if (ST.rxData.channel === "whatsapp")
+      showToast("WhatsApp reminders scheduled — abhi prototype hai, real send nahi hoga");
+    if (ST.rxData.channel === "voice")
+      showToast("Voice call reminders scheduled — abhi prototype hai, real call nahi hoga");
+    bumpScore && bumpScore(2);
+    renderRxStep(5);
+  }
+
+  // ════ Order from RX → Sehat Bazaar ════
+  function orderFromRx() {
+    ST.orderData = {
+      items: ST.rxData.meds
+        .filter((m) => MEDICINE_CATALOG[m.sku])
+        .map((m) => {
+          const cat = MEDICINE_CATALOG[m.sku];
+          const packsNeeded = Math.max(
+            1,
+            Math.ceil(((m.duration || 7) * (m.timing || []).length) / 10),
+          );
+          return {
+            sku: m.sku,
+            name: cat.brand,
+            generic: cat.generic,
+            mfr: cat.mfr,
+            mrp: cat.mrp,
+            price: cat.price,
+            pack: cat.pack,
+            qty: packsNeeded,
+            emoji: cat.emoji,
+          };
+        }),
+      forMember: ST.rxData.memberLabel,
+      rxId: "rx_" + Date.now(),
+      addressId: "home",
+      payment: "cod",
+    };
+    if (!ST.orderData.items.length) {
+      // Manual prescriptions — synthesize a single line so the user has something to order
+      ST.orderData.items = ST.rxData.meds.map((m, i) => ({
+        sku: "manual_" + i,
+        name: m.name + (m.strength ? " " + m.strength : ""),
+        generic: m.name,
+        mfr: "Generic",
+        mrp: 80,
+        price: 65,
+        pack: m.duration ? m.duration + " din ka stock" : "1 strip",
+        qty: 1,
+        emoji: m.form === "syrup" ? "🍼" : "💊",
+      }));
+    }
+    ST.orderStep = 0;
+    goTo("s-order");
+    renderOrderStep(0);
+  }
+
+  function startBazaar() {
+    goTo("s-bazaar");
+    renderBazaarList();
+  }
+  function orderBack() {
+    if (ST.orderStep > 0) renderOrderStep(ST.orderStep - 1);
+    else goBack();
+  }
+
+  function renderOrderProgress(step, total) {
+    const wrap = document.getElementById("order-progress-wrap");
+    if (!wrap) return;
+    let h = '<div class="rx-progress">';
+    for (let i = 0; i < total; i++)
+      h += `<div class="rx-progress-dot${i <= step ? " done" : ""}"></div>`;
+    h += "</div>";
+    wrap.innerHTML = h;
+  }
+
+  function renderOrderStep(step) {
+    ST.orderStep = step;
+    const el = document.getElementById("order-body");
+    if (!el) return;
+    const titleEl = document.getElementById("order-hdr-title");
+    const subEl = document.getElementById("order-hdr-sub");
+    renderOrderProgress(step, 4);
+
+    if (step === 0) {
+      if (titleEl) titleEl.textContent = "Sehat Bazaar";
+      if (subEl) subEl.textContent = "Cart dekho";
+      const sub = ST.orderData.items.reduce((s, it) => s + it.price * it.qty, 0);
+      const mrp = ST.orderData.items.reduce((s, it) => s + it.mrp * it.qty, 0);
+      const ship = sub >= 199 ? 0 : 30;
+      const total = sub + ship;
+      const saved = mrp - sub;
+      let html = `<div class="rx-body">
+      <div class="bz-banner">
+        <div class="bz-banner-ic">🛒</div>
+        <div style="flex:1">
+          <div class="bz-banner-l">Reliance Netmeds<span class="small">Tier 2 + 3 delivery · COD available · 100% original</span></div>
+        </div>
+      </div>`;
+      ST.orderData.items.forEach((it, i) => {
+        const disc = Math.round((1 - it.price / it.mrp) * 100);
+        html += `<div class="bz-cart-card">
+        <div class="bz-cart-pic">${it.emoji || "💊"}</div>
+        <div class="bz-cart-info">
+          <div class="bz-cart-name">${it.name}</div>
+          <div class="bz-cart-meta">${it.generic || ""} · ${it.pack}${it.mfr ? " · " + it.mfr : ""}</div>
+          <div class="bz-cart-pricing">
+            <div class="bz-cart-price">₹${it.price}</div>
+            <div class="bz-cart-mrp">₹${it.mrp}</div>
+            ${disc > 0 ? `<div class="bz-cart-disc">${disc}% OFF</div>` : ""}
+          </div>
+          <div class="bz-cart-qty">
+            <button onclick="orderQty(${i},-1)">−</button>
+            <span>${it.qty}</span>
+            <button onclick="orderQty(${i},1)">+</button>
+          </div>
+          ${it.sku && MEDICINE_CATALOG[it.sku] ? `<div class="bz-alt">💡 Generic available — <b>${it.generic || "same salt"}</b> ₹${Math.max(8, Math.round(it.price * 0.55))}/pack</div>` : ""}
+        </div>
+      </div>`;
+      });
+      html += `<div class="bz-bill">
+      <div class="bz-bill-row"><span>Items (${ST.orderData.items.length})</span><span>₹${sub}</span></div>
+      <div class="bz-bill-row save"><span>You save</span><span>− ₹${saved}</span></div>
+      <div class="bz-bill-row"><span>Delivery${ship === 0 ? " (FREE above ₹199)" : ""}</span><span>${ship === 0 ? "FREE" : "₹" + ship}</span></div>
+      <div class="bz-bill-row total"><span>Total</span><span>₹${total}</span></div>
+    </div>
+    <button class="rx-cta" onclick="renderOrderStep(1)">Address chunein →</button>
+    <button class="rx-cta secondary" onclick="goBack()">Cancel</button>
+    </div>`;
+      el.innerHTML = html;
+      return;
+    }
+
+    if (step === 1) {
+      if (titleEl) titleEl.textContent = "Address";
+      if (subEl) subEl.textContent = "Kahan delivery karein?";
+      const addrs = loadAddresses();
+      const sel = ST.orderData.addressId || addrs[0].id;
+      let html = `<div class="rx-body">
+      <div class="rx-step-title">Kahan deliver karein?</div>
+      <div class="rx-step-sub">${ST.orderData.forMember || "Aap"} ke liye dawai pohchani hai</div>`;
+      addrs.forEach((a) => {
+        html += `<button class="bz-addr-card ${a.id === sel ? "selected" : ""}" onclick="orderSelAddr('${a.id}')" style="border:1.5px solid ${a.id === sel ? "var(--primary)" : "rgba(255,255,255,.07)"}">
+        <div class="bz-addr-radio"></div>
+        <div style="flex:1;min-width:0">
+          <div class="bz-addr-tag">${a.tag}</div>
+          <div class="bz-addr-name">${a.name}</div>
+          <div class="bz-addr-line">${a.line}, ${a.city} − ${a.pin}</div>
+          <div class="bz-addr-line">📞 ${a.phone}</div>
+        </div>
+      </button>`;
+      });
+      html += `<button class="rx-med-add" onclick="orderAddAddr()">+ Naya address jodein</button>
+      <button class="rx-cta" onclick="renderOrderStep(2)">Payment chunein →</button>
+      <button class="rx-cta secondary" onclick="renderOrderStep(0)">Wapas cart</button>
+    </div>`;
+      el.innerHTML = html;
+      return;
+    }
+
+    if (step === 2) {
+      if (titleEl) titleEl.textContent = "Payment";
+      if (subEl) subEl.textContent = "Kaise pay karein?";
+      const sel = ST.orderData.payment || "cod";
+      let html = `<div class="rx-body">
+      <div class="rx-step-title">Payment kaise karein?</div>
+      <div class="rx-step-sub">Tier 2/3 ke liye COD bhi available — saamne paise dein</div>
+      <div class="bz-pay-list">
+        <button class="bz-pay-opt ${sel === "upi" ? "selected" : ""}" onclick="orderSelPay('upi')" style="font-family:inherit;color:inherit;width:100%;text-align:left">
+          <div class="bz-pay-opt-ic" style="background:rgba(57,0,173,.18);color:#a855f7">🟣</div>
+          <div style="flex:1"><div class="bz-pay-opt-name">UPI · GPay / PhonePe / Paytm</div><div class="bz-pay-opt-sub">Instant · No charges</div></div>
+          <div class="bz-pay-radio"></div>
+        </button>
+        <button class="bz-pay-opt ${sel === "cod" ? "selected" : ""}" onclick="orderSelPay('cod')" style="font-family:inherit;color:inherit;width:100%;text-align:left">
+          <div class="bz-pay-opt-ic" style="background:rgba(34,197,94,.18);color:#22c55e">💵</div>
+          <div style="flex:1"><div class="bz-pay-opt-name">Cash on Delivery</div><div class="bz-pay-opt-sub">Saamne paise dein · ₹0 charges</div></div>
+          <div class="bz-pay-radio"></div>
+        </button>
+        <button class="bz-pay-opt ${sel === "jio" ? "selected" : ""}" onclick="orderSelPay('jio')" style="font-family:inherit;color:inherit;width:100%;text-align:left">
+          <div class="bz-pay-opt-ic" style="background:rgba(168,85,247,.18);color:#a855f7">J</div>
+          <div style="flex:1"><div class="bz-pay-opt-name">Jio Wallet</div><div class="bz-pay-opt-sub">Linked to JioBharatIQ · 5% cashback</div></div>
+          <div class="bz-pay-radio"></div>
+        </button>
+      </div>
+      <button class="rx-cta" onclick="orderPlace()">Order confirm karein →</button>
+      <button class="rx-cta secondary" onclick="renderOrderStep(1)">Wapas address</button>
+    </div>`;
+      el.innerHTML = html;
+      return;
+    }
+
+    if (step === 3) {
+      // Success
+      if (titleEl) titleEl.textContent = "Order ho gaya ✓";
+      if (subEl) subEl.textContent = "ID: " + (ST.orderData.orderId || "");
+      const o = ST.orderData;
+      const addrs = loadAddresses();
+      const addr = addrs.find((a) => a.id === o.addressId) || addrs[0];
+      const total =
+        o.items.reduce((s, it) => s + it.price * it.qty, 0) +
+        (o.items.reduce((s, it) => s + it.price * it.qty, 0) >= 199 ? 0 : 30);
+      let html = `<div class="bz-success">
+      <div class="bz-tick">✓</div>
+      <h2>Order confirm ho gaya!</h2>
+      <p>${o.forMember || "Aap"} ke liye ${o.items.length} dawaiyaan pack ho rahi hain</p>
+      <div class="bz-success-id">${o.orderId}</div>
+      <div style="background:var(--surface);border-radius:14px;padding:14px;text-align:left;margin-bottom:14px">
+        <div style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:.4px;text-transform:uppercase;margin-bottom:6px">Delivery</div>
+        <div style="font-size:13px;font-weight:700">${addr.name} · ${addr.tag}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:3px;line-height:1.45">${addr.line}, ${addr.city} − ${addr.pin}</div>
+        <div style="font-size:13px;color:#22c55e;font-weight:700;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,255,255,.1)">⏱ Kal shaam tak pohchega · ₹${total} ${o.payment === "cod" ? "(COD)" : o.payment === "upi" ? "(UPI)" : "(Jio Wallet)"}</div>
+      </div>
+      <div style="background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);border-radius:12px;padding:12px;text-align:left;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:700;color:#25d366;margin-bottom:3px">💬 WhatsApp pe tracking link bhej diya</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.45">${addr.phone} pe order updates milte rahenge — Hindi mein</div>
+      </div>
+      <button class="rx-cta" onclick="trackOrder('${o.orderId}')">Order track karein →</button>
+      <button class="rx-cta secondary" onclick="goTo('s-hub')">Wapas Sehat Saathi</button>
+    </div>`;
+      el.innerHTML = html;
+      return;
+    }
+  }
+
+  function orderQty(i, d) {
+    const it = ST.orderData.items[i];
+    it.qty = Math.max(1, (it.qty || 1) + d);
+    renderOrderStep(0);
+  }
+  function orderSelAddr(id) {
+    ST.orderData.addressId = id;
+    renderOrderStep(1);
+  }
+  function orderSelPay(p) {
+    ST.orderData.payment = p;
+    renderOrderStep(2);
+  }
+  function orderAddAddr() {
+    const name = prompt("Naam (jaise: Maa-Papa)");
+    if (!name) return;
+    const line = prompt("Address line (House, area)");
+    if (!line) return;
+    const city = prompt("City");
+    if (!city) return;
+    const pin = prompt("PIN code");
+    if (!pin) return;
+    const phone = prompt("Phone (+91 ...)");
+    if (!phone) return;
+    const addrs = loadAddresses();
+    const id = "a" + Date.now();
+    addrs.push({ id, tag: "Naya", name, line, city, pin, phone });
+    saveAddresses(addrs);
+    ST.orderData.addressId = id;
+    renderOrderStep(1);
+  }
+  function orderPlace() {
+    const addrs = loadAddresses();
+    const addr = addrs.find((a) => a.id === ST.orderData.addressId) || addrs[0];
+    const sub = ST.orderData.items.reduce((s, it) => s + it.price * it.qty, 0);
+    const ship = sub >= 199 ? 0 : 30;
+    const orderId = "NM" + Date.now().toString(36).slice(-6).toUpperCase();
+    const order = {
+      id: orderId,
+      items: ST.orderData.items,
+      forMember: ST.orderData.forMember || "Aap",
+      addressId: ST.orderData.addressId,
+      addressSnapshot: addr,
+      payment: ST.orderData.payment || "cod",
+      rxId: ST.orderData.rxId || null,
+      placedAt: Date.now(),
+      subtotal: sub,
+      shipping: ship,
+      total: sub + ship,
+      statusIdx: 0,
+    };
+    const orders = loadOrders();
+    orders.unshift(order);
+    saveOrders(orders);
+    ST.orderData.orderId = orderId;
+    renderOrderStep(3);
+    bumpScore && bumpScore(3);
+    // Auto-progress for prototype demo: Placed → Confirmed → Packed → Shipped → Delivered every 6s
+    scheduleOrderProgress(orderId);
+  }
+
+  const ORDER_STAGES = [
+    { name: "Order placed", sub: "Reliance Netmeds ne aapka order receive kiya" },
+    { name: "Confirmed by pharmacy", sub: "Pharmacist ne prescription verify ki" },
+    { name: "Packed", sub: "Dawaiyaan thandi jagah pe pack ho gayi" },
+    { name: "Out for delivery", sub: "Delivery partner aapke ghar ki taraf nikla" },
+    { name: "Delivered", sub: "Order pohch gaya — dawai shuru karein" },
+  ];
+
+  function scheduleOrderProgress(orderId) {
+    // Demo timing: each stage in ~12s so the user can watch it move
+    for (let i = 1; i <= 4; i++) {
+      setTimeout(() => {
+        const orders = loadOrders();
+        const o = orders.find((x) => x.id === orderId);
+        if (!o) return;
+        o.statusIdx = i;
+        saveOrders(orders);
+      }, i * 12000);
+    }
+  }
+
+  function trackOrder(orderId) {
+    const orders = loadOrders();
+    const o = orders.find((x) => x.id === orderId);
+    if (!o) {
+      showToast("Order nahi mila");
+      return;
+    }
+    goTo("s-track");
+    renderTrack(o);
+    // Live refresh while user is on the screen
+    if (ST._trackTimer) clearInterval(ST._trackTimer);
+    ST._trackTimer = setInterval(() => {
+      if (document.getElementById("s-track").classList.contains("active")) {
+        const fresh = loadOrders().find((x) => x.id === orderId);
+        if (fresh) renderTrack(fresh);
+      } else {
+        clearInterval(ST._trackTimer);
+      }
+    }, 3000);
+  }
+
+  function renderTrack(o) {
+    const el = document.getElementById("track-body");
+    if (!el) return;
+    const addr = o.addressSnapshot || {
+      tag: "-",
+      name: "-",
+      line: "-",
+      city: "-",
+      pin: "-",
+      phone: "-",
+    };
+    const stage = ORDER_STAGES[o.statusIdx] || ORDER_STAGES[0];
+    const eta = o.statusIdx >= 4 ? "Delivered ✓" : "Kal shaam tak pohch jayegi";
+    let timeline = '<div class="bz-tl">';
+    ORDER_STAGES.forEach((s, i) => {
+      const cls = i < o.statusIdx ? "done" : i === o.statusIdx ? "active" : "";
+      const time =
+        i <= o.statusIdx
+          ? new Date(o.placedAt + i * 12000).toLocaleTimeString("en-IN", {
+              hour: "numeric",
+              minute: "2-digit",
+            })
+          : "";
+      timeline += `<div class="bz-tl-step ${cls}">
+      <div class="bz-tl-name">${s.name}</div>
+      <div class="bz-tl-meta">${s.sub}${time ? " · " + time : ""}</div>
+    </div>`;
+    });
+    timeline += "</div>";
+    let itemsHtml =
+      '<div style="margin-top:14px"><div class="bz-section-lbl" style="padding:0 0 8px">Order items</div>';
+    o.items.forEach((it) => {
+      itemsHtml += `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.06)">
+      <div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:16px">${it.emoji || "💊"}</div>
+      <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700">${it.name}</div><div style="font-size:10px;color:var(--text3)">${it.pack} × ${it.qty}</div></div>
+      <div style="font-size:13px;font-weight:700">₹${it.price * it.qty}</div>
+    </div>`;
+    });
+    itemsHtml += "</div>";
+
+    el.innerHTML = `<div class="bz-track">
+    <div class="bz-track-summary">
+      <div class="bz-track-id">ORDER ${o.id}</div>
+      <div class="bz-track-eta">${stage.name === "Delivered" ? "✓ Delivered" : "<b>" + eta + "</b>"}</div>
+      <div class="bz-track-addr">📍 ${addr.tag} · ${addr.line}, ${addr.city} − ${addr.pin}</div>
+      <div class="bz-track-addr">📞 ${addr.phone}${o.payment === "cod" ? " · COD ₹" + o.total : ""}</div>
+    </div>
+    ${timeline}
+    ${itemsHtml}
+    <div style="margin-top:18px">
+      <button class="rx-cta secondary" onclick="goTo('s-hub')">Wapas Sehat Saathi</button>
+    </div>
+  </div>`;
+  }
+
+  // ════ Mera Sehat — reminders + orders + reports list ════
+  function renderBazaarList() {
+    const el = document.getElementById("bazaar-body");
+    if (!el) return;
+    const rems = loadReminders();
+    const orders = loadOrders();
+    const labReports = loadLabReports();
+    const labCount = Object.values(labReports).reduce((s, arr) => s + (arr ? arr.length : 0), 0);
+
+    // ── Active reminders section ──
+    let html = '<div class="bz-section-lbl">Active reminders</div>';
+    if (!rems.length) {
+      html += `<div class="bz-empty">
+      <div class="bz-empty-emoji">⏰</div>
+      Abhi koi reminder nahi.<br>Parchi scan karein — auto-set ho jayega.
+      <div style="margin-top:12px"><button class="rx-cta" onclick="startFeature('rx')" style="display:inline-block;width:auto;padding:10px 20px">+ Parchi scan karein</button></div>
+    </div>`;
+    } else {
+      rems.forEach((r) => {
+        const ch = r.channel || "app";
+        const chLabel = { app: "App", whatsapp: "WhatsApp", voice: "Voice" }[ch] || "App";
+        html += `<div class="bz-list-card">
+        <div class="bz-list-ic" style="background:rgba(168,85,247,.18);color:#a855f7">💊</div>
+        <div class="bz-list-info">
+          <div class="bz-list-name">${r.name}${r.strength ? " · " + r.strength : ""}</div>
+          <div class="bz-list-sub">${r.who} · ${r.timing || "-"} · ${r.time || "-"}<span class="rem-channel-pill ${ch}">${chLabel}</span></div>
+        </div>
+        <button onclick="deleteReminder('${r.id}')" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer">✕</button>
+      </div>`;
+      });
+      html += `<div style="padding:0 16px 4px"><button class="rx-cta secondary" onclick="startFeature('rx')">+ Naya reminder lagao</button></div>`;
+    }
+
+    // ── Orders section ──
+    html += '<div class="bz-section-lbl">Mere orders</div>';
+    if (!orders.length) {
+      html += `<div class="bz-empty">
+      <div class="bz-empty-emoji">🛒</div>
+      Abhi koi order nahi.<br>Parchi scan karke ghar mangao.
+    </div>`;
+    } else {
+      orders.forEach((o) => {
+        const stIdx = o.statusIdx || 0;
+        const statusLabel =
+          stIdx >= 4
+            ? "Delivered"
+            : stIdx >= 3
+              ? "Out for Delivery"
+              : stIdx >= 1
+                ? "Packing"
+                : "Placed";
+        const cls = stIdx >= 4 ? "delivered" : stIdx >= 3 ? "shipped" : "placed";
+        html += `<div class="bz-list-card" onclick="trackOrder('${o.id}')">
+        <div class="bz-list-ic" style="background:rgba(251,146,60,.18);color:#fb923c">🛒</div>
+        <div class="bz-list-info">
+          <div class="bz-list-name">${o.items.length} dawaiyaan · ₹${o.total}</div>
+          <div class="bz-list-sub">${o.forMember} · ${new Date(o.placedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</div>
+        </div>
+        <div class="bz-list-status ${cls}">${statusLabel}</div>
+      </div>`;
+      });
+    }
+
+    // ── Lab reports ──
+    html += '<div class="bz-section-lbl">Lab reports</div>';
+    if (labCount === 0) {
+      html += `<div class="bz-empty">
+      <div class="bz-empty-emoji">🧪</div>
+      Koi lab report save nahi.<br>Photo ya PDF se padhwao.
+      <div style="margin-top:12px"><button class="rx-cta" onclick="startFeature('lab')" style="display:inline-block;width:auto;padding:10px 20px">Lab report jodein</button></div>
+    </div>`;
+    } else {
+      Object.keys(labReports).forEach((memKey) => {
+        (labReports[memKey] || []).forEach((r, idx) => {
+          const memLabel = memKey === "self" ? "Aap" : memKey.replace("fam_", "");
+          html += `<div class="bz-list-card" onclick="viewPastLabReport('${memKey}',${idx});goTo('s-lab')">
+          <div class="bz-list-ic" style="background:rgba(34,197,94,.18);color:#22c55e">🧪</div>
+          <div class="bz-list-info">
+            <div class="bz-list-name">${r.reportType || "Lab Report"} · ${memLabel}</div>
+            <div class="bz-list-sub">${r.date}${r.summary ? " — " + r.summary.substring(0, 60) + (r.summary.length > 60 ? "..." : "") : ""}</div>
+          </div>
+        </div>`;
+        });
+      });
+    }
+
+    el.innerHTML = html;
+  }
+
+  // — Stories rail: tap a daily dot to mark done & bump score —
+  function storiesTapDot(type) {
+    const today = new Date().toDateString();
+    const key = "daily_" + type + "_" + today;
+    if (localStorage.getItem(key)) {
+      showToast("Pehle hi ho gaya 💚");
+      return;
+    }
+    localStorage.setItem(key, "1");
+    if (typeof bumpScore === "function") bumpScore(2);
+    if (typeof refreshDailyDots === "function") refreshDailyDots();
+    if (typeof renderHubStories === "function") renderHubStories();
+    showToast(
+      {
+        paani: "Paani done — +2 score",
+        swas: "Saans done — +2 score",
+        khana: "Khana done — +2 score",
+      }[type] || "Done",
+    );
+  }
+
+  function deleteReminder(id) {
+    const rems = loadReminders().filter((r) => String(r.id) !== String(id));
+    saveReminders(rems);
+    showToast("Reminder hata diya");
+    renderBazaarList();
+  }
+
+  // — Update hub: prescription pill shows count if there are reminders —
+  function updateHubBazaarSub() {
+    try {
+      const rems = loadReminders();
+      const orders = loadOrders();
+      const sub = document.getElementById("tri-rail-bazaar-sub");
+      if (sub) {
+        if (rems.length || orders.length)
+          sub.textContent = `${rems.length} reminder · ${orders.length} order`;
+        else sub.textContent = "Reminders · Orders";
+      }
+      const pill = document.getElementById("aham-rx-pill");
+      if (pill && rems.length) pill.textContent = rems.length + " active";
+    } catch (e) {}
+  }
+
+  // ── MEAL FLOW ──
+  function renderMealStep(step) {
+    ST.mealStep = step;
+    const flow = document.getElementById("meal-flow");
+    const fam = loadFamily();
+
+    if (step === 0) {
+      flow.innerHTML = `
+      <p class="flow-q">Meal plan kiske liye banana hai?</p>
+      <div class="flow-choices">
+        <button class="flow-choice" onclick="mealFor('self')">🙋 Sirf Apne Liye</button>
+        ${fam.length ? `<button class="flow-choice" onclick="mealFor('family')">Poore Parivaar ke Liye (${fam.length} members)</button>` : ""}
+        <button class="flow-choice" onclick="mealFor('new_family')">Parivaar add karo pehle</button>
+      </div>`;
+    } else if (step === 1) {
+      flow.innerHTML = `
+      <p class="flow-q">Aapke fridge mein kya hai?</p>
+      <label class="meal-upload" for="fridge-img">
+        <div class="meal-upload-icon">📷</div>
+        <div class="meal-upload-text">Fridge ki photo khichein<br><span style="font-size:11px;color:var(--text3)">ya neeche text mein likhein</span></div>
+        <input type="file" id="fridge-img" accept="image/*" style="display:none" onchange="handleFridgePhoto(event)">
+      </label>
+      <div style="text-align:center;color:var(--text3);font-size:13px;margin-bottom:12px">— ya —</div>
+      <textarea class="flow-input" id="fridge-text" placeholder="Likho kya hai ghar mein: aloo, dal, chawal, tamatar..." rows="3" style="border-radius:var(--radius);resize:none"></textarea>
+      <button class="flow-next-btn" onclick="mealGenerate()">3-Din ka Plan Banao →</button>`;
+    } else if (step === 2) {
+      flow.innerHTML = `<div style="text-align:center;padding:40px 0"><div class="thinking-bub" style="display:inline-flex"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><p style="margin-top:16px;color:var(--text2)">Meal plan ban raha hai...</p></div>`;
+    }
+  }
+
+  function mealFor(type) {
+    if (type === "new_family") {
+      goTo("s-family");
+      return;
+    }
+    ST.mealData.for = type;
+    renderMealStep(1);
+  }
+
+  function handleFridgePhoto(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+      const b64 = ev.target.result.split(",")[1];
+      const fam = ST.mealData.for === "family" ? loadFamily() : [];
+      const profile = ST.userProfile || loadProfile();
+      const conds = [];
+      if (profile && profile.conditions) conds.push("User: " + profile.conditions);
+      for (const m of fam) {
+        const c = (m.conditions || "").trim();
+        if (c && c.toLowerCase() !== "no condition") conds.push(`${m.name} (${m.age}y): ${c}`);
+      }
+      const condCtx = conds.length
+        ? "\nHousehold chronic conditions to respect: " +
+          conds.join("; ") +
+          ". Avoid contraindicated foods."
+        : "";
+      const famInfo = fam.length
+        ? `\nFamily of ${fam.length} (${fam.map((m) => m.name).join(", ")})`
+        : "";
+      renderMealStep(2);
+      goTo("s-chat");
+      document.getElementById("chat-ctx-label").textContent = "Meal Planning";
+      ST.chatHistory = [];
+      ST.isFirstMsg = true;
+      addMsg("user", "📷 Fridge ki photo bheji hai", false);
+      callAIWithVision(
+        b64,
+        `Yeh meri fridge hai.${famInfo}${condCtx}\nAaj ke available ingredients dekh ke ek 3-din ka healthy Indian meal plan banao that RESPECTS the household chronic conditions. Breakfast, lunch, dinner. Indian dishes — roti, dal, sabzi, chawal. Simple aur nutritious.`,
+      );
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function mealGenerate() {
+    const text = document.getElementById("fridge-text").value.trim();
+    const fam = ST.mealData.for === "family" ? loadFamily() : [];
+    const profile = ST.userProfile || loadProfile();
+    // Build chronic-condition context — diet must respect each member's conditions
+    const conds = [];
+    if (profile && profile.scope) {
+      const selfCond = (profile.conditions || "").trim();
+      if (selfCond) conds.push("User (self): " + selfCond);
+    }
+    for (const m of fam) {
+      const c = (m.conditions || "").trim();
+      if (c && c.toLowerCase() !== "no condition") conds.push(`${m.name} (${m.age}y): ${c}`);
+    }
+    const condContext = conds.length
+      ? "IMPORTANT — household chronic conditions to respect in meal choices: " +
+        conds.join("; ") +
+        ". Avoid contraindicated foods (e.g., for Diabetes: low glycaemic; for BP: low sodium; for acidity: avoid spicy/fried)."
+      : "No chronic conditions reported in this household.";
+    const famInfo = fam.length
+      ? `Family ke liye (${fam.length} log): ${fam.map((m) => `${m.name} ${m.age}y`).join(", ")}`
+      : "Sirf apne liye";
+    const userMsg = `${famInfo}. ${condContext} Ghar mein available: ${text || "common Indian ingredients"}. 3-din ka healthy Indian meal plan banao — breakfast, lunch, dinner. Har meal mein portion aur ingredients batao.`;
+    goTo("s-chat");
+    document.getElementById("chat-ctx-label").textContent = "Meal Planning";
+    ST.chatHistory = [];
+    ST.isFirstMsg = true;
+    addMsg(
+      "user",
+      text ? `Available hai: ${text}` : "Common ingredients se meal plan banao",
+      false,
+    );
+    callAI(
+      userMsg,
+      `You are a nutrition expert specializing in Indian cuisine. Create practical, healthy 3-day meal plans using common Indian ingredients, RESPECTING the household chronic conditions provided. Format clearly: Day 1/2/3, then Breakfast/Lunch/Dinner. Keep portions realistic for Indian families. Include nutrients briefly. Respond in the same language the user uses. First line must be LANG:<code>.`,
+    );
+  }
+
+  // ── FAMILY ──
+  function loadFamily() {
+    try {
+      return JSON.parse(localStorage.getItem("ss_family") || "[]");
+    } catch (e) {
+      return [];
+    }
+  }
+  function saveFamily(f) {
+    localStorage.setItem("ss_family", JSON.stringify(f));
+  }
+
+  const EMOJIS_BY_GENDER = { Male: "M", Female: "F", Other: "?" };
+  const CONDITIONS = [
+    "Diabetes",
+    "BP High",
+    "Heart Problem",
+    "Thyroid",
+    "Arthritis",
+    "Asthma",
+    "Kidney Issue",
+    "No condition",
+  ];
+
+  function renderFamilyList() {
+    const fam = loadFamily();
+    const flow = document.getElementById("family-list");
+    if (fam.length === 0) {
+      flow.innerHTML = `<div class="empty-state"><div style="margin-bottom:8px"><img src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/icons/svg/ic_multiple_user.svg" width="48" height="48" style="filter:invert(.4)" alt=""></div><p>Abhi koi family member add nahi hai.<br>Add karo aur personalized health tips pao.</p></div><button class="add-family-btn" onclick="showAddFamily()">Family Member Add Karo</button>`;
+      return;
+    }
+    let html = `<button class="add-family-btn" onclick="showAddFamily()">Aur member add karo</button>`;
+    fam.forEach((m, i) => {
+      html += `<div class="family-member"><div class="family-avatar">${m.name[0].toUpperCase()}</div><div class="family-info"><div class="family-name">${m.name}</div><div class="family-meta">${m.age} saal • ${m.gender} • ${m.conditions || "Healthy"}</div>${m.phone ? `<div class="family-meta">${m.phone}</div>` : ""}</div><button style="background:none;border:none;cursor:pointer;color:var(--error);padding:8px" onclick="deleteFamily(${i})"><img src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/icons/svg/ic_trash_clear.svg" width="20" height="20" style="filter:invert(1) sepia(1) saturate(5) hue-rotate(300deg)" alt=""></button></div>`;
+    });
+    flow.innerHTML = html;
+  }
+
+  function deleteFamily(i) {
+    const fam = loadFamily();
+    fam.splice(i, 1);
+    saveFamily(fam);
+    renderFamilyList();
+  }
+
+  function showAddFamily() {
+    ST.familyAdd = {};
+    ST.condSelected = new Set();
+    const flow = document.getElementById("family-list");
+    flow.innerHTML = `
+    <p class="flow-q" style="margin-bottom:20px">Naya member add karo</p>
+    <div class="flow-tag">Naam *</div>
+    <input class="flow-input" id="fam-name" placeholder="Papa, Maa, Dadi...">
+    <div class="flow-tag">Aayu (saal) *</div>
+    <input class="flow-input" id="fam-age" type="number" placeholder="45">
+    <div class="flow-tag">Gender *</div>
+    <div class="flow-choices" style="flex-direction:row;flex-wrap:wrap;gap:8px;margin-bottom:20px">
+      <button class="flow-choice" style="flex:1;min-width:80px" onclick="selectGender(this,'Male')">Male</button>
+      <button class="flow-choice" style="flex:1;min-width:80px" onclick="selectGender(this,'Female')">Female</button>
+      <button class="flow-choice" style="flex:1;min-width:80px" onclick="selectGender(this,'Other')">🧑 Other</button>
+    </div>
+    <div class="flow-tag">Height & Weight (optional)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+      <input class="flow-input" id="fam-height" placeholder="Height (cm)" style="margin:0">
+      <input class="flow-input" id="fam-weight" placeholder="Weight (kg)" style="margin:0">
+    </div>
+    <div class="flow-tag">Koi beemari hai?</div>
+    <div class="conditions-grid">${CONDITIONS.map((c) => `<button class="cond-chip" onclick="toggleCond(this,'${c}')">${c}</button>`).join("")}</div>
+    <div class="flow-tag">Jio Phone Number (optional)</div>
+    <input class="flow-input" id="fam-phone" placeholder="9876543210" type="tel">
+    <button class="flow-next-btn" onclick="saveFamilyMember()">Add Karo</button>
+    <button class="flow-next-btn" style="background:var(--surface);color:var(--text)" onclick="renderFamilyList()">Cancel</button>
+  `;
+  }
+
+  function selectGender(el, val) {
+    document
+      .querySelectorAll("#family-list .flow-choice")
+      .forEach((b) => b.classList.remove("selected"));
+    el.classList.add("selected");
+    ST.familyAdd.gender = val;
+  }
+
+  function toggleCond(el, val) {
+    el.classList.toggle("selected");
+    if (ST.condSelected.has(val)) ST.condSelected.delete(val);
+    else ST.condSelected.add(val);
+  }
+
+  function saveFamilyMember() {
+    const name = document.getElementById("fam-name").value.trim();
+    const age = document.getElementById("fam-age").value.trim();
+    if (!name || !age) {
+      showToast("Naam aur aayu zaruri hai");
+      return;
+    }
+    const member = {
+      name,
+      age,
+      gender: ST.familyAdd.gender || "Other",
+      height: document.getElementById("fam-height").value,
+      weight: document.getElementById("fam-weight").value,
+      conditions: [...ST.condSelected].filter((c) => c !== "No condition").join(", ") || "",
+      phone: document.getElementById("fam-phone").value,
+    };
+    const fam = loadFamily();
+    fam.push(member);
+    saveFamily(fam);
+    showToast(`${name} add ho gaye!`);
+    // Show follow-up suggestions instead of dead-ending on the family list
+    const flow = document.getElementById("family-list");
+    if (flow) {
+      flow.innerHTML = `
+      <div style="text-align:center;padding:30px 16px 20px">
+        <div style="font-size:48px;margin-bottom:12px">🎉</div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:6px">${name} jud gaye!</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:24px">${name} ke liye Sehat Saathi ab dekhbhal karega.</div>
+        <div style="display:flex;flex-direction:column;gap:8px;max-width:320px;margin:0 auto">
+          <button class="lab-cta" onclick="goToFeature('lab')">🧪 ${name} ki lab report jodein</button>
+          <button class="lab-cta secondary" onclick="goToFeature('medicine')">💊 ${name} ke liye dawai reminder</button>
+          <button class="lab-cta secondary" onclick="renderFamilyList()">👨‍👩‍👧 Family list dekhein</button>
+          <button class="lab-cta secondary" onclick="goTo('s-hub')">← Wapas Sehat Saathi</button>
+        </div>
+      </div>`;
+    }
+  }
+
+  // ── BREATHWORK ──
+  const BREATH_PHASES = [
+    { name: "Saans Lo", instr: "Naak se dheere saans andar lo...", color: "#1eccb0", scale: 1.4 },
+    { name: "Rokho", instr: "Andar rokho — bilkul shaant...", color: "#f7ab20", scale: 1.4 },
+    {
+      name: "Saans Bahar",
+      instr: "Muh se dheere saans bahar nikalo...",
+      color: "#3535f3",
+      scale: 0.82,
+    },
+    { name: "Rokho", instr: "Bahar rokho — ek baar aur...", color: "#f7ab20", scale: 0.82 },
+  ];
+
+  function startBreath() {
+    if (ST.breathRunning) {
+      stopBreath();
+      return;
+    }
+    ST.breathRunning = true;
+    ST.breathPhaseIdx = 0;
+    ST.breathRounds = 0;
+    document.getElementById("breath-btn").textContent = "Band Karo";
+    document.getElementById("breath-intro").style.display = "none";
+    document.getElementById("breath-count").style.display = "block";
+    runBreathPhase();
+  }
+
+  function runBreathPhase() {
+    if (!ST.breathRunning) return;
+    if (ST.breathRounds >= 4) {
+      stopBreath();
+      return;
+    }
+    const phase = BREATH_PHASES[ST.breathPhaseIdx];
+    const ring = document.getElementById("breath-ring");
+    const glow = document.getElementById("breath-glow");
+    document.getElementById("breath-phase").textContent = phase.name;
+    document.getElementById("breath-instr").textContent = phase.instr;
+    ring.style.transform = `scale(${phase.scale})`;
+    ring.style.borderColor = phase.color;
+    glow.style.background = phase.color + "22";
+
+    let count = 4;
+    document.getElementById("breath-count").textContent = count;
+    speak(phase.name, true);
+
+    ST.breathTimer = setInterval(() => {
+      count--;
+      if (count <= 0) {
+        clearInterval(ST.breathTimer);
+        ST.breathPhaseIdx = (ST.breathPhaseIdx + 1) % 4;
+        if (ST.breathPhaseIdx === 0) ST.breathRounds++;
+        setTimeout(runBreathPhase, 200);
+      } else {
+        document.getElementById("breath-count").textContent = count;
+      }
+    }, 1000);
+  }
+
+  function stopBreath() {
+    ST.breathRunning = false;
+    clearInterval(ST.breathTimer);
+    const ring = document.getElementById("breath-ring");
+    ring.style.transform = "";
+    ring.style.borderColor = "";
+    document.getElementById("breath-phase").textContent = "Bahut accha kiya! 🙏";
+    document.getElementById("breath-count").style.display = "none";
+    document.getElementById("breath-instr").textContent =
+      "Regular practice se tension aur anxiety mein kaafi fark padta hai.";
+    document.getElementById("breath-btn").textContent = "Phir Se Karo";
+    document.getElementById("breath-intro").style.display = "block";
+    ST.breathRunning = false;
+    // Show follow-up next steps after a moment (no dead end)
+    setTimeout(() => {
+      const body =
+        document.querySelector("#s-breathwork .body") || document.getElementById("s-breathwork");
+      if (!body || document.getElementById("breath-followups")) return;
+      const fu = document.createElement("div");
+      fu.id = "breath-followups";
+      fu.style.cssText =
+        "display:flex;flex-direction:column;gap:8px;margin-top:18px;width:100%;max-width:300px";
+      fu.innerHTML = `
+      <button class="lab-cta secondary" style="margin:0" onclick="document.getElementById('breath-followups').remove();goToFeature('community')">💬 Apke jaise logo se baat karein</button>
+      <button class="lab-cta secondary" style="margin:0" onclick="document.getElementById('breath-followups').remove();goToFeature('wellness')">🌟 Wellness baat karein</button>
+      <button class="lab-cta secondary" style="margin:0" onclick="document.getElementById('breath-followups').remove();goTo('s-hub')">← Wapas Sehat Saathi</button>`;
+      body.appendChild(fu);
+    }, 1200);
+  }
+
+  // ── Stretch guide ──
+  function showStretchGuide() {
+    const d = document.getElementById("s-breathwork");
+    document.getElementById("breath-screen-title").textContent = "Gentle Stretch";
+    goTo("s-breathwork");
+    document.getElementById("breath-ring-wrap") &&
+      (document.getElementById("breath-ring-wrap").style.display = "none");
+    const steps = [
+      [
+        "Gardan ghuma",
+        "Dheere dheere sar ko left phir right ghumao — 5 baar. Akadhan khatam hoti hai.",
+      ],
+      [
+        "Kaandhe uthao",
+        "Dono kaandhe kaanon tak uthao, 5 second rokho, phir chhod do. 5 baar repeat karo.",
+      ],
+      ["Pair failao", "Kursi pe baith ke ek pair seedha karo, 10 second rokho. Dono taraf karo."],
+      [
+        "Haath uppar",
+        "Dono haath sir ke upar le jao, fingers interlock karo, aur uppar ki taraf kheencho. 10 second.",
+      ],
+      [
+        "Deep breath",
+        "Ab ek lambi saans lo, andar rokho 4 second, phir dheere dheere bahar nikalo. 3 baar.",
+      ],
+    ];
+    const wrap = document.getElementById("stretch-steps-wrap");
+    wrap.style.display = "block";
+    wrap.innerHTML = steps
+      .map(
+        (s, i) =>
+          `<div class="stretch-step"><div class="stretch-num">${i + 1}</div><div><div style="font-weight:700;margin-bottom:4px">${s[0]}</div><div class="stretch-text" style="color:var(--text2)">${s[1]}</div></div></div>`,
+      )
+      .join("");
+  }
+
+  function showPressureGuide() {
+    goTo("s-breathwork");
+    document.getElementById("breath-screen-title").textContent = "Pressure Points";
+    document.getElementById("breath-phase").textContent = "Sir Dard ke Pressure Points";
+    document.getElementById("breath-instr").innerHTML =
+      `<span style="display:block;margin-bottom:8px"><b>Kanapaati (Temples)</b> — dono taraf 2 ungli rakh ke 30 second circular motion mein dabao</span><span style="display:block;margin-bottom:8px"><b>Matha Centre (LI4)</b> — bhaun ke beech mein — 1 minute gentle pressure</span><span style="display:block"><b>Haath ka LI4 point</b> — angoothe aur tarjani ke beech — 2 minute dono haath pe</span>`;
+    document.getElementById("breath-btn").textContent = "Breathing Bhi Karo";
+    document.getElementById("breath-btn").onclick = startBreath;
+    document.getElementById("breath-count").style.display = "none";
+    document.getElementById("breath-ring").style.opacity = "0.3";
+  }
+
+  // ── v3: Sarvam STT (MediaRecorder → Saarika) ──
+  let _mediaRecorder = null;
+  let _audioChunks = [];
+
+  // ── v3.7: Hands-free conversation mode (Claude/Gemini-style) ──
+  // Tap Speak once → continuous loop: listen → silence-detect → STT → AI → TTS → auto-restart listen
+  let _convActive = false;
+  let _convStream = null;
+  let _convAudioCtx = null;
+  let _convRecorder = null;
+  let _convTickTimer = null;
+  let _convResumeTimer = null;
+
+  async function toggleVoice(target) {
+    if (_convActive) {
+      stopVoice();
+      return;
+    }
+    ST.voiceTarget = target;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showToast("Mic abhi available nahi — text mein likhein");
+      return;
+    }
+    _convActive = true;
+    ST.isListening = true;
+    // v4: clear transcript area each time the conversation starts
+    const ta = document.getElementById("voice-transcript-area");
+    if (ta) ta.innerHTML = "";
+    showVoiceOverlay(target);
+    setVoiceState("listening");
+    await convListenOnce();
+  }
+
+  // v4: Append a line to the in-overlay live transcript area
+  function appendVoiceLine(role, text, opts) {
+    const ta = document.getElementById("voice-transcript-area");
+    if (!ta) return null;
+    const line = document.createElement("div");
+    line.className = "voice-line " + role + (opts && opts.thinking ? " thinking" : "");
+    if (role === "thinking") {
+      line.className = "voice-line thinking";
+      line.textContent = text;
+    } else {
+      const lbl = document.createElement("span");
+      lbl.className = "voice-line-lbl";
+      lbl.textContent = role === "user" ? "Aap ne kaha" : "Saathi";
+      const body = document.createElement("div");
+      body.textContent = text;
+      line.appendChild(lbl);
+      line.appendChild(body);
+    }
+    ta.appendChild(line);
+    ta.scrollTop = ta.scrollHeight;
+    return line;
+  }
+  function removeVoiceThinkingLine() {
+    document
+      .querySelectorAll("#voice-transcript-area .voice-line.thinking")
+      .forEach((n) => n.remove());
+  }
+  // v4: Animate bars from analyser data
+  function _setBarsFromLevel(avg) {
+    const bars = document.querySelectorAll("#voice-bars .voice-bar");
+    if (!bars.length) return;
+    // avg is 0-255; map to 8-58 px height with simple per-bar variation
+    const base = Math.min(58, Math.max(8, (avg - 6) * 1.2));
+    bars.forEach((b, i) => {
+      const variance = (Math.sin(Date.now() / 90 + i) + 1) * 0.5; // 0..1
+      b.style.height = Math.round(8 + (base - 8) * (0.55 + 0.45 * variance)) + "px";
+    });
+  }
+  function _setBarsIdle() {
+    const wrap = document.getElementById("voice-bars");
+    if (wrap) wrap.classList.add("idle");
+    document.querySelectorAll("#voice-bars .voice-bar").forEach((b) => {
+      b.style.height = "8px";
+    });
+  }
+  function _setBarsThinking() {
+    const wrap = document.getElementById("voice-bars");
+    if (!wrap) return;
+    wrap.classList.remove("idle");
+    wrap.classList.add("thinking");
+    document.querySelectorAll("#voice-bars .voice-bar").forEach((b) => {
+      b.style.height = "";
+    });
+  }
+  function _setBarsListening() {
+    const wrap = document.getElementById("voice-bars");
+    if (!wrap) return;
+    wrap.classList.remove("idle", "thinking");
+  }
+
+  async function convListenOnce() {
+    if (!_convActive) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      _convStream = stream;
+      _audioChunks = [];
+      const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/mp4")
+          ? "audio/mp4"
+          : "";
+      _convRecorder = mime
+        ? new MediaRecorder(stream, { mimeType: mime })
+        : new MediaRecorder(stream);
+      _convRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size) _audioChunks.push(e.data);
+      };
+      _convRecorder.onstop = async () => {
+        try {
+          stream.getTracks().forEach((t) => t.stop());
+        } catch (e) {}
+        try {
+          if (_convAudioCtx) _convAudioCtx.close();
+        } catch (e) {}
+        _convAudioCtx = null;
+        const blob = new Blob(_audioChunks, { type: _convRecorder.mimeType || "audio/webm" });
+        if (!_convActive) return;
+        // If recording was too short, resume listening (user might have tapped before speaking)
+        if (blob.size < 1500) {
+          setTimeout(convListenOnce, 200);
+          return;
+        }
+        setVoiceState("thinking");
+        const transcript = await transcribeWithSarvam(blob);
+        if (!transcript) {
+          setVoiceState("listening");
+          if (_convActive) setTimeout(convListenOnce, 300);
+          return;
+        }
+        // Send to AI and play reply
+        await convHandleTranscript(transcript);
+        // After reply finishes, resume listening
+        if (_convActive) {
+          setVoiceState("listening");
+          _convResumeTimer = setTimeout(convListenOnce, 350);
+        }
+      };
+
+      // Set up silence detection via Web Audio
+      try {
+        _convAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const source = _convAudioCtx.createMediaStreamSource(stream);
+        const analyser = _convAudioCtx.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        let speechSeen = false;
+        let silenceMs = 0;
+        let elapsed = 0;
+        const SILENCE_THRESHOLD = 14; // RMS-ish on 0-255 scale
+        const SILENCE_HANG_MS = 1500; // 1.5s of silence after speech → stop
+        const MAX_RECORD_MS = 25000; // hard cap 25s
+        const NO_SPEECH_TIMEOUT = 6000; // stop if no speech detected at all in 6s
+        const tick = () => {
+          if (!_convActive || !_convRecorder || _convRecorder.state === "inactive") return;
+          analyser.getByteFrequencyData(data);
+          let sum = 0;
+          for (let i = 0; i < data.length; i++) sum += data[i];
+          const avg = sum / data.length;
+          // v4: drive live mic-level bars in the overlay
+          _setBarsFromLevel(avg);
+          elapsed += 100;
+          if (avg > SILENCE_THRESHOLD) {
+            speechSeen = true;
+            silenceMs = 0;
+          } else if (speechSeen) {
+            silenceMs += 100;
+            if (silenceMs >= SILENCE_HANG_MS) {
+              try {
+                _convRecorder.stop();
+              } catch (e) {}
+              return;
+            }
+          }
+          if (elapsed >= MAX_RECORD_MS || (!speechSeen && elapsed >= NO_SPEECH_TIMEOUT)) {
+            try {
+              _convRecorder.stop();
+            } catch (e) {}
+            return;
+          }
+          _convTickTimer = setTimeout(tick, 100);
+        };
+        _convTickTimer = setTimeout(tick, 400); // 400ms warm-up
+      } catch (e) {
+        console.warn("[conv] silence detection unavailable, falling back to fixed 8s", e);
+        // Fallback: stop after 8s
+        setTimeout(() => {
+          try {
+            _convRecorder.stop();
+          } catch (_) {}
+        }, 8000);
+      }
+      _convRecorder.start();
+    } catch (e) {
+      showToast("Mic ka permission chahiye");
+      console.error("[conv] mic error:", e);
+      stopVoice();
+    }
+  }
+
+  async function convHandleTranscript(transcript) {
+    const target = ST.voiceTarget || "chat";
+    // v4: Show user's spoken text in the overlay BEFORE sending to AI
+    appendVoiceLine("user", transcript);
+    if (target === "chat") {
+      addMsg("user", transcript, false);
+      setVoiceState("thinking");
+      appendVoiceLine("thinking", "Soch rahi hoon...");
+      // Wrap callAI so we know when it's done speaking (roughly when audio finishes)
+      await new Promise((resolve) => {
+        const _origSpeak = window.speak;
+        let resolved = false;
+        // Hook: when next addMsg(bot) is called → wait for speech to finish
+        const replyHook = (role) => {
+          if (role === "bot" && !resolved) {
+            // Wait for current audio to end, OR 12s max
+            const start = Date.now();
+            const checkDone = () => {
+              const noAudioPlaying = !_currentAudio || _currentAudio.paused || _currentAudio.ended;
+              if (noAudioPlaying || Date.now() - start > 12000) {
+                if (!resolved) {
+                  resolved = true;
+                  resolve();
+                }
+              } else {
+                setTimeout(checkDone, 250);
+              }
+            };
+            setVoiceState("speaking");
+            setTimeout(checkDone, 1500); // give TTS time to start
+          }
+        };
+        // Patch addMsg only to detect when bot reply lands (mirror is handled inside addMsg itself)
+        const origAddMsg = window.addMsg;
+        window.addMsg = function (role, text, showBadge) {
+          const r = origAddMsg.apply(this, arguments);
+          replyHook(role);
+          return r;
+        };
+        callAI(transcript, getSystemPromptFor(ST.chatCtx)).finally(() => {
+          // Restore addMsg
+          window.addMsg = origAddMsg;
+          // Safety net — if TTS never starts, resolve in 8s
+          setTimeout(() => {
+            if (!resolved) {
+              resolved = true;
+              resolve();
+            }
+          }, 8000);
+        });
+      });
+    } else {
+      // Hub: route the transcript through the hub flow → opens chat → AI replies
+      setVoiceState("thinking");
+      appendVoiceLine("thinking", "Soch rahi hoon...");
+      const inp = document.getElementById("hub-input");
+      if (inp) {
+        inp.value = transcript;
+      }
+      // Switch to chat target after first turn so subsequent turns continue in chat
+      ST.voiceTarget = "chat";
+      hubSend();
+      // Wait briefly so chat opens & first reply lands; addMsg will mirror bot reply
+      await new Promise((r) => setTimeout(r, 4500));
+      setVoiceState("speaking");
+    }
+  }
+
+  function setVoiceState(state) {
+    // state: 'listening' | 'thinking' | 'speaking'
+    const pill = document.getElementById("voice-state-pill");
+    const hint = document.getElementById("voice-hint");
+    if (pill) {
+      pill.classList.remove("thinking", "speaking");
+      if (state === "listening") {
+        pill.textContent = "Sun rahi hoon";
+      } else if (state === "thinking") {
+        pill.textContent = "Soch rahi hoon";
+        pill.classList.add("thinking");
+      } else if (state === "speaking") {
+        pill.textContent = "Bata rahi hoon";
+        pill.classList.add("speaking");
+      }
+    }
+    if (hint) {
+      if (state === "listening") hint.textContent = "Bolein... ya rukne ke liye band karein";
+      else if (state === "thinking") hint.textContent = "Aapki baat samjh rahi hoon";
+      else if (state === "speaking") hint.textContent = "Suno... aap baad mein bhi bol sakte ho";
+    }
+    if (state === "listening") _setBarsListening();
+    else if (state === "thinking") _setBarsThinking();
+    else if (state === "speaking") _setBarsThinking();
+  }
+
+  function showVoiceOverlay(target) {
+    const ov = document.getElementById("voice-ov");
+    if (ov) ov.classList.add("on");
+    const btn = document.getElementById(target === "chat" ? "chat-speak" : "hub-speak");
+    const lbl = document.getElementById(target === "chat" ? "chat-speak-lbl" : "hub-speak-lbl");
+    if (btn) btn.classList.add("listening");
+    if (lbl) lbl.textContent = "Ruko...";
+  }
+  function hideVoiceOverlay() {
+    const ov = document.getElementById("voice-ov");
+    if (ov) ov.classList.remove("on");
+    const cBtn = document.getElementById("chat-speak"),
+      hBtn = document.getElementById("hub-speak");
+    if (cBtn) cBtn.classList.remove("listening");
+    if (hBtn) hBtn.classList.remove("listening");
+    const cLbl = document.getElementById("chat-speak-lbl"),
+      hLbl = document.getElementById("hub-speak-lbl");
+    if (cLbl) cLbl.textContent = "Speak";
+    if (hLbl) hLbl.textContent = "Speak";
+    ST.isListening = false;
+  }
+
+  function stopVoice() {
+    _convActive = false;
+    if (_convTickTimer) {
+      clearTimeout(_convTickTimer);
+      _convTickTimer = null;
+    }
+    if (_convResumeTimer) {
+      clearTimeout(_convResumeTimer);
+      _convResumeTimer = null;
+    }
+    try {
+      if (_convRecorder && _convRecorder.state !== "inactive") _convRecorder.stop();
+    } catch (e) {}
+    try {
+      if (_convStream) _convStream.getTracks().forEach((t) => t.stop());
+    } catch (e) {}
+    try {
+      if (_convAudioCtx) _convAudioCtx.close();
+    } catch (e) {}
+    _convStream = null;
+    _convAudioCtx = null;
+    _convRecorder = null;
+    // Stop any in-progress TTS audio so the loop ends cleanly
+    if (_currentAudio) {
+      try {
+        _currentAudio.pause();
+      } catch (e) {}
+      _currentAudio = null;
+    }
+    hideVoiceOverlay();
+  }
+
+  async function transcribeWithSarvam(audioBlob) {
+    if (!SARVAM_KEY || SARVAM_KEY.length < 20 || SARVAM_KEY.includes("REPLACE")) {
+      showToast("Voice abhi ready nahi — text mein likhein");
+      return "";
+    }
+    try {
+      // Match file extension to actual MIME type (Sarvam infers format from filename)
+      const mt = (audioBlob.type || "").toLowerCase();
+      const ext = mt.includes("webm")
+        ? "webm"
+        : mt.includes("mp4")
+          ? "mp4"
+          : mt.includes("mpeg")
+            ? "mp3"
+            : mt.includes("wav")
+              ? "wav"
+              : "webm";
+      const fd = new FormData();
+      fd.append("file", audioBlob, "rec." + ext);
+      fd.append("model", "saarika:v2.5");
+      fd.append("language_code", ST.currentLanguage || "hi-IN");
+      fd.append("with_timestamps", "false");
+      const res = await fetch("https://api.sarvam.ai/speech-to-text", {
+        method: "POST",
+        headers: { "api-subscription-key": SARVAM_KEY },
+        body: fd,
+      });
+      if (!res.ok) {
+        const errTxt = await res.text();
+        console.error("[Sarvam STT]", res.status, errTxt);
+        showToast(
+          "Voice problem: " +
+            (res.status === 401
+              ? "API key invalid"
+              : res.status === 400
+                ? "Audio format"
+                : "Network"),
+        );
+        return "";
+      }
+      const data = await res.json();
+      const txt = (data.transcript || "").trim();
+      if (!txt) console.warn("[Sarvam STT] empty transcript", data);
+      return txt;
+    } catch (e) {
+      console.error("[Sarvam STT] failed", e);
+      showToast("Voice ka kuch problem aaya");
+      return "";
+    }
+  }
+  // ── v3: Sarvam TTS (Bulbul) — replaces Web Speech API ──
+  const SARVAM_SPEAKERS = { dadi: "manisha", maa: "anushka", saathi: "vidya" }; // v3.5: Bulbul v2 — 3x faster than v3 (median 2s vs 6s); warm female voices
+  const SARVAM_LANG_MAP = {
+    "hi-IN": "hi-IN",
+    "mr-IN": "hi-IN",
+    "bn-IN": "bn-IN",
+    "ta-IN": "ta-IN",
+    "te-IN": "te-IN",
+    "kn-IN": "kn-IN",
+    "ml-IN": "ml-IN",
+    "gu-IN": "gu-IN",
+    "pa-IN": "pa-IN",
+    // Short codes (LANG: prefix variants)
+    hi: "hi-IN",
+    mr: "hi-IN",
+    bn: "bn-IN",
+    ta: "ta-IN",
+    te: "te-IN",
+    kn: "kn-IN",
+    ml: "ml-IN",
+    gu: "gu-IN",
+    pa: "pa-IN",
+    en: "en-IN",
+  };
+  let _currentAudio = null;
+
+  // v3.3: cache Roman → Devanagari transliterations to avoid re-billing same text
+  const _translitCache = new Map();
+  async function transliterateToDevanagari(text, langCode) {
+    if (!text) return text;
+    // v3.5: normalize cache key (case + whitespace) for higher hit rate
+    const cacheKey = text.toLowerCase().replace(/\s+/g, " ").trim();
+    if (_translitCache.has(cacheKey)) return _translitCache.get(cacheKey);
+    // v3.5: skip transliteration for very short text (3 words or less) — Bulbul handles short phrases OK
+    if (text.length < 16 && text.split(/\s+/).length <= 3) return text;
+    // v3.5: skip if text is mostly English (no Hindi loanwords) — heuristic: very few short Devanagari-ish trigrams
+    if (
+      !/\b(beta|beti|hai|nahi|kya|mein|aap|tum|hum|pet|sir|sehat|ghar|nushka|takleef|dard|paani|chai|doodh|namaste|nasha|saans|neend|bukhar|khaaya|piya|kiya|raha|rahi|rahe|aaj|kal|subah|sham|raat|dopahar|theek|achha|achhi|acche|wah|haldi|adrak|ajwain|tulsi|jeera)\b/i.test(
+        text,
+      )
+    )
+      return text;
+    if (!SARVAM_KEY || SARVAM_KEY.length < 20 || SARVAM_KEY.includes("REPLACE")) return text;
+    try {
+      const target = langCode && langCode.length === 5 ? langCode : "hi-IN";
+      const _tStart = performance.now();
+      const res = await fetch("https://api.sarvam.ai/transliterate", {
+        method: "POST",
+        headers: { "api-subscription-key": SARVAM_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          input: text.length > 950 ? text.substring(0, 950) : text,
+          source_language_code: target,
+          target_language_code: target,
+          spoken_form: true,
+          numerals_format: "international",
+        }),
+      });
+      console.info("[Transliterate]", Math.round(performance.now() - _tStart), "ms");
+      if (!res.ok) {
+        const errTxt = await res.text();
+        console.warn("[transliterate]", res.status, errTxt);
+        return text; // fall back to original
+      }
+      const data = await res.json();
+      const out = (data.transliterated_text || text).trim();
+      _translitCache.set(cacheKey, out);
+      if (_translitCache.size > 200) {
+        // evict oldest entry to bound memory
+        const firstKey = _translitCache.keys().next().value;
+        _translitCache.delete(firstKey);
+      }
+      return out;
+    } catch (e) {
+      console.warn("[transliterate] failed, using original", e);
+      return text;
+    }
+  }
+
+  // ── v3.7: ElevenLabs opt-in TTS (faster + more natural; user must paste their key) ──
+  async function speakElevenLabs(text, opts) {
+    const key = localStorage.getItem("ss_elevenlabs_key");
+    if (!key || key.length < 20) return false;
+    const voiceId = localStorage.getItem("ss_elevenlabs_voice") || "EXAVITQu4vr4xnSDxMaL"; // Sarah default
+    if (_currentAudio) {
+      try {
+        _currentAudio.pause();
+      } catch (e) {}
+      _currentAudio = null;
+    }
+    try {
+      const _t = performance.now();
+      const speakText = (opts && opts.ttsText) || text;
+      const res = await fetch(
+        "https://api.elevenlabs.io/v1/text-to-speech/" +
+          voiceId +
+          "/stream?optimize_streaming_latency=4&output_format=mp3_44100_128",
+        {
+          method: "POST",
+          headers: { "xi-api-key": key, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: speakText.length > 800 ? speakText.substring(0, 800) : speakText,
+            model_id: "eleven_flash_v2_5",
+            voice_settings: {
+              stability: 0.45,
+              similarity_boost: 0.75,
+              style: 0.3,
+              use_speaker_boost: true,
+            },
+          }),
+        },
+      );
+      if (!res.ok) {
+        const errTxt = await res.text();
+        console.warn("[ElevenLabs]", res.status, errTxt);
+        return false; // fall back to Sarvam
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      console.info(
+        "[TTS-EL]",
+        voiceId,
+        Math.round(performance.now() - _t),
+        "ms",
+        "·",
+        speakText.length,
+        "chars",
+      );
+      _currentAudio = new Audio(url);
+      _currentAudio.onended = () => {
+        try {
+          URL.revokeObjectURL(url);
+        } catch (e) {}
+      };
+      await _currentAudio.play();
+      return true;
+    } catch (e) {
+      console.warn("[ElevenLabs] failed", e);
+      return false;
+    }
+  }
+
+  // User-facing helper: paste key (called from voice picker in v3.7+)
+  function setElevenLabsKey() {
+    const cur = localStorage.getItem("ss_elevenlabs_key") || "";
+    const key = prompt(
+      "ElevenLabs API key paste karein (sk_... ya xi-...). Khali chhodne par delete ho jaayegi.\n\nCurrent: " +
+        (cur ? cur.substring(0, 8) + "..." : "none"),
+    );
+    if (key === null) return;
+    if (key.trim().length === 0) {
+      localStorage.removeItem("ss_elevenlabs_key");
+      showToast("ElevenLabs hata di — Sarvam wapas active");
+    } else if (key.length < 20) {
+      showToast("Key chhoti lagti hai — dobara try karein");
+    } else {
+      localStorage.setItem("ss_elevenlabs_key", key.trim());
+      showToast("ElevenLabs ready! 🎙️ Faster + warmer voice");
+    }
+  }
+
+  async function speak(text, opts) {
+    if (!text) return;
+    // v3.7: try ElevenLabs first if user pasted a key (faster + more natural)
+    if (await speakElevenLabs(text, opts)) return;
+    // opts: { quiet, ttsText } — if ttsText provided, speak THAT (caller-supplied Devanagari) and skip transliteration.
+    const quiet = opts && opts.quiet;
+    const callerTtsText = opts && opts.ttsText;
+    if (_currentAudio) {
+      try {
+        _currentAudio.pause();
+      } catch (e) {}
+      _currentAudio = null;
+    }
+    if (!SARVAM_KEY || SARVAM_KEY.length < 20 || SARVAM_KEY.includes("REPLACE")) {
+      if (!quiet) console.info("[speak] SARVAM_KEY missing — skipping TTS");
+      return;
+    }
+    try {
+      // v3.3: Detect script → if Roman/Hinglish, transliterate to the target Indian script BEFORE TTS so Bulbul speaks natural Hindi (not letter-by-letter phonemes).
+      const detected = detectLang(text);
+      const targetLangCode =
+        detected.script !== "roman"
+          ? SARVAM_LANG_MAP[detected.code] || "hi-IN"
+          : SARVAM_LANG_MAP[ST.currentLanguage] || "hi-IN";
+      let speakText = callerTtsText || text;
+      // If caller didn't supply Devanagari version AND text is Roman, transliterate to target script first.
+      if (!callerTtsText && detected.script === "roman" && targetLangCode.startsWith("hi")) {
+        speakText = await transliterateToDevanagari(text, targetLangCode);
+      }
+      const speaker =
+        localStorage.getItem("ss_voice_pref") ||
+        SARVAM_SPEAKERS[ST.persona] ||
+        SARVAM_SPEAKERS.dadi;
+      const _t0 = performance.now();
+      const res = await fetch("https://api.sarvam.ai/text-to-speech", {
+        method: "POST",
+        headers: { "api-subscription-key": SARVAM_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          inputs: [speakText.length > 500 ? speakText.substring(0, 500) : speakText],
+          target_language_code: targetLangCode,
+          speaker,
+          pitch: 0,
+          pace: 0.85,
+          loudness: 1.4,
+          speech_sample_rate: 22050,
+          enable_preprocessing: true,
+          model: "bulbul:v2",
+        }),
+      });
+      if (!res.ok) {
+        const errTxt = await res.text();
+        console.error("[Sarvam TTS]", res.status, errTxt);
+        return;
+      }
+      console.info(
+        "[TTS]",
+        speaker,
+        Math.round(performance.now() - _t0),
+        "ms",
+        "·",
+        speakText.length,
+        "chars",
+      );
+      const data = await res.json();
+      if (data.audios && data.audios[0]) {
+        _currentAudio = new Audio("data:audio/wav;base64," + data.audios[0]);
+        _currentAudio.play().catch((e) => console.warn("[speak] autoplay blocked", e));
+      }
+    } catch (e) {
+      console.error("[Sarvam TTS] failed", e);
+    }
+  }
+
+  // ── Updates audio ──
+  function playUpdateAudio(btn, type) {
+    const texts = {
+      cricket:
+        "IPL 2026 mein aaj ka sabse bada match! Mumbai Indians aur Chennai Super Kings aaj sham saat baje wankhede stadium mein aapas mein takrayenge. Rohit Sharma ne kaha — aaj kuch khaas hoga!",
+    };
+    const txt = texts[type] || "Jaldi aayega!";
+    speak(txt);
+  }
+
+  // ── Toast ──
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
+  }
+  function showComingSoon() {
+    showToast("Jald aa raha hai");
+  }
+
+  // ── Init ──
+  window.addEventListener("load", () => {
+    // Back-to-shell navigation — attached here so it works regardless of React hydration.
+    // In production (Capacitor, no iframe) sets window.location directly.
+    // In dev (cross-origin iframe) sends a postMessage that the shell's /health page listens for.
+    const backBtn = document.getElementById("btn-back-to-shell");
+    if (backBtn) {
+      backBtn.addEventListener("click", function () {
+        try {
+          // Works in production and when top-frame is same origin.
+          window.top.location.href = "/";
+        } catch (_) {
+          // Cross-origin iframe (dev: shell port 3000, health port 3004).
+          window.parent.postMessage({ type: "health:navigate", href: "/" }, "*");
+        }
+      });
+    }
+
+    reloadSavedReminders();
+    ST.userProfile = loadProfile();
+    ST.recentFeatures = loadRecentFeatures();
+    renderQuickActions();
+    initHubDynamic();
+    // v3: Voice now uses Sarvam STT/TTS via MediaRecorder; no Web Speech detection needed.
+    // Speak buttons stay visible — if mic permission denied, toggleVoice() shows a toast.
+
+    // Hub: toggle send/speak based on input content
+    const hubInp = document.getElementById("hub-input");
+    const hubSendBtn = document.getElementById("hub-send-btn");
+    const hubSpeakBtn = document.getElementById("hub-speak");
+    if (hubInp) {
+      hubInp.addEventListener("input", () => {
+        const hasText = hubInp.value.trim().length > 0;
+        if (hubSendBtn) hubSendBtn.style.display = hasText ? "" : "none";
+        // v3: Sarvam works in any browser with mic permission — toggle Speak only on text presence
+        if (hubSpeakBtn) hubSpeakBtn.style.display = hasText ? "none" : "";
+      });
+    }
+  });
+
+  // ── v4: Nushke recipe kits — in-app step-by-step animation (no external video) ──
+  const REMEDY_KITS = {
+    "haldi-doodh": {
+      kw: ["haldi", "turmeric", "golden milk"],
+      emoji: "🥛",
+      title: "Haldi wala doodh",
+      durSec: 180,
+      ingredients: "1 cup doodh · ¼ chamach haldi · pinch kali mirch · ½ chamach gud",
+      steps: [
+        "Ek cup doodh halki aanch par garam karo.",
+        "¼ chamach haldi + chutki bhar kali mirch daalo.",
+        "2-3 minute dheere chalate raho — ubaal nahi.",
+        "Aanch band karo. Halka thanda hone do.",
+        "Gud ya shahad mila lo. Sone se 30 min pehle piyo.",
+      ],
+    },
+    "ajwain-bhaap": {
+      kw: ["ajwain"],
+      emoji: "🌾",
+      title: "Ajwain ki bhaap",
+      durSec: 240,
+      ingredients: "1 chamach ajwain · 1 patila paani · towel",
+      steps: [
+        "Patile mein 2 cup paani ubalo.",
+        "Ek chamach ajwain daalo. 1 minute aur ubaalo.",
+        "Aanch band. Sir par towel daalke patile ke upar jhuko.",
+        "5 min bhaap lo — naak aur muh dono se saans.",
+        "Bhaap ke baad 30 min thande mein mat jao.",
+      ],
+    },
+    "tulsi-kadha": {
+      kw: ["tulsi", "tulasi", "kadha"],
+      emoji: "🌿",
+      title: "Tulsi kadha",
+      durSec: 300,
+      ingredients: "8-10 tulsi patte · ½ inch adrak · 4-5 kali mirch · 1 elaichi · 1 cup paani",
+      steps: [
+        "Cup paani patile mein daalo.",
+        "Tulsi, kuti adrak, kali mirch, elaichi daal do.",
+        "5 min madhyam aanch par ubaalo (paani aadha ho).",
+        "Chhan lo. Thoda gud ya shahad mila lo.",
+        "Garam-garam piyo. Din mein 1-2 baar.",
+      ],
+    },
+    "adrak-chai": {
+      kw: ["adrak", "ginger"],
+      emoji: "🫚",
+      title: "Adrak ki chai",
+      durSec: 240,
+      ingredients: "1 inch adrak · ½ cup paani · ½ cup doodh · chai patti · gud",
+      steps: [
+        "Adrak chhote tukde karo, kuto.",
+        "Paani mein adrak + chai patti daalke ubaalo.",
+        "Doodh daalo. 3-4 min ubaalo aur.",
+        "Chhan lo. Gud mila lo.",
+        "Sardi-khansi mein subah-shaam piyo.",
+      ],
+    },
+    "jeera-paani": {
+      kw: ["jeera", "cumin"],
+      emoji: "🟤",
+      title: "Jeera paani",
+      durSec: 120,
+      ingredients: "1 chamach jeera · 1 glass paani",
+      steps: [
+        "Raat ko 1 chamach jeera 1 glass paani mein bhigo do.",
+        "Subah uthke paani ko ubalo — 2-3 min.",
+        "Halka thanda kar lo.",
+        "Khali pet piyo.",
+        "Pet phulta hai, gas hai — roz piyo.",
+      ],
+    },
+    "mulethi-kadha": {
+      kw: ["mulethi", "licorice"],
+      emoji: "🪵",
+      title: "Mulethi kadha",
+      durSec: 300,
+      ingredients: "1 inch mulethi stick · 1 cup paani · shahad",
+      steps: [
+        "Mulethi ko chhote tukdo mein todo.",
+        "1 cup paani mein ubaalo — aadha ho jaaye.",
+        "Chhan lo, halka garam.",
+        "½ chamach shahad mila lo (jab thoda thanda).",
+        "Khansi-galay khich-khich mein 2 baar piyo.",
+      ],
+    },
+    "saunf-paani": {
+      kw: ["saunf", "fennel"],
+      emoji: "🌱",
+      title: "Saunf paani",
+      durSec: 120,
+      ingredients: "1 chamach saunf · 1 cup paani",
+      steps: [
+        "Cup paani mein 1 chamach saunf bhigo do (raat ko).",
+        "Subah paani ko halka garam karo.",
+        "Khali pet piyo.",
+        "Acidity-jalan mein turant aaram.",
+        "Khaane ke baad bhi le sakte ho.",
+      ],
+    },
+    "methi-paani": {
+      kw: ["methi", "fenugreek"],
+      emoji: "🌾",
+      title: "Methi paani",
+      durSec: 120,
+      ingredients: "1 chamach methi dane · 1 glass paani",
+      steps: [
+        "Raat ko 1 chamach methi 1 glass paani mein bhigo do.",
+        "Subah paani chhan lo. Methi ke daane chaba sakte ho.",
+        "Khali pet piyo.",
+        "Sugar control aur kabz ke liye.",
+        "Roz 2 mahine — fark dikhega.",
+      ],
+    },
+    "namak-gargle": {
+      kw: ["namak", "salt water", "gargle", "garara"],
+      emoji: "🧂",
+      title: "Namak paani garara",
+      durSec: 120,
+      ingredients: "½ chamach namak · 1 glass garam paani",
+      steps: [
+        "Glass paani halka garam karo (jala na de).",
+        "½ chamach namak ghol lo.",
+        'Mooh mein paani lo, gala upar — "aaa" awaaz.',
+        "20-30 sec garara karo, thuk do.",
+        "Aise 4-5 baar. Din mein 3 baar.",
+      ],
+    },
+    "nimbu-shahad": {
+      kw: ["nimbu", "lemon", "shahad", "honey"],
+      emoji: "🍋",
+      title: "Nimbu-shahad paani",
+      durSec: 90,
+      ingredients: "½ nimbu · 1 chamach shahad · 1 glass garam paani",
+      steps: [
+        "Glass paani halka garam (jaise chai pee sako).",
+        "Aadha nimbu nichod do.",
+        "1 chamach shahad mila lo.",
+        "Sub achhi tarah ghol lo.",
+        "Khali pet piyo. Roz subah.",
+      ],
+    },
+    "anjeer-doodh": {
+      kw: ["anjeer", "fig"],
+      emoji: "🟣",
+      title: "Anjeer doodh",
+      durSec: 480,
+      ingredients: "2 sukhe anjeer · 1 cup doodh",
+      steps: [
+        "Raat ko 2 anjeer paani mein bhigo do.",
+        "Subah doodh ubaalo, anjeer kaat ke daal do.",
+        "5 min ubaalo. Halka thanda hone do.",
+        "Anjeer + doodh dono lo.",
+        "Kabz-weakness mein roz raat ko.",
+      ],
+    },
+    "arandi-kabz": {
+      kw: ["arandi", "castor"],
+      emoji: "💧",
+      title: "Arandi tel — kabz",
+      durSec: 120,
+      ingredients: "1 chamach arandi tel · halka garam doodh ya paani",
+      steps: [
+        "Sone se pehle 1 chamach arandi tel.",
+        "Halka garam doodh ya paani ke saath lo.",
+        "Subah pet saaf hoga.",
+        "Hafte mein 1 baar — roz nahi.",
+        "Pregnancy mein bilkul mat lein.",
+      ],
+    },
+    "amla-murabba": {
+      kw: ["amla"],
+      emoji: "🟢",
+      title: "Amla — roz ka",
+      durSec: 90,
+      ingredients: "1 amla (taza ya murabba)",
+      steps: [
+        "1 taza amla kaat lo (ya 1 piece murabba).",
+        "Khali pet khao subah.",
+        "Vitamin C bhar ke. Immunity strong.",
+        "Roz lena hai — fark 1 mahine mein.",
+        "Acidity ho to khaane ke baad lein.",
+      ],
+    },
+    "palak-juice": {
+      kw: ["palak", "spinach"],
+      emoji: "🥬",
+      title: "Palak juice",
+      durSec: 180,
+      ingredients: "1 cup palak patte · ½ cup paani · nimbu · namak",
+      steps: [
+        "Palak patte achhi tarah dho lo.",
+        "Mixie mein paani ke saath peeso.",
+        "Chhan lo. Nimbu + chutki namak.",
+        "Khali pet piyo subah.",
+        "Khoon banta hai, kabz door.",
+      ],
+    },
+    "neem-paani": {
+      kw: ["neem"],
+      emoji: "🌳",
+      title: "Neem paani",
+      durSec: 300,
+      ingredients: "8-10 neem patte · 2 cup paani",
+      steps: [
+        "2 cup paani mein neem patte daalo.",
+        "Madhyam aanch par 5 min ubaalo.",
+        "Chhan lo. Halka thanda hone do.",
+        "Kulla karo ya skin par lagao.",
+        "Daane-mooh ke chhale, skin issues mein.",
+      ],
+    },
+  };
+  function detectRemedy(text) {
+    if (!text) return null;
+    const t = text.toLowerCase();
+    for (const key in REMEDY_KITS) {
+      const kit = REMEDY_KITS[key];
+      for (const k of kit.kw) if (t.includes(k)) return [key, kit];
+    }
+    return null;
+  }
+  function injectRemedyCard(text, msgsContainer) {
+    const r = detectRemedy(text);
+    if (!r) return;
+    const [key, kit] = r;
+    const row = document.createElement("div");
+    row.className = "msg-row bot video-card-row";
+    row.innerHTML = `
+    <button class="recipe-card" onclick="openRemedy('${key}')">
+      <div class="recipe-card-thumb"><span>${kit.emoji}</span><div class="recipe-card-play">▶</div></div>
+      <div class="recipe-card-info">
+        <div class="recipe-card-title">${kit.title}</div>
+        <div class="recipe-card-ing">${kit.ingredients}</div>
+        <div class="recipe-card-meta"><span class="recipe-card-tag">AYUSH</span>${kit.steps.length} steps · ${Math.round(kit.durSec / 60)} min</div>
+      </div>
+    </button>`;
+    msgsContainer.appendChild(row);
+    msgsContainer.scrollTop = msgsContainer.scrollHeight;
+  }
+  function openRemedy(key) {
+    const kit = REMEDY_KITS[key];
+    if (!kit) return;
+    // Reuse the move-ov player — it already supports steps + auto-advance + speak
+    _moveSkill = kit;
+    _moveStepIdx = 0;
+    document.getElementById("move-ov").classList.add("on");
+    document.getElementById("move-ov-title").textContent = kit.title;
+    document.getElementById("move-ov-anim").innerHTML = kit.emoji;
+    document.getElementById("move-ov-progress").innerHTML = kit.steps
+      .map(() => '<div class="move-ov-progress-dot"></div>')
+      .join("");
+    document.getElementById("move-ov-next").textContent = "Aage badho";
+    showMoveStep(0);
+  }
+  // Back-compat: some flows still call injectVideoCard / openVideoLink
+  function injectVideoCard(text, msgsContainer) {
+    return injectRemedyCard(text, msgsContainer);
+  }
+  function openVideoLink(query) {
+    window.open(
+      "https://www.youtube.com/results?search_query=" + encodeURIComponent(query),
+      "_blank",
+      "noopener",
+    );
+  }
+
+  // ── v4: Acupressure points — in-app card with SVG body silhouette + pulsing point ──
+  const ACUPRESSURE_POINTS = {
+    "li4-headache": {
+      kw: ["headache", "sir dard", "sirdard", "migraine", "sar dard", "sar mein", "head"],
+      emoji: "✋",
+      title: "LI-4 (Hegu) — sir dard",
+      dur: "30 sec × 3",
+      body: "haath",
+      cx: 50,
+      cy: 42, // SVG center on hand silhouette
+      svgKey: "hand",
+      instr: [
+        "Apna baayan haath dekho — angootha aur tarjani ke beech V-shape.",
+        "Doosre haath ke angoothe se us V ke center par dabao.",
+        "30 sec tak halka dabav — saans dheere.",
+        "Haath hata lo. Doosre haath par bhi karo.",
+        "3 round — sir dard mein kaafi aaram.",
+      ],
+      tts: [
+        "अपना बायाँ हाथ देखो — अंगूठा और तर्जनी के बीच V शेप बनाओ।",
+        "दूसरे हाथ के अंगूठे से उस V के center पर दबाओ।",
+        "तीस सेकंड तक हलका दबाव रखो — साँस धीरे।",
+        "अब हाथ हटा लो। दूसरे हाथ पर भी ऐसा ही करो।",
+        "तीन round करो — सिर दर्द में काफ़ी आराम मिलेगा।",
+      ],
+    },
+    "gb20-neck": {
+      kw: ["gardan", "neck", "back of head", "neck pain"],
+      emoji: "👤",
+      title: "GB-20 — gardan/sir",
+      dur: "1 min",
+      svgKey: "head_back",
+      instr: [
+        "Sir ke peeche, kaano ke peeche ki taraf 2 hollows hain.",
+        "Dono haatho ke angoothe wahaan rakho.",
+        "Sir ko aage halka jhukao. Saans gehri.",
+        "1 min tak madhyam dabav.",
+        "Tension headache + gardan akadan mein.",
+      ],
+      tts: [
+        "सिर के पीछे, कानों के पीछे की तरफ़ दो छोटे gaps हैं।",
+        "दोनों हाथों के अंगूठे वहाँ रखो।",
+        "सिर को आगे हलका झुकाओ। साँस गहरी।",
+        "एक मिनट तक मध्यम दबाव।",
+        "Tension headache और गर्दन की अकड़न में।",
+      ],
+    },
+    "pc6-nausea": {
+      kw: ["nausea", "ulti", "vomiting", "jee michlana", "motion sickness", "ji ghabraana"],
+      emoji: "🫳",
+      title: "PC-6 (Neiguan) — jee michlana",
+      dur: "30 sec × 2",
+      svgKey: "wrist",
+      instr: [
+        "Kalai par 3 ungli neeche — beech mein 2 tendons hain.",
+        "Doosre haath ke angoothe se beech mein dabao.",
+        "30 sec firm dabao — ek hi point.",
+        "Haath hata lo. Doosre haath par karo.",
+        "Ulti, motion sickness, pregnancy nausea mein.",
+      ],
+      tts: [
+        "कलाई पर तीन उंगली नीचे — बीच में दो tendons हैं।",
+        "दूसरे हाथ के अंगूठे से बीच में दबाओ।",
+        "तीस सेकंड firm दबाव — एक ही point पर।",
+        "अब हाथ हटा लो। दूसरे हाथ पर करो।",
+        "उल्टी, motion sickness, pregnancy की मतली में आराम।",
+      ],
+    },
+    "yintang-stress": {
+      kw: [
+        "anxiety",
+        "tension",
+        "chinta",
+        "stress",
+        "ghabrahat",
+        "stress headache",
+        "frontal headache",
+      ],
+      emoji: "🧘",
+      title: "Yintang — chinta/tension",
+      dur: "1 min",
+      svgKey: "forehead",
+      instr: [
+        "Donon bhauon ke beech ka point.",
+        "Tarjani (index finger) wahaan rakho.",
+        "Halka circular massage — clockwise.",
+        "1 min, saans dheere ke saath.",
+        "Mann shant, neend acchi, chinta kam.",
+      ],
+      tts: [
+        "दोनों भौहों के बीच का point।",
+        "तर्जनी (index finger) वहाँ रखो।",
+        "हलका circular massage — clockwise।",
+        "एक मिनट, साँस धीरे के साथ।",
+        "मन शांत, नींद अच्छी, चिंता कम।",
+      ],
+    },
+    "st36-fatigue": {
+      kw: ["thakaan", "fatigue", "weakness", "energy", "kamzori"],
+      emoji: "🦵",
+      title: "ST-36 (Zusanli) — energy",
+      dur: "1 min × 2",
+      svgKey: "leg",
+      instr: [
+        "Ghutne se 4 ungli neeche — pindli ki haddi se 1 ungli baahar.",
+        "Angoothe se firm dabao.",
+        "1 min — saans gehri.",
+        "Doosre paav par bhi karo.",
+        "Thakaan, kamzori — roz subah karein.",
+      ],
+      tts: [
+        "घुटने से चार उंगली नीचे — पिंडली की हड्डी से एक उंगली बाहर।",
+        "अंगूठे से firm दबाव।",
+        "एक मिनट — साँस गहरी।",
+        "दूसरे पाँव पर भी करो।",
+        "थकान, कमज़ोरी में — रोज़ सुबह करो।",
+      ],
+    },
+    "lu7-cough": {
+      kw: ["khansi", "cough", "galay", "sore throat", "throat"],
+      emoji: "👋",
+      title: "LU-7 — khansi/galay",
+      dur: "30 sec × 2",
+      svgKey: "wrist",
+      instr: [
+        "Kalai ke shuru mein, angoothe ki taraf — chhota notch.",
+        "Doosre haath ki tarjani se halka dabao.",
+        "30 sec halki gol gati mein.",
+        "Doosre haath par karo.",
+        "Khansi, galay khich-khich, sardi mein.",
+      ],
+      tts: [
+        "कलाई के शुरू में, अंगूठे की तरफ़ — एक छोटा notch।",
+        "दूसरे हाथ की तर्जनी से हलका दबाव।",
+        "तीस सेकंड हलकी गोल गति में।",
+        "दूसरे हाथ पर करो।",
+        "खांसी, गले की खिच-खिच, सर्दी में।",
+      ],
+    },
+  };
+  const ACU_SVGS = {
+    hand: '<svg viewBox="0 0 100 100" width="180" height="180"><path d="M30 80 Q22 50 30 30 Q34 18 42 22 L44 50 L48 22 Q50 14 56 16 Q62 18 60 30 L60 50 L66 26 Q72 22 74 30 L70 56 L78 38 Q82 38 80 48 L72 70 Q68 88 50 90 Q35 90 30 80 Z" fill="rgba(34,197,94,.18)" stroke="rgba(34,197,94,.6)" stroke-width="1.5"/></svg>',
+    wrist:
+      '<svg viewBox="0 0 100 100" width="180" height="180"><rect x="20" y="35" width="60" height="35" rx="10" fill="rgba(34,197,94,.18)" stroke="rgba(34,197,94,.6)" stroke-width="1.5"/><path d="M30 35 L30 18 M50 35 L50 16 M70 35 L70 18" stroke="rgba(34,197,94,.6)" stroke-width="1.5" fill="none"/></svg>',
+    head_back:
+      '<svg viewBox="0 0 100 100" width="180" height="180"><circle cx="50" cy="50" r="32" fill="rgba(34,197,94,.18)" stroke="rgba(34,197,94,.6)" stroke-width="1.5"/><path d="M30 60 Q50 78 70 60" stroke="rgba(34,197,94,.4)" stroke-width="1.5" fill="none"/></svg>',
+    forehead:
+      '<svg viewBox="0 0 100 100" width="180" height="180"><ellipse cx="50" cy="55" rx="28" ry="36" fill="rgba(34,197,94,.18)" stroke="rgba(34,197,94,.6)" stroke-width="1.5"/><path d="M36 50 Q44 46 48 50 M52 50 Q56 46 64 50" stroke="rgba(34,197,94,.6)" stroke-width="1.5" fill="none"/></svg>',
+    leg: '<svg viewBox="0 0 100 100" width="180" height="180"><path d="M40 12 L40 88 Q44 92 50 92 Q56 92 60 88 L60 12 Z" fill="rgba(34,197,94,.18)" stroke="rgba(34,197,94,.6)" stroke-width="1.5"/><line x1="50" y1="30" x2="50" y2="50" stroke="rgba(34,197,94,.4)" stroke-width="1" stroke-dasharray="2,2"/></svg>',
+  };
+  function detectAcupressure(text) {
+    if (!text) return null;
+    const t = text.toLowerCase();
+    for (const key in ACUPRESSURE_POINTS) {
+      const p = ACUPRESSURE_POINTS[key];
+      for (const k of p.kw) if (t.includes(k)) return [key, p];
+    }
+    return null;
+  }
+  function injectAcupressureCard(text, msgsContainer) {
+    const a = detectAcupressure(text);
+    if (!a) return;
+    const [key, p] = a;
+    const row = document.createElement("div");
+    row.className = "msg-row bot video-card-row";
+    row.innerHTML = `
+    <button class="acu-card" onclick="openAcupressure('${key}')">
+      <div class="acu-card-thumb"><span>${p.emoji}</span><div class="acu-card-pulse"></div></div>
+      <div class="acu-card-info">
+        <div class="acu-card-title">${p.title}</div>
+        <div class="acu-card-meta"><span class="acu-card-tag">Acupressure</span>${p.dur} · Step-by-step</div>
+      </div>
+    </button>`;
+    msgsContainer.appendChild(row);
+    msgsContainer.scrollTop = msgsContainer.scrollHeight;
+  }
+  function openAcupressure(key) {
+    const p = ACUPRESSURE_POINTS[key];
+    if (!p) return;
+    // Reuse move-ov player; render an SVG silhouette in the anim slot
+    // v4.2: pass tts[] through so TTS reads clean Devanagari (not ambiguous Roman)
+    _moveSkill = { emoji: p.emoji, title: p.title, durSec: 60, steps: p.instr, tts: p.tts };
+    _moveStepIdx = 0;
+    document.getElementById("move-ov").classList.add("on");
+    document.getElementById("move-ov-title").textContent = p.title;
+    const anim = document.getElementById("move-ov-anim");
+    anim.innerHTML =
+      (ACU_SVGS[p.svgKey] || "") +
+      (typeof p.cx === "number"
+        ? `<div class="acu-pin" style="left:${p.cx}%;top:${p.cy}%"></div>`
+        : "");
+    document.getElementById("move-ov-progress").innerHTML = p.instr
+      .map(() => '<div class="move-ov-progress-dot"></div>')
+      .join("");
+    document.getElementById("move-ov-next").textContent = "Aage badho";
+    showMoveStep(0);
+  }
+
+  // ── Movement skills (animated step-by-step overlay) ──
+  const MOVEMENT_SKILLS = {
+    "anulom-vilom": {
+      emoji: "🌬",
+      title: "Anulom-Vilom Pranayam",
+      durSec: 180,
+      steps: [
+        "Aaram se baitho. Reedh ki haddi seedhi.",
+        "Daahini naak band karo angoothe se. Baayi se saans lo (4 sec).",
+        "Baayi naak band karo. Daahini se saans bahar nikalo (4 sec).",
+        "Phir daahini se saans lo. Baayi se saans bahar nikalo. Yeh ek round hai.",
+        "Aise 8-10 round karo. Saans dheere, gehri.",
+      ],
+      tts: [
+        "आराम से बैठो। रीढ़ की हड्डी सीधी।",
+        "दाहिनी नाक बंद करो अंगूठे से। बायीं से साँस लो — चार सेकंड।",
+        "अब बायीं नाक बंद करो। दाहिनी से साँस बाहर निकालो — चार सेकंड।",
+        "फिर दाहिनी से साँस लो। बायीं से बाहर निकालो। यह एक round हुआ।",
+        "ऐसे आठ से दस round करो। साँस धीरे, गहरी।",
+      ],
+    },
+    kapalbhati: {
+      emoji: "💨",
+      title: "Kapalbhati",
+      durSec: 120,
+      steps: [
+        "Vajrasana mein baitho ya kursi par seedha.",
+        "Naak se halki saans andar lo.",
+        "Pet andar khench ke saans bahar nikaalo — short, sharp.",
+        "Saans bahar ACTIVE, andar AUTO. Aise 30 baar.",
+        "Ek minute aaram. Phir 2 round aur.",
+      ],
+      tts: [
+        "वज्रासन में बैठो या कुर्सी पर सीधे।",
+        "नाक से हलकी साँस अंदर लो।",
+        "पेट अंदर खेंच के साँस बाहर निकालो — short, sharp।",
+        "साँस बाहर ACTIVE, अंदर AUTO। ऐसे तीस बार।",
+        "एक मिनट आराम। फिर दो round और।",
+      ],
+    },
+    bhramari: {
+      emoji: "🐝",
+      title: "Bhramari Pranayam",
+      durSec: 150,
+      steps: [
+        "Aankhein band, kaano mein angoothe se daba lo.",
+        "Naak se gehri saans lo.",
+        'Saans bahar nikalte hue "Mmm..." ki bhinbhinaahat (bee sound) karo.',
+        "Aise 5-7 baar. Saans aur awaaz dono lambi.",
+        "Mann ekdum shaant ho jaayega.",
+      ],
+      tts: [
+        "आँखें बंद, कानों में अंगूठे से दबा लो।",
+        "नाक से गहरी साँस लो।",
+        'साँस बाहर निकालते हुए "ममम..." की भिनभिनाहट करो — bee sound।',
+        "ऐसे पाँच से सात बार। साँस और आवाज़ दोनों लंबी।",
+        "मन एकदम शांत हो जाएगा।",
+      ],
+    },
+    vajrasana: {
+      emoji: "🧘",
+      title: "Vajrasana",
+      durSec: 300,
+      steps: [
+        "Ghutno ke bal baitho — paav peeche.",
+        "Edi par baith jao, paanv ek doosre se sata ke.",
+        "Reedh seedhi, haath jaangh par.",
+        "Aaram se 5 minute baitho — paachan ke liye sabse accha.",
+        "Khaane ke turant baad bhi kar sakte ho.",
+      ],
+      tts: [
+        "घुटनों के बल बैठो — पाँव पीछे।",
+        "एड़ी पर बैठ जाओ, पाँव एक दूसरे से सटा के।",
+        "रीढ़ सीधी, हाथ जाँघ पर।",
+        "आराम से पाँच मिनट बैठो — पाचन के लिए सबसे अच्छा।",
+        "खाने के तुरंत बाद भी कर सकते हो।",
+      ],
+    },
+    "surya-namaskar": {
+      emoji: "☀️",
+      title: "Surya Namaskar (1 round)",
+      durSec: 90,
+      steps: [
+        "Pranamasana — haath jodke khade ho.",
+        "Hasta Uttanasana — saans lete hue haath upar.",
+        "Padahastasana — saans bahar nikalte hue jhuk ke pair chhuo.",
+        "Ashwa Sanchalanasana — daahina paav peeche, baayi mod do.",
+        "Dandasana → Ashtanga → Bhujangasana → wapas. Yeh 1 round.",
+        "5-10 round ek saath. Hafte mein tezi se fark.",
+      ],
+    },
+    gardan: {
+      emoji: "🦒",
+      title: "Gardan ki exercises",
+      durSec: 120,
+      steps: [
+        "Seedhe baitho. Kandhe dheele.",
+        "Gardan dheere se daahini taraf — 5 sec ruko.",
+        "Wapas seedhi. Phir baayi taraf — 5 sec.",
+        "Aaram se gardan ko 360 degree ghumao — 3 baar.",
+        "Aaheste se. Computer wale roz karein.",
+      ],
+    },
+    malasana: {
+      emoji: "🦵",
+      title: "Malasana (squat)",
+      durSec: 90,
+      steps: [
+        "Pair kandhe ki chaudaai par.",
+        "Dheere dheere niche baitho — squat position.",
+        "Haath chest ke saamne jod lo, kohni se ghutno ko hatao.",
+        "30 sec ruko. Saans normal.",
+        "Paachan + ghutno + kamar sab ke liye accha.",
+      ],
+    },
+    shavasana: {
+      emoji: "🛌",
+      title: "Shavasana",
+      durSec: 240,
+      steps: [
+        "Peeth ke bal lete jao. Aankhein band.",
+        "Pair thode khule. Haath body se thoda door.",
+        "Pure body ko dheela chhod do.",
+        "Saans pe dhyan — andar, bahar.",
+        "Aise 5-10 minute. Stress turant kam.",
+      ],
+      tts: [
+        "पीठ के बल लेट जाओ। आँखें बंद।",
+        "पैर थोड़े खुले। हाथ body से थोड़ा दूर।",
+        "पूरी body को ढीला छोड़ दो।",
+        "साँस पे ध्यान — अंदर, बाहर।",
+        "ऐसे पाँच से दस मिनट। Stress तुरंत कम।",
+      ],
+    },
+    // ── v4.2: Wellness habits — same overlay player, lifestyle steps ──
+    "daily-walk": {
+      emoji: "🚶",
+      title: "Roz ki 30-min walk",
+      durSec: 1800,
+      steps: [
+        "Comfortable shoes pehno. Subah ya sham — jab time mile.",
+        "Pehle 5 min dheere chalo — body warm-up.",
+        "Phir 20 min brisk pace — saans halki tez ho jaaye.",
+        "Aakhri 5 min dheere — body ko cool down.",
+        "Roz karna — metabolism dheere-dheere strong hota hai.",
+      ],
+      tts: [
+        "Comfortable जूते पहनो, बेटा। सुबह या शाम — जब time मिले।",
+        "पहले पाँच मिनट धीरे चलो — body warm-up।",
+        "फिर बीस मिनट तेज़ चलो — साँस हलकी तेज़ हो जाए।",
+        "आख़िरी पाँच मिनट धीरे — body को cool down।",
+        "रोज़ करना है, बेटा। Metabolism धीरे-धीरे strong होता है।",
+      ],
+    },
+    hydration: {
+      emoji: "💧",
+      title: "Pani peene ka routine",
+      durSec: 60,
+      steps: [
+        "Subah uthke 2 glass paani peelo — khali pet.",
+        "Naashte ke 30 min pehle 1 glass.",
+        "Lunch ke 1 ghante baad 1-2 glass.",
+        "Sham 4 baje 1 glass — energy maintain.",
+        "Sone se 1 ghanta pehle aakhri ghoont — pura din 8 glass.",
+      ],
+      tts: [
+        "सुबह उठके दो गिलास पानी पीओ — खाली पेट।",
+        "नाश्ते के तीस मिनट पहले एक गिलास।",
+        "Lunch के एक घंटे बाद एक से दो गिलास।",
+        "शाम चार बजे एक गिलास — energy maintain।",
+        "सोने से एक घंटा पहले आख़िरी घूँट। पूरा दिन आठ गिलास, बेटा।",
+      ],
+    },
+    "screen-break": {
+      emoji: "👁",
+      title: "20-20-20 Aankho ka aaram",
+      durSec: 60,
+      steps: [
+        "Har 20 minute screen ke baad — break lo.",
+        "20 sec ke liye dur dekho — 20 feet.",
+        "Khidki ke baahar, ya door ki deewar.",
+        "Aankhein 3-4 baar blink karo.",
+        "Roz karna — laptop wala beta-beti zaroor.",
+      ],
+      tts: [
+        "हर बीस मिनट screen के बाद — break लो, बेटा।",
+        "बीस सेकंड के लिए दूर देखो — बीस feet दूर।",
+        "खिड़की के बाहर, या दूर की दीवार।",
+        "आँखें तीन-चार बार blink करो।",
+        "रोज़ करना। Laptop वाले बेटे-बेटी ज़रूर करना।",
+      ],
+    },
+    journaling: {
+      emoji: "📔",
+      title: "5-min raat ki diary",
+      durSec: 300,
+      steps: [
+        "Sone se pehle ek copy aur pen lo.",
+        "3 cheezein likho — aaj kya accha hua.",
+        "1 cheez likho — kal kya behtar karunga/karungi.",
+        "Agar koi tension hai — wo bhi likh do, mann halka hoga.",
+        "Roz raat — neend acchi aur stress kam.",
+      ],
+      tts: [
+        "सोने से पहले एक copy और pen लो, बेटा।",
+        "तीन चीज़ें लिखो — आज क्या अच्छा हुआ।",
+        "एक चीज़ लिखो — कल क्या बेहतर करूँगा/करूँगी।",
+        "अगर कोई tension है — वो भी लिख दो, मन हलका हो जाएगा।",
+        "रोज़ रात। नींद अच्छी और stress कम।",
+      ],
+    },
+    meditation: {
+      emoji: "🧘‍♀️",
+      title: "5-min mindful saans",
+      durSec: 300,
+      steps: [
+        "Aaram se baitho. Reedh seedhi. Aankhein band.",
+        "Saans pe dhyan lo — andar aati hai, bahar jaati hai.",
+        "Mann mein vichar aaye — koi baat nahi, wapas saans pe.",
+        "Aise 5 min — bina judge kiye.",
+        "Roz subah ya raat — mann shanti, focus tez.",
+      ],
+      tts: [
+        "आराम से बैठो, बेटा। रीढ़ सीधी। आँखें बंद।",
+        "साँस पे ध्यान लो — अंदर आती है, बाहर जाती है।",
+        "मन में विचार आए — कोई बात नहीं, वापस साँस पे लाओ।",
+        "ऐसे पाँच मिनट — बिना judge किए।",
+        "रोज़ सुबह या रात। मन शांत, focus तेज़।",
+      ],
+    },
+  };
+  function detectMovement(text) {
+    if (!text) return null;
+    const t = text.toLowerCase();
+    if (/anulom|vilom|nadi\s*shodhana/.test(t))
+      return ["anulom-vilom", MOVEMENT_SKILLS["anulom-vilom"]];
+    if (/kapalbhati/.test(t)) return ["kapalbhati", MOVEMENT_SKILLS.kapalbhati];
+    if (/bhramari|bhinbh/.test(t)) return ["bhramari", MOVEMENT_SKILLS.bhramari];
+    if (/vajrasana/.test(t)) return ["vajrasana", MOVEMENT_SKILLS.vajrasana];
+    if (/surya\s*namaskar/.test(t)) return ["surya-namaskar", MOVEMENT_SKILLS["surya-namaskar"]];
+    if (/(gardan|neck)\s*(rotation|exercise|ghumao|hila)/.test(t))
+      return ["gardan", MOVEMENT_SKILLS.gardan];
+    if (/malasana|squat/.test(t)) return ["malasana", MOVEMENT_SKILLS.malasana];
+    if (/shavasana|relaxation\s*pose/.test(t)) return ["shavasana", MOVEMENT_SKILLS.shavasana];
+    // v4.2: wellness habit detection — common lifestyle terms that fire a step card
+    if (
+      /(brisk\s*walk|daily\s*walk|tehlna|tehlne|chalna|walking|walk\s*karo|30\s*minute\s*walk|metabolism)/.test(
+        t,
+      )
+    )
+      return ["daily-walk", MOVEMENT_SKILLS["daily-walk"]];
+    if (
+      /(hydration|pani\s*peena|pani\s*piye|water\s*routine|2-3\s*glass\s*pani|glass\s*paani|glasses?\s*water)/.test(
+        t,
+      )
+    )
+      return ["hydration", MOVEMENT_SKILLS.hydration];
+    if (
+      /(20[\s-]?20[\s-]?20|screen\s*break|aankho\s*ka\s*aaram|eye\s*strain|laptop\s*break)/.test(t)
+    )
+      return ["screen-break", MOVEMENT_SKILLS["screen-break"]];
+    if (/(journal|diary|likh\s*lo|raat\s*ko\s*likh|gratitude)/.test(t))
+      return ["journaling", MOVEMENT_SKILLS.journaling];
+    if (/(meditation|dhyan|mindful|5\s*minute\s*shanti|saans\s*pe\s*dhyan)/.test(t))
+      return ["meditation", MOVEMENT_SKILLS.meditation];
+    return null;
+  }
+  function injectMovementCard(text, msgsContainer) {
+    const m = detectMovement(text);
+    if (!m) return;
+    const [key, skill] = m;
+    const row = document.createElement("div");
+    row.className = "msg-row bot video-card-row";
+    row.innerHTML = `
+    <button class="move-card" onclick="openMovement('${key}')">
+      <div class="move-card-emoji">${skill.emoji}</div>
+      <div class="move-card-info">
+        <div class="move-card-title">${skill.title}</div>
+        <div class="move-card-sub">Step-by-step · ${Math.round(skill.durSec / 60)} min</div>
+      </div>
+      <span class="move-card-cta">▶ Karo</span>
+    </button>`;
+    msgsContainer.appendChild(row);
+    msgsContainer.scrollTop = msgsContainer.scrollHeight;
+  }
+  let _moveSkill = null,
+    _moveStepIdx = 0,
+    _moveTimer = null;
+  function openMovement(key) {
+    _moveSkill = MOVEMENT_SKILLS[key];
+    if (!_moveSkill) return;
+    _moveStepIdx = 0;
+    document.getElementById("move-ov").classList.add("on");
+    document.getElementById("move-ov-title").textContent = _moveSkill.title;
+    document.getElementById("move-ov-anim").textContent = _moveSkill.emoji;
+    document.getElementById("move-ov-progress").innerHTML = _moveSkill.steps
+      .map(() => '<div class="move-ov-progress-dot"></div>')
+      .join("");
+    document.getElementById("move-ov-next").textContent = "Aage badho";
+    showMoveStep(0);
+  }
+  function showMoveStep(idx) {
+    if (!_moveSkill || idx >= _moveSkill.steps.length) return;
+    _moveStepIdx = idx;
+    document.getElementById("move-ov-step").textContent = _moveSkill.steps[idx];
+    const dots = document.querySelectorAll("#move-ov-progress .move-ov-progress-dot");
+    dots.forEach((d, i) => d.classList.toggle("done", i <= idx));
+    document.getElementById("move-ov-counter").textContent =
+      idx + 1 + " / " + _moveSkill.steps.length;
+    // v4.2: prefer pre-translated Devanagari tts[] for clean read-aloud (avoids
+    // ambiguous Roman words like "choddo" being pronounced incorrectly).
+    const sayText = (_moveSkill.tts && _moveSkill.tts[idx]) || _moveSkill.steps[idx];
+    speak(_moveSkill.steps[idx], { quiet: true, ttsText: sayText });
+    if (_moveTimer) clearTimeout(_moveTimer);
+    _moveTimer = setTimeout(() => {
+      if (idx < _moveSkill.steps.length - 1) showMoveStep(idx + 1);
+      else {
+        document.getElementById("move-ov-step").textContent =
+          "Bahut accha kiya! 💚 Roz karein, fark dikhega.";
+        document.getElementById("move-ov-next").textContent = "Done";
+        _moveSkill = null;
+      }
+    }, 9000);
+  }
+  function moveNextStep() {
+    if (!_moveSkill) {
+      closeMovement();
+      return;
+    }
+    if (_moveTimer) clearTimeout(_moveTimer);
+    if (_moveStepIdx < _moveSkill.steps.length - 1) showMoveStep(_moveStepIdx + 1);
+    else closeMovement();
+  }
+  function closeMovement() {
+    // v5.3: capture the just-closed skill BEFORE clearing _moveSkill so Focus Mode can mark its step done
+    const closedKey =
+      _moveSkill && (_moveSkill._focusKey || _moveSkill.key || _moveSkill.skillKey || null);
+    if (_moveTimer) {
+      clearTimeout(_moveTimer);
+      _moveTimer = null;
+    }
+    document.getElementById("move-ov").classList.remove("on");
+    if (_currentAudio) {
+      try {
+        _currentAudio.pause();
+      } catch (e) {}
+      _currentAudio = null;
+    }
+    _moveSkill = null;
+    _moveStepIdx = 0;
+    // Hook into Focus Mode
+    if (closedKey && typeof markFocusStepComplete === "function") {
+      try {
+        markFocusStepComplete(closedKey);
+      } catch (e) {
+        console.warn("[focus]", e);
+      }
+    }
+  }
+
+  // ══════════════ v5.3: SYMPTOM FOCUS MODE ══════════════
+  //
+  // When the user taps one of the 4 priority takleef (Sir dard, Sardi-khansi,
+  // Pet, Neend), Dadi asks 2-3 clarifying questions, then the hub TAKES OVER:
+  // body.focus class hides every non-focus surface and reveals .focus-home
+  // which renders a 3-step healing path (acupressure → ghar ka nuska → rest).
+  // After a per-symptom delay (30min / 2h / 4h / 8h, or 30s with ?demo_focus=1),
+  // a pulsing "kaisa hai ab?" circle appears in the stories rail. Tap →
+  // #focus-validate-ov modal with 3 outcomes:
+  //   - Better → blessing + inline Ayurvedic upsell (Sehat Bazaar reuse)
+  //   - Same   → rotate to a different remedy (max 2 retries → doctor)
+  //   - Worse  → #doctor-ov (existing v5.2)
+  // State lives in ss_focus. One active focus at a time.
+
+  const FOCUS_FLOWS = {
+    "sir-dard": {
+      emoji: "🤕",
+      title: "Sir dard ka ilaj",
+      dadiOpener:
+        "Beta, sir dard se buri taklif hoti hai. Mujhe 3 sawaal puchne do, phir saath mil ke theek karte hain.",
+      qa: [
+        {
+          id: "where",
+          q: "Kahan dard hai?",
+          opts: ["Maathe ke aage", "Peeche (gardan)", "Side mein", "Poora sir"],
+        },
+        {
+          id: "since",
+          q: "Kab se?",
+          opts: ["Abhi-abhi", "Aaj subah se", "Kal raat se", "2 din se zyada"],
+        },
+        {
+          id: "with",
+          q: "Saath mein kya?",
+          opts: ["Mitli aati hai", "Aankh mein dard", "Tension", "Kuch nahi"],
+        },
+      ],
+      quote: (a) => {
+        const w =
+          a.where === "Maathe ke aage"
+            ? "Maathe ke aage tension wala dard"
+            : a.where === "Peeche (gardan)"
+              ? "Gardan se uthta dard"
+              : "Sir mein dard";
+        const t =
+          a.with === "Tension"
+            ? " — relax karte hain"
+            : a.with === "Mitli aati hai"
+              ? " — pet aur sir dono shaant karte hain"
+              : " — dheere se theek karte hain";
+        return w + t + ".";
+      },
+      buildSteps: (a) => [
+        {
+          type: "acupressure",
+          key:
+            a.where === "Peeche (gardan)"
+              ? "gb20-neck"
+              : a.where === "Maathe ke aage"
+                ? "yintang-stress"
+                : "li4-headache",
+          durMin: 5,
+        },
+        { type: "remedy", key: "tulsi-kadha", durMin: 8 },
+        { type: "rest", key: a.with === "Tension" ? "meditation" : "shavasana", durMin: 15 },
+      ],
+      altSteps: (a) => [
+        { type: "acupressure", key: "li4-headache", durMin: 5 },
+        { type: "remedy", key: "adrak-chai", durMin: 5 },
+        { type: "rest", key: "anulom-vilom", durMin: 5 },
+      ],
+      validateAfterMin: 30,
+      ayurSku: "ayur-bramhi",
+      ayurCopy:
+        "Aapka sir dard baar-baar hota hai? <b>Bramhi</b> roz subah lo — dimaag shaant, dard kam.",
+      validateTitle: (a) =>
+        `Beta, ${a && a.where === "Maathe ke aage" ? "maathe ka dard" : "sir kaisa hai"} ab?`,
+    },
+
+    "sardi-khansi": {
+      emoji: "🤧",
+      title: "Sardi-khansi ka ilaj",
+      dadiOpener: "Beta, mausam badla hoga. Chal, dheere-dheere theek karte hain.",
+      qa: [
+        {
+          id: "type",
+          q: "Khaansi ya nazla?",
+          opts: ["Sookhi khaansi", "Balgam waali", "Nazla / behti naak", "Dono"],
+        },
+        { id: "throat", q: "Galay mein khich-khich?", opts: ["Haan, bahut", "Thodi", "Nahi"] },
+        { id: "fever", q: "Bukhar ya badan dard?", opts: ["Halka", "Nahi", "Bukhar zyada hai"] },
+      ],
+      quote: (a) => `${a.type || "Sardi-khansi"} — gala aur seena dono ki dekhbhal karte hain.`,
+      buildSteps: (a) => [
+        { type: "acupressure", key: "lu7-cough", durMin: 3 },
+        {
+          type: "remedy",
+          key:
+            a.type === "Sookhi khaansi"
+              ? "mulethi-kadha"
+              : a.type === "Balgam waali"
+                ? "ajwain-bhaap"
+                : a.type === "Nazla / behti naak"
+                  ? "tulsi-kadha"
+                  : "adrak-chai",
+          durMin: 8,
+        },
+        { type: "rest", key: "anulom-vilom", durMin: 5 },
+      ],
+      altSteps: (a) => [
+        { type: "remedy", key: "namak-gargle", durMin: 3 },
+        { type: "remedy", key: "nimbu-shahad", durMin: 3 },
+        { type: "rest", key: "bhramari", durMin: 5 },
+      ],
+      requiresDoctor: (a) => a.fever === "Bukhar zyada hai",
+      validateAfterMin: 240,
+      ayurSku: "ayur-sitopaladi",
+      ayurCopy:
+        "Mausam ke saath baar-baar khaansi? <b>Sitopaladi churan</b> roz shahad ke saath — immunity strong.",
+      validateTitle: () => "Beta, gala aur khaansi ab kaisi hai?",
+    },
+
+    pet: {
+      emoji: "🤢",
+      title: "Pet ki dikkat ka ilaj",
+      dadiOpener: "Beta, pet ki shaanti zindagi ki shaanti hai. Bata, kya hua?",
+      qa: [
+        {
+          id: "kind",
+          q: "Kya takleef hai?",
+          opts: ["Acidity / jalan", "Gas", "Pet dard", "Dast (loose motion)"],
+        },
+        {
+          id: "when",
+          q: "Kab shuru hua?",
+          opts: ["Khaane ke baad", "Subah uthkar", "Achanak", "2 din se zyada"],
+        },
+        {
+          id: "food",
+          q: "Kya khaaya tha?",
+          opts: ["Tala-bhuna", "Bahar ka", "Doodh / dahi", "Yaad nahi"],
+        },
+      ],
+      quote: (a) => `${a.kind || "Pet ki takleef"} — andar se shaanti karte hain.`,
+      buildSteps: (a) => [
+        { type: "movement", key: a.kind === "Gas" ? "malasana" : "hydration", durMin: 5 },
+        {
+          type: "remedy",
+          key:
+            a.kind === "Acidity / jalan"
+              ? "saunf-paani"
+              : a.kind === "Gas"
+                ? "jeera-paani"
+                : a.kind === "Dast (loose motion)"
+                  ? "nimbu-shahad"
+                  : "ajwain-bhaap",
+          durMin: 5,
+        },
+        { type: "rest", key: "vajrasana", durMin: 10 },
+      ],
+      altSteps: () => [
+        { type: "remedy", key: "jeera-paani", durMin: 3 },
+        { type: "remedy", key: "saunf-paani", durMin: 3 },
+        { type: "rest", key: "vajrasana", durMin: 5 },
+      ],
+      requiresDoctor: (a) => a.kind === "Dast (loose motion)" && a.when === "2 din se zyada",
+      validateAfterMin: 120,
+      ayurSku: "ayur-hingvashtak",
+      ayurCopy:
+        "Roz pet halka rehe? <b>Hingvashtak churan</b> khane se pehle — pet aur pachchhan dono theek.",
+      validateTitle: () => "Beta, pet ab kaisa hai?",
+    },
+
+    neend: {
+      emoji: "😴",
+      title: "Achi neend ka rasta",
+      dadiOpener: "Beta, neend hi sehat ki neev hai. Mujhe bata, kya dikkat hai?",
+      qa: [
+        {
+          id: "kind",
+          q: "Kya dikkat hai?",
+          opts: [
+            "Neend nahi aati",
+            "Beech mein toot jaati",
+            "Subah jaldi uth jaate",
+            "Theek se nahi sote",
+          ],
+        },
+        {
+          id: "mind",
+          q: "Soochne mein dikkat?",
+          opts: ["Bahut soochta hoon", "Thodi tension", "Nahi"],
+        },
+        { id: "screen", q: "Sone se pehle phone?", opts: ["Haan, late tak", "Thoda", "Nahi"] },
+      ],
+      quote: (a) =>
+        `${a.kind === "Neend nahi aati" ? "Neend dheere se aati hai, ghabraao mat" : "Aaj raat behtar neend ki taiyari karte hain"}.`,
+      buildSteps: (a) => [
+        { type: "movement", key: "screen-break", durMin: 3 },
+        { type: "remedy", key: "haldi-doodh", durMin: 5 },
+        {
+          type: "rest",
+          key: a.mind === "Bahut soochta hoon" ? "journaling" : "meditation",
+          durMin: 10,
+        },
+      ],
+      altSteps: () => [
+        { type: "movement", key: "meditation", durMin: 5 },
+        { type: "remedy", key: "haldi-doodh", durMin: 5 },
+        { type: "rest", key: "shavasana", durMin: 10 },
+      ],
+      validateAfterMin: 480,
+      ayurSku: "ayur-ashwagandha",
+      ayurCopy:
+        "Roz gehri neend chahiye? <b>Ashwagandha</b> raat ko doodh ke saath — body shaant, mann thanda.",
+      validateTitle: () => "Beta, kal raat ki neend kaisi rahi?",
+    },
+  };
+
+  // Demo-mode flag — short-circuits all per-symptom validation delays to 30 seconds.
+  const FOCUS_DEMO = (function () {
+    try {
+      return new URLSearchParams(window.location.search).get("demo_focus") === "1";
+    } catch (e) {
+      return false;
+    }
+  })();
+
+  // — Storage —
+  function loadFocus() {
+    try {
+      return JSON.parse(localStorage.getItem("ss_focus") || "null");
+    } catch (e) {
+      return null;
+    }
+  }
+  function saveFocus(obj) {
+    if (obj === null) localStorage.removeItem("ss_focus");
+    else localStorage.setItem("ss_focus", JSON.stringify(obj));
+  }
+
+  function hasActiveFocus() {
+    const f = loadFocus();
+    return !!(f && !f.resolved);
+  }
+  function getActiveFocus() {
+    const f = loadFocus();
+    return f && !f.resolved ? f : null;
+  }
+
+  // — Start / End —
+  function startFocus(symptom) {
+    // Single-active-at-a-time: if another focus is mid-flow, ask before replacing.
+    const existing = getActiveFocus();
+    if (existing && existing.symptom !== symptom) {
+      const ok = confirm(
+        'Pehle wala ilaj rok dein? "' +
+          ((FOCUS_FLOWS[existing.symptom] && FOCUS_FLOWS[existing.symptom].title) ||
+            existing.symptom) +
+          '" abhi jari hai.',
+      );
+      if (!ok) return;
+      endFocus(false);
+    }
+    if (!FOCUS_FLOWS[symptom]) {
+      console.warn("[focus] unknown symptom", symptom);
+      return;
+    }
+    ST._focusPendingSymptom = symptom;
+    ST._focusQAStep = 0;
+    ST._focusQAAnswers = {};
+    goTo("s-focus-qa");
+    renderFocusQA(0);
+  }
+
+  function endFocus(showHomeReset) {
+    saveFocus(null);
+    document.body.classList.remove("focus");
+    if (showHomeReset !== false) {
+      if (typeof renderHubStories === "function") renderHubStories();
+      if (typeof applySunitaMode === "function") applySunitaMode();
+    }
+  }
+
+  function cancelFocusQA() {
+    ST._focusPendingSymptom = null;
+    ST._focusQAStep = 0;
+    ST._focusQAAnswers = {};
+    goBack();
+  }
+
+  // — Q&A render —
+  function renderFocusQA(stepIdx) {
+    const sym = ST._focusPendingSymptom;
+    if (!sym) return;
+    const flow = FOCUS_FLOWS[sym];
+    if (!flow) return;
+    const el = document.getElementById("fq-body");
+    if (!el) return;
+    const titleEl = document.getElementById("fq-hdr-title");
+    const subEl = document.getElementById("fq-hdr-sub");
+    if (titleEl) titleEl.textContent = flow.title;
+    if (subEl) subEl.textContent = `${stepIdx + 1} of ${flow.qa.length} chote sawaal`;
+    const q = flow.qa[stepIdx];
+    if (!q) return;
+
+    let html = "";
+    if (stepIdx === 0) {
+      html += `<div class="fq-opener">${flow.dadiOpener}</div>`;
+    }
+    html += `<div class="fq-progress">`;
+    for (let i = 0; i < flow.qa.length; i++) {
+      const cls = i < stepIdx ? "done" : i === stepIdx ? "current" : "";
+      html += `<div class="fq-dot ${cls}"></div>`;
+    }
+    html += `</div>`;
+    html += `<div class="fq-q">${q.q}</div>`;
+    html += `<div class="fq-opts">`;
+    q.opts.forEach((opt) => {
+      const esc = opt.replace(/'/g, "\\'");
+      html += `<button class="fq-opt" onclick="onFocusQATap('${q.id}','${esc}')">${opt}</button>`;
+    });
+    html += `</div>`;
+    html += `<button class="fq-skip" onclick="onFocusQASkip()">Skip — Saathi default rasta chunega</button>`;
+    el.innerHTML = html;
+  }
+
+  function onFocusQATap(qId, val) {
+    const sym = ST._focusPendingSymptom;
+    if (!sym) return;
+    const flow = FOCUS_FLOWS[sym];
+    ST._focusQAAnswers = ST._focusQAAnswers || {};
+    ST._focusQAAnswers[qId] = val;
+
+    // Early doctor-required short-circuit (e.g. sardi-khansi + bukhar zyada)
+    if (flow.requiresDoctor && flow.requiresDoctor(ST._focusQAAnswers)) {
+      ST._focusPendingSymptom = null;
+      ST._focusQAAnswers = {};
+      goTo("s-hub");
+      setTimeout(() => openDoctor((ST.userProfile && ST.userProfile.name) || "Aap"), 200);
+      return;
+    }
+
+    const nextIdx = ST._focusQAStep + 1;
+    if (nextIdx >= flow.qa.length) {
+      finalizeFocusStart(false);
+    } else {
+      ST._focusQAStep = nextIdx;
+      renderFocusQA(nextIdx);
+    }
+  }
+
+  function onFocusQASkip() {
+    finalizeFocusStart(true);
+  }
+
+  function finalizeFocusStart(skipped) {
+    const sym = ST._focusPendingSymptom;
+    if (!sym) return;
+    const flow = FOCUS_FLOWS[sym];
+    const answers = ST._focusQAAnswers || {};
+    const steps = flow
+      .buildSteps(answers)
+      .map((s, i) => ({ ...s, status: i === 0 ? "current" : "pending" }));
+    saveFocus({
+      symptom: sym,
+      startedAt: Date.now(),
+      qaAnswers: answers,
+      qaSkipped: !!skipped,
+      steps,
+      retryCount: 0,
+      validations: [],
+      resolved: false,
+      resolvedAt: null,
+    });
+    ST._focusPendingSymptom = null;
+    ST._focusQAStep = 0;
+    ST._focusQAAnswers = {};
+    goTo("s-hub");
+    setTimeout(() => {
+      if (typeof applySunitaMode === "function") applySunitaMode();
+      renderFocusHome();
+      if (typeof renderHubStories === "function") renderHubStories();
+    }, 60);
+  }
+
+  // — Focus home render (inside the hub, revealed by body.focus) —
+  function renderFocusHome() {
+    const el = document.getElementById("focus-home");
+    if (!el) return;
+    const f = getActiveFocus();
+    if (!f) {
+      el.innerHTML = "";
+      return;
+    }
+    const flow = FOCUS_FLOWS[f.symptom];
+    if (!flow) {
+      el.innerHTML = "";
+      return;
+    }
+    const doneCount = f.steps.filter((s) => s.status === "done").length;
+    const currIdx = f.steps.findIndex((s) => s.status === "current");
+    const progressLabel =
+      doneCount === f.steps.length
+        ? `✓ Saare ${f.steps.length} step pure huye`
+        : `Step ${(currIdx >= 0 ? currIdx : doneCount) + 1} of ${f.steps.length}`;
+
+    let html = `<div class="focus-banner">
+    <button class="focus-banner-pause" onclick="pauseFocusConfirm()" aria-label="Pause">✕</button>
+    <div class="focus-banner-row">
+      <div class="focus-banner-emoji">${flow.emoji}</div>
+      <div>
+        <div class="focus-banner-title">${flow.title}</div>
+        <div class="focus-banner-progress">${progressLabel}</div>
+      </div>
+    </div>
+    <div class="focus-dadi-quote">${flow.quote ? flow.quote(f.qaAnswers || {}) : ""}</div>
+  </div>`;
+
+    html += `<div class="focus-stepper">`;
+    f.steps.forEach((s, i) => {
+      const meta = focusStepMeta(s);
+      html += `<button class="focus-step-card ${s.status}" onclick="${s.status === "done" ? "replayFocusStep(" + i + ")" : "openFocusStep(" + i + ")"}">
+      <div class="focus-step-num">${s.status === "done" ? "✓" : i + 1}</div>
+      <div class="focus-step-info">
+        <div class="focus-step-name">${meta.emoji} ${meta.title}</div>
+        <div class="focus-step-sub">${meta.sub} · ${s.durMin || meta.durMin || 5} min</div>
+      </div>
+      <div class="focus-step-status ${s.status}">${s.status === "done" ? "Done" : s.status === "current" ? "Shuru karein →" : "Aage"}</div>
+    </button>`;
+    });
+    html += `</div>`;
+
+    if (doneCount === f.steps.length) {
+      const waitMins = FOCUS_DEMO ? 0.5 : flow.validateAfterMin || 30;
+      html += `<div class="focus-allset"><b>Bahut accha kiya beta 🙏</b>Saathi thodi der mein puchega — ab kaisa hai?<br><span style="font-size:11px;color:var(--text3)">${FOCUS_DEMO ? "~30 sec" : waitMins >= 60 ? Math.round(waitMins / 60) + " ghante" : waitMins + " min"} mein</span></div>`;
+    }
+
+    html += `<button class="focus-doctor-link" onclick="openDoctor((ST.userProfile&&ST.userProfile.name)||'Aap')">Phir bhi takleef hai? Doctor se baat karein →</button>`;
+
+    el.innerHTML = html;
+  }
+
+  // Look up display name + emoji + sub-text for a focus step from its underlying catalog
+  function focusStepMeta(step) {
+    if (step.type === "acupressure") {
+      const p = typeof ACUPRESSURE_POINTS !== "undefined" ? ACUPRESSURE_POINTS[step.key] : null;
+      return {
+        emoji: (p && p.emoji) || "✋",
+        title: (p && p.title) || "Acupressure",
+        sub: (p && p.dur) || "Pressure point",
+        durMin: 5,
+      };
+    }
+    if (step.type === "remedy") {
+      const r = typeof REMEDY_KITS !== "undefined" ? REMEDY_KITS[step.key] : null;
+      return {
+        emoji: (r && r.emoji) || "🍵",
+        title: (r && r.title) || "Nuska",
+        sub: r ? r.ingredients.split("·")[0].trim() : "Ghar ka nuska",
+        durMin: r ? Math.ceil((r.durSec || 300) / 60) : 5,
+      };
+    }
+    if (step.type === "movement" || step.type === "rest") {
+      const m = typeof MOVEMENT_SKILLS !== "undefined" ? MOVEMENT_SKILLS[step.key] : null;
+      return {
+        emoji: (m && m.emoji) || "🧘",
+        title: (m && m.title) || "Aaram",
+        sub: step.type === "rest" ? "Aaram + shaanti" : "Shareer ki movement",
+        durMin: m ? Math.ceil((m.durSec || 300) / 60) : 5,
+      };
+    }
+    return { emoji: "•", title: "Step", sub: "", durMin: 5 };
+  }
+
+  function openFocusStep(idx) {
+    const f = getActiveFocus();
+    if (!f) return;
+    const step = f.steps[idx];
+    if (!step || step.status === "done") return;
+    // Tag the skill with the focus step key so closeMovement can mark it done after
+    const tagSkill = () => {
+      if (typeof _moveSkill !== "undefined" && _moveSkill) _moveSkill._focusKey = step.key;
+    };
+    if (step.type === "acupressure") {
+      if (typeof openAcupressure === "function") {
+        openAcupressure(step.key);
+        setTimeout(tagSkill, 20);
+      }
+    } else if (step.type === "remedy") {
+      if (typeof openRemedy === "function") {
+        openRemedy(step.key);
+        setTimeout(tagSkill, 20);
+      }
+    } else if (step.type === "movement" || step.type === "rest") {
+      if (typeof openMovement === "function") {
+        openMovement(step.key);
+        setTimeout(tagSkill, 20);
+      }
+    }
+  }
+
+  function replayFocusStep(idx) {
+    // Allow re-watching a done step without changing state
+    const f = getActiveFocus();
+    if (!f) return;
+    const step = f.steps[idx];
+    if (!step) return;
+    const tagSkill = () => {
+      if (typeof _moveSkill !== "undefined" && _moveSkill) _moveSkill._focusKey = "__replay__";
+    };
+    if (step.type === "acupressure" && typeof openAcupressure === "function") {
+      openAcupressure(step.key);
+      setTimeout(tagSkill, 20);
+    } else if (step.type === "remedy" && typeof openRemedy === "function") {
+      openRemedy(step.key);
+      setTimeout(tagSkill, 20);
+    } else if (typeof openMovement === "function") {
+      openMovement(step.key);
+      setTimeout(tagSkill, 20);
+    }
+  }
+
+  function markFocusStepComplete(stepKey) {
+    if (!stepKey || stepKey === "__replay__") return;
+    const f = getActiveFocus();
+    if (!f) return;
+    let bumped = false;
+    for (let i = 0; i < f.steps.length; i++) {
+      if (f.steps[i].status !== "done" && f.steps[i].key === stepKey) {
+        f.steps[i].status = "done";
+        f.steps[i].completedAt = Date.now();
+        bumped = true;
+        const next = f.steps.find((s) => s.status === "pending");
+        if (next) next.status = "current";
+        break;
+      }
+    }
+    if (!bumped) return;
+    if (f.steps.every((s) => s.status === "done")) {
+      f.allStepsDoneAt = Date.now();
+    }
+    saveFocus(f);
+    if (typeof bumpScore === "function") bumpScore(2);
+    // Re-render any visible focus surface
+    renderFocusHome();
+    if (typeof renderHubStories === "function") renderHubStories();
+  }
+
+  function pauseFocusConfirm() {
+    const f = getActiveFocus();
+    if (!f) return;
+    const ok = confirm("Ilaj rok dein? Aap kabhi bhi phir se shuru kar sakte ho.");
+    if (!ok) return;
+    endFocus(true);
+  }
+
+  // — Validation —
+  function getFocusValidateMs() {
+    const f = getActiveFocus();
+    if (!f) return null;
+    const flow = FOCUS_FLOWS[f.symptom];
+    if (!flow) return null;
+    const min = FOCUS_DEMO ? 0.5 : flow.validateAfterMin || 30;
+    return min * 60 * 1000;
+  }
+  function isFocusValidationDue() {
+    const f = getActiveFocus();
+    if (!f) return false;
+    // Has the user been answered already in the current cycle?
+    const lastValidation = (f.validations || []).slice(-1)[0];
+    const sinceStart = Date.now() - (lastValidation ? lastValidation.answeredAt : f.startedAt);
+    return sinceStart >= getFocusValidateMs();
+  }
+
+  function openFocusValidate() {
+    const f = getActiveFocus();
+    if (!f) return;
+    const flow = FOCUS_FLOWS[f.symptom];
+    document.getElementById("fv-emoji").textContent = flow.emoji;
+    document.getElementById("fv-title").textContent = flow.validateTitle
+      ? flow.validateTitle(f.qaAnswers || {})
+      : `Beta, ${flow.title.toLowerCase()} ka kya haal hai?`;
+    document.getElementById("focus-validate-ov").classList.add("on");
+  }
+  function closeFocusValidate() {
+    document.getElementById("focus-validate-ov").classList.remove("on");
+  }
+
+  function onFocusBetter() {
+    const f = getActiveFocus();
+    if (!f) {
+      closeFocusValidate();
+      return;
+    }
+    f.validations = f.validations || [];
+    f.validations.push({ askedAt: Date.now(), answeredAt: Date.now(), answer: "better" });
+    f.resolved = true;
+    f.resolvedAt = Date.now();
+    saveFocus(f);
+    closeFocusValidate();
+    if (typeof bumpScore === "function") bumpScore(5);
+    openBlessing();
+    showAyurUpsell(f.symptom);
+    // exit focus mode — but keep #bless-ov visible so the upsell can be tapped
+    document.body.classList.remove("focus");
+    if (typeof renderHubStories === "function") setTimeout(renderHubStories, 120);
+  }
+
+  function onFocusSame() {
+    const f = getActiveFocus();
+    if (!f) {
+      closeFocusValidate();
+      return;
+    }
+    f.validations = f.validations || [];
+    f.validations.push({ askedAt: Date.now(), answeredAt: Date.now(), answer: "same" });
+    f.retryCount = (f.retryCount || 0) + 1;
+    closeFocusValidate();
+    if (f.retryCount >= 2) {
+      // Cap reached → graceful doctor handoff
+      f.resolved = true;
+      f.resolvedAt = Date.now();
+      saveFocus(f);
+      document.body.classList.remove("focus");
+      setTimeout(() => openDoctor((ST.userProfile && ST.userProfile.name) || "Aap"), 220);
+      if (typeof renderHubStories === "function") setTimeout(renderHubStories, 120);
+      return;
+    }
+    // Rotate to altSteps for the next round
+    const flow = FOCUS_FLOWS[f.symptom];
+    const alt =
+      (flow.altSteps && flow.altSteps(f.qaAnswers || {})) || flow.buildSteps(f.qaAnswers || {});
+    f.steps = alt.map((s, i) => ({ ...s, status: i === 0 ? "current" : "pending" }));
+    f.startedAt = Date.now();
+    saveFocus(f);
+    renderFocusHome();
+    if (typeof showToast === "function") showToast("Ek aur upay try karein, beta 🌿");
+    if (typeof renderHubStories === "function") setTimeout(renderHubStories, 120);
+  }
+
+  function onFocusWorse() {
+    const f = getActiveFocus();
+    if (!f) {
+      closeFocusValidate();
+      return;
+    }
+    f.validations = f.validations || [];
+    f.validations.push({ askedAt: Date.now(), answeredAt: Date.now(), answer: "worse" });
+    f.resolved = true;
+    f.resolvedAt = Date.now();
+    saveFocus(f);
+    closeFocusValidate();
+    document.body.classList.remove("focus");
+    setTimeout(() => openDoctor((ST.userProfile && ST.userProfile.name) || "Aap"), 220);
+    if (typeof renderHubStories === "function") setTimeout(renderHubStories, 120);
+  }
+
+  // — Inline Ayurvedic upsell, slides into #bless-ov —
+  function showAyurUpsell(symptom) {
+    const flow = FOCUS_FLOWS[symptom];
+    if (!flow || !flow.ayurSku) return;
+    const sku = flow.ayurSku;
+    const cat = typeof MEDICINE_CATALOG !== "undefined" ? MEDICINE_CATALOG[sku] : null;
+    if (!cat) return;
+    const slot = document.getElementById("bless-ayur-slot");
+    if (!slot) return;
+    const disc = Math.round((1 - cat.price / cat.mrp) * 100);
+    slot.innerHTML = `<div class="ayur-upsell">
+    <div class="ayur-upsell-head">
+      <div class="ayur-upsell-emoji">${cat.emoji}</div>
+      <div class="ayur-upsell-brand">${cat.brand}<span class="ayur-tag">AYUSH</span></div>
+    </div>
+    <div class="ayur-upsell-copy">${flow.ayurCopy}</div>
+    <div class="ayur-upsell-pricing">
+      <div class="ayur-upsell-price">₹${cat.price}</div>
+      <div class="ayur-upsell-mrp">₹${cat.mrp}</div>
+      ${disc > 0 ? `<div style="font-size:10px;font-weight:700;color:#fb923c;background:rgba(251,146,60,.14);border-radius:var(--radius-pill);padding:2px 8px">${disc}% OFF</div>` : ""}
+    </div>
+    <div class="ayur-upsell-actions">
+      <button class="ayur-upsell-btn secondary" onclick="dismissAyurUpsell()">Abhi nahi</button>
+      <button class="ayur-upsell-btn" onclick="orderAyurvedic('${sku}')">Ghar mangao →</button>
+    </div>
+  </div>`;
+  }
+  function dismissAyurUpsell() {
+    const slot = document.getElementById("bless-ayur-slot");
+    if (slot) slot.innerHTML = "";
+    const ov = document.getElementById("bless-ov");
+    if (ov) ov.classList.remove("on");
+  }
+
+  function orderAyurvedic(sku) {
+    const cat = MEDICINE_CATALOG[sku];
+    if (!cat) return;
+    // Dismiss the blessing overlay
+    const ov = document.getElementById("bless-ov");
+    if (ov) ov.classList.remove("on");
+    const slot = document.getElementById("bless-ayur-slot");
+    if (slot) slot.innerHTML = "";
+    // Pre-seed Sehat Bazaar cart with this single AYUSH item
+    ST.orderData = {
+      items: [
+        {
+          sku,
+          name: cat.brand,
+          generic: cat.generic,
+          mfr: cat.mfr,
+          mrp: cat.mrp,
+          price: cat.price,
+          pack: cat.pack,
+          qty: 1,
+          emoji: cat.emoji,
+        },
+      ],
+      forMember: (ST.userProfile && ST.userProfile.name) || "Aap",
+      rxId: "ayur_" + Date.now(),
+      addressId: "home",
+      payment: "cod",
+    };
+    ST.orderStep = 0;
+    goTo("s-order");
+    if (typeof renderOrderStep === "function") renderOrderStep(0);
+  }
+} // end __SS_LOADED__ guard

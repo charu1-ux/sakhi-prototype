@@ -1,0 +1,132 @@
+@import "tailwindcss";
+@import "@intelligence/tokens/styles";
+
+/*
+ * Tailwind `dark:` variant — fires on either signal so icons and utilities
+ * respond to both explicit next-themes overrides AND the OS-level colour
+ * scheme (matching the same dual-rule pattern used in tokens.css).
+ *
+ * Priority matrix:
+ *   data-theme="dark"  → dark (regardless of OS)
+ *   data-theme="light" → light (regardless of OS)
+ *   no data-theme + OS dark  → dark  (CSS-only, pre-hydration safe)
+ *   no data-theme + OS light → light
+ */
+@custom-variant dark {
+  /* 1. Explicit override via next-themes */
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  /* 2. CSS-only fallback: OS is dark AND next-themes hasn't overridden to light */
+  @media (prefers-color-scheme: dark) {
+    &:not(:where([data-theme="light"], [data-theme="light"] *)) {
+      @slot;
+    }
+  }
+}
+
+/*
+ * Map design tokens onto Tailwind v4 utilities so utilities like `bg-bg`,
+ * `text-fg`, `rounded-md`, `shadow-mid` resolve to token-driven values.
+ *
+ * IMPORTANT: <alpha-value> with var() references generates invalid CSS in Tailwind v4.
+ * Use rgb(var(--token)) without alpha — tokens flip via CSS vars so dark mode works.
+ */
+
+@theme inline {
+  --color-bg: rgb(var(--color-bg));
+  --color-surface: rgb(var(--color-surface));
+  --color-surface-elevated: rgb(var(--color-surface-elevated));
+  --color-fg: rgb(var(--color-fg));
+  --color-fg-muted: rgb(var(--color-fg-muted));
+  --color-border: rgb(var(--color-border));
+  --color-border-strong: rgb(var(--color-border-strong));
+  --color-primary: rgb(var(--color-primary));
+  --color-primary-fg: rgb(var(--color-primary-fg));
+  --color-success: rgb(var(--color-success));
+  --color-warning: rgb(var(--color-warning));
+  --color-danger: rgb(var(--color-danger));
+  --color-info: rgb(var(--color-info));
+  --color-live: rgb(var(--color-live));
+
+  /* Shell — per-vertical gradient accent colours */
+  --color-vertical-news: #ffb39e;
+  --color-vertical-cricket: #ff9eb6;
+  --color-vertical-devotion: #81e8e8;
+  --color-vertical-jobs: #f6f09a;
+  --color-vertical-health: #9ee4ff;
+  --color-vertical-finance: #b5ff9e;
+  --color-vertical-astro: #9eaeff;
+  --color-vertical-glow: #f5fafe;
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-full: var(--radius-full);
+
+  --shadow-flat: var(--shadow-flat);
+  --shadow-low: var(--shadow-low);
+  --shadow-mid: var(--shadow-mid);
+  --shadow-high: var(--shadow-high);
+}
+
+/* Safe-area utilities — keep content out of the iOS notch and bottom handle. */
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+@utility pl-safe {
+  padding-left: env(safe-area-inset-left);
+}
+@utility pr-safe {
+  padding-right: env(safe-area-inset-right);
+}
+@utility px-safe {
+  padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+}
+@utility py-safe {
+  padding-block: env(safe-area-inset-top) env(safe-area-inset-bottom);
+}
+
+/* Hide scrollbars globally — mobile app should never show browser scrollbars. */
+* {
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+}
+
+html {
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: rgb(var(--color-bg));
+  color: rgb(var(--color-fg));
+  color-scheme: light dark;
+  font-family: var(--font-sans);
+}
+
+body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: rgb(var(--color-bg));
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

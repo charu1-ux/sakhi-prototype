@@ -1,0 +1,13 @@
+{
+  "version": "1.0",
+  "vertical": "jobs",
+  "lead": "Samyak",
+  "color": "#10B981",
+  "devPort": 3003,
+  "rules": {
+    "allowedImportPrefixes": ["@/components/", "@/lib/", "react", "next", "lucide-react"],
+    "forbiddenPatterns": ["@radix-ui", "gsap", "@gsap", "framer-motion"],
+    "requiredFiles": ["src/app/page.tsx", "src/app/layout.tsx"]
+  },
+  "screens": []
+}

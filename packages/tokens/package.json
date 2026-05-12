@@ -1,0 +1,9 @@
+{
+  "name": "@intelligence/tokens",
+  "version": "0.1.0",
+  "main": "./tokens.ts",
+  "exports": {
+    ".": "./tokens.ts",
+    "./styles": "./tokens.css"
+  }
+}

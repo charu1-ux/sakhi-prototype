@@ -1,0 +1,38 @@
+---
+description: Atomic-design discipline for components
+globs: src/components/**
+alwaysApply: false
+---
+
+# Component rules
+
+## Folder placement
+
+- `primitives/` — Radix wrappers, Tailwind-styled. The only place that imports `@radix-ui/*`.
+- `atoms/` — single-purpose UI (Badge, Spinner, Input, ThemeToggle…).
+- `molecules/` — 2–4 atoms grouped (SearchBar, AvatarName, IconLabel…).
+- `organisms/` — self-contained sections (NavHeader, ChatInputDock, MessageBubble…).
+- `templates/` — page-level layout skeletons with slots.
+
+## Authoring rules
+
+- Always export named, never default — except for Storybook `*.stories.tsx`.
+- Use `React.forwardRef` for any component that wraps an interactive native element.
+- Compose class names with `cn(...)`. Pass `className` through last so callers can override.
+- Provide stable, descriptive `displayName` on `forwardRef` components.
+
+## Concrete pattern
+
+```tsx
+export const Foo = React.forwardRef<HTMLButtonElement, FooProps>(
+  ({ variant = "primary", className, ...rest }, ref) => (
+    <button ref={ref} className={cn(base, variants[variant], className)} {...rest} />
+  ),
+);
+Foo.displayName = "Foo";
+```
+
+## Storybook
+
+- Each component must ship a colocated `Component.stories.tsx`.
+- Stories cover at minimum: default, variants, disabled (if interactive).

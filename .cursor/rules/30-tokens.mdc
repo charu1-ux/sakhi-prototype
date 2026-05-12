@@ -1,0 +1,31 @@
+---
+description: Design token authoring & dual-export contract
+globs: src/styles/**
+alwaysApply: false
+---
+
+# Tokens
+
+## Dual-export contract
+
+- `tokens.css` is the source of truth for **CSS-consumed** tokens (color, spacing, radius, shadow). Light values live on `:root`, dark on `[data-theme="dark"]`.
+- `tokens.ts` is the typed mirror for **JS-consumed** tokens (motion, numeric spacing, radius). Values MUST match `tokens.css`.
+- When you change one, change both in the same commit.
+
+## Naming
+
+- Colors: `--color-<role>` (e.g. `--color-bg`, `--color-fg-muted`, `--color-primary`).
+- Spacing: `--space-<scale>` (8pt grid: 0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16).
+- Radius: `--radius-{sm,md,lg,full}`.
+- Shadow: `--shadow-{flat,low,mid,high}`.
+- Motion: `--duration-{fast,base,slow,deliberate}`, `--ease-{standard,emphasized,bounce}`.
+
+## Wiring to Tailwind
+
+- New CSS tokens must be mapped under `@theme inline { … }` in `src/app/globals.css` so Tailwind utilities resolve them.
+- New TS tokens go in `tokens.ts` only when JS code (GSAP, math) needs them.
+
+## Don't
+
+- Don't introduce raw hex/rgb in components — extend tokens instead.
+- Don't fork tokens per vertical; verticals theme via the same vars.

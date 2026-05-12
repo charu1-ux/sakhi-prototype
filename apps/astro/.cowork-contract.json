@@ -1,0 +1,13 @@
+{
+  "version": "1.0",
+  "vertical": "astro",
+  "lead": "Shivali",
+  "color": "#EC4899",
+  "devPort": 3002,
+  "rules": {
+    "allowedImportPrefixes": ["@/components/", "@/lib/", "react", "next", "lucide-react"],
+    "forbiddenPatterns": ["@radix-ui", "gsap", "@gsap", "framer-motion"],
+    "requiredFiles": ["src/app/page.tsx", "src/app/layout.tsx"]
+  },
+  "screens": []
+}

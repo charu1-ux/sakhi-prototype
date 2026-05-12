@@ -1,0 +1,40 @@
+---
+description: Project-wide conventions for intelligence-core
+alwaysApply: true
+---
+
+# intelligence-core — global rules
+
+## Stack
+
+- Next.js 16 App Router · React 19 · TypeScript 5
+- Tailwind v4 (classes-only styling — see `99-tailwind-only.mdc`)
+- Radix UI primitives wrapped under `src/components/primitives/`
+- Design tokens at `src/styles/tokens.css` + `src/styles/tokens.ts`
+- GSAP via `@/lib/motion`
+- next-themes (`attribute="data-theme"`) for dark/light
+
+## Layout
+
+```
+src/app/         App Router routes, layout, sw.ts (Serwist)
+src/components/  primitives/ atoms/ molecules/ organisms/ templates/
+src/lib/         cn.ts, icons/, motion/
+src/styles/      tokens.css, tokens.ts
+public/          manifest.webmanifest, icons/
+docs/            design-system/, adr/, cowork/
+```
+
+## Hard rules
+
+- Use the `cn()` helper for className composition. Never concatenate class strings manually.
+- Tokens via Tailwind utilities only (`bg-bg`, `text-fg`, `rounded-md`, `shadow-mid`). No hex / rgb / px literals in components.
+- Imports flow upward only: atom -> molecule -> organism -> template -> page.
+- New components belong in the correct atomic folder and need a Storybook story.
+- Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`...) — enforced by commitlint.
+
+## Don't
+
+- Don't add `*.module.css`, styled-components, emotion, or any CSS-in-JS.
+- Don't import Radix packages outside `src/components/primitives/`.
+- Don't hard-code colours, spacing, radii, durations, or easings — extend tokens instead.

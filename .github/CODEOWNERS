@@ -1,0 +1,7 @@
+# Default owners for everything in the repo.
+* @akshay1-borhade
+
+# Design system core — keep token / primitive review tight.
+/src/styles/                 @akshay1-borhade
+/src/components/primitives/  @akshay1-borhade
+/.cursor/rules/              @akshay1-borhade

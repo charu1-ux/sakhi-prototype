@@ -1,0 +1,29 @@
+---
+description: Next.js App Router conventions for intelligence-core
+globs: src/app/**
+alwaysApply: false
+---
+
+# App Router conventions
+
+## Server vs Client components
+
+- Default to Server Components. Add `"use client"` only when the file uses hooks, refs, or browser APIs (event handlers count).
+- Keep data fetching in Server Components / route handlers; never in atoms.
+
+## Layout & PWA
+
+- `app/layout.tsx` is the only place to mount providers (`ThemeProvider`, future `TooltipProvider`).
+- Always export both `metadata` and `viewport` — `viewportFit: "cover"` is required for safe-area to work.
+- Use `min-h-dvh` (not `min-h-screen`) so iOS reports the correct viewport height.
+- Wrap top-level shells with the safe-area utilities (`pt-safe`, `pb-safe`, `px-safe`).
+
+## Fonts & icons
+
+- Fonts come from `next/font` only — never `<link>` tags. Geist for sans, Geist_Mono for mono.
+- Icons come from `@/lib/icons`, never directly from `lucide-react` in app code.
+
+## Routing
+
+- Co-locate `loading.tsx`, `error.tsx`, and `not-found.tsx` per route segment.
+- Route Handlers live in `app/api/*/route.ts`.

@@ -1,0 +1,13 @@
+{
+  "version": "1.0",
+  "vertical": "health",
+  "lead": "Nawaneet",
+  "color": "#3B82F6",
+  "devPort": 3004,
+  "rules": {
+    "allowedImportPrefixes": ["@/components/", "@/lib/", "react", "next", "lucide-react"],
+    "forbiddenPatterns": ["@radix-ui", "gsap", "@gsap", "framer-motion"],
+    "requiredFiles": ["src/app/page.tsx", "src/app/layout.tsx"]
+  },
+  "screens": []
+}
