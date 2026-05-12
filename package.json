@@ -1,0 +1,42 @@
+{
+  "name": "intelligence-prototype",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:shell": "turbo run dev --filter=@intelligence/shell",
+    "dev:news": "turbo run dev --filter=@intelligence/news",
+    "dev:astro": "turbo run dev --filter=@intelligence/astro",
+    "dev:jobs": "turbo run dev --filter=@intelligence/jobs",
+    "dev:health": "turbo run dev --filter=@intelligence/health",
+    "dev:finance": "turbo run dev --filter=@intelligence/finance",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "prepare": "husky || true"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.6.0",
+    "@commitlint/config-conventional": "^19.6.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.10",
+    "turbo": "^2"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs,cjs,json,md,mdx,css,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "packageManager": "npm@11.12.1",
+  "engines": {
+    "node": ">=22"
+  }
+}
