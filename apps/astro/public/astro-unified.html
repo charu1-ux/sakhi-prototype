@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Jio Bharat IQ Astro — Full Experience</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+  font-family:'Outfit',sans-serif;
+  background:#0a0a1a;
+  min-height:100vh;
+  overflow:hidden;
+  display:flex; justify-content:center;
+}
+
+.phone-frame {
+  width:390px; max-width:100vw; height:100vh;
+  position:relative; overflow:hidden;
+}
+
+/* Mobile: full screen, no constraint */
+@media (max-width: 480px) {
+  .phone-frame { width:100%; max-width:100%; }
+}
+
+/* ── Phases ── */
+.phase {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  opacity:0; pointer-events:none;
+  transition: opacity 700ms cubic-bezier(0.4,0,0.2,1), transform 700ms cubic-bezier(0.4,0,0.2,1);
+  z-index:1;
+  transform: scale(0.97);
+}
+.phase.active {
+  opacity:1; pointer-events:all; z-index:2;
+  transform: scale(1);
+}
+.phase.exiting {
+  opacity:0; pointer-events:none; z-index:1;
+  transform: scale(1.03);
+}
+.phase iframe {
+  width:100%; height:100%; border:none; background:#faf9f6;
+}
+
+/* ── Transition Overlay ── */
+.transition-overlay {
+  position:absolute; inset:0;
+  background:radial-gradient(ellipse at center, #1a1a4e, #0a0a1a);
+  z-index:10; opacity:0; pointer-events:none;
+  transition: opacity 500ms cubic-bezier(0.4,0,0.2,1);
+}
+.transition-overlay.active { opacity:1; pointer-events:all; }
+
+/* ── Keyframes ── */
+@keyframes fadeInUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeInScale { from { opacity:0; transform:scale(0.85); } to { opacity:1; transform:scale(1); } }
+@keyframes twinkle { 0%,100% { opacity:0.2; } 50% { opacity:0.9; } }
+@keyframes breathe { 0%,100% { transform:scale(1); opacity:0.6; } 50% { transform:scale(1.1); opacity:1; } }
+@keyframes pulseRing { 0% { transform:scale(1); opacity:0.5; } 100% { transform:scale(1.6); opacity:0; } }
+</style>
+</head>
+<body>
+<div class="phone-frame" id="app">
+
+  <!-- ═══ STAGE 0: JBIQ Homepage ═══ -->
+  <div class="phase active" id="phase-jbiq">
+    <iframe src="jbiq-homepage.html?unified=1" id="iframe-jbiq" allow="autoplay"></iframe>
+  </div>
+
+  <!-- ═══ STAGE 1: Phase 0 — Birth Details Capture ═══ -->
+  <div class="phase" id="phase-phase0">
+    <iframe id="iframe-phase0" allow="autoplay"></iframe>
+  </div>
+
+  <!-- ═══ STAGE 2: Phase 1 — Grand Kundli Reveal (Ashutosh) ═══ -->
+  <div class="phase" id="phase-phase1">
+    <iframe id="iframe-phase1" allow="autoplay"></iframe>
+  </div>
+
+  <!-- ═══ STAGE 3: New User Astro Homepage ═══ -->
+  <div class="phase" id="phase-homepage">
+    <iframe id="iframe-homepage" allow="autoplay"></iframe>
+  </div>
+
+  <!-- ═══ STAGE 4: Repeat User Daily Homepage ═══ -->
+  <div class="phase" id="phase-daily">
+    <iframe id="iframe-daily" allow="autoplay"></iframe>
+  </div>
+
+  <!-- Transition overlay for smooth phase switches -->
+  <div class="transition-overlay" id="transition"></div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   ORCHESTRATOR — 5-Stage Flow
+   ═══════════════════════════════════════
+
+   JBIQ Homepage
+     → click Astrology avatar
+   Phase 0 (astro-phase0.html)
+     → DOB/TOB/POB → cosmic loading → auto-advance
+   Phase 1 (astro-phase1.html)
+     → Grand Reveal + Ashutosh narration → "Explore My Stars" CTA
+   New User Homepage (astro-home.html)
+     → "Start Daily Guidance" CTA at bottom
+   Daily Homepage (astro-home-daily.html)
+     → "Explore Kundli Universe" re-entry card → loops to homepage
+*/
+
+let currentPhase = 'jbiq';
+let transitioning = false;
+
+function transitionTo(phaseId, iframeSrc) {
+  if (transitioning || currentPhase === phaseId) return;
+  transitioning = true;
+
+  var overlay = document.getElementById('transition');
+  var currentEl = document.getElementById('phase-' + currentPhase);
+  var nextEl = document.getElementById('phase-' + phaseId);
+
+  // Fade in overlay
+  overlay.classList.add('active');
+
+  setTimeout(function() {
+    // Load iframe src NOW (just before becoming visible) so animations play correctly
+    if (iframeSrc) {
+      var iframe = nextEl.querySelector('iframe');
+      if (iframe && (!iframe.src || iframe.src === 'about:blank' || iframe.src === '')) {
+        iframe.src = iframeSrc;
+      }
+    }
+
+    // Swap visibility
+    currentEl.classList.remove('active');
+    currentEl.classList.add('exiting');
+    nextEl.classList.add('active');
+
+    // Fade out overlay
+    setTimeout(function() {
+      overlay.classList.remove('active');
+      currentEl.classList.remove('exiting');
+      currentPhase = phaseId;
+      transitioning = false;
+    }, 500);
+  }, 500);
+}
+
+// ── Navigation Functions ──
+function goToPhase0() {
+  transitionTo('phase0', 'astro-phase0.html?unified=1');
+}
+
+function goToPhase1() {
+  transitionTo('phase1', 'astro-phase1.html?unified=1');
+}
+
+function goToHomepage() {
+  transitionTo('homepage', 'astro-home.html?unified=1');
+}
+
+function goToDaily() {
+  transitionTo('daily', 'astro-home-daily-v2.html?unified=1');
+}
+
+function goToHomepageFromDaily() {
+  transitionTo('homepage');
+}
+
+// ── Listen for messages from child iframes ──
+window.addEventListener('message', function(e) {
+  if (!e.data || !e.data.type) return;
+
+  switch (e.data.type) {
+    case 'astrology-avatar-clicked':
+      // JBIQ homepage → Phase 0
+      goToPhase0();
+      break;
+
+    case 'phase0-complete':
+      // Phase 0 done → Phase 1 (Grand Reveal)
+      goToPhase1();
+      break;
+
+    case 'phase1-complete':
+      // Phase 1 done → New User Homepage
+      goToHomepage();
+      break;
+
+    case 'go-daily':
+      // New user homepage → Daily homepage
+      goToDaily();
+      break;
+
+    case 'go-kundli-universe':
+      // Daily homepage → back to New User Homepage
+      goToHomepageFromDaily();
+      break;
+  }
+});
+
+// ── Debug: keyboard shortcuts (1-5) ──
+document.addEventListener('keydown', function(e) {
+  if (e.key === '1') transitionTo('jbiq');
+  if (e.key === '2') goToPhase0();
+  if (e.key === '3') goToPhase1();
+  if (e.key === '4') goToHomepage();
+  if (e.key === '5') goToDaily();
+});
+</script>
+</body>
+</html>

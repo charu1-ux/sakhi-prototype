@@ -26,6 +26,11 @@ const nextConfig: NextConfig = {
         destination: "/health",
         permanent: false,
       },
+      {
+        source: "/astro/index.html",
+        destination: "/astro",
+        permanent: false,
+      },
     ];
   },
 };

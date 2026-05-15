@@ -1,0 +1,2292 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Jio Bharat IQ Astro — Daily V2</title>
+<style>
+:root {
+  --primary-50: #3535f3;
+  --primary-20: #ebebfe;
+  --secondary-50: #f5a623;
+  --sparkle-50: #00c48c;
+  --planet-mercury: #4ecdc4;
+  --text-high: #1a1a1a;
+  --text-mid: #555;
+  --text-low: #888;
+  --text-disabled: #aaa;
+  --white: #ffffff;
+  --surface-ghost: #f5f5f7;
+  --stroke-minimal: #eee;
+  --grey-40: #ccc;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { font-family:'Outfit',sans-serif; background:#0a0a1a; display:block; margin:0; padding:0; min-height:100vh; overscroll-behavior:none; }
+
+.phone-frame {
+  width:100%; max-width:100%; height:100vh; background:#0a0a1a;
+  position:relative; overflow:hidden; display:flex; flex-direction:column;
+}
+.status-bar { display:none; }
+.status-bar-right { display:flex; gap:5px; align-items:center; }
+
+.scroll-feed {
+  flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: max(32px, calc(32px + env(safe-area-inset-bottom)));
+  position:relative;
+}
+.scroll-feed::-webkit-scrollbar { display:none; }
+
+.horiz-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+.horiz-scroll::-webkit-scrollbar { display:none; }
+
+@keyframes fadeInUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+@keyframes breathe { 0%,100% { transform:scale(1); opacity:0.7; } 50% { transform:scale(1.08); opacity:1; } }
+@keyframes pulseRing { 0% { transform:scale(1); opacity:0.6; } 100% { transform:scale(1.8); opacity:0; } }
+@keyframes shimmer { 0% { background-position:-200% 0; } 100% { background-position:200% 0; } }
+@keyframes pulseDot { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+@keyframes livePulse { 0%,100% { box-shadow:0 0 0 0 rgba(0,196,140,0.4); } 50% { box-shadow:0 0 0 8px rgba(0,196,140,0); } }
+@keyframes speakerPulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.05); } }
+@keyframes scanLine { 0% { top:0; opacity:0.8; } 50% { opacity:1; } 100% { top:100%; opacity:0.8; } }
+@keyframes typewriter { from { width:0; } to { width:100%; } }
+@keyframes orbitSpin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+@keyframes floatIn { from { opacity:0; transform:translateX(-40px) scale(0.8); } to { opacity:1; transform:translateX(0) scale(1); } }
+@keyframes chestOpen { 0% { transform:translateY(0) scaleY(1); } 50% { transform:translateY(-12px) scaleY(1.1); } 100% { transform:translateY(-20px) scaleY(0.3); opacity:0.3; } }
+@keyframes revealUp { from { opacity:0; transform:translateY(30px) scale(0.9); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes glowPulse { 0%,100% { box-shadow:0 0 20px rgba(245,166,35,0.3); } 50% { box-shadow:0 0 40px rgba(245,166,35,0.6); } }
+@keyframes cosmicEntry { 0% { opacity:0; transform:scale(0.5); filter:blur(10px); } 60% { opacity:1; transform:scale(1.05); filter:blur(0); } 100% { opacity:1; transform:scale(1); filter:blur(0); } }
+@keyframes starTwinkle { 0%,100% { opacity:0.15; } 50% { opacity:0.6; } }
+@keyframes meteorFlash { 0% { opacity:0; transform:translateX(-20px) translateY(20px); } 30% { opacity:1; } 100% { opacity:0; transform:translateX(20px) translateY(-20px); } }
+@keyframes auraGlow { 0%,100% { filter:blur(8px) brightness(0.8); } 50% { filter:blur(12px) brightness(1.2); } }
+@keyframes gateOpen { 0% { transform:scaleX(1); } 100% { transform:scaleX(0); transform-origin:left; } }
+@keyframes counterUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+@keyframes zodiacSpin { from { transform:translate(-50%,-50%) rotate(0deg); } to { transform:translate(-50%,-50%) rotate(360deg); } }
+@keyframes zodiacSpinReverse { from { transform:translate(-50%,-50%) rotate(0deg); } to { transform:translate(-50%,-50%) rotate(-360deg); } }
+@keyframes sunPulse { 0%,100% { filter:brightness(1) drop-shadow(0 0 15px rgba(245,166,35,0.5)); } 50% { filter:brightness(1.3) drop-shadow(0 0 30px rgba(245,166,35,0.8)); } }
+@keyframes sceneTextIn { 0% { opacity:0; transform:translateY(14px) scale(0.95); } 100% { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes rashiHighlight { 0%,100% { filter:brightness(1) drop-shadow(0 0 0px transparent); } 50% { filter:brightness(1.8) drop-shadow(0 0 8px rgba(245,166,35,0.6)); } }
+</style>
+
+<script src="vendor/react.production.min.js"></script>
+<script src="vendor/react-dom.production.min.js"></script>
+<script src="vendor/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script>
+</script>
+<script type="text/babel">
+const { useState, useEffect, useRef, useMemo } = React;
+const IS_UNIFIED = new URLSearchParams(window.location.search).has('unified');
+
+/* ========== ELEVENLABS TTS (set ELEVEN_KEY locally; do not commit secrets) ========== */
+const ELEVEN_KEY = '';
+const ELEVEN_TTS_URL = 'https://api.elevenlabs.io/v1/text-to-speech/';
+const VOICE_IDS = {
+  'abhilash': 'CwhRBWXzGAHq8TQ4Fs17',
+  'karun': 'onwK4e9ZLuTAKqWW03F9',
+  'hitesh': 'pqHfZKP75CvOlQylNhV4',
+  'arya': 'iP95p4xoKVk53GoZ742B',
+};
+const DEFAULT_VOICE_ID = 'CwhRBWXzGAHq8TQ4Fs17';
+
+const audioCache = {};
+const fetchTTSAudio = async (text, speaker = 'abhilash', cacheKey) => {
+  const key = cacheKey || text.slice(0, 40);
+  if (audioCache[key]) return audioCache[key];
+  const voiceId = VOICE_IDS[speaker] || DEFAULT_VOICE_ID;
+  try {
+    const resp = await fetch(ELEVEN_TTS_URL + voiceId, {
+      method: 'POST',
+      headers: { 'xi-api-key': ELEVEN_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, model_id: 'eleven_multilingual_v2', voice_settings: { stability: 0.7, similarity_boost: 0.8, style: 0.35 } }),
+    });
+    if (!resp.ok) throw new Error('TTS error: ' + resp.status);
+    const blob = await resp.blob();
+    const src = URL.createObjectURL(blob);
+    audioCache[key] = src;
+    return src;
+  } catch (e) { console.warn('TTS fetch failed:', e); return null; }
+};
+
+const playAudioSrc = (src) => new Promise((resolve) => {
+  if (!src) { resolve(); return; }
+  const audio = new Audio(src);
+  audio.onended = resolve;
+  audio.onerror = resolve;
+  audio.play().catch(resolve);
+});
+
+const playTTS = async (text, speaker = 'abhilash') => {
+  const voiceId = VOICE_IDS[speaker] || DEFAULT_VOICE_ID;
+  const chunks = [];
+  if (text.length <= 480) { chunks.push(text); }
+  else {
+    let remaining = text;
+    while (remaining.length > 0) {
+      if (remaining.length <= 480) { chunks.push(remaining); break; }
+      let cut = remaining.lastIndexOf('\u0964', 479);
+      if (cut < 100) cut = remaining.lastIndexOf('.', 479);
+      if (cut < 100) cut = remaining.lastIndexOf(',', 479);
+      if (cut < 100) cut = 479;
+      chunks.push(remaining.substring(0, cut + 1));
+      remaining = remaining.substring(cut + 1).trim();
+    }
+  }
+  for (const chunk of chunks) {
+    try {
+      const resp = await fetch(ELEVEN_TTS_URL + voiceId, {
+        method: 'POST',
+        headers: { 'xi-api-key': ELEVEN_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: chunk, model_id: 'eleven_multilingual_v2', voice_settings: { stability: 0.7, similarity_boost: 0.8, style: 0.35 } }),
+      });
+      if (!resp.ok) throw new Error(await resp.text());
+      const blob = await resp.blob();
+      const audio = new Audio(URL.createObjectURL(blob));
+      await new Promise((resolve) => { audio.onended = resolve; audio.onerror = resolve; audio.play(); });
+    } catch (err) { console.error('TTS chunk error:', err); throw err; }
+  }
+};
+
+
+/* ========== USER PROFILE ========== */
+const USER_NAME = 'Shivali';
+const RASHI = 'Vrishchik';
+const RASHI_SYMBOL = '\u264F';
+const RULING_PLANET = 'Mercury';
+const NAKSHATRA = 'Anuradha';
+const MULANK = 9;
+const DOB = '15 Nov 1995';
+const BIRTH_TIME = '10:32 AM';
+
+
+/* ========== TIMELINE DATA ========== */
+const DAILY_TIMELINE = [
+  { hour:5, endHour:7, planet:'Sun', icon:'\u2609', nameHi:'\u0938\u0942\u0930\u094D\u092F', color:'#ff8c00', label:'\u092A\u094D\u0930\u093E\u0930\u094D\u0925\u0928\u093E \u0915\u093E \u0938\u092E\u092F', advice:'Surya namaskar \u2014 spiritual energy peak',
+    narration:'सुबह पाँच से सात बजे तक सूर्य का समय है। आपके मूलांक नौ के साथ सूर्य की एनर्जी बहुत स्ट्रांग होती है। ये टाइम है प्रार्थना का, सूर्य नमस्कार का। स्पिरिचुअल एनर्जी पीक पर है।' },
+  { hour:7, endHour:9, planet:'Mercury', icon:'\u263F', nameHi:'\u092C\u0941\u0927', color:'#4ecdc4', label:'\u0938\u0902\u0935\u093E\u0926 \u0936\u0915\u094D\u0924\u093F', advice:'Important calls and emails \u2014 words have power now',
+    narration:'सात से नौ बजे तक बुध का समय है, और आज बुधवार है तो ये टाइम डबल पावरफ़ुल है। जो भी इम्पॉर्टेंट कॉल या ईमेल है, अभी करो। आपकी वाणी में आज जादू है।' },
+  { hour:9, endHour:11, planet:'Mars', icon:'\u2642', nameHi:'\u092E\u0902\u0917\u0932', color:'#ff4444', label:'\u0928\u093F\u0930\u094D\u0923\u092F \u090A\u0930\u094D\u091C\u093E', advice:'Bold decisions \u2014 Mars charges your lagna today',
+    narration:'नौ से ग्यारह बजे तक मंगल का समय है। आपकी कुंडली में मंगल लग्न में है, तो ये टाइम आपके लिए सबसे पावरफ़ुल है। बोल्ड डिसीज़न लो, इनिशिएटिव लो। मंगल आपको चार्ज कर रहा है।' },
+  { hour:11, endHour:14, planet:'Jupiter', icon:'\u2643', nameHi:'\u0917\u0941\u0930\u0941', color:'#9b59b6', label:'\u091C\u094D\u091E\u093E\u0928 \u0935\u093F\u0938\u094D\u0924\u093E\u0930', advice:'Learning and mentoring \u2014 absorb everything',
+    narration:'ग्यारह से दो बजे तक गुरु का समय है। बृहस्पति आपके पंचम भाव में है, तो ये सीखने और सिखाने का बेस्ट टाइम है। कोई नया स्किल, कोई डीप कन्वर्सेशन, सब एब्ज़ॉर्ब करो।' },
+  { hour:14, endHour:16, planet:'Venus', icon:'\u2640', nameHi:'\u0936\u0941\u0915\u094D\u0930', color:'#e84393', label:'\u0938\u094C\u0902\u0926\u0930\u094D\u092F \u0915\u093E\u0932', advice:'Creative work and relationships flourish',
+    narration:'दोपहर दो से चार बजे तक शुक्र का समय है। इसमें गोल्डन विंडो भी है। क्रिएटिव काम करो, रिलेशनशिप्स पर ध्यान दो। फ़ाइनेंशियल डिसीज़न के लिए ये बेस्ट स्लॉट है आज।' },
+  { hour:16, endHour:18, planet:'Saturn', icon:'\u2644', nameHi:'\u0936\u0928\u093F', color:'#3d5a99', label:'\u0905\u0928\u0941\u0936\u093E\u0938\u0928', advice:'Pending tasks \u2014 Saturn rewards honest effort',
+    narration:'चार से छह बजे तक शनि का समय है। आपकी कुंडली में शनि दशम भाव में स्ट्रांग है। पेंडिंग काम ख़त्म करो, डिसिप्लिन से करो। शनि मेहनत का फल ज़रूर देता है।' },
+  { hour:18, endHour:20, planet:'Moon', icon:'\u263D', nameHi:'\u091A\u0902\u0926\u094D\u0930', color:'#e8c44a', label:'\u092D\u093E\u0935\u0928\u093E\u0924\u094D\u092E\u0915 \u0938\u092E\u092F', advice:'Family time \u2014 emotional bonds strengthen',
+    narration:'शाम छह से आठ बजे तक चंद्र का समय है। आपका मून आठवें भाव में है, तो इमोशन्स डीप होंगे। फ़ैमिली के साथ टाइम स्पेंड करो, इमोशनल बॉन्ड्स मज़बूत होंगे। सॉफ़्ट टोन रखें।' },
+  { hour:20, endHour:23, planet:'Rahu', icon:'\u260A', nameHi:'\u0930\u093E\u0939\u0941', color:'#636e72', label:'\u0938\u093E\u0935\u0927\u093E\u0928\u0940 \u0915\u093E\u0932', advice:'Avoid impulsive decisions \u2014 Rahu clouds clarity',
+    narration:'रात आठ से ग्यारह बजे तक राहु का समय है। इस टाइम में इम्पल्सिव डिसीज़न अवॉइड करो। राहु क्लैरिटी को क्लाउड करता है। रिलैक्स करो, कोई बड़ा डिसीज़न कल पर छोड़ो। रेस्ट इम्पॉर्टेंट है।' },
+];
+
+const GOLDEN_WINDOW = {
+  startHour:14, startMin:18, endHour:15, endMin:7,
+  planet:'Jupiter', planetIcon:'\u2643',
+  label:'Golden Window', advice:'Best for: Financial decisions, important conversations',
+  timeLabel:'2:18 \u2013 3:07 PM \u00B7 Jupiter',
+};
+
+const getSlotForHour = (h) => {
+  for (let i = DAILY_TIMELINE.length - 1; i >= 0; i--) {
+    if (h >= DAILY_TIMELINE[i].hour) return DAILY_TIMELINE[i];
+  }
+  return DAILY_TIMELINE[0];
+};
+
+
+/* ========== ENERGY / FORECAST CARDS ========== */
+const ENERGY_CARDS = [
+  { label:'Career', labelHi:'करियर', score:82, icon:'\uD83D\uDCBC', color:'#3535f3', zone:'head',
+    summary:'Saturn 10th house mein strong', tip:'11 AM ke baad important meetings' },
+  { label:'Love', labelHi:'प्रेम', score:65, icon:'\u2764\uFE0F', color:'#e84393', zone:'heart',
+    summary:'Venus thoda weak hai is hafte', tip:'Partner ko space do' },
+  { label:'Wealth', labelHi:'धन', score:85, icon:'\uD83D\uDCB0', color:'#f5a623', zone:'solar',
+    summary:'Jupiter 5th house — investments ke liye achha', tip:'Golden window mein financial calls' },
+  { label:'Health', labelHi:'स्वास्थ्य', score:71, icon:'\uD83C\uDFC3', color:'#00c48c', zone:'body',
+    summary:'Mars lagna mein — vitality high', tip:'Evening walk best rahegi' },
+];
+
+
+/* ========== WEEKLY UPAY ========== */
+const WEEKLY_UPAY = [
+  { day:'\u0938\u094B\u092E', dayEn:'Mon', planet:'Moon', planetIcon:'\u263D', color:'#7f8fa6', upay:'Shivling par jal chadhayein', active:false },
+  { day:'\u092E\u0902\u0917\u0932', dayEn:'Tue', planet:'Mars', planetIcon:'\u2642', color:'#ff4444', upay:'Hanuman Chalisa padhein', active:false },
+  { day:'\u092C\u0941\u0927', dayEn:'Wed', planet:'Mercury', planetIcon:'\u263F', color:'#4ecdc4', upay:'Hara rang pehne \u2014 budh ki shakti badhegi', active:true },
+  { day:'\u0917\u0941\u0930\u0941', dayEn:'Thu', planet:'Jupiter', planetIcon:'\u2643', color:'#9b59b6', upay:'Peela vastra dharan karein', active:false },
+  { day:'\u0936\u0941\u0915\u094D\u0930', dayEn:'Fri', planet:'Venus', planetIcon:'\u2640', color:'#e84393', upay:'Kheer ka daan karein', active:false },
+  { day:'\u0936\u0928\u093F', dayEn:'Sat', planet:'Saturn', planetIcon:'\u2644', color:'#3d5a99', upay:'Sarso tel ka diya jalayein', active:false },
+  { day:'\u0930\u0935\u093F', dayEn:'Sun', planet:'Sun', planetIcon:'\u2609', color:'#ff8c00', upay:'Surya ko jal dein subah', active:false },
+];
+
+
+/* ========== TRANSIT CHANGES ========== */
+const TRANSIT_CHANGES = [
+  { planet:'Moon', planetIcon:'☽', color:'#e8c44a',
+    from:'7th House', to:'8th House', fromAngle:90, toAngle:135,
+    meaning:'Emotional sensitivity badhi hai — family ke saath soft tone rakhein' },
+  { planet:'Mercury', planetIcon:'☿', color:'#5fffb0',
+    from:'Retrograde', to:'Direct', fromAngle:200, toAngle:160,
+    meaning:'Communication mein clarity waapas — pending emails aaj karo' },
+];
+
+
+/* ========== PLANET MOODS ========== */
+const PLANET_MOODS = [
+  { name:'Budh', icon:'\u263F', color:'#4ecdc4', mood:'aligned', moodHi:'सामंजस्य में', message:'Communication smooth rahega' },
+  { name:'Mangal', icon:'\u2642', color:'#ff4444', mood:'energized', moodHi:'ऊर्जावान', message:'Courage aur drive peak par' },
+  { name:'Shukra', icon:'\u2640', color:'#e84393', mood:'resting', moodHi:'विश्राम', message:'Love mein patience chahiye' },
+  { name:'Guru', icon:'\u2643', color:'#9b59b6', mood:'aligned', moodHi:'शुभ', message:'Wisdom aur growth ka din' },
+  { name:'Shani', icon:'\u2644', color:'#3d5a99', mood:'strict', moodHi:'कठोर', message:'Discipline se rewards milenge' },
+  { name:'Chandra', icon:'\u263D', color:'#7f8fa6', mood:'intense', moodHi:'तीव्र', message:'Emotions deep hain aaj raat' },
+];
+
+const MOOD_COLORS = { aligned:'#00c48c', energized:'#ff6644', resting:'#f5a623', strict:'#3d5a99', intense:'#9b59b6' };
+
+
+/* ========== MERCURY MESSAGE ========== */
+const MERCURY_MESSAGE = 'मैं बुध हूँ। आज मेरा दिन है — बुधवार। मैं आपके दशम भाव में हूँ, इसका मतलब है आज आपकी वाणी में जादू है। जो ईमेल भेजनी है, जो कॉल करनी है, जो प्रेज़ेंटेशन देना है — आज करो। मेरी शक्ति आपके हर शब्द को पर्सुएसिव बनाएगी। कम्युनिकेशन का दिन है, ' + USER_NAME + '।';
+
+
+/* ========== EMOJI HELPERS ========== */
+const E = {
+  pray: '\uD83D\uDE4F', fire: '\uD83D\uDD25', bulb: '\uD83D\uDCA1',
+  speaker: '\uD83D\uDD0A', pause: '\u23F8\uFE0F', sparkle: '\u2728',
+  mag: '\uD83D\uDD0D', battery: '\uD83D\uDD0B', mars: '\u2642',
+  arrow: '\u2192', check: '\u2705',
+};
+
+const ALL_HOURS = [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23];
+const formatTime12 = (h) => (h % 12 || 12) + ' ' + (h < 12 ? 'AM' : 'PM');
+const isGoldenHour = (h) => h === 14 || h === 15;
+
+
+/* ═══════════════════════════════════════
+   STARFIELD — tiny twinkling dots
+   ═══════════════════════════════════════ */
+const Starfield = ({ count = 40 }) => {
+  const stars = useMemo(() => Array.from({ length: count }, (_, i) => ({
+    left: Math.random() * 100 + '%',
+    top: Math.random() * 100 + '%',
+    size: 1 + Math.random() * 2,
+    delay: Math.random() * 4 + 's',
+    duration: 2 + Math.random() * 3 + 's',
+  })), [count]);
+
+  return (
+    <div style={{ position:'absolute', inset:0, pointerEvents:'none', overflow:'hidden' }}>
+      {stars.map((s, i) => (
+        <div key={i} style={{
+          position:'absolute', left:s.left, top:s.top,
+          width:s.size, height:s.size, borderRadius:'50%',
+          background:'#fff',
+          animation: `starTwinkle ${s.duration} ease-in-out ${s.delay} infinite`,
+        }} />
+      ))}
+    </div>
+  );
+};
+
+
+/* ═══════════════════════════════════════
+   ZONE DIVIDER — atmospheric transition
+   ═══════════════════════════════════════ */
+const ZoneDivider = ({ icon, label }) => (
+  <div style={{
+    padding:'32px 20px 16px', display:'flex', alignItems:'center', gap:12,
+  }}>
+    <div style={{ flex:1, height:1, background:'linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)' }} />
+    <div style={{
+      fontSize:10, fontWeight:700, letterSpacing:1.5, color:'rgba(255,255,255,0.25)',
+      textTransform:'uppercase', display:'flex', alignItems:'center', gap:6,
+    }}>
+      <span style={{ fontSize:14, opacity:0.5 }}>{icon}</span>
+      {label}
+    </div>
+    <div style={{ flex:1, height:1, background:'linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)' }} />
+  </div>
+);
+
+
+/* ═══════════════════════════════════════
+   COSMIC ENTRY — planet greets user
+   ═══════════════════════════════════════ */
+const GREETING_TEXT = 'वेलकम बैक ' + USER_NAME + '! आज आपका धन ज़ोन 85 परसेंट पे है — जुपिटर पंचम भाव में स्ट्रॉंग है। गोल्डन विंडो दोपहर 2:18 पे आ रही है, फ़ाइनैंशियल डिसीज़न के लिए बेस्ट टाइम।';
+
+// Preload greeting audio immediately so it's ready when entry plays
+fetchTTSAudio(GREETING_TEXT, 'abhilash', 'entry_greet');
+
+const CosmicEntry = ({ onComplete }) => {
+  const [phase, setPhase] = useState('stars'); // stars → planet → greet → speaking → done
+  const hasPlayed = useRef(false);
+  const audioPlaying = useRef(false);
+
+  useEffect(() => {
+    if (hasPlayed.current) return;
+    hasPlayed.current = true;
+    const t1 = setTimeout(() => setPhase('planet'), 600);
+    const t2 = setTimeout(() => setPhase('greet'), 1400);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+
+  const handleTap = async () => {
+    if (audioPlaying.current) return;
+    audioPlaying.current = true;
+    setPhase('speaking');
+    try {
+      const src = await fetchTTSAudio(GREETING_TEXT, 'abhilash', 'entry_greet');
+      if (src) await playAudioSrc(src);
+    } catch(e) {}
+    setPhase('done');
+    setTimeout(() => onComplete(), 400);
+  };
+
+  if (phase === 'done') return null;
+
+  const topCard = ENERGY_CARDS.reduce((a,b) => a.score > b.score ? a : b);
+
+  return (
+    <div onClick={phase === 'greet' ? handleTap : undefined} style={{
+      position:'absolute', inset:0, zIndex:100, cursor: phase === 'greet' ? 'pointer' : 'default',
+      background:'radial-gradient(ellipse at center, #0d0d2e 0%, #0a0a1a 70%)',
+      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+      transition:'opacity 400ms ease',
+      opacity: phase === 'done' ? 0 : 1,
+    }}>
+      <Starfield count={60} />
+
+      {/* Planet orb */}
+      <div style={{
+        width:80, height:80, borderRadius:'50%',
+        background:'linear-gradient(135deg, #4ecdc4, #26d0ce)',
+        display:'flex', alignItems:'center', justifyContent:'center',
+        fontSize:40, color:'#fff',
+        opacity: phase === 'stars' ? 0 : 1,
+        animation: phase !== 'stars' ? 'cosmicEntry 800ms ease-out both' : 'none',
+        boxShadow: phase === 'speaking' ? '0 0 60px rgba(78,205,196,0.6), 0 0 120px rgba(78,205,196,0.25)' : '0 0 40px rgba(78,205,196,0.4), 0 0 80px rgba(78,205,196,0.15)',
+        transition:'box-shadow 500ms ease',
+      }}>☿</div>
+
+      {/* Pulse ring */}
+      {phase !== 'stars' && (
+        <div style={{
+          position:'absolute', width:80, height:80, borderRadius:'50%',
+          border:'2px solid rgba(78,205,196,0.3)',
+          animation:'pulseRing 2s ease-out infinite',
+        }} />
+      )}
+
+      {/* Greeting text */}
+      <div style={{
+        marginTop:24, textAlign:'center',
+        opacity: (phase === 'greet' || phase === 'speaking') ? 1 : 0,
+        transform: (phase === 'greet' || phase === 'speaking') ? 'translateY(0)' : 'translateY(10px)',
+        transition:'all 500ms ease',
+      }}>
+        <div style={{ fontSize:18, fontWeight:300, color:'rgba(255,255,255,0.9)', letterSpacing:0.5 }}>
+          Welcome back, {USER_NAME} {E.sparkle}
+        </div>
+        <div style={{ fontSize:13, fontWeight:500, color:'#4ecdc4', marginTop:10, opacity:0.9, maxWidth:260, lineHeight:1.5 }}>
+          Aaj {topCard.labelHi} zone strongest hai — Golden Window 2:18 PM
+        </div>
+
+        {/* Tap prompt or speaking indicator */}
+        {phase === 'greet' && (
+          <div style={{
+            marginTop:24, fontSize:12, fontWeight:500, color:'rgba(255,255,255,0.4)',
+            animation:'breathe 2s ease-in-out infinite',
+          }}>
+            {'\uD83D\uDD0A'} Tap to begin
+          </div>
+        )}
+        {phase === 'speaking' && (
+          <div style={{
+            marginTop:24, fontSize:12, fontWeight:500, color:'#4ecdc4',
+            display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+          }}>
+            <span style={{ width:6, height:6, borderRadius:'50%', background:'#4ecdc4', animation:'breathe 1s ease-in-out infinite' }} />
+            Speaking...
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
+/* ═══════════════════════════════════════
+   1A. COMPACT LIVING HEADER
+   ═══════════════════════════════════════ */
+const CompactHeader = () => {
+  const dateStr = '16 April 2026';
+  const dayHi = 'बुधवार';
+  const totalScore = Math.round(ENERGY_CARDS.reduce((s, c) => s + c.score, 0) / ENERGY_CARDS.length);
+
+  return (
+    <div style={{
+      padding:'14px 20px 12px', display:'flex', alignItems:'center', gap:12,
+      animation:'fadeInUp 500ms ease-out 200ms both',
+    }}>
+      {/* Back — replaces profile + planet badge */}
+      <button
+        type="button"
+        aria-label="Back"
+        onClick={() => window.location.href = 'astro-home.html'}
+        style={{
+          flexShrink:0, width:44, height:44, borderRadius:'50%', padding:0, margin:0,
+          border:'2px solid rgba(78,205,196,0.35)', background:'rgba(78,205,196,0.08)',
+          display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
+          color:'rgba(255,255,255,0.92)',
+        }}
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      {/* Name + date */}
+      <div style={{ flex:1 }}>
+        <div style={{ fontSize:16, fontWeight:700, color:'rgba(255,255,255,0.9)' }}>
+          Welcome back, {USER_NAME} {E.sparkle}
+        </div>
+        <div style={{ fontSize:11, fontWeight:400, color:'rgba(255,255,255,0.4)', marginTop:2 }}>
+          {dateStr} · {dayHi}
+        </div>
+      </div>
+
+      {/* Aura score ring */}
+      <div style={{ position:'relative', width:44, height:44 }}>
+        <svg width="44" height="44" viewBox="0 0 44 44">
+          <circle cx="22" cy="22" r="18" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
+          <circle cx="22" cy="22" r="18" fill="none" stroke="#4ecdc4" strokeWidth="3"
+            strokeDasharray={`${totalScore * 1.13} 113`} strokeLinecap="round"
+            transform="rotate(-90 22 22)" style={{ transition:'stroke-dasharray 1s ease' }} />
+        </svg>
+        <div style={{
+          position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center',
+          fontSize:12, fontWeight:800, color:'#4ecdc4',
+        }}>{totalScore}</div>
+      </div>
+    </div>
+  );
+};
+
+
+/* ═══════════════════════════════════════
+   COSMIC TAGLINE BANNER
+   ═══════════════════════════════════════ */
+const CosmicTagline = () => {
+  const hour = new Date().getHours();
+  const slot = getSlotForHour(hour);
+  const topCard = ENERGY_CARDS.reduce((a, b) => a.score > b.score ? a : b);
+
+  return (
+    <div style={{
+      margin:'0 20px 8px', padding:'14px 16px', borderRadius:14,
+      background:'linear-gradient(135deg, rgba(78,205,196,0.10), rgba(53,53,243,0.06))',
+      border:'1px solid rgba(78,205,196,0.15)',
+      animation:'fadeInUp 500ms ease-out 400ms both',
+    }}>
+      <div style={{ fontSize:13, fontWeight:600, color:'rgba(255,255,255,0.85)', lineHeight:1.6, marginBottom:6 }}>
+        {E.sparkle} Aaj ka raaz: {topCard.labelHi} zone {topCard.score}% pe hai — {topCard.summary}
+      </div>
+      <div style={{ fontSize:11, fontWeight:400, color:'rgba(255,255,255,0.45)', lineHeight:1.5 }}>
+        Abhi {slot.nameHi} ({slot.planet}) ka samay chal raha hai · Golden Window 2:18 PM
+      </div>
+    </div>
+  );
+};
+
+
+/* ═══════════════════════════════════════
+   1B. LIVING DAY ORBIT CLOCK
+   ═══════════════════════════════════════ */
+const OrbitClock = () => {
+  const currentHour = new Date().getHours();
+  const currentSlot = getSlotForHour(currentHour);
+  const [autoIdx, setAutoIdx] = useState(0);
+  const [userSelected, setUserSelected] = useState(null);
+  const [speaking, setSpeaking] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const autoTimer = useRef(null);
+  const pauseTimer = useRef(null);
+  const currentAudio = useRef(null);
+  const cancelledRef = useRef(false);
+
+  const CLOCK_SIZE = 280;
+  const CENTER = CLOCK_SIZE / 2;
+  const RADIUS = 110;
+
+  const stopCurrentAudio = () => {
+    if (currentAudio.current) {
+      try { currentAudio.current.pause(); currentAudio.current.currentTime = 0; } catch(e) {}
+      currentAudio.current = null;
+    }
+  };
+
+  const playClockAudio = (src) => new Promise((resolve) => {
+    if (!src) { resolve(); return; }
+    stopCurrentAudio();
+    const audio = new Audio(src);
+    currentAudio.current = audio;
+    audio.onended = () => { currentAudio.current = null; resolve(); };
+    audio.onerror = () => { currentAudio.current = null; resolve(); };
+    audio.play().catch(() => { currentAudio.current = null; resolve(); });
+  });
+
+  // Preload all clock slot audios on mount so taps are instant
+  useEffect(() => {
+    DAILY_TIMELINE.forEach((slot, i) => {
+      fetchTTSAudio(slot.narration, 'abhilash', 'clock_' + i);
+    });
+  }, []);
+
+  // Auto-rotate: silently advance every 5 seconds (NO audio — audio only on user tap)
+  useEffect(() => {
+    if (userSelected !== null) return;
+    const timer = setTimeout(() => {
+      setAutoIdx(prev => (prev + 1) % DAILY_TIMELINE.length);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [autoIdx, userSelected]);
+
+  // When user taps a segment, pause auto-rotate, speak that slot, then resume after
+  const handleSegmentTap = async (slot, idx) => {
+    cancelledRef.current = true;
+    stopCurrentAudio();
+    setUserSelected(idx);
+    clearTimeout(pauseTimer.current);
+
+    if (!muted) {
+      setSpeaking(true);
+      try {
+        cancelledRef.current = false;
+        const src = await fetchTTSAudio(slot.narration, 'abhilash', 'clock_' + idx);
+        if (src && !cancelledRef.current) await playClockAudio(src);
+      } catch (e) { console.warn(e); }
+      setSpeaking(false);
+    }
+
+    // Resume auto-rotation after 15s of idle
+    clearTimeout(pauseTimer.current);
+    pauseTimer.current = setTimeout(() => {
+      setUserSelected(null);
+      setAutoIdx((idx + 1) % DAILY_TIMELINE.length);
+    }, 15000);
+  };
+
+  const activeIdx = userSelected !== null ? userSelected : autoIdx;
+  const activeSlot = DAILY_TIMELINE[activeIdx];
+
+  // Progress indicator
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    setProgress(0);
+    const start = Date.now();
+    const estimatedDur = 5000;
+    let rafId;
+    const raf = () => {
+      const pct = Math.min((Date.now() - start) / estimatedDur, 1);
+      setProgress(pct);
+      if (pct < 1) rafId = requestAnimationFrame(raf);
+    };
+    rafId = requestAnimationFrame(raf);
+    return () => cancelAnimationFrame(rafId);
+  }, [autoIdx, userSelected, muted]);
+
+  return (
+    <div style={{
+      margin:'8px 16px', borderRadius:24, overflow:'hidden',
+      background:'linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))',
+      border:'1px solid rgba(255,255,255,0.06)',
+      padding:'20px 0',
+      animation:'fadeInUp 500ms ease-out 500ms both',
+    }}>
+      {/* Section label */}
+      <div style={{ padding:'0 20px 16px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div>
+          <div style={{ fontSize:15, fontWeight:800, color:'rgba(255,255,255,0.9)' }}>आज का दिन</div>
+          <div style={{ fontSize:10, fontWeight:400, color:'rgba(255,255,255,0.35)' }}>Poore din ka cosmic map</div>
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+          <div style={{
+            fontSize:9, fontWeight:700, color:'#4ecdc4', letterSpacing:1,
+            background:'rgba(78,205,196,0.1)', padding:'4px 10px', borderRadius:8,
+          }}>{(activeIdx + 1) + '/' + DAILY_TIMELINE.length}</div>
+          <div onClick={() => setMuted(!muted)} style={{
+            width:28, height:28, borderRadius:'50%', cursor:'pointer',
+            background: muted ? 'rgba(255,255,255,0.06)' : 'rgba(78,205,196,0.1)',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            fontSize:12, color: muted ? 'rgba(255,255,255,0.3)' : '#4ecdc4',
+            border: muted ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(78,205,196,0.2)',
+          }}>{muted ? '🔇' : '🔊'}</div>
+        </div>
+      </div>
+
+      {/* Auto-rotate progress bar */}
+      {userSelected === null && (
+        <div style={{ margin:'0 20px 12px', height:2, borderRadius:1, background:'rgba(255,255,255,0.06)' }}>
+          <div style={{
+            height:'100%', borderRadius:1, background:activeSlot.color,
+            width:(progress * 100) + '%', transition:'width 100ms linear',
+          }} />
+        </div>
+      )}
+
+      {/* Circular clock */}
+      <div style={{ display:'flex', justifyContent:'center', position:'relative' }}>
+        <div style={{ position:'relative', width:CLOCK_SIZE, height:CLOCK_SIZE }}>
+          <svg width={CLOCK_SIZE} height={CLOCK_SIZE} style={{ position:'absolute', inset:0 }}>
+            <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="32" />
+          </svg>
+
+          {DAILY_TIMELINE.map((slot, i) => {
+            const totalHours = 18;
+            const startAngle = ((slot.hour - 5) / totalHours) * 360 - 90;
+            const endAngle = ((slot.endHour - 5) / totalHours) * 360 - 90;
+            const midAngle = (startAngle + endAngle) / 2;
+            const midRad = (midAngle * Math.PI) / 180;
+            const isActive = i === activeIdx;
+            const isCurrentSlot = slot.planet === currentSlot.planet;
+
+            const r = RADIUS;
+            const startRad = (startAngle * Math.PI) / 180;
+            const endRad = (endAngle * Math.PI) / 180;
+            const x1 = CENTER + r * Math.cos(startRad);
+            const y1 = CENTER + r * Math.sin(startRad);
+            const x2 = CENTER + r * Math.cos(endRad);
+            const y2 = CENTER + r * Math.sin(endRad);
+            const largeArc = (endAngle - startAngle) > 180 ? 1 : 0;
+            const iconX = CENTER + RADIUS * Math.cos(midRad);
+            const iconY = CENTER + RADIUS * Math.sin(midRad);
+
+            return (
+              <g key={i}>
+                <svg width={CLOCK_SIZE} height={CLOCK_SIZE} style={{ position:'absolute', inset:0, cursor:'pointer' }}
+                  onClick={() => handleSegmentTap(slot, i)}>
+                  <path
+                    d={'M ' + x1 + ' ' + y1 + ' A ' + r + ' ' + r + ' 0 ' + largeArc + ' 1 ' + x2 + ' ' + y2}
+                    fill="none" stroke={isActive ? slot.color : 'rgba(255,255,255,0.08)'}
+                    strokeWidth={isActive ? 34 : 30}
+                    strokeLinecap="butt"
+                    style={{ transition:'all 400ms ease', opacity: isActive ? 0.8 : 0.4 }}
+                  />
+                </svg>
+                <div style={{
+                  position:'absolute',
+                  left:iconX - 14, top:iconY - 14,
+                  width:28, height:28, borderRadius:'50%',
+                  background: isActive ? slot.color : isCurrentSlot ? slot.color + '60' : 'rgba(0,0,0,0.4)',
+                  border: isActive ? '2px solid ' + slot.color : '1px solid rgba(255,255,255,0.1)',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  fontSize:14, color: isActive || isCurrentSlot ? '#fff' : 'rgba(255,255,255,0.5)',
+                  cursor:'pointer', transition:'all 400ms ease',
+                  boxShadow: isActive ? '0 0 16px ' + slot.color + '60' : 'none',
+                  transform: isActive ? 'scale(1.15)' : 'scale(1)',
+                  zIndex:5,
+                }} onClick={() => handleSegmentTap(slot, i)}>
+                  {slot.icon}
+                </div>
+              </g>
+            );
+          })}
+
+          {/* Center content */}
+          <div style={{
+            position:'absolute', left:CENTER - 55, top:CENTER - 45,
+            width:110, height:90, display:'flex', flexDirection:'column',
+            alignItems:'center', justifyContent:'center', textAlign:'center',
+          }}>
+            <div style={{ fontSize:11, fontWeight:400, color:'rgba(255,255,255,0.35)' }}>
+              {formatTime12(activeSlot.hour)} – {formatTime12(activeSlot.endHour)}
+            </div>
+            <div style={{
+              fontSize:28, marginTop:2,
+              animation:'breathe 3s ease-in-out infinite',
+            }}>{activeSlot.icon}</div>
+            <div style={{ fontSize:13, fontWeight:700, color:activeSlot.color, marginTop:2, transition:'color 300ms ease' }}>
+              {activeSlot.nameHi}
+            </div>
+            <div style={{ fontSize:9, fontWeight:500, color:'rgba(255,255,255,0.4)' }}>
+              {activeSlot.planet}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Active segment detail panel */}
+      <div style={{
+        margin:'16px 20px 0', padding:'14px 16px', borderRadius:14,
+        background:'linear-gradient(135deg, ' + activeSlot.color + '12, ' + activeSlot.color + '06)',
+        border:'1px solid ' + activeSlot.color + '20',
+        transition:'all 400ms ease',
+      }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div style={{ fontSize:13, fontWeight:700, color:activeSlot.color }}>
+            {activeSlot.label}
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+            {speaking && (
+              <div style={{ display:'flex', gap:2, alignItems:'flex-end' }}>
+                {[8, 14, 6, 12, 8].map((h, i) => (
+                  <div key={i} style={{
+                    width:2, height:h, borderRadius:1, background:activeSlot.color,
+                    animation:'breathe 0.6s ease-in-out infinite',
+                    animationDelay:(i * 0.08) + 's', opacity:0.7,
+                  }} />
+                ))}
+              </div>
+            )}
+            {isCurrent(activeSlot) && (
+              <span style={{
+                fontSize:8, fontWeight:800, letterSpacing:1, color:'#fff',
+                background:activeSlot.color, padding:'2px 8px', borderRadius:6,
+              }}>ABHI</span>
+            )}
+          </div>
+        </div>
+        <div style={{ fontSize:12, fontWeight:400, color:'rgba(255,255,255,0.6)', lineHeight:1.5, marginTop:4 }}>
+          {activeSlot.advice}
+        </div>
+      </div>
+
+      {/* Golden Window callout */}
+      <div style={{
+        margin:'12px 20px 0', padding:'10px 14px', borderRadius:12,
+        background:'linear-gradient(135deg, rgba(245,208,96,0.1), rgba(212,160,23,0.05))',
+        border:'1px solid rgba(212,160,23,0.15)',
+        display:'flex', alignItems:'center', gap:10,
+      }}>
+        <div style={{ fontSize:18 }}>✨</div>
+        <div>
+          <div style={{ fontSize:11, fontWeight:700, color:'#f5d060' }}>Golden Window · {GOLDEN_WINDOW.timeLabel}</div>
+          <div style={{ fontSize:10, fontWeight:400, color:'rgba(255,255,255,0.45)' }}>{GOLDEN_WINDOW.advice}</div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Helper used inside OrbitClock detail panel
+const isCurrent = (slot) => {
+  const h = new Date().getHours();
+  return h >= slot.hour && h < slot.endHour;
+};
+
+
+/* ═══════════════════════════════════════
+   1C. SPEAKING PLANET VISIT
+   ═══════════════════════════════════════ */
+const SpeakingPlanetVisit = () => {
+  const [entered, setEntered] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
+  const [hasSpoken, setHasSpoken] = useState(false);
+  const ref = useRef(null);
+  const observerFired = useRef(false);
+
+  // Auto-trigger on scroll into view
+  useEffect(() => {
+    if (!ref.current) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !observerFired.current) {
+        observerFired.current = true;
+        setEntered(true);
+      }
+    }, { threshold: 0.5 });
+    obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, []);
+
+  const handleSpeak = async () => {
+    if (speaking) return;
+    setSpeaking(true);
+    try { await playTTS(MERCURY_MESSAGE, 'abhilash'); } catch (e) { console.warn(e); }
+    setSpeaking(false);
+    setHasSpoken(true);
+  };
+
+  return (
+    <div ref={ref} style={{
+      margin:'0 16px', position:'relative', minHeight:140,
+      animation:'fadeInUp 500ms ease-out 700ms both',
+    }}>
+      {/* Planet orb — floats in */}
+      <div style={{
+        position:'absolute', left:12, top:16,
+        width:56, height:56, borderRadius:'50%',
+        background:'linear-gradient(135deg, #4ecdc4, #26d0ce)',
+        display:'flex', alignItems:'center', justifyContent:'center',
+        fontSize:28, color:'#fff',
+        boxShadow:'0 0 24px rgba(78,205,196,0.3), 0 0 48px rgba(78,205,196,0.1)',
+        opacity: entered ? 1 : 0,
+        transform: entered ? 'translateX(0) scale(1)' : 'translateX(-40px) scale(0.7)',
+        transition:'all 600ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+        cursor:'pointer',
+        zIndex:2,
+      }} onClick={handleSpeak}>
+        ☿
+        {/* Pulse ring */}
+        {entered && (
+          <div style={{
+            position:'absolute', inset:-6, borderRadius:'50%',
+            border:'2px solid rgba(78,205,196,0.3)',
+            animation:'pulseRing 2.5s ease-out infinite',
+          }} />
+        )}
+      </div>
+
+      {/* Speech bubble */}
+      <div style={{
+        marginLeft:80, padding:'16px 18px',
+        background:'rgba(78,205,196,0.06)',
+        border:'1px solid rgba(78,205,196,0.12)',
+        borderRadius:'4px 16px 16px 16px',
+        opacity: entered ? 1 : 0,
+        transform: entered ? 'translateY(0)' : 'translateY(12px)',
+        transition:'all 500ms ease 300ms',
+      }}>
+        <div style={{
+          fontSize:9, fontWeight:700, letterSpacing:1.2, color:'#4ecdc4',
+          textTransform:'uppercase', marginBottom:6, opacity:0.6,
+        }}>☿ Budh · First Person</div>
+        <div style={{
+          fontSize:13, fontWeight:400, color:'rgba(255,255,255,0.7)', lineHeight:1.6,
+          fontStyle:'italic',
+        }}>
+          "{MERCURY_MESSAGE}"
+        </div>
+        <button onClick={handleSpeak} style={{
+          marginTop:10, display:'flex', alignItems:'center', gap:6,
+          padding:'6px 14px', borderRadius:16, border:'none',
+          background:'rgba(78,205,196,0.12)', color:'#4ecdc4',
+          fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'Outfit',
+          animation: speaking ? 'speakerPulse 1s ease-in-out infinite' : 'none',
+        }}>
+          {speaking ? (E.pause + ' Bol raha hoon...') : hasSpoken ? (E.speaker + ' Phir suniye') : (E.speaker + ' Suniye Budh ka sandesh')}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+
+/* ═══════════════════════════════════════
+   1D. DAILY ASTROCAST — TV-style rashifal with revolving zodiac wheel
+   ═══════════════════════════════════════ */
+
+// 12 Rashi symbols for the zodiac wheel
+const RASHI_WHEEL = [
+  { sym:'♈', name:'मेष' },   { sym:'♉', name:'वृष' },
+  { sym:'♊', name:'मिथुन' }, { sym:'♋', name:'कर्क' },
+  { sym:'♌', name:'सिंह' },  { sym:'♍', name:'कन्या' },
+  { sym:'♎', name:'तुला' },  { sym:'♏', name:'वृश्चिक' },
+  { sym:'♐', name:'धनु' },   { sym:'♑', name:'मकर' },
+  { sym:'♒', name:'कुम्भ' }, { sym:'♓', name:'मीन' },
+];
+const USER_RASHI_IDX = 7; // Vrishchik = index 7
+
+// TV-style narration scenes — Devanagari script for proper Hindi voice
+const ASTROCAST_SCENES = [
+  {
+    chunk: 'नमस्ते ' + USER_NAME + ' जी। आज सोलह अप्रैल, बुधवार, बुध देव का दिन। आपकी राशि है वृश्चिक, आपका मूलांक है नौ, और आपका स्वामी ग्रह है मंगल। आइए सुनिए आज का राशिफल।',
+    label: 'आज का राशिफल',
+    sublabel: 'वृश्चिक राशि · मूलांक 9',
+    icon: '♏',
+    color: '#c9a0ff',
+    area: 'intro',
+  },
+  {
+    chunk: 'सबसे पहले करियर। शनि आपके दशम भाव में स्ट्रांग पोज़ीशन में है। आज कोई भी प्रेज़ेंटेशन या मीटिंग रखो, बॉस नोटिस करेगा। मूलांक नौ की मंगल एनर्जी के साथ शनि का ये संयोग आपको रिकग्निशन दिलाएगा। रेटिंग, पाँच में से चार।',
+    label: 'Career',
+    sublabel: 'शनि दशम भाव · ⭐⭐⭐⭐',
+    icon: '💼',
+    color: '#3535f3',
+    area: 'career',
+  },
+  {
+    chunk: 'अब बात करते हैं प्यार की। शुक्र इस हफ़्ते थोड़ा कमज़ोर चल रहा है, लेकिन आपकी कुंडली में शुक्र चौथे भाव में है तो घर का प्यार स्ट्रांग रहेगा। पार्टनर को थोड़ा स्पेस दो। कल से सिचुएशन इम्प्रूव होगी। रेटिंग, पाँच में से तीन।',
+    label: 'Love & Relationships',
+    sublabel: 'शुक्र चतुर्थ भाव · ⭐⭐⭐',
+    icon: '❤️',
+    color: '#e84393',
+    area: 'love',
+  },
+  {
+    chunk: 'धन लाभ की बात। बृहस्पति आपके पंचम भाव में है। आज का गोल्डन विंडो है दोपहर दो बजे। फ़ाइनेंशियल डिसीज़न और इन्वेस्टमेंट के लिए ये सबसे अच्छा समय है। पैसा लगाना हो तो तब लगाओ। रेटिंग, पाँच में से चार।',
+    label: 'Wealth & Finance',
+    sublabel: 'बृहस्पति पंचम भाव · Golden Hour 2 PM',
+    icon: '💰',
+    color: '#f5a623',
+    area: 'wealth',
+  },
+  {
+    chunk: 'सेहत की बात। मंगल लग्न में होने की वजह से आपकी नैचुरल एनर्जी हाई है। एक्सरसाइज़ ज़रूर करो लेकिन ज़्यादा स्ट्रेन से बचो। शाम की वॉक बेस्ट रहेगी। पानी ज़्यादा पियो। रेटिंग, पाँच में से चार।',
+    label: 'Health & Energy',
+    sublabel: 'मंगल लग्न · High Vitality',
+    icon: '🏃',
+    color: '#00c48c',
+    area: 'health',
+  },
+  {
+    chunk: 'अब लकी चीज़ें। आपका लकी नंबर आज है तीन। लकी कलर है रॉयल ब्लू। और शुभ समय है सुबह नौ से ग्यारह बजे तक, मंगल की होरा। इस समय कोई भी नया काम शुरू कर सकते हो।',
+    label: 'Lucky Number & Color',
+    sublabel: '3 · Royal Blue · शुभ 9–11 AM',
+    icon: '🍀',
+    color: '#4ecdc4',
+    area: 'lucky',
+  },
+  {
+    chunk: 'ओवरऑल ' + USER_NAME + ' जी, आज का दिन काफ़ी पॉज़िटिव है। बुध देव आपके साथ हैं, कम्युनिकेशन में जादू है। वृश्चिक राशि की इंटेंसिटी और मूलांक नौ की फ़ायर, दोनों अलाइंड हैं। शानदार दिन है, इसका पूरा फ़ायदा उठाइए। जय श्री कृष्ण।',
+    label: 'Overall: शानदार दिन ✨',
+    sublabel: 'बुध + मूलांक 9 = Aligned',
+    icon: '✨',
+    color: '#f5a623',
+    area: 'overall',
+  },
+];
+
+// Revolving Zodiac Wheel — pure CSS/SVG, golden rings with 12 rashi symbols
+const ZodiacWheel = ({ playing, activeRashiIdx }) => {
+  const SIZE = 420;
+  const CX = SIZE / 2;
+  const CY = SIZE / 2;
+  const OUTER_R = 195;
+  const MID_R = 155;
+  const INNER_R = 115;
+  const CORE_R = 75;
+
+  return (
+    <div style={{
+      position:'absolute', top:'50%', left:'50%',
+      width:SIZE, height:SIZE,
+      transform:'translate(-50%,-50%)',
+      pointerEvents:'none', zIndex:0,
+      opacity: playing ? 0.7 : 0.3,
+      transition:'opacity 800ms ease',
+    }}>
+      {/* Ambient golden glow behind everything */}
+      <div style={{
+        position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)',
+        width: SIZE * 0.7, height: SIZE * 0.7, borderRadius:'50%',
+        background:'radial-gradient(circle, rgba(245,166,35,0.15) 0%, rgba(200,120,20,0.06) 50%, transparent 75%)',
+        filter:'blur(20px)',
+        animation: playing ? 'breathe 4s ease-in-out infinite' : 'none',
+      }} />
+
+      {/* Outer ring — slow clockwise */}
+      <div style={{
+        position:'absolute', top:'50%', left:'50%',
+        width:SIZE, height:SIZE,
+        animation: playing ? 'zodiacSpin 50s linear infinite' : 'zodiacSpin 100s linear infinite',
+      }}>
+        <svg width={SIZE} height={SIZE} viewBox={'0 0 ' + SIZE + ' ' + SIZE}>
+          {/* Outermost decorative ring */}
+          <circle cx={CX} cy={CY} r={OUTER_R} fill="none" stroke="rgba(245,166,35,0.18)" strokeWidth="0.5" strokeDasharray="2 6" />
+          {/* Main outer golden ring */}
+          <circle cx={CX} cy={CY} r={MID_R + 20} fill="none" stroke="rgba(245,166,35,0.4)" strokeWidth="2" />
+          {/* Secondary ring */}
+          <circle cx={CX} cy={CY} r={MID_R} fill="none" stroke="rgba(245,166,35,0.2)" strokeWidth="1" strokeDasharray="6 3" />
+
+          {/* 12 Rashi symbols on outer ring */}
+          {RASHI_WHEEL.map((r, i) => {
+            const angle = (i * 30 - 90) * (Math.PI / 180);
+            const rx = CX + (MID_R + 20) * Math.cos(angle);
+            const ry = CY + (MID_R + 20) * Math.sin(angle);
+            const isUser = i === activeRashiIdx;
+            return (
+              <g key={i}>
+                {/* Glow behind user's rashi */}
+                {isUser && <circle cx={rx} cy={ry} r={22} fill="rgba(245,166,35,0.12)" />}
+                <circle cx={rx} cy={ry} r={isUser ? 17 : 13} fill={isUser ? 'rgba(245,166,35,0.25)' : 'rgba(245,166,35,0.08)'} stroke={isUser ? 'rgba(245,166,35,0.8)' : 'rgba(245,166,35,0.3)'} strokeWidth={isUser ? 2 : 1} />
+                <text x={rx} y={ry + 1} textAnchor="middle" dominantBaseline="central" fill={isUser ? '#f5a623' : 'rgba(245,166,35,0.7)'} fontSize={isUser ? 15 : 12} fontWeight={isUser ? 'bold' : 'normal'} style={{ animation: isUser && playing ? 'rashiHighlight 2s ease-in-out infinite' : 'none' }}>{r.sym}</text>
+              </g>
+            );
+          })}
+
+          {/* 12 spokes — radial lines */}
+          {Array.from({ length: 12 }, (_, i) => {
+            const angle = (i * 30 - 90) * (Math.PI / 180);
+            return <line key={i} x1={CX + CORE_R * Math.cos(angle)} y1={CY + CORE_R * Math.sin(angle)} x2={CX + MID_R * Math.cos(angle)} y2={CY + MID_R * Math.sin(angle)} stroke="rgba(245,166,35,0.12)" strokeWidth="1" />;
+          })}
+
+          {/* Degree tick marks — 36 small ticks */}
+          {Array.from({ length: 36 }, (_, i) => {
+            const angle = (i * 10 - 90) * (Math.PI / 180);
+            const r1 = MID_R + 14;
+            const r2 = MID_R + 20;
+            return <line key={i} x1={CX + r1 * Math.cos(angle)} y1={CY + r1 * Math.sin(angle)} x2={CX + r2 * Math.cos(angle)} y2={CY + r2 * Math.sin(angle)} stroke="rgba(245,166,35,0.15)" strokeWidth="0.5" />;
+          })}
+        </svg>
+      </div>
+
+      {/* Inner ring — slow counter-clockwise */}
+      <div style={{
+        position:'absolute', top:'50%', left:'50%',
+        width:SIZE, height:SIZE,
+        animation: playing ? 'zodiacSpinReverse 35s linear infinite' : 'zodiacSpinReverse 70s linear infinite',
+      }}>
+        <svg width={SIZE} height={SIZE} viewBox={'0 0 ' + SIZE + ' ' + SIZE}>
+          <circle cx={CX} cy={CY} r={INNER_R} fill="none" stroke="rgba(245,166,35,0.3)" strokeWidth="1.5" strokeDasharray="8 4" />
+          <circle cx={CX} cy={CY} r={CORE_R} fill="none" stroke="rgba(245,166,35,0.15)" strokeWidth="1" />
+          {/* 6 decorative stars on inner ring */}
+          {[0, 60, 120, 180, 240, 300].map((deg, i) => {
+            const a = (deg - 90) * (Math.PI / 180);
+            return <text key={i} x={CX + INNER_R * Math.cos(a)} y={CY + INNER_R * Math.sin(a)} textAnchor="middle" dominantBaseline="central" fill="rgba(245,166,35,0.4)" fontSize={10}>✦</text>;
+          })}
+          {/* 6 dots on core ring */}
+          {[30, 90, 150, 210, 270, 330].map((deg, i) => {
+            const a = (deg - 90) * (Math.PI / 180);
+            return <circle key={i} cx={CX + CORE_R * Math.cos(a)} cy={CY + CORE_R * Math.sin(a)} r={2} fill="rgba(245,166,35,0.3)" />;
+          })}
+        </svg>
+      </div>
+
+      {/* Center sun — blazing glow */}
+      <div style={{
+        position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)',
+        width:60, height:60, borderRadius:'50%',
+        background:'radial-gradient(circle, rgba(245,166,35,0.5) 0%, rgba(245,166,35,0.15) 40%, transparent 70%)',
+        animation: playing ? 'sunPulse 3s ease-in-out infinite' : 'sunPulse 5s ease-in-out infinite',
+      }}>
+        <div style={{
+          position:'absolute', inset:10, borderRadius:'50%',
+          background:'radial-gradient(circle, rgba(245,180,50,0.8) 0%, rgba(245,166,35,0.3) 50%, transparent 100%)',
+        }} />
+        {/* Sun star shape */}
+        <div style={{
+          position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)',
+          fontSize:16, color:'rgba(245,166,35,0.9)',
+        }}>☀</div>
+      </div>
+    </div>
+  );
+};
+
+const DailyAstrocast = () => {
+  const [phase, setPhase] = useState('idle'); // idle → playing → done
+  const [sceneIdx, setSceneIdx] = useState(0);
+  const [speaking, setSpeaking] = useState(false);
+  const cancelledRef = useRef(false);
+  const audioRef = useRef(null);
+
+  const stopAudio = () => {
+    if (audioRef.current) {
+      try { audioRef.current.pause(); audioRef.current.currentTime = 0; } catch(e) {}
+      audioRef.current = null;
+    }
+  };
+
+  const playSceneAudio = (src) => new Promise((resolve) => {
+    if (!src) { resolve(); return; }
+    stopAudio();
+    const audio = new Audio(src);
+    audioRef.current = audio;
+    audio.onended = () => { audioRef.current = null; resolve(); };
+    audio.onerror = () => { audioRef.current = null; resolve(); };
+    audio.play().catch(() => { audioRef.current = null; resolve(); });
+  });
+
+  // Preload all astrocast scene audios on mount
+  useEffect(() => {
+    ASTROCAST_SCENES.forEach((s, i) => {
+      fetchTTSAudio(s.chunk, 'abhilash', 'astrocast_s' + i);
+    });
+  }, []);
+
+  const handlePlay = async () => {
+    if (phase === 'playing') return;
+    setPhase('playing');
+    setSceneIdx(0);
+    cancelledRef.current = false;
+
+    // Pre-fetch all scenes in parallel first, then play sequentially
+    setSpeaking(true);
+    const srcs = await Promise.all(
+      ASTROCAST_SCENES.map((s, i) => fetchTTSAudio(s.chunk, 'abhilash', 'astrocast_s' + i))
+    );
+    for (let i = 0; i < ASTROCAST_SCENES.length; i++) {
+      if (cancelledRef.current) break;
+      setSceneIdx(i);
+      try {
+        if (srcs[i] && !cancelledRef.current) await playSceneAudio(srcs[i]);
+      } catch (e) { console.warn('Astrocast TTS scene ' + i + ':', e); }
+    }
+    setSpeaking(false);
+    if (!cancelledRef.current) setPhase('done');
+  };
+
+  const handleStop = () => {
+    cancelledRef.current = true;
+    stopAudio();
+    setPhase('idle');
+    setSceneIdx(0);
+    setSpeaking(false);
+  };
+
+  // Cleanup on unmount
+  useEffect(() => () => { cancelledRef.current = true; stopAudio(); }, []);
+
+  const scene = ASTROCAST_SCENES[sceneIdx];
+  const isPlaying = phase === 'playing';
+
+  // Area-to-color mapping for the progress bar
+  const AREA_COLORS = { intro:'#c9a0ff', career:'#3535f3', love:'#e84393', wealth:'#f5a623', health:'#00c48c', lucky:'#4ecdc4', overall:'#f5a623' };
+
+  return (
+    <div style={{
+      margin:'16px 16px 0', borderRadius:20, overflow:'hidden',
+      position:'relative',
+      animation:'fadeInUp 500ms ease-out 800ms both',
+    }}>
+      {/* Main container */}
+      <div style={{
+        position:'relative',
+        minHeight: isPlaying ? 360 : 340,
+        background: 'radial-gradient(ellipse at 50% 50%, #12103a 0%, #0a0a1a 70%)',
+        transition:'min-height 500ms ease',
+        display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+        padding:'28px 20px',
+      }}>
+        {/* Starfield */}
+        <Starfield count={isPlaying ? 40 : 15} />
+
+        {/* Revolving Zodiac Wheel — always present, intensifies when playing */}
+        <ZodiacWheel playing={isPlaying} activeRashiIdx={USER_RASHI_IDX} />
+
+        {/* ── IDLE STATE ── */}
+        {phase === 'idle' && (
+          <div style={{ textAlign:'center', position:'relative', zIndex:2 }}>
+            {/* Play button */}
+            <div style={{
+              width:68, height:68, borderRadius:'50%', margin:'0 auto 16px',
+              background:'linear-gradient(135deg, #f5a623, #e8871e)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              fontSize:28, color:'#fff', cursor:'pointer',
+              boxShadow:'0 0 40px rgba(245,166,35,0.35), inset 0 1px 0 rgba(255,255,255,0.2)',
+              animation:'glowPulse 2.5s ease-in-out infinite',
+            }} onClick={handlePlay}>▶</div>
+            <div style={{ fontSize:16, fontWeight:800, color:'rgba(255,255,255,0.92)' }}>
+              Aaj Ka Rashifal
+            </div>
+            <div style={{ fontSize:11, fontWeight:400, color:'rgba(255,255,255,0.4)', marginTop:4 }}>
+              वृश्चिक राशि · मूलांक 9
+            </div>
+            <div style={{
+              marginTop:12, display:'inline-flex', alignItems:'center', gap:6,
+              padding:'5px 14px', borderRadius:12,
+              background:'rgba(255,60,60,0.12)', border:'1px solid rgba(255,60,60,0.25)',
+            }}>
+              <div style={{ width:6, height:6, borderRadius:'50%', background:'#ff3c3c', animation:'breathe 1.5s ease-in-out infinite' }} />
+              <span style={{ fontSize:10, fontWeight:700, color:'#ff5c5c', letterSpacing:0.5 }}>LIVE</span>
+            </div>
+          </div>
+        )}
+
+        {/* ── PLAYING STATE ── */}
+        {isPlaying && (
+          <div style={{
+            textAlign:'center', position:'relative', zIndex:2,
+            width:'100%', maxWidth:320,
+          }}>
+            {/* Top bar: scene label + stop button */}
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+              <div style={{
+                fontSize:9, fontWeight:700, letterSpacing:1.2, color:'rgba(255,255,255,0.3)',
+                textTransform:'uppercase',
+              }}>{(sceneIdx + 1) + ' / ' + ASTROCAST_SCENES.length}</div>
+              <div onClick={handleStop} style={{
+                width:28, height:28, borderRadius:'50%', cursor:'pointer',
+                background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)',
+                display:'flex', alignItems:'center', justifyContent:'center',
+                fontSize:10, color:'rgba(255,255,255,0.4)',
+              }}>✕</div>
+            </div>
+
+            {/* Scene icon */}
+            <div key={'icon' + sceneIdx} style={{
+              fontSize:48, marginBottom:12,
+              animation:'cosmicEntry 400ms ease-out',
+            }}>{scene.icon}</div>
+
+            {/* Scene label (big) */}
+            <div key={'label' + sceneIdx} style={{
+              fontSize:20, fontWeight:800, color:scene.color,
+              lineHeight:1.3,
+              textShadow:'0 0 30px ' + scene.color + '40',
+              animation:'sceneTextIn 400ms ease-out',
+            }}>{scene.label}</div>
+
+            {/* Sublabel (detail line) */}
+            <div key={'sub' + sceneIdx} style={{
+              fontSize:12, fontWeight:500, color:'rgba(255,255,255,0.5)',
+              marginTop:6,
+              animation:'sceneTextIn 400ms ease-out 100ms both',
+            }}>{scene.sublabel}</div>
+
+            {/* Audio wave visualizer */}
+            {speaking && (
+              <div style={{
+                marginTop:20, display:'inline-flex', alignItems:'center', gap:8,
+                padding:'6px 16px', borderRadius:14,
+                background:'rgba(255,255,255,0.04)',
+                border:'1px solid rgba(255,255,255,0.06)',
+              }}>
+                <div style={{ display:'flex', gap:2, alignItems:'flex-end' }}>
+                  {[10, 18, 7, 22, 12, 16, 9, 20, 11, 15].map((h, i) => (
+                    <div key={i} style={{
+                      width:2.5, height:h, borderRadius:2, background:scene.color,
+                      animation:'breathe 0.6s ease-in-out infinite',
+                      animationDelay:(i * 0.07) + 's',
+                      opacity:0.8,
+                    }} />
+                  ))}
+                </div>
+                <span style={{ fontSize:9, fontWeight:600, color:'rgba(255,255,255,0.35)' }}>LIVE</span>
+              </div>
+            )}
+
+            {/* Progress bar */}
+            <div style={{
+              marginTop:18, height:3, borderRadius:2, background:'rgba(255,255,255,0.06)',
+              overflow:'hidden', display:'flex', gap:2,
+            }}>
+              {ASTROCAST_SCENES.map((s, i) => (
+                <div key={i} style={{
+                  flex:1, height:'100%', borderRadius:2,
+                  background: i < sceneIdx ? (AREA_COLORS[s.area] || '#fff') : i === sceneIdx ? scene.color : 'transparent',
+                  opacity: i < sceneIdx ? 0.6 : i === sceneIdx ? 1 : 0,
+                  transition:'all 300ms ease',
+                }} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── DONE STATE ── */}
+        {phase === 'done' && (
+          <div style={{ textAlign:'center', position:'relative', zIndex:2, animation:'fadeInUp 400ms ease-out' }}>
+            <div style={{ fontSize:40, marginBottom:14 }}>✨</div>
+            <div style={{ fontSize:16, fontWeight:800, color:'rgba(255,255,255,0.92)' }}>
+              आज का दिन: शानदार
+            </div>
+            <div style={{ fontSize:11, fontWeight:400, color:'rgba(255,255,255,0.45)', marginTop:8, lineHeight:1.6 }}>
+              Career ⭐⭐⭐⭐ · Love ⭐⭐⭐ · Wealth ⭐⭐⭐⭐ · Health ⭐⭐⭐⭐
+            </div>
+            <div style={{ fontSize:11, fontWeight:500, color:'#f5a623', marginTop:6 }}>
+              Lucky: 3 · Royal Blue · शुभ 9–11 AM
+            </div>
+            <button onClick={() => { setPhase('idle'); setSceneIdx(0); }} style={{
+              marginTop:14, padding:'8px 20px', borderRadius:16, border:'none',
+              background:'rgba(245,166,35,0.12)', color:'#f5a623',
+              fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'Outfit',
+              border:'1px solid rgba(245,166,35,0.2)',
+            }}>
+              🔄 Phir suniye
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
+/* ═══════════════════════════════════════
+   2A. RITUAL REVEAL CHEST
+   ═══════════════════════════════════════ */
+const RitualChest = () => {
+  const today = WEEKLY_UPAY.find(d => d.active);
+  const [opened, setOpened] = useState(false);
+  const [playing, setPlaying] = useState(false);
+
+  const handleOpen = () => {
+    if (opened) return;
+    setOpened(true);
+  };
+
+  const handleSpeak = async () => {
+    if (playing || !today) return;
+    setPlaying(true);
+    try { await playTTS(today.upay + '. Aaj ' + today.planet + ' ki shakti ke liye ye upay zaroor karein.', 'abhilash'); }
+    catch (e) { console.warn(e); }
+    setPlaying(false);
+  };
+
+  return (
+    <div style={{
+      margin:'0 16px',
+      animation:'fadeInUp 500ms ease-out both',
+    }}>
+      <div style={{ fontSize:15, fontWeight:800, color:'rgba(255,255,255,0.9)', marginBottom:14 }}>
+        Aaj Ka Upay
+      </div>
+
+      {/* Chest */}
+      <div style={{
+        borderRadius:20, overflow:'hidden', position:'relative',
+        background:'linear-gradient(135deg, #1a1040, #0d0828)',
+        border:'1px solid rgba(245,166,35,0.15)',
+        cursor: opened ? 'default' : 'pointer',
+        minHeight: opened ? 200 : 160,
+        transition:'min-height 500ms ease',
+      }} onClick={handleOpen}>
+
+        {/* Chest body (always visible) */}
+        <div style={{
+          position:'relative', zIndex:2,
+          padding: opened ? '20px' : '24px 20px',
+          display:'flex', flexDirection:'column', alignItems:'center',
+          justifyContent:'center',
+        }}>
+          {!opened ? (
+            /* Closed state — mysterious chest */
+            <>
+              <div style={{
+                width:72, height:72, borderRadius:16,
+                background:'linear-gradient(135deg, #f5a623, #d4880f)',
+                display:'flex', alignItems:'center', justifyContent:'center',
+                fontSize:36, boxShadow:'0 0 30px rgba(245,166,35,0.3)',
+                animation:'glowPulse 2s ease-in-out infinite',
+              }}>🔮</div>
+              <div style={{ fontSize:15, fontWeight:700, color:'rgba(255,255,255,0.8)', marginTop:14 }}>
+                Aaj ka upay tayyar hai
+              </div>
+              <div style={{ fontSize:11, fontWeight:400, color:'rgba(255,255,255,0.35)', marginTop:4 }}>
+                Tap to reveal
+              </div>
+              {/* Shimmer particles */}
+              {[...Array(6)].map((_, i) => (
+                <div key={i} style={{
+                  position:'absolute',
+                  left: 30 + Math.random() * 60 + '%',
+                  top: 20 + Math.random() * 50 + '%',
+                  width:3, height:3, borderRadius:'50%',
+                  background:'#f5a623',
+                  animation:`starTwinkle ${1.5 + Math.random() * 2}s ease-in-out ${Math.random() * 2}s infinite`,
+                }} />
+              ))}
+            </>
+          ) : (
+            /* Opened state — remedy revealed */
+            <div style={{ width:'100%', animation:'revealUp 500ms ease-out both' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+                <div style={{
+                  width:52, height:52, borderRadius:'50%', flexShrink:0,
+                  background:'linear-gradient(135deg, ' + today.color + '30, ' + today.color + '60)',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  fontSize:24, boxShadow:'0 0 20px ' + today.color + '30',
+                  animation:'breathe 3s ease-in-out infinite',
+                }}>{today.planetIcon}</div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:10, fontWeight:700, color:today.color, textTransform:'uppercase', letterSpacing:0.8 }}>
+                    {today.planet} · {today.day}वार
+                  </div>
+                  <div style={{ fontSize:15, fontWeight:700, color:'rgba(255,255,255,0.9)', marginTop:4, lineHeight:1.4 }}>
+                    {today.upay}
+                  </div>
+                </div>
+              </div>
+              <button onClick={(e) => { e.stopPropagation(); handleSpeak(); }} style={{
+                marginTop:14, display:'flex', alignItems:'center', gap:6,
+                padding:'8px 16px', borderRadius:16, border:'none',
+                background:today.color + '18', color:today.color,
+                fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'Outfit',
+                animation: playing ? 'speakerPulse 1s ease-in-out infinite' : 'none',
+              }}>
+                {playing ? (E.pause + ' Playing...') : (E.speaker + ' Suniye')}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Week streak dots */}
+      <div style={{
+        display:'flex', justifyContent:'center', gap:8, marginTop:12,
+      }}>
+        {WEEKLY_UPAY.map((d, i) => (
+          <div key={i} style={{
+            display:'flex', flexDirection:'column', alignItems:'center', gap:3,
+          }}>
+            <div style={{
+              width: d.active ? 28 : 22, height: d.active ? 28 : 22,
+              borderRadius:'50%',
+              background: d.active ? ('linear-gradient(135deg, ' + d.color + ', ' + d.color + 'cc)') : 'rgba(255,255,255,0.04)',
+              border: d.active ? 'none' : '1px solid rgba(255,255,255,0.08)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              fontSize: d.active ? 12 : 10,
+              color: d.active ? '#fff' : 'rgba(255,255,255,0.25)',
+              transition:'all 200ms ease',
+              boxShadow: d.active ? ('0 0 12px ' + d.color + '40') : 'none',
+            }}>{d.planetIcon}</div>
+            <div style={{
+              fontSize:7, fontWeight: d.active ? 700 : 400,
+              color: d.active ? d.color : 'rgba(255,255,255,0.2)',
+            }}>{d.dayEn}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+
+/* ═══════════════════════════════════════
+   2B. COSMIC ALERT BEACON
+   ═══════════════════════════════════════ */
+const CosmicAlert = () => {
+  const [expanded, setExpanded] = useState(false);
+  // Only show if Moon moved to 8th house (intense transit)
+  const alert = TRANSIT_CHANGES.find(t => t.to === '8th House');
+  if (!alert) return null;
+
+  return (
+    <div style={{ margin:'0 16px', animation:'fadeInUp 500ms ease-out both' }}>
+      <div onClick={() => setExpanded(!expanded)} style={{
+        borderRadius:16, overflow:'hidden', cursor:'pointer',
+        background: expanded
+          ? 'linear-gradient(135deg, rgba(255,100,50,0.12), rgba(255,60,30,0.06))'
+          : 'linear-gradient(135deg, rgba(255,100,50,0.08), rgba(255,60,30,0.03))',
+        border:'1px solid rgba(255,100,50,0.15)',
+        padding:'14px 18px',
+        transition:'all 300ms ease',
+      }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          {/* Pulsing beacon */}
+          <div style={{ position:'relative' }}>
+            <div style={{
+              width:36, height:36, borderRadius:'50%',
+              background:'linear-gradient(135deg, #ff6432, #ff4444)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              fontSize:16, color:'#fff',
+              boxShadow:'0 0 16px rgba(255,100,50,0.4)',
+            }}>⚠</div>
+            <div style={{
+              position:'absolute', inset:-4, borderRadius:'50%',
+              border:'2px solid rgba(255,100,50,0.4)',
+              animation:'pulseRing 1.5s ease-out infinite',
+            }} />
+          </div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:13, fontWeight:700, color:'#ff8866' }}>Cosmic Alert</div>
+            <div style={{ fontSize:11, fontWeight:400, color:'rgba(255,255,255,0.45)' }}>
+              {alert.planet} {alert.from} → {alert.to}
+            </div>
+          </div>
+          <span style={{
+            fontSize:16, color:'rgba(255,255,255,0.3)',
+            transition:'transform 200ms', transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+          }}>▾</span>
+        </div>
+
+        {expanded && (
+          <div style={{
+            marginTop:12, padding:'12px 14px', borderRadius:12,
+            background:'rgba(255,100,50,0.06)',
+            borderLeft:'3px solid rgba(255,100,50,0.3)',
+            animation:'fadeInUp 200ms ease-out',
+          }}>
+            <div style={{ fontSize:12, fontWeight:500, color:'rgba(255,255,255,0.6)', lineHeight:1.6 }}>
+              {alert.meaning}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
+/* ═══════════════════════════════════════
+   2C. ENERGY AURA MAP
+   ═══════════════════════════════════════ */
+// Today's energy — simple 4-area snapshot
+const TODAY_ENERGY = [
+  { area:'करियर', icon:'💼', stars:4, planet:'शनि', color:'#3535f3',
+    line:'Boss notice karega — meetings rakho' },
+  { area:'प्रेम', icon:'❤️', stars:3, planet:'शुक्र', color:'#e84393',
+    line:'Patience rakho — kal se better hoga' },
+  { area:'धन', icon:'💰', stars:4, planet:'गुरु', color:'#f5a623',
+    line:'2 PM golden window — invest karo' },
+  { area:'सेहत', icon:'🏃', stars:4, planet:'मंगल', color:'#00c48c',
+    line:'Energy high — evening walk best' },
+];
+
+const TodayEnergyCard = () => {
+  return (
+    <div style={{
+      margin:'0 16px', borderRadius:20, overflow:'hidden',
+      background:'linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))',
+      border:'1px solid rgba(255,255,255,0.06)',
+      padding:'20px',
+      animation:'fadeInUp 500ms ease-out both',
+    }}>
+      <div style={{ fontSize:15, fontWeight:800, color:'rgba(255,255,255,0.9)', marginBottom:4 }}>
+        Aaj Ki Energy
+      </div>
+      <div style={{ fontSize:10, fontWeight:400, color:'rgba(255,255,255,0.35)', marginBottom:16 }}>
+        आज आपकी ज़िंदगी के चार पहलू
+      </div>
+
+      {/* 2×2 grid */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+        {TODAY_ENERGY.map((e, i) => (
+          <div key={i} style={{
+            padding:'14px', borderRadius:14,
+            background:'linear-gradient(135deg, ' + e.color + '10, ' + e.color + '05)',
+            border:'1px solid ' + e.color + '25',
+          }}>
+            {/* Icon + Area */}
+            <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:8 }}>
+              <span style={{ fontSize:18 }}>{e.icon}</span>
+              <span style={{ fontSize:13, fontWeight:700, color:'rgba(255,255,255,0.9)' }}>{e.area}</span>
+            </div>
+            {/* Stars */}
+            <div style={{ fontSize:14, letterSpacing:2, marginBottom:6 }}>
+              {Array.from({ length: 5 }, (_, s) => (
+                <span key={s} style={{ color: s < e.stars ? e.color : 'rgba(255,255,255,0.1)' }}>★</span>
+              ))}
+            </div>
+            {/* One-liner */}
+            <div style={{ fontSize:10, fontWeight:400, color:'rgba(255,255,255,0.55)', lineHeight:1.5 }}>
+              {e.line}
+            </div>
+            {/* Planet tag */}
+            <div style={{
+              marginTop:8, fontSize:9, fontWeight:600, color:e.color,
+              padding:'2px 8px', borderRadius:6, background:e.color + '12',
+              display:'inline-block',
+            }}>{e.planet}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+
+/* ═══════════════════════════════════════
+   3A. PATTERN SCANNER
+   ═══════════════════════════════════════ */
+const PatternScanner = () => {
+  const [scanned, setScanned] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const ref = useRef(null);
+  const fired = useRef(false);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !fired.current) {
+        fired.current = true;
+        setTimeout(() => setScanned(true), 300);
+        setTimeout(() => setRevealed(true), 2500);
+      }
+    }, { threshold: 0.4 });
+    obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} style={{
+      margin:'0 16px', borderRadius:20, overflow:'hidden',
+      background:'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)',
+      padding:'22px 20px', position:'relative',
+      animation:'fadeInUp 500ms ease-out both',
+    }}>
+      {/* Scan line */}
+      {scanned && !revealed && (
+        <div style={{
+          position:'absolute', left:0, right:0, height:2,
+          background:'linear-gradient(90deg, transparent, #f5a623, transparent)',
+          animation:'scanLine 2s ease-in-out',
+          zIndex:5,
+        }} />
+      )}
+
+      {/* Constellation grid decoration */}
+      <div style={{ position:'absolute', inset:0, opacity:0.03, pointerEvents:'none' }}>
+        {[...Array(20)].map((_, i) => (
+          <div key={i} style={{
+            position:'absolute',
+            left: Math.random() * 100 + '%', top: Math.random() * 100 + '%',
+            width:2, height:2, borderRadius:'50%', background:'#fff',
+          }} />
+        ))}
+      </div>
+
+      {/* Header */}
+      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:16 }}>
+        <div style={{
+          width:32, height:32, borderRadius:10,
+          background:'linear-gradient(135deg, #f5a62330, #f5a62310)',
+          display:'flex', alignItems:'center', justifyContent:'center', fontSize:16,
+        }}>🧠</div>
+        <div>
+          <div style={{ fontSize:14, fontWeight:800, color:'#fff' }}>Pattern Scanner</div>
+          <div style={{ fontSize:10, color:'rgba(255,255,255,0.3)' }}>Only you can see this</div>
+        </div>
+        <span style={{
+          fontSize:7, fontWeight:700, letterSpacing:1, color:'#f5a623',
+          background:'#f5a62320', padding:'2px 8px', borderRadius:8, marginLeft:'auto',
+        }}>AI INSIGHT</span>
+      </div>
+
+      {/* Scan status */}
+      {!revealed ? (
+        <div style={{ textAlign:'center', padding:'20px 0' }}>
+          <div style={{
+            fontSize:12, fontWeight:500, color:'rgba(255,255,255,0.4)',
+            animation:'pulseDot 1.5s ease-in-out infinite',
+          }}>
+            {scanned ? 'Scanning your cosmic patterns...' : 'Waiting to scan...'}
+          </div>
+        </div>
+      ) : (
+        /* Revealed insight */
+        <div style={{ animation:'fadeInUp 500ms ease-out' }}>
+          {/* Flash label */}
+          <div style={{
+            fontSize:9, fontWeight:800, letterSpacing:2, color:'#f5a623',
+            textAlign:'center', marginBottom:14,
+          }}>PATTERN DETECTED</div>
+
+          {/* Core insight */}
+          <div style={{
+            padding:'16px', borderRadius:14,
+            background:'rgba(245,166,35,0.06)',
+            border:'1px solid rgba(245,166,35,0.12)',
+            marginBottom:14,
+          }}>
+            <div style={{ fontSize:15, fontWeight:700, color:'#fff', lineHeight:1.6 }}>
+              {USER_NAME}, aap raat 11 baje ke baad sabse zyada astro check karti ho.
+            </div>
+            <div style={{ fontSize:12, fontWeight:400, color:'rgba(255,255,255,0.6)', lineHeight:1.7, marginTop:8 }}>
+              Aapki kundli mein <span style={{ color:'#7f8fa6', fontWeight:700 }}>Chandra 8th house</span> mein hai — ye naturally deep thinking raat ko badhata hai.
+            </div>
+          </div>
+
+          {/* Evidence cards — fade in one by one */}
+          <div style={{ display:'flex', gap:8, marginBottom:14 }}>
+            {[
+              { icon:'🌙', label:'Moon', detail:'8th House', delay:'0ms' },
+              { icon:'🕐', label:'Peak', detail:'11 PM–1 AM', delay:'200ms' },
+              { icon:'💕', label:'Most checked', detail:'Relationships', delay:'400ms' },
+            ].map((ev, i) => (
+              <div key={i} style={{
+                flex:1, padding:'10px 8px', borderRadius:10, textAlign:'center',
+                background:'rgba(255,255,255,0.03)',
+                border:'1px solid rgba(255,255,255,0.06)',
+                animation:'fadeInUp 300ms ease-out ' + ev.delay + ' both',
+              }}>
+                <div style={{ fontSize:16, marginBottom:4 }}>{ev.icon}</div>
+                <div style={{ fontSize:8, fontWeight:600, color:'rgba(255,255,255,0.35)', textTransform:'uppercase', letterSpacing:0.5 }}>{ev.label}</div>
+                <div style={{ fontSize:10, fontWeight:700, color:'#f5a623', marginTop:2 }}>{ev.detail}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Prediction */}
+          <div style={{ fontSize:12, fontWeight:500, color:'rgba(255,255,255,0.65)', lineHeight:1.7, marginBottom:14 }}>
+            🔮 Jab bhi aap 3+ din relationship section check karti ho, uske baad koi meaningful conversation hoti hai.
+            Last 4 din se check kiya hai — <span style={{ color:'#e84393', fontWeight:700 }}>kuch hone waala hai.</span>
+          </div>
+
+          {/* Expandable */}
+          <button onClick={() => setExpanded(!expanded)} style={{
+            width:'100%', padding:'10px 14px', borderRadius:12,
+            border:'1px solid rgba(255,255,255,0.08)',
+            background: expanded ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.02)',
+            color:'rgba(255,255,255,0.5)', fontSize:11, fontWeight:600, cursor:'pointer',
+            fontFamily:'Outfit', display:'flex', alignItems:'center', justifyContent:'space-between',
+          }}>
+            <span>{expanded ? 'Hide' : '💡 Why does this app know me so well?'}</span>
+            <span style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition:'transform 200ms' }}>▾</span>
+          </button>
+
+          {expanded && (
+            <div style={{
+              marginTop:12, padding:'14px', borderRadius:12,
+              background:'rgba(255,255,255,0.03)',
+              animation:'fadeInUp 200ms ease-out',
+            }}>
+              <div style={{ fontSize:11, fontWeight:400, color:'rgba(255,255,255,0.5)', lineHeight:1.7 }}>
+                Hum aapki kundli + app usage patterns dono analyze karte hain. Aapka Moon 8th house mein hone ka matlab hai
+                aap naturally curious ho — especially hidden truths ke baare mein. Ye dikhata hai ke aap emotionally process
+                karne ke liye astrology use karti ho. That's actually very healthy.
+              </div>
+              <div style={{
+                marginTop:10, padding:'8px 12px', borderRadius:8,
+                background:'rgba(78,205,196,0.06)', borderLeft:'3px solid rgba(78,205,196,0.3)',
+                fontSize:10, fontWeight:600, color:'#4ecdc4', lineHeight:1.5,
+              }}>
+                ✨ Tip: Raat ko check karna band mat karo — subah bhi 2 min check karo. Subah ka perspective different hoga.
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+
+/* ═══════════════════════════════════════
+   3B. COSMIC SHIFT MAP
+   ═══════════════════════════════════════ */
+const CosmicShiftMap = () => {
+  const [phase, setPhase] = useState(0); // 0=before, 1=moving, 2=arrived
+  const ref = useRef(null);
+  const inView = useRef(false);
+  const timers = useRef([]);
+
+  // Looping animation: KAL (1.5s) → moving (1.6s) → AAJ (3s) → reset → repeat
+  const runCycle = () => {
+    const t = timers.current;
+    // Clear any pending timers
+    t.forEach(clearTimeout);
+    t.length = 0;
+    setPhase(0);
+    t.push(setTimeout(() => { if (inView.current) setPhase(1); }, 1500));   // start moving
+    t.push(setTimeout(() => { if (inView.current) setPhase(2); }, 3100));   // arrive
+    t.push(setTimeout(() => { if (inView.current) runCycle(); }, 7000));    // reset & loop
+  };
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      inView.current = entry.isIntersecting;
+      if (entry.isIntersecting) {
+        runCycle();
+      } else {
+        // Pause when off-screen
+        timers.current.forEach(clearTimeout);
+        timers.current.length = 0;
+      }
+    }, { threshold: 0.3 });
+    obs.observe(ref.current);
+    return () => { obs.disconnect(); timers.current.forEach(clearTimeout); };
+  }, []);
+
+  // Planet layout: each planet has from/to positions in the sky map
+  const PLANET_ANIM = [
+    { // Moon: moves from right-center to lower-right (7th → 8th house)
+      fromX: 65, fromY: 35, toX: 78, toY: 62,
+      ...TRANSIT_CHANGES[0],
+    },
+    { // Mercury: moves from left-low to left-center (retrograde → direct = "forward")
+      fromX: 28, fromY: 65, toX: 35, toY: 40,
+      ...TRANSIT_CHANGES[1],
+    },
+  ];
+
+  return (
+    <div ref={ref} style={{
+      margin:'0 16px',
+      animation:'fadeInUp 500ms ease-out both',
+    }}>
+      <div style={{ fontSize:15, fontWeight:800, color:'rgba(255,255,255,0.9)', marginBottom:4 }}>
+        Kal Se Kya Badla
+      </div>
+      <div style={{ fontSize:10, fontWeight:400, color:'rgba(255,255,255,0.35)', marginBottom:14 }}>
+        {phase < 2 ? 'Raat bhar planets move hue...' : 'Overnight planetary movements'}
+      </div>
+
+      {/* Animated sky map */}
+      <div style={{
+        borderRadius:16, overflow:'hidden', position:'relative',
+        background:'linear-gradient(160deg, #111640 0%, #0c0e28 40%, #0f1235 100%)',
+        border:'1px solid rgba(139,156,247,0.12)',
+        height:240, marginBottom:14,
+      }}>
+        <Starfield count={30} />
+
+        {/* Subtle grid — kundli house feel */}
+        <svg style={{ position:'absolute', inset:0, pointerEvents:'none', opacity:0.08 }} width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <line x1="50" y1="0" x2="50" y2="100" stroke="#8b9cf7" strokeWidth="0.3" />
+          <line x1="0" y1="50" x2="100" y2="50" stroke="#8b9cf7" strokeWidth="0.3" />
+          <line x1="0" y1="0" x2="100" y2="100" stroke="#8b9cf7" strokeWidth="0.15" strokeDasharray="2 3" />
+          <line x1="100" y1="0" x2="0" y2="100" stroke="#8b9cf7" strokeWidth="0.15" strokeDasharray="2 3" />
+        </svg>
+
+        {/* Phase label — KAL / MOVING / AAJ */}
+        <div style={{
+          position:'absolute', top:10, left:14, display:'flex', alignItems:'center', gap:6, zIndex:5,
+        }}>
+          <div style={{
+            fontSize:10, fontWeight:800, letterSpacing:1.5,
+            color: phase === 0 ? 'rgba(255,255,255,0.5)' : phase === 1 ? '#f5a623' : '#4ecdc4',
+            transition:'color 500ms ease',
+          }}>{phase === 0 ? 'KAL' : phase === 1 ? 'TRANSIT...' : 'AAJ'}</div>
+          {phase === 1 && (
+            <div style={{ width:5, height:5, borderRadius:'50%', background:'#f5a623', animation:'pulseDot 0.8s ease-in-out infinite' }} />
+          )}
+        </div>
+
+        {PLANET_ANIM.map((p, i) => {
+          const x = phase >= 1 ? p.toX : p.fromX;
+          const y = phase >= 1 ? p.toY : p.fromY;
+
+          return (
+            <React.Fragment key={i}>
+              {/* Ghost "from" position */}
+              {phase >= 1 && (
+                <div style={{
+                  position:'absolute', left:p.fromX + '%', top:p.fromY + '%',
+                  transform:'translate(-50%, -50%)',
+                  width:42, height:42, borderRadius:'50%',
+                  border:'2px dashed ' + p.color + '70',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  fontSize:16, color:p.color + '90',
+                  animation:'fadeInUp 300ms ease-out',
+                  background: p.color + '15',
+                  boxShadow:'0 0 12px ' + p.color + '20',
+                }}>{p.planetIcon}</div>
+              )}
+
+              {/* Trail path — thicker, glowing */}
+              {phase >= 1 && (
+                <svg style={{ position:'absolute', inset:0, zIndex:1, pointerEvents:'none' }}
+                  width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  {/* Glow line */}
+                  <line x1={p.fromX} y1={p.fromY} x2={p.toX} y2={p.toY}
+                    stroke={p.color} strokeWidth={phase >= 2 ? '1.2' : '0.6'} strokeDasharray="2 2"
+                    opacity={phase >= 2 ? 0.6 : 0.3}
+                    style={{ transition:'all 500ms ease', filter:'blur(0.5px)' }}
+                  />
+                  {/* Arrow head at destination */}
+                  {phase >= 2 && (
+                    <circle cx={p.toX} cy={p.toY} r="1.5" fill={p.color} opacity="0.8" />
+                  )}
+                </svg>
+              )}
+
+              {/* Planet orb — big, bright, unmissable */}
+              <div style={{
+                position:'absolute',
+                left:x + '%', top:y + '%',
+                transform:'translate(-50%, -50%)',
+                width:48, height:48, borderRadius:'50%',
+                background:'radial-gradient(circle at 30% 30%, #fff 0%, ' + p.color + ' 35%, ' + p.color + '99 100%)',
+                display:'flex', alignItems:'center', justifyContent:'center',
+                fontSize:22, color:'#fff', fontWeight:'bold',
+                textShadow:'0 0 6px rgba(0,0,0,0.5)',
+                boxShadow: phase >= 2
+                  ? '0 0 30px ' + p.color + 'aa, 0 0 60px ' + p.color + '50, 0 0 100px ' + p.color + '20'
+                  : '0 0 16px ' + p.color + '70, 0 0 40px ' + p.color + '30',
+                transition:'all 1.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                zIndex:3,
+                border:'2px solid ' + p.color + '90',
+              }}>
+                {p.planetIcon}
+                {/* Arrival pulse rings */}
+                {phase >= 2 && (
+                  <>
+                    <div style={{
+                      position:'absolute', inset:-8, borderRadius:'50%',
+                      border:'2px solid ' + p.color + '50',
+                      animation:'pulseRing 2s ease-out infinite',
+                      animationDelay:(i * 0.4) + 's',
+                    }} />
+                    <div style={{
+                      position:'absolute', inset:-4, borderRadius:'50%',
+                      border:'1px solid ' + p.color + '30',
+                      animation:'pulseRing 2s ease-out infinite',
+                      animationDelay:(i * 0.4 + 0.6) + 's',
+                    }} />
+                  </>
+                )}
+              </div>
+
+              {/* "From" label — bigger, more visible */}
+              {phase >= 1 && (
+                <div style={{
+                  position:'absolute', left:p.fromX + '%', top:(p.fromY + 14) + '%',
+                  transform:'translateX(-50%)',
+                  fontSize:9, fontWeight:700, color:p.color + '80',
+                  textDecoration:'line-through', whiteSpace:'nowrap',
+                  animation:'fadeInUp 300ms ease-out',
+                  background:'rgba(0,0,0,0.4)', padding:'1px 6px', borderRadius:4,
+                }}>{p.from}</div>
+              )}
+
+              {/* "To" label — bold, highlighted */}
+              {phase >= 2 && (
+                <div style={{
+                  position:'absolute', left:x + '%', top:(y + 15) + '%',
+                  transform:'translateX(-50%)',
+                  fontSize:10, fontWeight:800, color:p.color,
+                  whiteSpace:'nowrap',
+                  animation:'fadeInUp 300ms ease-out',
+                  background:'rgba(0,0,0,0.5)', padding:'2px 8px', borderRadius:4,
+                  border:'1px solid ' + p.color + '30',
+                }}>{p.to}</div>
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
+
+      {/* Change cards */}
+      {TRANSIT_CHANGES.map((t, i) => (
+        <div key={i} style={{
+          padding:'14px 16px', borderRadius:14, marginBottom:10,
+          background:'linear-gradient(135deg, ' + t.color + '12, ' + t.color + '06)',
+          border:'1px solid ' + t.color + '35',
+        }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+            <div style={{
+              width:32, height:32, borderRadius:'50%',
+              background:'radial-gradient(circle at 35% 35%, ' + t.color + '50, ' + t.color + '20)',
+              border:'1.5px solid ' + t.color + '60',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              fontSize:16,
+              boxShadow:'0 0 10px ' + t.color + '30',
+            }}>{t.planetIcon}</div>
+            <span style={{ fontSize:14, fontWeight:800, color:'rgba(255,255,255,0.9)' }}>{t.planet}</span>
+            <div style={{ display:'flex', alignItems:'center', gap:6, marginLeft:'auto' }}>
+              <span style={{ fontSize:11, color:'rgba(255,255,255,0.4)', textDecoration:'line-through' }}>{t.from}</span>
+              <span style={{ fontSize:11, color:t.color }}>→</span>
+              <span style={{ fontSize:11, fontWeight:800, color:t.color }}>{t.to}</span>
+            </div>
+          </div>
+          <div style={{ fontSize:12, fontWeight:400, color:'rgba(255,255,255,0.6)', lineHeight:1.5 }}>
+            {t.meaning}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+
+/* ═══════════════════════════════════════
+   3C. PLANET MOOD RINGS
+   ═══════════════════════════════════════ */
+const PlanetMoodRings = () => {
+  const [selected, setSelected] = useState(null);
+
+  return (
+    <div style={{
+      margin:'0 16px',
+      animation:'fadeInUp 500ms ease-out both',
+    }}>
+      <div style={{ fontSize:15, fontWeight:800, color:'rgba(255,255,255,0.9)', marginBottom:4 }}>
+        Planet Mood Rings
+      </div>
+      <div style={{ fontSize:10, fontWeight:400, color:'rgba(255,255,255,0.35)', marginBottom:14 }}>
+        Aapke graho ka aaj ka mood
+      </div>
+
+      {/* Planet row */}
+      <div style={{ display:'flex', justifyContent:'space-around', marginBottom:14 }}>
+        {PLANET_MOODS.map((p, i) => {
+          const isSelected = selected === i;
+          const moodColor = MOOD_COLORS[p.mood] || '#888';
+          return (
+            <div key={i} onClick={() => setSelected(isSelected ? null : i)}
+              style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, cursor:'pointer' }}>
+              <div style={{ position:'relative' }}>
+                {/* Aura ring */}
+                <div style={{
+                  width: isSelected ? 46 : 40, height: isSelected ? 46 : 40,
+                  borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center',
+                  background:'rgba(0,0,0,0.3)',
+                  border:'2px solid ' + moodColor + (isSelected ? '' : '40'),
+                  boxShadow: isSelected ? '0 0 16px ' + moodColor + '50' : '0 0 8px ' + moodColor + '20',
+                  transition:'all 300ms ease',
+                  fontSize: isSelected ? 20 : 18,
+                }}>{p.icon}</div>
+                {/* Mood dot */}
+                <div style={{
+                  position:'absolute', bottom:-2, right:-2,
+                  width:10, height:10, borderRadius:'50%',
+                  background:moodColor, border:'2px solid #0a0a1a',
+                }} />
+              </div>
+              <div style={{ fontSize:9, fontWeight:600, color:'rgba(255,255,255,0.4)' }}>{p.name}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Selected planet detail */}
+      {selected !== null && (
+        <div style={{
+          padding:'14px', borderRadius:14,
+          background:'rgba(255,255,255,0.03)',
+          border:'1px solid ' + (MOOD_COLORS[PLANET_MOODS[selected].mood] || '#888') + '20',
+          animation:'fadeInUp 200ms ease-out',
+        }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
+            <span style={{ fontSize:20 }}>{PLANET_MOODS[selected].icon}</span>
+            <span style={{ fontSize:13, fontWeight:700, color:'rgba(255,255,255,0.8)' }}>{PLANET_MOODS[selected].name}</span>
+            <span style={{
+              fontSize:10, fontWeight:600,
+              color:MOOD_COLORS[PLANET_MOODS[selected].mood],
+              background:MOOD_COLORS[PLANET_MOODS[selected].mood] + '18',
+              padding:'2px 8px', borderRadius:8, marginLeft:'auto',
+            }}>{PLANET_MOODS[selected].moodHi}</span>
+          </div>
+          <div style={{ fontSize:12, fontWeight:400, color:'rgba(255,255,255,0.5)', lineHeight:1.5 }}>
+            {PLANET_MOODS[selected].message}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+
+/* ═══════════════════════════════════════
+   4A. PREDICTION CHECK-IN (COSMIC POSTCARD)
+   ═══════════════════════════════════════ */
+const PredictionCheckIn = () => {
+  const [answered, setAnswered] = useState(null);
+
+  return (
+    <div style={{
+      margin:'0 16px',
+      animation:'fadeInUp 500ms ease-out both',
+    }}>
+      <div style={{
+        borderRadius:20, overflow:'hidden', position:'relative',
+        background:'linear-gradient(135deg, #0d0d2a, #1a1a4e)',
+        border:'1px solid rgba(53,53,243,0.15)',
+        padding:'20px',
+      }}>
+        <Starfield count={15} />
+
+        <div style={{
+          fontSize:9, fontWeight:700, letterSpacing:1.2, color:'rgba(139,156,247,0.6)',
+          textTransform:'uppercase', marginBottom:10, position:'relative',
+        }}>Prediction Check-in</div>
+
+        <div style={{
+          fontSize:13, fontWeight:400, color:'rgba(255,255,255,0.6)', lineHeight:1.6,
+          fontStyle:'italic', marginBottom:14, position:'relative',
+          padding:'12px 14px', borderRadius:12,
+          background:'rgba(255,255,255,0.03)',
+        }}>
+          "Kal humne kaha tha ki Mercury direct hone se ek important message aayega before noon..."
+        </div>
+
+        {answered === null ? (
+          <div style={{ position:'relative' }}>
+            <div style={{ fontSize:14, fontWeight:600, color:'rgba(255,255,255,0.8)', marginBottom:12 }}>
+              Kya ye sahi tha?
+            </div>
+            <div style={{ display:'flex', gap:10 }}>
+              <button onClick={() => setAnswered('yes')} style={{
+                flex:1, padding:'10px', borderRadius:12, border:'none',
+                background:'rgba(0,196,140,0.12)', color:'#00c48c', fontSize:14, fontWeight:700,
+                cursor:'pointer', fontFamily:'Outfit',
+              }}>Haan ✓</button>
+              <button onClick={() => setAnswered('no')} style={{
+                flex:1, padding:'10px', borderRadius:12, border:'none',
+                background:'rgba(255,255,255,0.05)', color:'rgba(255,255,255,0.4)', fontSize:14, fontWeight:700,
+                cursor:'pointer', fontFamily:'Outfit',
+              }}>Nahi ✗</button>
+            </div>
+          </div>
+        ) : (
+          <div style={{
+            textAlign:'center', padding:'12px', position:'relative',
+            animation:'fadeInUp 300ms ease-out',
+          }}>
+            <div style={{ fontSize:24, marginBottom:8 }}>{answered === 'yes' ? '✨' : '🙏'}</div>
+            <div style={{ fontSize:13, fontWeight:500, color:'rgba(255,255,255,0.6)', lineHeight:1.5 }}>
+              {answered === 'yes'
+                ? '3 din se sahi — aapka cosmic connection strong hai!'
+                : 'Noted — hum accuracy improve karte rahenge. Shukriya 🙏'}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
+/* ═══════════════════════════════════════
+   4B. DESTINY GATE
+   ═══════════════════════════════════════ */
+const KundliExploreCard = () => {
+  const handleTap = () => {
+    window.location.href = 'astro-home.html';
+  };
+
+  return (
+    <div style={{ margin:'0 16px', animation:'fadeInUp 500ms ease-out both' }}>
+      <div onClick={handleTap} style={{
+        borderRadius:20, overflow:'hidden', position:'relative',
+        background:'linear-gradient(135deg, #0d0828, #1a0d2e)',
+        border:'1px solid rgba(245,208,96,0.2)',
+        padding:'28px 20px', cursor:'pointer',
+        textAlign:'center',
+      }}>
+        <Starfield count={12} />
+
+        {/* Kundli icon */}
+        <div style={{
+          fontSize:40, marginBottom:14, position:'relative',
+          filter:'drop-shadow(0 0 12px rgba(245,208,96,0.4))',
+        }}>🪷</div>
+
+        <div style={{
+          fontSize:17, fontWeight:800, color:'#f5d060', position:'relative',
+          lineHeight:1.4,
+        }}>
+          आपकी कुंडली के राज़ जानें
+        </div>
+        <div style={{
+          fontSize:12, fontWeight:400, color:'rgba(255,255,255,0.5)',
+          marginTop:8, position:'relative', lineHeight:1.5,
+        }}>
+          ग्रह, दशा, योग, दोष — सब एक जगह
+        </div>
+
+        {/* CTA button */}
+        <div style={{
+          marginTop:16, display:'inline-flex', alignItems:'center', gap:8,
+          padding:'10px 24px', borderRadius:24,
+          background:'linear-gradient(135deg, #f5d060, #d4880f)',
+          color:'#1a0d00', fontSize:13, fontWeight:700,
+          boxShadow:'0 0 20px rgba(245,208,96,0.25)',
+          position:'relative',
+        }}>
+          Explore Kundli →
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+/* ═══════════════════════════════════════
+   APP SHELL
+   ═══════════════════════════════════════ */
+const App = () => {
+  const [entryDone, setEntryDone] = useState(false);
+  const alreadyEntered = useRef(!!sessionStorage.getItem('cosmic_entry_done'));
+
+  useEffect(() => {
+    if (alreadyEntered.current) {
+      setEntryDone(true);
+    }
+  }, []);
+
+  const handleEntryComplete = () => {
+    sessionStorage.setItem('cosmic_entry_done', '1');
+    setEntryDone(true);
+  };
+
+  return (
+    <div className="phone-frame">
+      <div className="status-bar">
+        <span>9:41</span>
+        <span style={{ fontSize:11, fontWeight:700 }}>✦ Astro Daily</span>
+        <div className="status-bar-right">
+          <span style={{ fontSize:10 }}>Jio 5G</span>
+          <span>{E.battery}</span>
+        </div>
+      </div>
+
+      {/* Cosmic Entry Animation */}
+      {!alreadyEntered.current && !entryDone && (
+        <CosmicEntry onComplete={handleEntryComplete} />
+      )}
+
+      {/* Background gradient that shifts per zone */}
+      <div className="scroll-feed" style={{
+        background:'linear-gradient(180deg, #0a0a1a 0%, #0d0d2e 15%, #0d0828 35%, #0a1a2a 55%, #0d1a18 75%, #1a1408 100%)',
+        opacity: entryDone ? 1 : 0,
+        transition:'opacity 500ms ease',
+      }}>
+
+        {/* ═══ ZONE 1: LIVE COSMIC ROOM ═══ */}
+        <CompactHeader />
+        <DailyAstrocast />
+        <div style={{ height:24 }} />
+        <OrbitClock />
+        <div style={{ height:20 }} />
+        <SpeakingPlanetVisit />
+
+        {/* ═══ ZONE 2: TODAY'S RITUALS ═══ */}
+        <ZoneDivider icon="🕉" label="Today's Rituals" />
+        <RitualChest />
+        <div style={{ height:16 }} />
+        <CosmicAlert />
+        <div style={{ height:16 }} />
+        <TodayEnergyCard />
+
+        {/* ═══ ZONE 3: DEEP INTELLIGENCE ═══ */}
+        <ZoneDivider icon="🔮" label="Deep Intelligence" />
+        <CosmicShiftMap />
+        <div style={{ height:16 }} />
+        <PlanetMoodRings />
+
+        {/* ═══ ZONE 4: LIFE PROGRESSION ═══ */}
+        <ZoneDivider icon="⚡" label="Life Progression" />
+        <PredictionCheckIn />
+        <div style={{ height:16 }} />
+        {IS_UNIFIED && <KundliExploreCard />}
+        {IS_UNIFIED && <div style={{ height:16 }} />}
+        {!IS_UNIFIED && <KundliExploreCard />}
+        {!IS_UNIFIED && <div style={{ height:16 }} />}
+
+        {/* ═══ CHAT BAR AT BOTTOM ═══ */}
+        <div style={{ padding:'8px 16px 24px' }}>
+          {/* Suggested questions — horizontal scroll */}
+          <div style={{
+            display:'flex', gap:8, overflowX:'auto', marginBottom:10,
+            paddingBottom:4, WebkitOverflowScrolling:'touch',
+          }} className="horiz-scroll">
+            {[
+              'Aaj mera din kaisa rahega?',
+              'Career mein kab milega promotion?',
+              'Shubh muhurat kya hai aaj?',
+              'Kya aaj invest karna chahiye?',
+              'Love life kab improve hogi?',
+            ].map((q, i) => (
+              <div key={i} style={{
+                flexShrink:0, padding:'8px 14px', borderRadius:20,
+                background:'rgba(255,255,255,0.06)',
+                border:'1px solid rgba(255,255,255,0.1)',
+                fontSize:11, fontWeight:500, color:'rgba(255,255,255,0.6)',
+                cursor:'pointer', whiteSpace:'nowrap',
+              }}>{q}</div>
+            ))}
+          </div>
+
+          {/* Chat input bar */}
+          <div style={{
+            display:'flex', alignItems:'center', gap:10,
+            padding:'10px 14px', borderRadius:24,
+            background:'rgba(255,255,255,0.06)',
+            border:'1px solid rgba(255,255,255,0.1)',
+          }}>
+            <div style={{
+              flex:1, fontSize:13, fontWeight:400, color:'rgba(255,255,255,0.3)',
+            }}>Apna sawaal poochiye...</div>
+            <div style={{
+              width:36, height:36, borderRadius:'50%',
+              background:'linear-gradient(135deg, #f5a623, #e8871e)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              fontSize:16, cursor:'pointer',
+              boxShadow:'0 0 12px rgba(245,166,35,0.3)',
+            }}>✦</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

@@ -1832,6 +1832,14 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`);
   ];
   new eR({
     precacheEntries: [
+      {
+        revision: "411adca5a5dd382b4ec676aa8b09ee91",
+        url: "/_next/static/QNdcRnzCvnMz7d_OxG-MA/_buildManifest.js",
+      },
+      {
+        revision: "b6652df95db52feb4daf4eca35380933",
+        url: "/_next/static/QNdcRnzCvnMz7d_OxG-MA/_ssgManifest.js",
+      },
       { revision: null, url: "/_next/static/chunks/239-fc5aeed65bdef089.js" },
       { revision: null, url: "/_next/static/chunks/301-711822084df62ade.js" },
       { revision: null, url: "/_next/static/chunks/497-cb9b07699e408970.js" },
@@ -1839,9 +1847,10 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`);
       { revision: null, url: "/_next/static/chunks/87c73c54-f46fec743414da25.js" },
       { revision: null, url: "/_next/static/chunks/app/_global-error/page-b5fb22c2e9c47b62.js" },
       { revision: null, url: "/_next/static/chunks/app/_not-found/page-a3885bca1e346abe.js" },
+      { revision: null, url: "/_next/static/chunks/app/astro/page-22bed08fe36e4e09.js" },
       { revision: null, url: "/_next/static/chunks/app/health/page-f8e5cabd44612679.js" },
-      { revision: null, url: "/_next/static/chunks/app/layout-a26d365ddf5dba1d.js" },
-      { revision: null, url: "/_next/static/chunks/app/page-aef0dbcf99e0a793.js" },
+      { revision: null, url: "/_next/static/chunks/app/layout-3d839854b710f7c0.js" },
+      { revision: null, url: "/_next/static/chunks/app/page-2ab3a6786a16dd05.js" },
       { revision: null, url: "/_next/static/chunks/framework-369218c9910949e7.js" },
       { revision: null, url: "/_next/static/chunks/main-app-655b766c2b5f225f.js" },
       { revision: null, url: "/_next/static/chunks/main-bbe9be3c0dbf93b5.js" },
@@ -1871,14 +1880,6 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`);
       },
       { revision: null, url: "/_next/static/chunks/webpack-1dfcc0e66d6ce68c.js" },
       { revision: null, url: "/_next/static/css/d322d76104fe40af.css" },
-      {
-        revision: "13f6a5b113e73c2e628b03253e97f18a",
-        url: "/_next/static/jMqGcpDZnzkzeTmNf-zt5/_buildManifest.js",
-      },
-      {
-        revision: "b6652df95db52feb4daf4eca35380933",
-        url: "/_next/static/jMqGcpDZnzkzeTmNf-zt5/_ssgManifest.js",
-      },
       {
         revision: "b39676298197422e3f5284bfafdc7dc3",
         url: "/_next/static/media/27834908180db20f-s.p.woff2",

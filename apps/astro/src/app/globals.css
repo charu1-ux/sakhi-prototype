@@ -82,3 +82,16 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ─── Native OS dark/light mode: tell browser which scheme we're using ─── */
+:root {
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+  }
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+}

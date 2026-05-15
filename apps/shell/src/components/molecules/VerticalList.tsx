@@ -63,6 +63,10 @@ const verticals: Vertical[] = [
     slug: "astro",
     icon: "/assets/shell/ico-astro.svg",
     gradientFrom: "from-vertical-astro",
+    // Same Capacitor WKURLSchemeHandler fix as health — point directly to
+    // index.html so the static file is served on device instead of falling
+    // back to the shell. Also skips the Next.js dev iframe route on device.
+    externalUrl: "/astro/jbiq-homepage.html",
   },
 ];
 
