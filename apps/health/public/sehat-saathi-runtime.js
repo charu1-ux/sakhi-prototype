@@ -5,6 +5,14 @@ if (!window.__SS_LOADED__) {
   const GROQ_API_KEY = (window.__SS_CONFIG__ && window.__SS_CONFIG__.groqKey) || "";
   const SARVAM_KEY = (window.__SS_CONFIG__ && window.__SS_CONFIG__.sarvamKey) || "";
 
+  // PR #16: Sarvam API doesn't return CORS headers, so direct calls from a
+  // browser are blocked. Route every Sarvam request through this Cloudflare
+  // Worker proxy, which adds the CORS headers and forwards to api.sarvam.ai.
+  const SARVAM_PROXY_BASE_URL = "https://sarvam-proxy.nawaneet-kumar.workers.dev";
+  function sarvamUrl(path) {
+    return SARVAM_PROXY_BASE_URL + path;
+  }
+
   // ── State ──
   const ST = {
     screen: "s-home",
@@ -178,6 +186,294 @@ CRITICAL RULES:
 - Use ONLY ingredients listed above. Don't invent new combinations.
 - Match remedy to specific complaint. Don't dump multiple options unless asked for "aur batao".`;
 
+  // CCRAS = Central Council for Research in Ayurveda and Siddha (Department of
+  // ISM&H, Ministry of Health & Family Welfare, Govt of India). The booklet
+  // "Ayurvedic Home Remedies" is the primary clinical authority behind every
+  // remedy the app can give — 25 ingredients with validated use-cases. Citing
+  // this lets the bot legitimately say "Central Government ke Ayurvedic
+  // research ke mutabik hai", not a forwarded folk claim.
+  const CCRAS_REMEDIES = {
+    adrak: {
+      name: "Adrak / Sonth",
+      conditions: {
+        indigestion: "5gm crushed rhizome with salt or jaggery twice daily before meal",
+        ear_pain: "2-4 drops fresh warm juice in ear — do not use if there is discharge",
+        hoarseness: "1-3gm dry rhizome powder with honey in three divided doses",
+        aches_pains: "10-20ml decoction from 2gm dry rhizome twice a day",
+        cold_cough:
+          "2-5gm dry rhizome powder with jaggery thrice daily. 10ml decoction every morning prevents recurrent cold.",
+        headache: "Warm paste applied on forehead 3-4 times a day",
+        abdominal_pain: "5ml juice in a glass of buttermilk with lemon and salt",
+      },
+    },
+    ajwain: {
+      name: "Ajwain",
+      conditions: {
+        abdominal_pain: "1gm powder with lukewarm water twice or thrice",
+        flatulence: "2gm ajwain powder with equal saunf powder with warm water",
+        piles: "1gm powder and 1gm black salt with buttermilk twice daily",
+        sinusitis: "Warm paste applied over forehead and below eyes in morning",
+        nasal_block: "1-2gm powder in steaming water, inhale vapour 2-3 times a day",
+        loss_of_appetite: "1gm powder with warm water half hour before meals",
+        skin_allergy: "1-2gm powder with water twice daily",
+      },
+    },
+    anar: {
+      name: "Anar",
+      conditions: {
+        indigestion:
+          "10ml fruit juice with black salt or fried jeera powder with honey before food",
+        bleeding_piles: "10ml fruit juice with sugar twice a day",
+        diarrhoea: "10ml decoction of fruit skin thrice a day",
+        acidity: "10ml fruit juice twice a day or eat the fruit",
+        bad_breath: "Gargle with warm decoction of fruit skin 3-4 times a day",
+        acne: "Paste of seeds applied to affected part twice daily",
+      },
+    },
+    amla: {
+      name: "Amla",
+      conditions: {
+        general_health: "Regular use provides nutrition and boosts immunity",
+        acidity_constipation:
+          "3-5gm powdered fruit rind with milk twice a day or 10-20ml juice twice daily",
+        stress: "25-50gm fruit rind ground in buttermilk applied on forehead",
+        diabetes: "10-20ml fruit juice with 10-20ml fresh haldi juice twice a day",
+        hair_fall_dandruff: "Fruit rind soaked overnight applied on scalp two hours before bath",
+        bleeding_gums: "Fine powder massaged to gums after brushing twice daily",
+      },
+    },
+    dalchini: {
+      name: "Dalchini",
+      conditions: {
+        indigestion: "2gm bark powder with water twice a day",
+        loss_of_appetite: "2gm equal parts dalchini and ajwain for chewing before food",
+        vomiting: "1-2gm powder with honey thrice daily",
+        tension_headache: "Rubbed with water and applied to forehead",
+        mental_tension: "Aroma has soothing effect — crushed pieces near pillow",
+        dry_cough: "Chewing controls throat irritation",
+      },
+    },
+    dhania: {
+      name: "Dhania",
+      conditions: {
+        cold_cough:
+          "20ml decoction from 5gm powder with sugar and haldi thrice daily. Dhania tea every morning prevents cold.",
+        intestinal_worms: "3-5gm powder with jaggery twice daily for 5 days",
+        dehydration: "20ml decoction with sugar and pinch of salt frequently",
+        indigestion: "20ml decoction from 5gm powder with pinch of ginger thrice daily",
+        fever: "20ml decoction from 5gm powder with sugar 3-4 times a day",
+      },
+    },
+    elaichi: {
+      name: "Elaichi",
+      conditions: {
+        hiccough: "1-2 fruits chewed frequently (max 4 per day)",
+        vomiting: "250-500mg seed powder fried in ghee thrice daily with honey",
+        bad_breath: "1-2 seeds chewed frequently",
+        cold: "20ml decoction from 5gm dhania, 1gm methi, little haldi, 2-3 times daily",
+        cough: "Little elaichi powder with teaspoon honey 3-4 times day. Max 3 per day.",
+      },
+    },
+    ghee: {
+      name: "Ghee",
+      conditions: {
+        wounds_burns: "Application over affected part frequently",
+        loss_of_appetite: "With hing and jeera powder with food",
+        memory: "Daily use in children improves memory",
+        constipation: "5ml ghee in warm milk with sugar at bedtime",
+      },
+    },
+    haldi: {
+      name: "Haldi",
+      conditions: {
+        diabetes: "10ml fresh juice with 10ml amla juice twice daily",
+        acne: "Paste applied to affected part twice a day. Haldi with milk on face gives glow.",
+        cold: "2gm powder with warm milk and sugar twice a day. Haldi in herbal tea prevents allergies.",
+        wounds_skin: "Wash with haldi decoction, apply paste mixed with ghee or coconut oil",
+        skin_allergy: "1-3gm powder with jaggery twice a day",
+      },
+    },
+    hing: {
+      name: "Hing",
+      conditions: {
+        abdominal_pain:
+          "Dissolve in water and apply on and around umbilicus. Especially useful in children. 1gm fried in ghee with buttermilk twice a day.",
+        toothache: "Keep fried hing in the affected tooth",
+        loss_of_appetite:
+          "Pinch of hing fried in ghee with crushed adrak in buttermilk before food",
+      },
+    },
+    jayphal: {
+      name: "Jayphal",
+      conditions: {
+        diarrhoea_children: "Pinch of powder rubbed in milk or water 3-4 times a day",
+        irritability_children: "1-2 pinch powder with milk acts as mild sedative 3-4 times day",
+        abdominal_pain: "2gm powder with warm water 4-5 times a day",
+      },
+    },
+    jeera: {
+      name: "Jeera",
+      conditions: {
+        indigestion: "3-6gm fried jeera powder with rock salt in warm water thrice daily",
+        diarrhoea: "1-2gm fried jeera powder with 250ml buttermilk four times daily",
+        acidity: "5-10gm ghee boiled with jeera taken with rice during meals",
+        cold: "Warm decoction of 2gm jeera, 5gm dhania, 1gm haldi, 1gm methi with honey and lemon 2-3 times",
+        cough: "Same decoction or chewing few grains frequently",
+      },
+    },
+    kalimirach: {
+      name: "Kalimirach",
+      conditions: {
+        cough: "1gm powder with ghee and honey twice daily",
+        indigestion: "Pinch with crushed ginger and rock salt before meal",
+        loss_of_appetite: "Pinch with 2 teaspoon lemon juice half hour before food",
+        hoarseness: "1-2gm seed powder fried in ghee twice daily, keep in mouth",
+        bleeding_gums: "Pinch mixed with honey applied to gums after gargling with warm salt water",
+      },
+    },
+    karela: {
+      name: "Karela",
+      conditions: {
+        diabetes: "1-3gm seed powder with water twice a day",
+        indigestion: "5-10ml fruit juice twice daily",
+        skin_diseases: "5-10ml juice every morning on empty stomach",
+        acne: "5-10ml juice on empty stomach once a day",
+        intestinal_worms: "10ml juice with jaggery in morning for 3 days",
+      },
+    },
+    lahsun: {
+      name: "Lahsun",
+      conditions: {
+        ear_pain: "2-4 drops warm fresh juice in ear twice daily — no discharge",
+        flatulence: "6ml juice with honey twice a day",
+        cold_cough: "Crushed bulb boiled in water taken with sugar",
+        joint_pain: "5gm paste with honey twice a day. Warm paste in oil applied over joint.",
+      },
+    },
+    laung: {
+      name: "Laung",
+      conditions: {
+        cough:
+          "Chew frequently or 1gm powder with honey 2-3 times. 20ml warm decoction 3-4 times daily.",
+        cold_hiccough: "1-2gm powder with honey in three divided doses",
+        indigestion: "1-2gm powder with warm water",
+        toothache: "Crushed clove kept in affected tooth",
+        bad_breath: "Small piece chewed frequently",
+        ear_pain:
+          "Warm coconut oil boiled with laung powder filled in ear twice daily — no discharge",
+      },
+    },
+    madhu: {
+      name: "Madhu / Honey",
+      conditions: {
+        obesity: "One teaspoon with glass of water in the morning",
+        cough: "With pinch of laung powder 3-4 times",
+        wounds_burns: "Honey and ghee mixed and applied",
+        bleeding_gums:
+          "Mixture of ginger, pepper, rock salt, honey and ghee applied to gums twice daily",
+        note: "Honey should never be boiled",
+      },
+    },
+    methi: {
+      name: "Methi",
+      conditions: {
+        diabetes: "2gm powder with milk twice daily",
+        body_ache: "2gm powder with 2gm jeera powder in warm milk twice daily",
+        dandruff:
+          "Scalp massaged with paste half hour before bath. Coconut oil boiled with methi powder used regularly.",
+      },
+    },
+    nariyal: {
+      name: "Nariyal",
+      conditions: {
+        acidity: "Tender coconut water twice daily",
+        kidney_stone: "Tender coconut water twice daily",
+        dehydration: "Tender coconut water frequently",
+        hair_fall: "Coconut oil processed with methi and amla powder used regularly",
+        wounds: "Coconut oil applied frequently",
+      },
+    },
+    neem: {
+      name: "Neem",
+      conditions: {
+        skin_disease: "10ml leaf juice with honey twice a day",
+        wounds: "Warm paste of leaves over affected part",
+        intestinal_worms: "20ml decoction from handful of leaves on empty stomach for 3 days",
+        dandruff: "Decoction applied to scalp one hour before bath",
+      },
+    },
+    nimbu: {
+      name: "Nimbu",
+      conditions: {
+        indigestion: "5-10ml juice with pinch of salt and pepper before food",
+        dehydration: "One nimbu in glass of water with salt and sugar",
+        vomiting: "5-10ml juice with water, sugar and pinch of salt frequently in small quantities",
+        bleeding_gums: "Fruit skin crushed and rubbed gently to gums twice daily",
+        loss_of_appetite: "5ml juice with salt and pinch of pepper before meals",
+      },
+    },
+    pyaj: {
+      name: "Pyaj",
+      conditions: {
+        sun_stroke: "Use plenty of onion for prevention",
+        cold_cough_children: "Decoction from a piece given with jaggery thrice daily",
+        dysentery: "White onion chopped and fried in ghee eaten with rice",
+      },
+    },
+    pippali: {
+      name: "Pippali",
+      conditions: {
+        indigestion: "2gm powder with jaggery twice daily before meal",
+        cold_cough:
+          "2gm powder with honey thrice daily. 10-20ml decoction with ginger and black pepper 2-3 times.",
+        diarrhoea:
+          "2-3gm powder in 1 litre buttermilk divided into 4 parts, one part every 6 hours",
+        cold_with_fever: "2gm powder with honey twice daily",
+      },
+    },
+    saunf: {
+      name: "Saunf",
+      conditions: {
+        indigestion: "3-5gm powder with fried jeera and rock salt in warm water thrice daily",
+        diarrhoea: "3-5gm powder with buttermilk 3-4 times daily",
+        abdominal_pain: "3-5gm powder with buttermilk 3-4 times daily",
+        bad_breath: "Little quantity chewed after food",
+        loss_of_appetite: "3-5gm roasted saunf powder with buttermilk, pepper and salt twice daily",
+      },
+    },
+    tulsi: {
+      name: "Tulsi",
+      conditions: {
+        cold_cough: "5-10ml juice twice or thrice daily with honey",
+        fever: "30ml decoction from handful of leaves and 5gm dhania thrice daily",
+        skin_allergy: "5-10ml juice twice or thrice daily",
+        indigestion: "5-10ml juice twice or thrice daily",
+        ear_pain: "2-3 lukewarm drops twice daily — no discharge",
+        wound: "Juice mixed with honey and haldi applied",
+      },
+    },
+  };
+
+  // Flatten CCRAS_REMEDIES into a plain-text block that sits inside the system
+  // prompt next to NUSHKE_KB. Generated once at script load.
+  const CCRAS_KB =
+    `CCRAS-VALIDATED REMEDIES (Central Council for Research in Ayurveda and Siddha, Department of ISM&H, Ministry of Health & Family Welfare, Govt of India — PRIMARY CLINICAL AUTHORITY. When you give a remedy that matches an entry below, cite this source.):
+
+` +
+    Object.values(CCRAS_REMEDIES)
+      .map((ing) => {
+        const conds = Object.entries(ing.conditions)
+          .map(([c, dose]) => `  - ${c}: ${dose}`)
+          .join("\n");
+        return `${ing.name.toUpperCase()}:\n${conds}`;
+      })
+      .join("\n\n") +
+    `
+
+CCRAS SAFETY GATE (always include in remedy responses, per the booklet): "Agar 2-3 din mein farak na pade toh paas ke doctor se milein."
+
+CCRAS CITATION TEMPLATE (use when giving a CCRAS-validated remedy — adapt to user's language/script): "Yeh nushka Central Government ke Ayurvedic research (CCRAS) ke mutabik hai — Ministry of Health, Govt of India ne ise validate kiya hai."`;
+
   const SYSTEM_PROMPT = `You are Sehat Saathi — a warm dadi/nani figure inside JioBharatIQ. NOT a remedy machine.
 
 LANGUAGE: Reply in the user's language and dialect. Match their script (if they wrote in Devanagari, reply in Devanagari; if Roman/Hinglish, reply that way). Never switch language unless they do. Never ask them to change language.
@@ -194,7 +490,13 @@ CRITICAL — DO NOT RUSH TO REMEDIES:
 SERIOUS EMERGENCY (escalate immediately, NO remedy, NO question):
 Chest pain, breathing trouble, infant <3 months with fever, seizure, sudden worst-ever headache, vomiting blood, loss of consciousness, sudden face droop or arm weakness. Tell them warmly but firmly: doctor ke paas turant jao, der mat karo.
 
-KNOWLEDGE BASE: Authoritative remedies for common ailments are listed in the AUTHORITATIVE NUSHKE REFERENCE block below. Match the user's complaint to those entries before suggesting anything. If their complaint isn't covered, fall back to the kitchen ingredient bank (ajwain, haldi, adrak, tulsi, neem, amla, mulethi, saunf, methi, jeera, coconut water, warm milk, honey, rock salt, nimbu, cloves, cinnamon, hing).
+KNOWLEDGE BASE: Two layered sources back every remedy you give.
+1. CCRAS (Central Council for Research in Ayurveda and Siddha, Ministry of Health & Family Welfare, Govt of India) — PRIMARY CLINICAL AUTHORITY. Validated ingredient × condition entries with doses. When a user's complaint matches a CCRAS entry, prefer that remedy and cite the source (template below in the CCRAS block).
+2. NUSHKE_KB (Ghar Ka Vaidh traditional reference) — secondary, broader catalogue in Hindi/Hinglish. Use when CCRAS doesn't cover the complaint.
+Always end remedy responses with the CCRAS safety gate ("Agar 2-3 din mein farak na pade toh paas ke doctor se milein"). Adapt the wording to the user's language/script.
+If neither source covers the complaint, fall back to the kitchen ingredient bank (ajwain, haldi, adrak, tulsi, neem, amla, mulethi, saunf, methi, jeera, coconut water, warm milk, honey, rock salt, nimbu, cloves, cinnamon, hing).
+
+${CCRAS_KB}
 
 ${NUSHKE_KB}
 
@@ -1366,7 +1668,7 @@ Second line onward: your warm response.`;
         if (detectedScript === "roman" && targetLang.startsWith("hi")) {
           chunk = await transliterateToDevanagari(chunk, targetLang);
         }
-        const res = await fetch("https://api.sarvam.ai/text-to-speech", {
+        const res = await fetch(sarvamUrl("/text-to-speech"), {
           method: "POST",
           headers: { "api-subscription-key": SARVAM_KEY, "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1833,7 +2135,10 @@ Second line onward: your warm response.`;
   let _vpCurrentAudio = null;
 
   function openVoicePicker() {
-    _vpSelected = localStorage.getItem("ss_voice_pref") || "kavitha";
+    // v5.5.3: validate against bulbul:v2 allowlist (older "kavitha" default
+    // returns HTTP 400 on every TTS call). _validSarvamSpeaker handles clearing
+    // stale prefs and falling back to manisha.
+    _vpSelected = typeof _validSarvamSpeaker === "function" ? _validSarvamSpeaker() : "manisha";
     renderVoicePickerList();
     document.getElementById("voice-picker-ov").classList.add("on");
   }
@@ -1894,7 +2199,7 @@ Second line onward: your warm response.`;
     const sample =
       "नमस्ते बेटा, आज कैसे हो? कुछ खाया कि नहीं? बैठो, मैं तुम्हें एक छोटा सा घरेलू नुस्खा बताती हूं।";
     try {
-      const res = await fetch("https://api.sarvam.ai/text-to-speech", {
+      const res = await fetch(sarvamUrl("/text-to-speech"), {
         method: "POST",
         headers: { "api-subscription-key": SARVAM_KEY, "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -5138,6 +5443,14 @@ Rules:
   let _convRecorder = null;
   let _convTickTimer = null;
   let _convResumeTimer = null;
+  // v5.5: half-duplex flag — true between speak() start and "playback fully drained
+  // + grace period". convListenOnce refuses to (re)open the mic while this is on, so
+  // TTS coming out of the phone speaker doesn't get re-captured by the mic.
+  let _isSpeaking = false;
+  // v5.5.4: conversational voice mode — confirmation flow for AI-suggested skills.
+  // Carries state across turns inside convHandleTranscript.
+  // Shape: { kind:'movement'|'remedy'|'acupressure', key, title } | null
+  let _pendingVoiceSkill = null;
 
   async function toggleVoice(target) {
     if (_convActive) {
@@ -5158,6 +5471,9 @@ Rules:
     setVoiceState("listening");
     await convListenOnce();
   }
+  // `async function` is not subject to Annex B legacy block-scoped hoisting,
+  // so it doesn't reach window like sibling regular-function globals do.
+  window.toggleVoice = toggleVoice;
 
   // v4: Append a line to the in-overlay live transcript area
   function appendVoiceLine(role, text, opts) {
@@ -5221,8 +5537,26 @@ Rules:
 
   async function convListenOnce() {
     if (!_convActive) return;
+    // v5.5: refuse to re-open the mic while TTS is still emitting — otherwise the
+    // speaker tail (browser AEC handles most of it, but room reverb leaks) gets
+    // re-transcribed and the AI starts talking to itself.
+    if (_isSpeaking) {
+      console.info("[voice-skill] mic gated by _isSpeaking, retry in 250ms");
+      _convResumeTimer = setTimeout(convListenOnce, 250);
+      return;
+    }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // v5.5: enable browser-native AEC + noise suppression + AGC. Chrome ships
+      // WebRTC AEC3 here; Safari uses its own AEC. Big improvement on the
+      // "AI hears its own TTS through the phone speaker" loop and on background
+      // hum (fans, traffic) being mistaken for speech.
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
       _convStream = stream;
       _audioChunks = [];
       const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
@@ -5278,7 +5612,9 @@ Rules:
         let speechSeen = false;
         let silenceMs = 0;
         let elapsed = 0;
-        const SILENCE_THRESHOLD = 14; // RMS-ish on 0-255 scale
+        let aboveThreshFrames = 0; // v5.5: consecutive loud frames before flipping speechSeen
+        const SILENCE_THRESHOLD = 18; // v5.5: raised 14→18 — less sensitive to ambient hum (fans, traffic, AC)
+        const SPEECH_CONFIRM_FRAMES = 3; // v5.5: need 3 frames (~300ms) above threshold to count as speech (filters single-frame spikes / room noise pops)
         const SILENCE_HANG_MS = 1500; // 1.5s of silence after speech → stop
         const MAX_RECORD_MS = 25000; // hard cap 25s
         const NO_SPEECH_TIMEOUT = 6000; // stop if no speech detected at all in 6s
@@ -5292,15 +5628,21 @@ Rules:
           _setBarsFromLevel(avg);
           elapsed += 100;
           if (avg > SILENCE_THRESHOLD) {
-            speechSeen = true;
+            aboveThreshFrames++;
+            if (aboveThreshFrames >= SPEECH_CONFIRM_FRAMES) speechSeen = true;
             silenceMs = 0;
-          } else if (speechSeen) {
-            silenceMs += 100;
-            if (silenceMs >= SILENCE_HANG_MS) {
-              try {
-                _convRecorder.stop();
-              } catch (e) {}
-              return;
+          } else {
+            // v5.5: reset CONSECUTIVE loud-frame counter on any quiet frame so a single
+            // door-slam / pot-clang doesn't slowly accumulate into a false speechSeen.
+            aboveThreshFrames = 0;
+            if (speechSeen) {
+              silenceMs += 100;
+              if (silenceMs >= SILENCE_HANG_MS) {
+                try {
+                  _convRecorder.stop();
+                } catch (e) {}
+                return;
+              }
             }
           }
           if (elapsed >= MAX_RECORD_MS || (!speechSeen && elapsed >= NO_SPEECH_TIMEOUT)) {
@@ -5329,41 +5671,218 @@ Rules:
     }
   }
 
+  // v5.5.5: unified skill detector for voice mode. Returns a normalized
+  // {kind, key, title} object or null. Used by both the fast-path (explicit
+  // user request) and the suggestion-confirmation path (AI mentioned a skill).
+  // Order: movement → remedy → acupressure.
+  function _detectSkillForVoice(text) {
+    if (!text) return null;
+    const mv = typeof detectMovement === "function" ? detectMovement(text) : null;
+    if (mv) return { kind: "movement", key: mv[0], title: (mv[1] && mv[1].title) || mv[0] };
+    const rm = typeof detectRemedy === "function" ? detectRemedy(text) : null;
+    if (rm) return { kind: "remedy", key: rm[0], title: (rm[1] && rm[1].title) || rm[0] };
+    const ap = typeof detectAcupressure === "function" ? detectAcupressure(text) : null;
+    if (ap) return { kind: "acupressure", key: ap[0], title: (ap[1] && ap[1].title) || ap[0] };
+    return null;
+  }
+  // Expose for the fast-path consumer too (kept on closure, but also referenced as `detectSkillForVoice`)
+  const detectSkillForVoice = _detectSkillForVoice;
+
+  // v5.5.4: yes/no detection in Roman + Devanagari. Do NOT use \b — JS word
+  // boundary is ASCII-only, fails on Devanagari. Use lookahead for end-of-token.
+  function _isAffirmative(t) {
+    if (!t) return false;
+    const s = t.trim().toLowerCase();
+    return /^(haa?n?|haaji|yes+|yeah?|yep|sure|ok(ay)?|chalo|theek|theek\s*hai|start|shuru|karna|karenge?|karke|haa\s*ji|बिल्कुल|हाँ|हां|हा|जी|जी\s*हाँ|करना|करूँ|करूं|करेंगे|करेगा|शुरू|चलो|ठीक|हाँ\s*जी)(\s|$|[.,!?।])/i.test(
+      s + " ",
+    );
+  }
+  function _isNegative(t) {
+    if (!t) return false;
+    const s = t.trim().toLowerCase();
+    return /^(nahi+n?|nai|nope|no+|skip|chod\s*do|chhod|baad\s*mein|rehne\s*do|नहीं|नहि|नही|छोड़|रहने\s*दो|बाद\s*में|मत)(\s|$|[.,!?।])/i.test(
+      s + " ",
+    );
+  }
+
+  // v5.5.4: Speaks a confirmation prompt + waits for TTS to fully end, then
+  // resumes listening so the user's yes/no can be captured by the next convListenOnce.
+  async function _offerVoiceSkillConfirmation(skill) {
+    _pendingVoiceSkill = skill;
+    // Prompts in Hindi/Hinglish that match the warm "saathi" tone.
+    const prompts = {
+      movement:
+        skill.title + " aapko mere saath karwaaun? Step-by-step bataati hoon. Haan ya nahi?",
+      remedy:
+        skill.title + " banane mein mere saath chalein? Step-by-step bataati hoon. Haan ya nahi?",
+      acupressure: skill.title + " ka point bataati hoon, mere saath dabaaiyega? Haan ya nahi?",
+    };
+    const prompt = prompts[skill.kind] || skill.title + " karna chahenge mere saath? Haan ya nahi?";
+    // v5.5.4: guarantee no overlap — kill any in-flight TTS before speaking the
+    // confirmation prompt. The previous chat-reply audio could still be playing
+    // if checkDone resolved on a stale _currentAudio.ended state.
+    if (_currentAudio) {
+      try {
+        _currentAudio.pause();
+      } catch (e) {}
+      _currentAudio = null;
+    }
+    appendVoiceLine("bot", prompt);
+    setVoiceState("speaking");
+    await new Promise((resolve) => {
+      let resolved = false;
+      speak(prompt, { ttsText: prompt });
+      // Wait for TTS to actually start playing, then wait for it to end.
+      let started = false;
+      const tick = () => {
+        if (resolved) return;
+        const playing = _currentAudio && !_currentAudio.paused && !_currentAudio.ended;
+        if (playing) started = true;
+        if (started && !playing) {
+          resolved = true;
+          setTimeout(resolve, 500);
+          return;
+        }
+        setTimeout(tick, 200);
+      };
+      setTimeout(tick, 800); // give Sarvam fetch + Audio load a beat to start
+      // Safety net — if TTS never plays (e.g. Sarvam returns 5xx + Web Speech also fails) resolve after 7s
+      setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          resolve();
+        }
+      }, 7000);
+    });
+    // Now resume listening for the user's yes/no
+    if (_convActive) {
+      setVoiceState("listening");
+      _convResumeTimer = setTimeout(convListenOnce, 350);
+    }
+  }
+
   async function convHandleTranscript(transcript) {
     const target = ST.voiceTarget || "chat";
     // v4: Show user's spoken text in the overlay BEFORE sending to AI
     appendVoiceLine("user", transcript);
     if (target === "chat") {
+      // v5.5.4: confirmation flow — if a previous turn offered a skill, this
+      // turn is the user's yes/no, NOT a new AI question.
+      if (_pendingVoiceSkill) {
+        const pending = _pendingVoiceSkill;
+        if (_isAffirmative(transcript)) {
+          console.info("[voice-skill] user confirmed →", pending.kind, pending.key);
+          addMsg("user", transcript, false);
+          _pendingVoiceSkill = null;
+          stopVoice();
+          setTimeout(() => {
+            if (pending.kind === "movement") openMovement(pending.key);
+            else if (pending.kind === "remedy") openRemedy(pending.key);
+            else if (pending.kind === "acupressure") openAcupressure(pending.key);
+          }, 400);
+          return;
+        }
+        if (_isNegative(transcript)) {
+          console.info("[voice-skill] user declined →", pending.kind, pending.key);
+          _pendingVoiceSkill = null;
+          addMsg("user", transcript, false);
+          // Brief warm acknowledgement, then continue as normal conversation
+          const ack = "Theek hai. Aur kuch poochna ho to bolein.";
+          addMsg("bot", ack, false);
+          appendVoiceLine("bot", ack);
+          if (_currentAudio) {
+            try {
+              _currentAudio.pause();
+            } catch (e) {}
+            _currentAudio = null;
+          }
+          speak(ack, { ttsText: ack });
+          return; // onstop in convListenOnce will resume listening after _isSpeaking clears
+        }
+        // Ambiguous response — clear pending and treat as a fresh AI turn
+        console.info("[voice-skill] ambiguous response, treating as new turn");
+        _pendingVoiceSkill = null;
+      }
+
+      // v5.5.5: FAST-PATH — if the user explicitly named a skill in their question
+      // (e.g. "box breathing exercise karwaaye", "anulom vilom sikhao"), skip the
+      // AI text reply entirely and open the skill overlay directly. Saves 20+
+      // seconds of redundant explanation when the user already asked for the
+      // skill by name. AI is only consulted when the user has a general question
+      // (e.g. "sir mein dard hai") — then the AI suggests a skill and we offer
+      // confirmation.
+      const userSkill = detectSkillForVoice(transcript);
+      if (userSkill) {
+        console.info(
+          "[voice-skill] user explicitly asked →",
+          userSkill.kind,
+          userSkill.key,
+          "· fast-path",
+        );
+        addMsg("user", transcript, false);
+        // Short warm ack so the user knows we heard them, then open the skill.
+        const ack = "Chaliye, " + userSkill.title + " karte hain mere saath.";
+        addMsg("bot", ack, false);
+        appendVoiceLine("bot", ack);
+        if (_currentAudio) {
+          try {
+            _currentAudio.pause();
+          } catch (e) {}
+          _currentAudio = null;
+        }
+        // Wait briefly for the ack to start speaking + most of it to play, then hand off.
+        // The skill overlay pauses any in-flight audio so a slight bleed is fine.
+        speak(ack, { ttsText: ack });
+        stopVoice();
+        setTimeout(() => {
+          if (userSkill.kind === "movement") openMovement(userSkill.key);
+          else if (userSkill.kind === "remedy") openRemedy(userSkill.key);
+          else if (userSkill.kind === "acupressure") openAcupressure(userSkill.key);
+        }, 2500); // ~2.5s lets the ack finish; openSkill cancels any residual audio anyway
+        return;
+      }
+
       addMsg("user", transcript, false);
       setVoiceState("thinking");
       appendVoiceLine("thinking", "Soch rahi hoon...");
-      // Wrap callAI so we know when it's done speaking (roughly when audio finishes)
+      // v5.5: capture the bot's reply text so we can offer a matching skill
+      // (movement / remedy / acupressure) overlay after TTS finishes.
+      let lastBotText = "";
+      // v5.5.4: use _isSpeaking (set by _markTtsStart on every TTS play site) as
+      // the source of truth — the old _currentAudio.ended polling false-resolved
+      // on stale state.
+      // v5.5.5: removed the 14s force-resolve which was cutting long bot TTS off
+      // mid-sentence. Now we wait for _isSpeaking to transition true → false
+      // (real audio finish) with a generous 60s safety net.
       await new Promise((resolve) => {
-        const _origSpeak = window.speak;
         let resolved = false;
-        // Hook: when next addMsg(bot) is called → wait for speech to finish
         const replyHook = (role) => {
           if (role === "bot" && !resolved) {
-            // Wait for current audio to end, OR 12s max
-            const start = Date.now();
-            const checkDone = () => {
-              const noAudioPlaying = !_currentAudio || _currentAudio.paused || _currentAudio.ended;
-              if (noAudioPlaying || Date.now() - start > 12000) {
-                if (!resolved) {
-                  resolved = true;
-                  resolve();
-                }
-              } else {
-                setTimeout(checkDone, 250);
-              }
-            };
             setVoiceState("speaking");
-            setTimeout(checkDone, 1500); // give TTS time to start
+            const start = Date.now();
+            let started = false;
+            const tick = () => {
+              if (resolved) return;
+              if (Date.now() - start > 60000) {
+                resolved = true;
+                resolve();
+                return;
+              } // safety net
+              if (_isSpeaking) started = true;
+              if (started && !_isSpeaking) {
+                resolved = true;
+                resolve();
+                return;
+              }
+              setTimeout(tick, 200);
+            };
+            setTimeout(tick, 800); // let Sarvam fetch + audio start
           }
         };
         // Patch addMsg only to detect when bot reply lands (mirror is handled inside addMsg itself)
         const origAddMsg = window.addMsg;
         window.addMsg = function (role, text, showBadge) {
+          if (role === "bot") lastBotText = text;
           const r = origAddMsg.apply(this, arguments);
           replyHook(role);
           return r;
@@ -5371,15 +5890,34 @@ Rules:
         callAI(transcript, getSystemPromptFor(ST.chatCtx)).finally(() => {
           // Restore addMsg
           window.addMsg = origAddMsg;
-          // Safety net — if TTS never starts, resolve in 8s
+          // Safety net — if TTS never starts, resolve in 12s
           setTimeout(() => {
             if (!resolved) {
               resolved = true;
               resolve();
             }
-          }, 8000);
+          }, 12000);
         });
       });
+      // v5.5.4: instead of auto-launching the skill (which caused 2-voice overlap
+      // + felt jarring), OFFER it conversationally. v5.5.5: only check the BOT
+      // reply now — explicit user requests took the fast-path above.
+      try {
+        const botSkill = detectSkillForVoice(lastBotText);
+        if (botSkill) {
+          console.info(
+            "[voice-skill] AI suggested →",
+            botSkill.kind,
+            botSkill.key,
+            "· offering confirmation",
+          );
+          await _offerVoiceSkillConfirmation(botSkill);
+          return;
+        }
+        console.info("[voice-skill] no skill in this turn");
+      } catch (e) {
+        console.warn("[voice] skill confirmation failed", e);
+      }
     } else {
       // Hub: route the transcript through the hub flow → opens chat → AI replies
       setVoiceState("thinking");
@@ -5474,6 +6012,14 @@ Rules:
       } catch (e) {}
       _currentAudio = null;
     }
+    // v5.5: release half-duplex flag (user cancelled mid-speech; speechSynthesis covers Web Speech)
+    try {
+      window.speechSynthesis && window.speechSynthesis.cancel();
+    } catch (e) {}
+    _isSpeaking = false;
+    // v5.5.4: clear any pending skill confirmation so a future voice session
+    // doesn't open with a stale offer.
+    _pendingVoiceSkill = null;
     hideVoiceOverlay();
   }
 
@@ -5494,12 +6040,19 @@ Rules:
             : mt.includes("wav")
               ? "wav"
               : "webm";
+      // Sarvam validates Content-Type by exact string match. MediaRecorder
+      // tags blobs as "audio/webm;codecs=opus" — the bare "audio/webm" is in
+      // Sarvam's allowlist but the codec-suffixed form is not. Re-wrap the
+      // blob with the codec parameter stripped so the multipart part header
+      // sends "Content-Type: audio/webm".
+      const cleanType = mt.split(";")[0] || "audio/" + ext;
+      const cleanBlob = new Blob([audioBlob], { type: cleanType });
       const fd = new FormData();
-      fd.append("file", audioBlob, "rec." + ext);
+      fd.append("file", cleanBlob, "rec." + ext);
       fd.append("model", "saarika:v2.5");
       fd.append("language_code", ST.currentLanguage || "hi-IN");
       fd.append("with_timestamps", "false");
-      const res = await fetch("https://api.sarvam.ai/speech-to-text", {
+      const res = await fetch(sarvamUrl("/speech-to-text"), {
         method: "POST",
         headers: { "api-subscription-key": SARVAM_KEY },
         body: fd,
@@ -5529,6 +6082,28 @@ Rules:
   }
   // ── v3: Sarvam TTS (Bulbul) — replaces Web Speech API ──
   const SARVAM_SPEAKERS = { dadi: "manisha", maa: "anushka", saathi: "vidya" }; // v3.5: Bulbul v2 — 3x faster than v3 (median 2s vs 6s); warm female voices
+  // v5.5.3: Bulbul v2 dropped some legacy speakers (kavitha, meera, pavithra, maitreyi).
+  // Stored localStorage prefs from earlier sessions could point at retired names →
+  // every TTS call returns 400 "Speaker 'kavitha' is not compatible with bulbul:v2".
+  // Validate against the current allowlist on every read.
+  const BULBUL_V2_SPEAKERS = ["anushka", "abhilash", "manisha", "vidya", "arya", "karun", "hitesh"];
+  function _validSarvamSpeaker() {
+    const stored =
+      typeof localStorage !== "undefined" ? localStorage.getItem("ss_voice_pref") : null;
+    if (stored && BULBUL_V2_SPEAKERS.includes(stored)) return stored;
+    if (stored) {
+      // Stale pref — clear it so the picker shows a valid default next time
+      console.info(
+        '[Sarvam TTS] stored speaker "' +
+          stored +
+          '" not in bulbul:v2 allowlist — clearing localStorage.ss_voice_pref',
+      );
+      try {
+        localStorage.removeItem("ss_voice_pref");
+      } catch (e) {}
+    }
+    return SARVAM_SPEAKERS[ST.persona] || SARVAM_SPEAKERS.dadi;
+  }
   const SARVAM_LANG_MAP = {
     "hi-IN": "hi-IN",
     "mr-IN": "hi-IN",
@@ -5573,7 +6148,7 @@ Rules:
     try {
       const target = langCode && langCode.length === 5 ? langCode : "hi-IN";
       const _tStart = performance.now();
-      const res = await fetch("https://api.sarvam.ai/transliterate", {
+      const res = await fetch(sarvamUrl("/transliterate"), {
         method: "POST",
         headers: { "api-subscription-key": SARVAM_KEY, "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -5605,8 +6180,54 @@ Rules:
     }
   }
 
+  // v5.5: half-duplex helper — call right before play() on TTS audio. Sets
+  // _isSpeaking true for the duration of playback + a 700ms grace period
+  // (covers speaker output latency + room reverb tail), then clears. Voice
+  // conversation mode reads this flag to refuse to (re)open the mic while
+  // TTS is still audible.
+  function _markTtsStart(audioEl) {
+    _isSpeaking = true;
+    const done = () => {
+      setTimeout(() => {
+        _isSpeaking = false;
+      }, 700);
+    };
+    if (audioEl) {
+      const orig = audioEl.onended;
+      audioEl.onended = (e) => {
+        try {
+          orig && orig(e);
+        } catch (_) {}
+        done();
+      };
+      audioEl.addEventListener("error", done, { once: true });
+    } else {
+      done();
+      /* unknown path → release after grace */
+    }
+  }
+
   // ── v3.7: ElevenLabs opt-in TTS (faster + more natural; user must paste their key) ──
+  // v5.5.4: default to BLOCKED. ElevenLabs is opt-in only — the user must explicitly
+  // paste their own key via the voice picker (setElevenLabsKey). This skips a
+  // wasted round-trip on every page load for users who don't have a paid key
+  // (the common case). When a user does have a key, we persist the unblock to
+  // localStorage so it survives reloads; if that key's quota is exhausted, we
+  // persist the block too so we don't waste cycles on a known-dead key.
+  const _localElKey =
+    typeof localStorage !== "undefined" ? localStorage.getItem("ss_elevenlabs_key") || "" : "";
+  const _hasUserElKey = _localElKey && _localElKey.length >= 20;
+  const _persistedBlock =
+    typeof localStorage !== "undefined" && localStorage.getItem("ss_eleven_blocked") === "1";
+  let _elevenLabsBlocked = _persistedBlock || !_hasUserElKey;
+  let _elevenLabsBlockedReason = !_hasUserElKey
+    ? "opt-in-required"
+    : _persistedBlock
+      ? "previously-blocked"
+      : "";
+
   async function speakElevenLabs(text, opts) {
+    if (_elevenLabsBlocked) return false;
     const key = localStorage.getItem("ss_elevenlabs_key");
     if (!key || key.length < 20) return false;
     const voiceId = localStorage.getItem("ss_elevenlabs_voice") || "EXAVITQu4vr4xnSDxMaL"; // Sarah default
@@ -5641,6 +6262,29 @@ Rules:
       if (!res.ok) {
         const errTxt = await res.text();
         console.warn("[ElevenLabs]", res.status, errTxt);
+        // v5.3.3: any 401 / 402 / 429 / quota_exceeded → session kill-switch.
+        // v5.5.4: persist so we don't waste a round-trip on every page reload
+        if (
+          res.status === 401 ||
+          res.status === 402 ||
+          res.status === 429 ||
+          /quota_exceeded|invalid|unauthor/i.test(errTxt)
+        ) {
+          _elevenLabsBlocked = true;
+          _elevenLabsBlockedReason = /quota_exceeded/i.test(errTxt)
+            ? "quota_exceeded"
+            : "http_" + res.status;
+          try {
+            localStorage.setItem("ss_eleven_blocked", "1");
+          } catch (e) {}
+          if (typeof showToast === "function") {
+            showToast(
+              _elevenLabsBlockedReason === "quota_exceeded"
+                ? "Voice quota khatam — text mein dekhein"
+                : "Voice ka key problem — text mein dekhein",
+            );
+          }
+        }
         return false; // fall back to Sarvam
       }
       const blob = await res.blob();
@@ -5660,6 +6304,7 @@ Rules:
           URL.revokeObjectURL(url);
         } catch (e) {}
       };
+      _markTtsStart(_currentAudio);
       await _currentAudio.play();
       return true;
     } catch (e) {
@@ -5678,11 +6323,20 @@ Rules:
     if (key === null) return;
     if (key.trim().length === 0) {
       localStorage.removeItem("ss_elevenlabs_key");
+      // v5.5.4: removing the key → revert to opt-in-blocked default
+      _elevenLabsBlocked = true;
+      _elevenLabsBlockedReason = "opt-in-required";
       showToast("ElevenLabs hata di — Sarvam wapas active");
     } else if (key.length < 20) {
       showToast("Key chhoti lagti hai — dobara try karein");
     } else {
       localStorage.setItem("ss_elevenlabs_key", key.trim());
+      // v5.5.4: new key paste → clear any stale block state, unblock for this session
+      try {
+        localStorage.removeItem("ss_eleven_blocked");
+      } catch (e) {}
+      _elevenLabsBlocked = false;
+      _elevenLabsBlockedReason = "";
       showToast("ElevenLabs ready! 🎙️ Faster + warmer voice");
     }
   }
@@ -5716,12 +6370,19 @@ Rules:
       if (!callerTtsText && detected.script === "roman" && targetLangCode.startsWith("hi")) {
         speakText = await transliterateToDevanagari(text, targetLangCode);
       }
-      const speaker =
-        localStorage.getItem("ss_voice_pref") ||
-        SARVAM_SPEAKERS[ST.persona] ||
-        SARVAM_SPEAKERS.dadi;
+      const speaker = _validSarvamSpeaker();
       const _t0 = performance.now();
-      const res = await fetch("https://api.sarvam.ai/text-to-speech", {
+      // v5.5.4: log the actual target language so users can verify routing.
+      // (Bulbul v2 speakers are all Hindi-primary multilingual — even with
+      // target_language_code: 'pa-IN' the Punjabi rendering carries a Hindi
+      // accent. That's a Sarvam model limitation, not our routing.)
+      console.info(
+        "[TTS] lang=" + targetLangCode + " speaker=" + speaker + " chars=" + speakText.length,
+      );
+      // v5.5.4: For non-Hindi targets, disable preprocessing — it over-normalizes
+      // Gurmukhi/Bengali/Tamil text toward Hindi phonology.
+      const _enablePreprocess = targetLangCode.startsWith("hi") || targetLangCode.startsWith("en");
+      const res = await fetch(sarvamUrl("/text-to-speech"), {
         method: "POST",
         headers: { "api-subscription-key": SARVAM_KEY, "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -5732,7 +6393,7 @@ Rules:
           pace: 0.85,
           loudness: 1.4,
           speech_sample_rate: 22050,
-          enable_preprocessing: true,
+          enable_preprocessing: _enablePreprocess,
           model: "bulbul:v2",
         }),
       });
@@ -5753,6 +6414,7 @@ Rules:
       const data = await res.json();
       if (data.audios && data.audios[0]) {
         _currentAudio = new Audio("data:audio/wav;base64," + data.audios[0]);
+        _markTtsStart(_currentAudio);
         _currentAudio.play().catch((e) => console.warn("[speak] autoplay blocked", e));
       }
     } catch (e) {
@@ -5824,6 +6486,10 @@ Rules:
   });
 
   // ── v4: Nushke recipe kits — in-app step-by-step animation (no external video) ──
+  // v5.4: 100 ghar ke nushke (was 15). Schema per entry:
+  //   { kw:string[], emoji:string, title:string, durSec:number, ingredients:string, steps:string[5] }
+  // Categories: digestion 12 · respiratory 12 · sleep/stress 8 · joint 8 · skin 8 ·
+  //             hair 6 · immunity 8 · headache 5 · eye/ear 4 · women 5 · kids 4 · seasonal 3 · detox 2
   const REMEDY_KITS = {
     "haldi-doodh": {
       kw: ["haldi", "turmeric", "golden milk"],
@@ -6035,6 +6701,1225 @@ Rules:
         "Daane-mooh ke chhale, skin issues mein.",
       ],
     },
+
+    // ══════ v5.4 — 85 NEW NUSHKE (total 100) — organized by ailment ══════
+
+    // ── DIGESTION (12) — gas, acidity, bloating, constipation, loose motion ──
+    "hing-paani": {
+      kw: ["hing", "asafoetida", "phulna"],
+      emoji: "⚪",
+      title: "Hing wala paani",
+      durSec: 90,
+      ingredients: "chutki bhar hing · 1 glass garam paani",
+      steps: [
+        "Glass paani halka garam karo.",
+        "Chutki bhar hing ghol lo.",
+        "Khali pet ya khaane ke 30 min baad piyo.",
+        "Pet phulna, gas mein 10 min mein aaram.",
+        "Roz subah le sakte ho.",
+      ],
+    },
+    "pudina-paani": {
+      kw: ["pudina", "mint", "mitli", "vomit"],
+      emoji: "🌿",
+      title: "Pudina paani — mitli",
+      durSec: 180,
+      ingredients: "8-10 pudina patte · 1 cup paani · kala namak",
+      steps: [
+        "8-10 pudina patte achhi tarah dho lo.",
+        "Cup paani mein patte daal ke 3 min ubaalo.",
+        "Chhan lo. Chutki kala namak.",
+        "Mitli aaye to ghoont-ghoont piyo.",
+        "Yatra mein bhi le sakte ho.",
+      ],
+    },
+    "nariyal-paani-dast": {
+      kw: ["nariyal pani", "coconut water", "dast", "dehydration"],
+      emoji: "🥥",
+      title: "Nariyal paani — paani ki kami",
+      durSec: 60,
+      ingredients: "1 taza nariyal paani · pinch namak",
+      steps: [
+        "Taza nariyal kaat lo (ya bottle wala).",
+        "Glass mein nikal lo.",
+        "Chutki namak mila lo — electrolyte ban gaya.",
+        "Har 1-2 ghante mein 1 glass.",
+        "Loose motion aur garmi mein zaroori.",
+      ],
+    },
+    "munakka-kabz": {
+      kw: ["munakka", "raisins", "kabz buzurg"],
+      emoji: "🍇",
+      title: "Munakka doodh — kabz",
+      durSec: 480,
+      ingredients: "5-7 munakka · 1 cup garam doodh",
+      steps: [
+        "Raat ko 5-7 munakka paani mein bhigo do.",
+        "Subah doodh garam karo.",
+        "Bhigi munakke + doodh saath lo.",
+        "Subah pet dheere se saaf hoga.",
+        "Bachon-buzurgon ke liye safe.",
+      ],
+    },
+    "dahi-jeera": {
+      kw: ["dahi", "curd", "jeera", "loose motion", "dast"],
+      emoji: "🥣",
+      title: "Dahi-jeera — dast band",
+      durSec: 60,
+      ingredients: "½ katori dahi · ½ chamach bhuna jeera · chutki namak",
+      steps: [
+        "Taza dahi ½ katori lo.",
+        "Bhuna jeera powder ½ chamach.",
+        "Chutki namak. Achhi tarah phento.",
+        "Khaane ke saath lo, din mein 2 baar.",
+        "Dast mein 1 din mein aaram.",
+      ],
+    },
+    "isabgol-doodh": {
+      kw: ["isabgol", "psyllium"],
+      emoji: "🌾",
+      title: "Isabgol doodh",
+      durSec: 120,
+      ingredients: "2 chamach isabgol · 1 cup garam doodh ya paani",
+      steps: [
+        "Cup garam doodh ya paani lo.",
+        "2 chamach isabgol daal ke jaldi ghol lo.",
+        "Ghoot ke turant pi lo (gaadha ho jata hai).",
+        "Sone se 1 ghanta pehle.",
+        "Subah pet saaf, dard nahi.",
+      ],
+    },
+    "ajwain-namak-chura": {
+      kw: ["ajwain namak", "pet bhaari", "indigestion"],
+      emoji: "🌾",
+      title: "Ajwain-namak chura",
+      durSec: 60,
+      ingredients: "½ chamach ajwain · chutki kala namak · garam paani",
+      steps: [
+        "Ajwain ½ chamach munh mein lo.",
+        "Chutki kala namak mila do.",
+        "Achhi tarah chabao.",
+        "Upar se ghoont garam paani.",
+        "Pet bhaari, dakaar, gas — 5 min mein aaram.",
+      ],
+    },
+    "dhaniya-paani": {
+      kw: ["dhaniya", "coriander", "acidity", "ibs"],
+      emoji: "🌱",
+      title: "Dhaniya beej paani",
+      durSec: 480,
+      ingredients: "1 chamach dhaniya beej · 1 cup paani",
+      steps: [
+        "Raat ko 1 chamach dhaniya beej paani mein bhigo do.",
+        "Subah paani chhan lo.",
+        "Khali pet piyo.",
+        "Acidity, IBS, jalan mein khaas.",
+        "Roz 1 mahina — fark milega.",
+      ],
+    },
+    "saunth-chai": {
+      kw: ["saunth", "sonth", "dry ginger"],
+      emoji: "🟫",
+      title: "Saunth chai",
+      durSec: 240,
+      ingredients: "¼ chamach saunth powder · 1 cup paani · gud",
+      steps: [
+        "Cup paani mein ¼ chamach saunth daalo.",
+        "3-4 min madhyam aanch par ubaalo.",
+        "Chhan lo. Thoda gud mila lo.",
+        "Garam-garam piyo.",
+        "Sardi mein pet bhaari ho to khaas.",
+      ],
+    },
+    "elaichi-paani": {
+      kw: ["elaichi", "cardamom", "mitli"],
+      emoji: "🟢",
+      title: "Elaichi paani",
+      durSec: 120,
+      ingredients: "2 elaichi · 1 cup paani · shahad",
+      steps: [
+        "2 elaichi kuto.",
+        "Cup paani mein daal ke 2 min ubaalo.",
+        "Chhan lo. Halka thanda hone do.",
+        "Shahad mila lo (½ chamach).",
+        "Mitli, gas, muh ki badbu mein.",
+      ],
+    },
+    "amla-jeera-acidity": {
+      kw: ["amla jeera", "chronic acidity"],
+      emoji: "🟢",
+      title: "Amla-bhuna jeera",
+      durSec: 60,
+      ingredients: "1 chamach amla powder · ½ chamach bhuna jeera · 1 cup paani",
+      steps: [
+        "Cup paani mein 1 chamach amla powder.",
+        "½ chamach bhuna jeera powder.",
+        "Achhi tarah ghol lo.",
+        "Khali pet subah piyo.",
+        "Chronic acidity mein 21 din.",
+      ],
+    },
+    "kala-namak-nimbu": {
+      kw: ["kala namak nimbu", "bhook", "appetite"],
+      emoji: "🧂",
+      title: "Kala namak-nimbu paani",
+      durSec: 90,
+      ingredients: "½ nimbu · ¼ chamach kala namak · 1 glass paani",
+      steps: [
+        "Glass paani saadharan tapmaan par.",
+        "Aadha nimbu nichod do.",
+        "¼ chamach kala namak.",
+        "Achhi tarah ghol lo.",
+        "Khaane se 30 min pehle. Bhook khulti hai.",
+      ],
+    },
+
+    // ── RESPIRATORY (12) — cough, cold, sore throat, sinus, chest ──
+    "shahad-adrak-paste": {
+      kw: ["shahad adrak", "honey ginger", "khansi"],
+      emoji: "🍯",
+      title: "Shahad-adrak paste",
+      durSec: 60,
+      ingredients: "1 chamach adrak ras · 1 chamach shahad",
+      steps: [
+        "Adrak ko kuto, ras nikalo (1 chamach).",
+        "1 chamach shahad mila lo.",
+        "Achhi tarah ghol lo.",
+        "Din mein 2-3 baar 1 chamach lo.",
+        "Khansi 2-3 din mein kam.",
+      ],
+    },
+    "kali-mirch-doodh": {
+      kw: ["kali mirch doodh", "sardi", "cold"],
+      emoji: "🌶",
+      title: "Kali mirch doodh",
+      durSec: 300,
+      ingredients: "1 cup doodh · ¼ chamach kali mirch · chutki haldi · gud",
+      steps: [
+        "Doodh garam karo.",
+        "¼ chamach kuti kali mirch + chutki haldi.",
+        "3-4 min ubaalo.",
+        "Aanch band. Gud mila lo.",
+        "Raat ko sone se pehle. Sardi-jukam mein.",
+      ],
+    },
+    "tulsi-shahad": {
+      kw: ["tulsi shahad", "bachay khansi", "kids cough"],
+      emoji: "🌿",
+      title: "Tulsi-shahad — bachon ke liye",
+      durSec: 90,
+      ingredients: "5-7 tulsi patte · 1 chamach shahad",
+      steps: [
+        "5-7 tulsi patte dho lo.",
+        "Patton ka ras nikalo (kucho).",
+        "1 chamach shahad mila lo.",
+        "Bachay ko din mein 2 baar ½ chamach.",
+        "1 saal se chote bachon ko shahad mat dena.",
+      ],
+    },
+    "lavang-paani": {
+      kw: ["lavang", "clove", "gala dard", "sore throat"],
+      emoji: "🟤",
+      title: "Lavang ka paani",
+      durSec: 240,
+      ingredients: "4-5 lavang · 1 cup paani · shahad",
+      steps: [
+        "4-5 lavang kuto.",
+        "Cup paani mein daal ke 3 min ubaalo.",
+        "Chhan lo. Halka thanda hone do.",
+        "Shahad mila lo (½ chamach).",
+        "Galay ki khich-khich mein 2-3 baar.",
+      ],
+    },
+    "ajwain-shahad": {
+      kw: ["ajwain shahad", "balgam", "phlegm"],
+      emoji: "🌾",
+      title: "Ajwain-shahad — balgami khansi",
+      durSec: 60,
+      ingredients: "½ chamach ajwain powder · 1 chamach shahad",
+      steps: [
+        "Ajwain ½ chamach powder bana lo.",
+        "1 chamach shahad mila lo.",
+        "Achhi tarah ghol lo.",
+        "Subah-shaam khali pet.",
+        "Balgam wali khansi mein 4-5 din.",
+      ],
+    },
+    "dalchini-shahad": {
+      kw: ["dalchini", "cinnamon", "sardi"],
+      emoji: "🟤",
+      title: "Dalchini-shahad",
+      durSec: 120,
+      ingredients: "¼ chamach dalchini powder · 1 chamach shahad · garam paani",
+      steps: [
+        "Cup garam paani lo.",
+        "¼ chamach dalchini powder.",
+        "1 chamach shahad mila lo.",
+        "Subah khali pet piyo.",
+        "Cold ki shuruwat mein khaas.",
+      ],
+    },
+    "haldi-namak-garara": {
+      kw: ["haldi namak garara", "sore throat"],
+      emoji: "🟡",
+      title: "Haldi-namak garara",
+      durSec: 120,
+      ingredients: "½ chamach haldi · ½ chamach namak · 1 glass garam paani",
+      steps: [
+        "Glass paani halka garam karo.",
+        "½ chamach haldi + ½ chamach namak.",
+        "Achhi tarah ghol lo.",
+        "Muh mein paani, gala upar — 30 sec garara.",
+        "Din mein 3 baar — galay mein turant aaram.",
+      ],
+    },
+    "ghee-kali-mirch": {
+      kw: ["ghee kali mirch", "sookhi khansi"],
+      emoji: "🟡",
+      title: "Ghee-kali mirch",
+      durSec: 60,
+      ingredients: "1 chamach ghee · 2-3 kali mirch · gud",
+      steps: [
+        "Pan mein 1 chamach ghee garam karo.",
+        "2-3 kuti kali mirch daalo.",
+        "Halka bhuna lo (10 sec).",
+        "Aanch band. Thoda gud mila lo.",
+        "Garam-garam khaao. Sookhi khansi mein khaas.",
+      ],
+    },
+    "eucalyptus-bhaap": {
+      kw: ["eucalyptus", "nilgiri", "sinus", "naak band"],
+      emoji: "🌿",
+      title: "Nilgiri tel ki bhaap",
+      durSec: 300,
+      ingredients: "4-5 boond nilgiri tel · 1 patila garam paani · towel",
+      steps: [
+        "Patile mein paani ubalo.",
+        "4-5 boond nilgiri (eucalyptus) tel daalo.",
+        "Aanch band. Sir par towel daalo.",
+        "5 min bhaap lo — naak se saans.",
+        "Naak band, sinus mein 1 hi baar mein aaram.",
+      ],
+    },
+    "saunf-mishri": {
+      kw: ["saunf mishri", "sookhi khansi", "dry cough"],
+      emoji: "🟢",
+      title: "Saunf-mishri",
+      durSec: 60,
+      ingredients: "1 chamach saunf · ½ chamach mishri",
+      steps: [
+        "Saunf 1 chamach + mishri ½ chamach.",
+        "Munh mein lo, dheere chusté raho.",
+        "Khansi aane par turant.",
+        "Bachon ko bhi de sakte ho.",
+        "Sookhi khich-khich wali khansi mein.",
+      ],
+    },
+    "badaam-kesar-doodh": {
+      kw: ["badaam kesar", "almond saffron"],
+      emoji: "🥛",
+      title: "Badaam-kesar doodh",
+      durSec: 600,
+      ingredients: "5-6 badaam · 4-5 kesar · 1 cup doodh · gud",
+      steps: [
+        "Raat ko 5-6 badaam bhigo do.",
+        "Subah chhilka utar ke kucho.",
+        "Doodh garam karo, kesar + badaam daalo.",
+        "5 min ubaalo. Gud mila lo.",
+        "Sardi mein chati saaf, taakat aati hai.",
+      ],
+    },
+    "lasun-shahad": {
+      kw: ["lasun shahad", "garlic honey", "immunity"],
+      emoji: "🧄",
+      title: "Lasun-shahad",
+      durSec: 60,
+      ingredients: "1 kaali lasun · 1 chamach shahad",
+      steps: [
+        "1 kaali lasun chhil ke kuto.",
+        "1 chamach shahad mila lo.",
+        "Sone se pehle khali pet.",
+        "Cold-cough-immunity ke liye.",
+        "Roz 1 mahina — fark dikhega.",
+      ],
+    },
+
+    // ── SLEEP & STRESS (8) ──
+    "jaiphal-doodh": {
+      kw: ["jaiphal", "nutmeg", "neend", "insomnia"],
+      emoji: "🟤",
+      title: "Jaiphal doodh — neend",
+      durSec: 300,
+      ingredients: "pinch jaiphal powder · 1 cup garam doodh · gud",
+      steps: [
+        "Doodh garam karo.",
+        "Chutki bhar jaiphal powder daalo.",
+        "2 min ubaalo. Gud mila lo.",
+        "Sone se 30 min pehle.",
+        "Bachon ko aadhi chutki — gehri neend.",
+      ],
+    },
+    "ashwagandha-doodh": {
+      kw: ["ashwagandha", "stress", "tension"],
+      emoji: "🥛",
+      title: "Ashwagandha doodh",
+      durSec: 300,
+      ingredients: "½ chamach ashwagandha powder · 1 cup doodh · gud",
+      steps: [
+        "Cup doodh garam karo.",
+        "½ chamach ashwagandha powder.",
+        "3-4 min dheere ubaalo.",
+        "Gud mila lo. Halka thanda.",
+        "Raat ko sone se pehle. 21 din — stress kam.",
+      ],
+    },
+    "kesar-doodh-neend": {
+      kw: ["kesar doodh", "neend shanti"],
+      emoji: "🟠",
+      title: "Kesar doodh — shanti",
+      durSec: 300,
+      ingredients: "3-4 kesar dhaaga · 1 cup doodh · gud",
+      steps: [
+        "Doodh ½ cup garam karo.",
+        "3-4 kesar dhaaga daalo (rang chhute).",
+        "Aanch band. Halka gud.",
+        "Sone se pehle ghoont-ghoont piyo.",
+        "Mann mein shanti, neend gehri.",
+      ],
+    },
+    "brahmi-chai": {
+      kw: ["brahmi", "chinta", "anxiety", "focus"],
+      emoji: "🌿",
+      title: "Brahmi chai",
+      durSec: 300,
+      ingredients: "½ chamach brahmi powder · 1 cup paani · shahad",
+      steps: [
+        "Cup paani ubaalo.",
+        "½ chamach brahmi powder daalo.",
+        "5 min madhyam aanch.",
+        "Chhan lo. Shahad mila lo.",
+        "Subah piyo. Mann shaant, dhyaan acha.",
+      ],
+    },
+    "khus-khus-doodh": {
+      kw: ["khus khus", "poppy seeds"],
+      emoji: "🥛",
+      title: "Khus-khus doodh",
+      durSec: 360,
+      ingredients: "1 chamach khus-khus · 1 cup doodh · gud",
+      steps: [
+        "Khus-khus 1 chamach paani mein 2 ghante bhigo.",
+        "Mixie mein peeso (chikna paste).",
+        "Doodh garam karo. Paste daalo.",
+        "Gud mila lo. 2 min ubaalo.",
+        "Raat ko piyo. Pakki neend.",
+      ],
+    },
+    "lavender-malish": {
+      kw: ["lavender", "sir malish", "aaram"],
+      emoji: "💜",
+      title: "Lavender tel — sir malish",
+      durSec: 600,
+      ingredients: "1 chamach nariyal tel · 3-4 boond lavender tel",
+      steps: [
+        "Nariyal tel 1 chamach halka garam.",
+        "3-4 boond lavender tel mila lo.",
+        "Sir, kanpati, gardan par lagao.",
+        "Halki ungliyon se 10 min malish.",
+        "Sone se pehle. Mann shaant, neend.",
+      ],
+    },
+    "shankhpushpi-syrup": {
+      kw: ["shankhpushpi", "padhai", "focus"],
+      emoji: "🌸",
+      title: "Shankhpushpi — padhai",
+      durSec: 60,
+      ingredients: "1 chamach shankhpushpi syrup · ½ cup paani",
+      steps: [
+        "Paani halka garam karo.",
+        "1 chamach shankhpushpi syrup ghol lo.",
+        "Subah khali pet piyo.",
+        "Bachon ki padhai, focus, smriti ke liye.",
+        "Daily 1 mahina — fark dikhega.",
+      ],
+    },
+    "tulsi-vetiver-snan": {
+      kw: ["tulsi snan", "vetiver bath", "khus snan"],
+      emoji: "🛁",
+      title: "Tulsi-vetiver snan",
+      durSec: 600,
+      ingredients: "15-20 tulsi patte · 1 chamach vetiver (khus) · 1 baalti garam paani",
+      steps: [
+        "Baalti garam paani lo.",
+        "Tulsi patte + vetiver (khus) daal do.",
+        "15 min ke liye dhak do.",
+        "Halka thanda hone par snan karo.",
+        "Tension, garmi, takleef — sab dhul jaaye.",
+      ],
+    },
+
+    // ── JOINT & BODY PAIN (8) ──
+    "haldi-doodh-jod": {
+      kw: ["haldi doodh jod", "joint", "ghutna"],
+      emoji: "🦴",
+      title: "Haldi doodh — jodon ke liye",
+      durSec: 300,
+      ingredients: "1 cup doodh · ½ chamach haldi · ½ chamach ghee · gud",
+      steps: [
+        "Doodh garam karo.",
+        "½ chamach haldi + ½ chamach ghee.",
+        "5 min dheere ubaalo.",
+        "Gud mila lo (½ chamach).",
+        "Raat ko piyo. Jod-soojan mein 21 din.",
+      ],
+    },
+    "sarso-tel-malish": {
+      kw: ["sarso tel", "mustard oil", "kamar dard"],
+      emoji: "🟡",
+      title: "Sarso tel malish — kamar",
+      durSec: 900,
+      ingredients: "2 chamach sarso tel · 2 lasun · ajwain",
+      steps: [
+        "Pan mein 2 chamach sarso tel.",
+        "2 kuti lasun + chutki ajwain daalo.",
+        "Halka garam. Lasun bhuna ho to band.",
+        "Halka thanda. Kamar par malish — 10 min.",
+        "Roz raat ko. Kamar, jodon mein aaram.",
+      ],
+    },
+    "methi-pisi-jod": {
+      kw: ["methi paste", "knee swelling", "ghutna soojan"],
+      emoji: "🌾",
+      title: "Methi pisi — ghutne par",
+      durSec: 300,
+      ingredients: "2 chamach methi powder · paani · towel",
+      steps: [
+        "2 chamach methi powder.",
+        "Halka garam paani daal ke paste banao.",
+        "Ghutne ya jod par 5 mm motha lagao.",
+        "Towel se dhak do. 30 min rakho.",
+        "Halke garam paani se dho lo. Roz raat.",
+      ],
+    },
+    "til-tel-malish": {
+      kw: ["til tel", "sesame oil", "body ache"],
+      emoji: "⚫",
+      title: "Til tel malish",
+      durSec: 600,
+      ingredients: "3 chamach til tel · halka garam",
+      steps: [
+        "Til tel 3 chamach halka garam karo.",
+        "Poore badan par dheere malish.",
+        "Khaaskar jod, gardan, kandhe.",
+        "10 min ke liye chhod do.",
+        "Garam paani se snan karo.",
+      ],
+    },
+    "lasun-tel-jod": {
+      kw: ["lasun tel", "garlic oil", "jod"],
+      emoji: "🧄",
+      title: "Lasun tel — jod",
+      durSec: 600,
+      ingredients: "4-5 lasun · 3 chamach sarso/til tel",
+      steps: [
+        "Lasun 4-5 kuto.",
+        "Pan mein tel + lasun garam karo.",
+        "Lasun kaala ho jaaye to aanch band.",
+        "Halka thanda. Jod par malish.",
+        "Roz raat ko — jodon mein chamatkar.",
+      ],
+    },
+    "ajwain-til-potli": {
+      kw: ["ajwain potli", "hot compress", "sek"],
+      emoji: "🟫",
+      title: "Ajwain-til potli sek",
+      durSec: 300,
+      ingredients: "2 chamach ajwain · 2 chamach til · sooti kapda",
+      steps: [
+        "Tava par ajwain + til halka bhuno.",
+        "Garam-garam sooti kapde mein baandh do.",
+        "Potli ban gayi. Garam ho.",
+        "Dard wali jagah par sek do (5 min).",
+        "4-5 baar repeat. Dard mein turant.",
+      ],
+    },
+    "eranda-tel-jod": {
+      kw: ["eranda", "castor oil jod", "chronic pain"],
+      emoji: "💧",
+      title: "Eranda tel — chronic jod",
+      durSec: 600,
+      ingredients: "2 chamach eranda tel · halka garam",
+      steps: [
+        "Eranda tel 2 chamach halka garam.",
+        "Dard wale jod par lagao.",
+        "Halki ungliyon se 10 min malish.",
+        "Towel se dhak do — 30 min.",
+        "Garam paani se dho lo. Roz raat.",
+      ],
+    },
+    "nirgundi-tel": {
+      kw: ["nirgundi", "moch", "sprain"],
+      emoji: "🌿",
+      title: "Nirgundi tel — moch",
+      durSec: 600,
+      ingredients: "2 chamach nirgundi tel",
+      steps: [
+        "Nirgundi tel 2 chamach lo.",
+        "Halka garam karo.",
+        "Mansapeshi, moch wali jagah par.",
+        "10 min halki malish.",
+        "Din mein 2 baar — 5-7 din.",
+      ],
+    },
+
+    // ── SKIN (8) ──
+    "besan-haldi-mask": {
+      kw: ["besan haldi", "chamak", "glow"],
+      emoji: "✨",
+      title: "Besan-haldi face pack",
+      durSec: 900,
+      ingredients: "2 chamach besan · ¼ chamach haldi · 1 chamach malai/dahi",
+      steps: [
+        "2 chamach besan + ¼ chamach haldi.",
+        "1 chamach malai ya dahi mila lo.",
+        "Gaadha paste banao.",
+        "Chehre par lagao. 15 min sookhne do.",
+        "Halke haath se chhuda do. Paani se dho lo.",
+      ],
+    },
+    "malai-kesar-mask": {
+      kw: ["malai kesar", "sookhi skin", "dry skin"],
+      emoji: "🥛",
+      title: "Malai-kesar — sookhi skin",
+      durSec: 600,
+      ingredients: "1 chamach malai · 3-4 kesar dhaaga · chutki haldi",
+      steps: [
+        "Malai 1 chamach lo.",
+        "Kesar 3-4 dhaaga doodh mein bhigo (5 min).",
+        "Malai mein kesar + chutki haldi.",
+        "Chehre par lagao. 20 min.",
+        "Halke paani se dho. Skin chamak jayegi.",
+      ],
+    },
+    "neem-haldi-paste": {
+      kw: ["neem haldi paste", "daane", "pimple", "acne"],
+      emoji: "🌳",
+      title: "Neem-haldi — daane",
+      durSec: 900,
+      ingredients: "10 neem patte · ¼ chamach haldi · gulab jal",
+      steps: [
+        "10 neem patte dho ke peeso.",
+        "¼ chamach haldi mila lo.",
+        "Gulab jal daal ke paste.",
+        "Daane par lagao. 15 min.",
+        "Thande paani se dho. Roz raat.",
+      ],
+    },
+    "aloe-vera-sunburn": {
+      kw: ["aloe vera", "ghritkumari", "sunburn", "jal gaye"],
+      emoji: "🌵",
+      title: "Aloe vera — dhoop mein jal gaye",
+      durSec: 300,
+      ingredients: "1 taza aloe vera patta",
+      steps: [
+        "Aloe vera patta kaato.",
+        "Gel chamach se nikalo.",
+        "Jali jagah par seedha lagao.",
+        "30 min chhod do. Thanda lage.",
+        "Thande paani se dho. 2-3 baar din mein.",
+      ],
+    },
+    "khira-aankh": {
+      kw: ["khira", "cucumber eye", "kala daag", "dark circles"],
+      emoji: "🥒",
+      title: "Khire ke phaake — aankh",
+      durSec: 900,
+      ingredients: "1 taza khira",
+      steps: [
+        "Khire ke 2 patle phaake kaato.",
+        "Fridge mein 10 min thanda karo.",
+        "Aankh band karke phaake rakho.",
+        "15 min relax karo.",
+        "Roz raat — kale daag halke.",
+      ],
+    },
+    "multani-mitti-mask": {
+      kw: ["multani mitti", "oily skin"],
+      emoji: "🟫",
+      title: "Multani mitti — oily skin",
+      durSec: 900,
+      ingredients: "2 chamach multani mitti · gulab jal · nimbu",
+      steps: [
+        "Multani mitti 2 chamach katori mein.",
+        "Gulab jal daal ke gaadha paste.",
+        "½ nimbu nichodo.",
+        "Chehre par lagao. 15-20 min sookhne do.",
+        "Halke paani se dho lo. Hafte mein 2 baar.",
+      ],
+    },
+    "tulsi-pack-pimple": {
+      kw: ["tulsi pack", "pimple", "muhase"],
+      emoji: "🌿",
+      title: "Tulsi pack — pimple",
+      durSec: 600,
+      ingredients: "15-20 tulsi patte · 1 chamach gulab jal",
+      steps: [
+        "Tulsi patte dho ke peeso.",
+        "Gulab jal mila lo.",
+        "Paste tayyar.",
+        "Pimple par seedha lagao. 20 min.",
+        "Thande paani se dho. Roz — 7 din mein fark.",
+      ],
+    },
+    "shahad-nimbu-face": {
+      kw: ["shahad nimbu chehra", "tan", "daag"],
+      emoji: "🍋",
+      title: "Shahad-nimbu — chehra",
+      durSec: 600,
+      ingredients: "1 chamach shahad · ½ chamach nimbu ras",
+      steps: [
+        "1 chamach shahad katori mein.",
+        "½ chamach nimbu ras.",
+        "Achhi tarah mila lo.",
+        "Chehre par lagao. 15 min.",
+        "Halke paani se dho. Hafte mein 2-3 baar.",
+      ],
+    },
+
+    // ── HAIR & SCALP (6) ──
+    "amla-nariyal-tel": {
+      kw: ["amla nariyal tel", "hair fall", "baal jhaadna"],
+      emoji: "🥥",
+      title: "Amla-nariyal tel — baal",
+      durSec: 600,
+      ingredients: "2 amla · 3 chamach nariyal tel",
+      steps: [
+        "2 amla ke chhote tukde karo.",
+        "Pan mein nariyal tel + amla.",
+        "5 min dheere garam karo (amla bhura ho).",
+        "Aanch band. Chhan lo.",
+        "Hafte mein 2 baar baal par lagao, raat ko.",
+      ],
+    },
+    "methi-dahi-mask": {
+      kw: ["methi dahi", "dandruff", "rusi"],
+      emoji: "🌾",
+      title: "Methi-dahi — rusi",
+      durSec: 480,
+      ingredients: "2 chamach methi paste · 3 chamach dahi",
+      steps: [
+        "Methi raat ko bhigo do (1 chamach).",
+        "Subah paste banao.",
+        "3 chamach dahi mila lo.",
+        "Sir par lagao. 30 min.",
+        "Halke shampoo se dho. Hafte mein 1 baar.",
+      ],
+    },
+    "bhringraj-tel-malish": {
+      kw: ["bhringraj", "baal badhao", "hair growth"],
+      emoji: "🌿",
+      title: "Bhringraj tel — baal badhao",
+      durSec: 900,
+      ingredients: "3 chamach bhringraj tel",
+      steps: [
+        "Bhringraj tel 3 chamach halka garam.",
+        "Sir par dheere malish — 10 min.",
+        "Jadon mein achhi tarah lago.",
+        "Raat ko chhod do (towel pillow par).",
+        "Subah halke shampoo se dho. Hafte mein 2 baar.",
+      ],
+    },
+    "shikakai-snan": {
+      kw: ["shikakai", "natural shampoo", "herbal shampoo"],
+      emoji: "🌳",
+      title: "Shikakai — kudrati shampoo",
+      durSec: 480,
+      ingredients: "2 chamach shikakai powder · 1 chamach amla powder · 1 cup paani",
+      steps: [
+        "Cup paani garam karo.",
+        "Shikakai + amla powder daalo.",
+        "5 min ubaalo. Halka thanda.",
+        "Chhan lo. Yahi shampoo hai.",
+        "Sir par achhi tarah lagao, dho lo.",
+      ],
+    },
+    "henna-pack": {
+      kw: ["henna", "mehndi", "safed baal", "grey hair"],
+      emoji: "🌿",
+      title: "Mehndi pack — safed baal",
+      durSec: 1800,
+      ingredients: "4 chamach mehndi · 1 cup dahi · 1 chamach amla powder",
+      steps: [
+        "Raat ko mehndi + dahi + amla katori mein.",
+        "Achhi tarah ghol lo, dhak do.",
+        "Subah baalon par lagao.",
+        "2 ghante rakho.",
+        "Halke paani se dho. Mahine mein 2 baar.",
+      ],
+    },
+    "pyaaz-ras-balon": {
+      kw: ["pyaaz ras", "onion juice", "baal"],
+      emoji: "🧅",
+      title: "Pyaaz ka ras — baal",
+      durSec: 1800,
+      ingredients: "1 pyaaz · cotton",
+      steps: [
+        "1 madhyam pyaaz kucho.",
+        "Ras chhan lo (cotton se).",
+        "Sir mein khaas patches par lagao.",
+        "30 min rakho.",
+        "Halke shampoo se dho. Hafte mein 3 baar.",
+      ],
+    },
+
+    // ── FEVER & IMMUNITY (8) ──
+    "tulsi-kalimirch-kadha": {
+      kw: ["tulsi kali mirch kadha", "bukhar", "fever"],
+      emoji: "🌿",
+      title: "Tulsi-kali mirch kadha — bukhar",
+      durSec: 300,
+      ingredients: "10 tulsi · 5 kali mirch · 1 inch adrak · 1 cup paani · gud",
+      steps: [
+        "Patila — 1 cup paani.",
+        "Tulsi, kuti kali mirch, kuta adrak.",
+        "5 min ubaalo (paani aadha).",
+        "Chhan lo. Gud mila lo.",
+        "Garam-garam piyo. Din mein 2 baar.",
+      ],
+    },
+    "giloy-paani": {
+      kw: ["giloy", "immunity", "rog pratirodh"],
+      emoji: "🌿",
+      title: "Giloy paani — immunity",
+      durSec: 300,
+      ingredients: "1 inch giloy stick · 1 cup paani",
+      steps: [
+        "Giloy ko kuto.",
+        "1 cup paani mein 5 min ubaalo.",
+        "Aadha paani reh jaaye.",
+        "Chhan lo. Khali pet piyo.",
+        "Roz subah — immunity strong.",
+      ],
+    },
+    "chyawanprash-roz": {
+      kw: ["chyawanprash", "daily immunity"],
+      emoji: "🟤",
+      title: "Chyawanprash — roz ka",
+      durSec: 60,
+      ingredients: "1 chamach chyawanprash · 1 cup garam doodh",
+      steps: [
+        "1 chamach chyawanprash lo.",
+        "Subah khali pet khao.",
+        "Upar se garam doodh ya paani.",
+        "Bachon ko ½ chamach.",
+        "Saal bhar roz — bukhar, sardi door.",
+      ],
+    },
+    "amla-haldi-shahad": {
+      kw: ["amla haldi shahad", "immunity boost"],
+      emoji: "🟢",
+      title: "Amla-haldi-shahad",
+      durSec: 60,
+      ingredients: "1 chamach amla powder · ¼ chamach haldi · 1 chamach shahad",
+      steps: [
+        "Katori mein amla + haldi powder.",
+        "1 chamach shahad daal ke ghol lo.",
+        "Khali pet subah.",
+        "Vitamin C + antioxidant.",
+        "Roz 1 mahina — immunity badhe.",
+      ],
+    },
+    "ajwain-gud-bachay-imm": {
+      kw: ["ajwain gud bachay", "kids immunity"],
+      emoji: "🍯",
+      title: "Ajwain-gud laddu — bachay",
+      durSec: 60,
+      ingredients: "1 chamach ajwain · 1 chamach gud",
+      steps: [
+        "Ajwain ½ chamach pees lo.",
+        "Gud 1 chamach piglao.",
+        "Mila ke chhote laddu banao.",
+        "Bachay ko 1 laddu subah.",
+        "Sardi-cough-immunity, sab.",
+      ],
+    },
+    "neem-giloy-kadha": {
+      kw: ["neem giloy", "dengue", "viral"],
+      emoji: "🌳",
+      title: "Neem-giloy kadha — bukhar",
+      durSec: 480,
+      ingredients: "10 neem patte · 1 inch giloy · 1 cup paani",
+      steps: [
+        "10 neem patte + giloy kuti.",
+        "Cup paani mein 7-8 min ubaalo.",
+        "Paani 1/3 reh jaye.",
+        "Chhan lo. Kadwa hai — gud mila lo.",
+        "Din mein 1 baar. Dengue, viral bukhar mein.",
+      ],
+    },
+    "ccf-chai": {
+      kw: ["ccf", "dhaniya jeera saunf", "typhoid"],
+      emoji: "🌱",
+      title: "CCF chai — dhaniya-jeera-saunf",
+      durSec: 300,
+      ingredients: "½ chamach dhaniya · ½ chamach jeera · ½ chamach saunf · 2 cup paani",
+      steps: [
+        "Dhaniya + jeera + saunf 2 cup paani mein.",
+        "5 min ubaalo (paani aadha).",
+        "Chhan lo.",
+        "Din bhar ghoont-ghoont piyo.",
+        "Bukhar ke baad pet-pachhan theek.",
+      ],
+    },
+    "kesar-doodh-bukhar": {
+      kw: ["kesar bukhar baad", "weakness"],
+      emoji: "🟠",
+      title: "Kesar doodh — bukhar baad",
+      durSec: 300,
+      ingredients: "5 kesar dhaaga · 1 cup doodh · gud",
+      steps: [
+        "Doodh garam karo.",
+        "5 kesar dhaaga daalo.",
+        "Rang chhute (2 min).",
+        "Gud mila lo.",
+        "Raat ko piyo. Kamzori jaldi door.",
+      ],
+    },
+
+    // ── HEADACHE variants (5) ──
+    "pudina-balm-sir": {
+      kw: ["pudina sir dard", "tension headache"],
+      emoji: "🌿",
+      title: "Pudina paste — sir dard",
+      durSec: 300,
+      ingredients: "10 pudina patte",
+      steps: [
+        "10 pudina patte dho ke peeso.",
+        "Halka paste banao.",
+        "Maathe par patli parat lagao.",
+        "15 min lete raho — aankh band.",
+        "Halke paani se pochho. Turant aaram.",
+      ],
+    },
+    "lavang-tel-temple": {
+      kw: ["lavang tel", "clove oil", "kanpati"],
+      emoji: "🌰",
+      title: "Lavang tel — kanpati",
+      durSec: 120,
+      ingredients: "1 boond lavang tel · 1 chamach nariyal tel",
+      steps: [
+        "Nariyal tel 1 chamach lo.",
+        "1 boond lavang tel mila lo.",
+        "Kanpati (temple) par lagao.",
+        "Halke ungliyon se 2 min malish.",
+        "Andheri jagah par 10 min lete raho.",
+      ],
+    },
+    "til-tel-naas": {
+      kw: ["til tel naas", "sinus headache"],
+      emoji: "⚫",
+      title: "Til tel naas — sinus",
+      durSec: 60,
+      ingredients: "1-2 boond til tel · ungli",
+      steps: [
+        "Halka til tel.",
+        "1-2 boond ungli par.",
+        "Dheere naak ke baahar lagao.",
+        "Lete jaake 5 min.",
+        "Sinus se sir dard mein khaas.",
+      ],
+    },
+    "brahmi-malish-sir": {
+      kw: ["brahmi malish", "chronic sir dard"],
+      emoji: "🌿",
+      title: "Brahmi tel — sir malish",
+      durSec: 900,
+      ingredients: "2 chamach brahmi tel",
+      steps: [
+        "Brahmi tel 2 chamach halka garam.",
+        "Sir, kanpati, gardan par.",
+        "Ungliyon se 10 min dheere malish.",
+        "Raat ko sone se pehle.",
+        "Daily — chronic sir dard mein 1 mahina.",
+      ],
+    },
+    "ghee-migraine": {
+      kw: ["ghee migraine", "aadha sisi"],
+      emoji: "🟡",
+      title: "Ghee — migraine",
+      durSec: 60,
+      ingredients: "1-2 boond garam ghee",
+      steps: [
+        "Ghee halka garam karo (jala na de).",
+        "Lete jaao. Sir peeche.",
+        "1-2 boond naak ke baahar lagao.",
+        "5 min relax — aankh band.",
+        "Subah uthke karo. Migraine mein 2 hafte.",
+      ],
+    },
+
+    // ── EYE & EAR (4) ──
+    "gulab-jal-aankh": {
+      kw: ["gulab jal", "rose water aankh"],
+      emoji: "🌹",
+      title: "Gulab jal — aankh",
+      durSec: 60,
+      ingredients: "2-3 boond suddha gulab jal",
+      steps: [
+        "Suddha gulab jal dropper mein lo.",
+        "Aankh ke kone par 1-2 boond.",
+        "Aankh 1 min band rakho.",
+        "Dheere aankh khoolo.",
+        "Roz subah-shaam. Jalan-thakaan kam.",
+      ],
+    },
+    "trifala-aankh-dho": {
+      kw: ["trifala", "aankh dho", "triphala"],
+      emoji: "💧",
+      title: "Trifala paani — aankh dho",
+      durSec: 480,
+      ingredients: "½ chamach trifala powder · 1 cup paani",
+      steps: [
+        "Raat ko trifala paani mein bhigo do.",
+        "Subah achhi tarah chhan lo.",
+        "Halke paani ko hatheli par lo.",
+        "Aankh khol ke dheere dho lo.",
+        "Hafte mein 3 baar — aankhon ka amrit.",
+      ],
+    },
+    "sarso-tel-kaan": {
+      kw: ["sarso tel kaan", "ear ache"],
+      emoji: "👂",
+      title: "Sarso tel — kaan dard",
+      durSec: 60,
+      ingredients: "2-3 boond garam sarso tel",
+      steps: [
+        "Sarso tel halka garam (test kar lo).",
+        "2-3 boond kaan mein.",
+        "Side mein lete jaake 5 min.",
+        "Cotton se kaan dhak do.",
+        "Din mein 2 baar.",
+      ],
+    },
+    "lasun-tel-kaan": {
+      kw: ["lasun tel kaan", "ear infection"],
+      emoji: "🧄",
+      title: "Lasun tel — kaan infection",
+      durSec: 300,
+      ingredients: "1 lasun · 1 chamach sarso tel",
+      steps: [
+        "1 lasun kuto.",
+        "Sarso tel mein halka garam karo.",
+        "Lasun kala ho jaye to aanch band.",
+        "Chhan lo. Halka thanda.",
+        "2 boond kaan mein. Din mein 1 baar.",
+      ],
+    },
+
+    // ── WOMEN\'S WELLNESS (5) ──
+    "methi-laddu": {
+      kw: ["methi laddu", "jachcha", "postnatal"],
+      emoji: "🍯",
+      title: "Methi laddu — jachcha",
+      durSec: 1800,
+      ingredients: "½ kg methi · 250 gm gud · 250 gm ghee · gond · mewa",
+      steps: [
+        "Methi dane bhuno, peeso.",
+        "Ghee mein gond bhuno (phoolne tak).",
+        "Gud + methi + gond + mewa mila lo.",
+        "Garam-garam laddu bana lo.",
+        "Bachay hone ke baad 40 din roz 1.",
+      ],
+    },
+    "dashmool-kadha": {
+      kw: ["dashmool", "period cramps", "mahawari"],
+      emoji: "🌿",
+      title: "Dashmool kadha — period dard",
+      durSec: 480,
+      ingredients: "1 chamach dashmool churna · 1 cup paani · gud",
+      steps: [
+        "Cup paani mein 1 chamach dashmool.",
+        "7-8 min ubaalo (paani aadha).",
+        "Chhan lo.",
+        "Gud mila lo.",
+        "Period ke pehle 3 din se piyo. Dard kam.",
+      ],
+    },
+    "ajwain-gud-period": {
+      kw: ["ajwain gud period", "mahawari dard"],
+      emoji: "🌾",
+      title: "Ajwain-gud — period dard",
+      durSec: 60,
+      ingredients: "½ chamach ajwain · 1 chamach gud",
+      steps: [
+        "Pan mein gud piglao (1 chamach).",
+        "½ chamach ajwain mila lo.",
+        "Halka thanda. Goli bana lo.",
+        "Period ke 1st din lo.",
+        "Pet ka dard, kamar dard turant kam.",
+      ],
+    },
+    "anjeer-akhrot-fertility": {
+      kw: ["anjeer akhrot", "fertility", "prajanan"],
+      emoji: "🌰",
+      title: "Anjeer-akhrot — taakat",
+      durSec: 480,
+      ingredients: "2 anjeer · 4 akhrot · 1 cup doodh",
+      steps: [
+        "Raat ko 2 anjeer + 4 akhrot bhigo.",
+        "Subah doodh garam karo.",
+        "Bhige anjeer-akhrot kaato, doodh mein.",
+        "3 min ubaalo.",
+        "Subah khali pet. Prajanan-shakti, taakat.",
+      ],
+    },
+    "shatavari-doodh": {
+      kw: ["shatavari", "women hormone", "naari"],
+      emoji: "🌿",
+      title: "Shatavari doodh — naari",
+      durSec: 300,
+      ingredients: "½ chamach shatavari churna · 1 cup doodh · gud",
+      steps: [
+        "Doodh garam karo.",
+        "½ chamach shatavari churna.",
+        "3 min dheere ubaalo.",
+        "Gud mila lo.",
+        "Raat ko piyo. Hormone balance.",
+      ],
+    },
+
+    // ── KIDS (4) ──
+    "ajwain-baccha-pet": {
+      kw: ["ajwain bachay", "colic", "baby pet"],
+      emoji: "👶",
+      title: "Ajwain-gud — bachay pet",
+      durSec: 120,
+      ingredients: "chutki ajwain · ¼ chamach gud · 2 chamach garam paani",
+      steps: [
+        "Chutki ajwain powder.",
+        "¼ chamach gud piglao.",
+        "2 chamach garam paani.",
+        "Bachay ko 1 chamach.",
+        "Colic, pet dard, gas mein.",
+      ],
+    },
+    "saunth-shahad-baccha": {
+      kw: ["saunth shahad bachay", "kids cold"],
+      emoji: "🍯",
+      title: "Saunth-shahad — bachay khansi",
+      durSec: 60,
+      ingredients: "pinch saunth · ½ chamach shahad (1 saal+)",
+      steps: [
+        "Chutki saunth powder.",
+        "½ chamach shahad mein mila.",
+        "Bachay ko din mein 2 baar.",
+        "Khansi 2-3 din mein kam.",
+        "1 saal se chote ko shahad mat dena.",
+      ],
+    },
+    "badaam-rogan-bachay": {
+      kw: ["badaam rogan", "bachay dimag", "brain"],
+      emoji: "🌰",
+      title: "Badaam rogan — bachay dimag",
+      durSec: 60,
+      ingredients: "1 boond badaam rogan · 1 cup doodh",
+      steps: [
+        "Doodh garam karo (bachay ke layak).",
+        "1 boond badaam rogan daalo.",
+        "Achhi tarah ghol lo.",
+        "Bachay ko subah piyo.",
+        "Dimag tez, padhai mein focus.",
+      ],
+    },
+    "baby-malish-tel": {
+      kw: ["baby malish", "newborn massage", "nariyal tel"],
+      emoji: "👶",
+      title: "Baby malish — nariyal tel",
+      durSec: 600,
+      ingredients: "3 chamach nariyal tel · halka garam",
+      steps: [
+        "Nariyal tel 3 chamach halka garam.",
+        "Hatheli par lo (test kar lo).",
+        "Bachay ke poore badan par dheere.",
+        "10 min halki malish.",
+        "Snan se 30 min pehle. Roz.",
+      ],
+    },
+
+    // ── SEASONAL (3) ──
+    "khus-sharbat-garmi": {
+      kw: ["khus sharbat", "garmi", "lu", "heat stroke"],
+      emoji: "🥤",
+      title: "Khus sharbat — garmi mein",
+      durSec: 300,
+      ingredients: "2 chamach khus sharbat · 1 glass thanda paani",
+      steps: [
+        "Glass thanda paani lo.",
+        "2 chamach khus sharbat mila lo.",
+        "Achhi tarah ghol lo.",
+        "Dopahar mein piyo.",
+        "Lu lagne mein, garmi mein turant aaram.",
+      ],
+    },
+    "masala-chai-monsoon": {
+      kw: ["monsoon chai", "barsaat", "mausami"],
+      emoji: "☕",
+      title: "Mausami masala chai",
+      durSec: 480,
+      ingredients:
+        "1 inch adrak · 4 tulsi · 2 lavang · 1 elaichi · 2 kali mirch · chai patti · paani · doodh",
+      steps: [
+        "Paani mein adrak, tulsi, lavang, elaichi, kali mirch.",
+        "3 min ubaalo. Chai patti daalo.",
+        "Doodh daalo. 3 min aur ubaalo.",
+        "Chhan lo. Gud mila lo.",
+        "Barsaat mein roz subah. Immunity, sardi door.",
+      ],
+    },
+    "amla-til-laddu-jaada": {
+      kw: ["amla til laddu", "sardi", "winter", "jaada"],
+      emoji: "❄",
+      title: "Amla-til laddu — sardi",
+      durSec: 1800,
+      ingredients: "100 gm amla powder · 100 gm bhuna til · 200 gm gud · 2 chamach ghee",
+      steps: [
+        "Pan mein ghee mein gud piglao.",
+        "Amla + bhuna til daal ke mila.",
+        "Halka thanda hone do.",
+        "Chhote laddu bana lo.",
+        "Sardiyon mein roz 1 — taakat, immunity.",
+      ],
+    },
+
+    // ── DETOX / EXTRA (2) ──
+    "methi-saunth-kabz": {
+      kw: ["methi saunth", "chronic kabz"],
+      emoji: "🌾",
+      title: "Methi-saunth chura",
+      durSec: 60,
+      ingredients: "½ chamach methi powder · ¼ chamach saunth · 1 cup garam paani",
+      steps: [
+        "Methi powder + saunth katori mein.",
+        "Cup garam paani daalo.",
+        "Achhi tarah ghol lo.",
+        "Raat ko sone se pehle piyo.",
+        "Subah pet saaf — chronic kabz mein.",
+      ],
+    },
+    "kheere-pani-detox": {
+      kw: ["kheere detox", "cucumber water", "pudina paani"],
+      emoji: "🥒",
+      title: "Kheere-pudina detox paani",
+      durSec: 480,
+      ingredients: "½ kheere · 8 pudina patte · ½ nimbu · 1 jar paani",
+      steps: [
+        "Kheere ke patle phaake kaato.",
+        "Pudina + ½ nimbu ke phaake.",
+        "Jar mein paani + sab daal do.",
+        "Fridge mein 4 ghante.",
+        "Din bhar piyo. Detox, taza skin.",
+      ],
+    },
   };
   function detectRemedy(text) {
     if (!text) return null;
@@ -6066,12 +7951,35 @@ Rules:
   function openRemedy(key) {
     const kit = REMEDY_KITS[key];
     if (!kit) return;
+    // v5.5.4: kill any in-flight TTS before remedy walkthrough starts speaking
+    if (_currentAudio) {
+      try {
+        _currentAudio.pause();
+      } catch (e) {}
+      _currentAudio = null;
+    }
+    try {
+      window.speechSynthesis && window.speechSynthesis.cancel();
+    } catch (e) {}
     // Reuse the move-ov player — it already supports steps + auto-advance + speak
     _moveSkill = kit;
     _moveStepIdx = 0;
     document.getElementById("move-ov").classList.add("on");
     document.getElementById("move-ov-title").textContent = kit.title;
-    document.getElementById("move-ov-anim").innerHTML = kit.emoji;
+    // v5.4: restore emoji-circle look after any prior MOVEMENT_SKILLS run may have
+    // stripped the .pulse class + transparent-background state for SVG animation.
+    const anim = document.getElementById("move-ov-anim");
+    if (_lottieInstance) {
+      try {
+        _lottieInstance.destroy();
+      } catch (e) {}
+      _lottieInstance = null;
+    }
+    anim.classList.add("pulse");
+    anim.style.background = "rgba(34,197,94,.1)";
+    anim.style.border = "2px solid rgba(34,197,94,.3)";
+    anim.style.fontSize = "80px";
+    anim.innerHTML = kit.emoji;
     document.getElementById("move-ov-progress").innerHTML = kit.steps
       .map(() => '<div class="move-ov-progress-dot"></div>')
       .join("");
@@ -6269,6 +8177,16 @@ Rules:
   function openAcupressure(key) {
     const p = ACUPRESSURE_POINTS[key];
     if (!p) return;
+    // v5.5.4: kill any in-flight TTS before acupressure walkthrough starts speaking
+    if (_currentAudio) {
+      try {
+        _currentAudio.pause();
+      } catch (e) {}
+      _currentAudio = null;
+    }
+    try {
+      window.speechSynthesis && window.speechSynthesis.cancel();
+    } catch (e) {}
     // Reuse move-ov player; render an SVG silhouette in the anim slot
     // v4.2: pass tts[] through so TTS reads clean Devanagari (not ambiguous Roman)
     _moveSkill = { emoji: p.emoji, title: p.title, durSec: 60, steps: p.instr, tts: p.tts };
@@ -6276,6 +8194,18 @@ Rules:
     document.getElementById("move-ov").classList.add("on");
     document.getElementById("move-ov-title").textContent = p.title;
     const anim = document.getElementById("move-ov-anim");
+    // v5.4: restore default circle look after any prior MOVEMENT_SKILLS run that
+    // may have transparent-styled the container, then paint the body silhouette.
+    if (_lottieInstance) {
+      try {
+        _lottieInstance.destroy();
+      } catch (e) {}
+      _lottieInstance = null;
+    }
+    anim.classList.remove("pulse");
+    anim.style.background = "rgba(34,197,94,.1)";
+    anim.style.border = "2px solid rgba(34,197,94,.3)";
+    anim.style.fontSize = "80px";
     anim.innerHTML =
       (ACU_SVGS[p.svgKey] || "") +
       (typeof p.cx === "number"
@@ -6289,11 +8219,205 @@ Rules:
   }
 
   // ── Movement skills (animated step-by-step overlay) ──
+  // v5.4: per-step animation library. Each MOVEMENT_SKILLS step can declare an
+  // `anim` key (lookup into ANIM_SVG) and optionally a `lottie` URL. showMoveStep
+  // prefers Lottie if URL+player available, else renders the SVG. SVGs use SMIL
+  // <animate> — supported in Chrome/Safari (Firefox shows static last frame).
+  // Theme: green accent #22c55e, transparent dark bg matching .move-ov-anim.
+  // TODO(port): Lottie path skipped here because lottie-web isn't loaded via
+  // layout.tsx (out of file-allowlist). When the CDN <script> is added later,
+  // restore the lottie branch in renderStepAnim below. For now SVG only.
+  const ANIM_SVG = (() => {
+    const s = (inner) =>
+      `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;overflow:visible">${inner}</svg>`;
+    const stroke = "#22c55e",
+      fill = "rgba(34,197,94,.15)";
+    return {
+      // ── Breathing primitives ──
+      "breath-in": s(
+        `<circle cx="100" cy="100" r="30" fill="${fill}" stroke="${stroke}" stroke-width="2"><animate attributeName="r" values="30;75" dur="4s" fill="freeze"/></circle><text x="100" y="180" text-anchor="middle" fill="${stroke}" font-size="14" font-family="JioType,sans-serif">Saans andar</text>`,
+      ),
+      "breath-out": s(
+        `<circle cx="100" cy="100" r="75" fill="${fill}" stroke="${stroke}" stroke-width="2"><animate attributeName="r" values="75;30" dur="4s" fill="freeze"/></circle><text x="100" y="180" text-anchor="middle" fill="${stroke}" font-size="14" font-family="JioType,sans-serif">Saans bahar</text>`,
+      ),
+      "breath-cycle": s(
+        `<circle cx="100" cy="100" r="30" fill="${fill}" stroke="${stroke}" stroke-width="2"><animate attributeName="r" values="30;75;30" dur="6s" repeatCount="indefinite"/></circle><text x="100" y="180" text-anchor="middle" fill="${stroke}" font-size="14" font-family="JioType,sans-serif">Saans pe dhyan</text>`,
+      ),
+      "breath-hold": s(
+        `<circle cx="100" cy="100" r="75" fill="${fill}" stroke="${stroke}" stroke-width="2"><animate attributeName="stroke-opacity" values="1;.4;1" dur="2s" repeatCount="indefinite"/></circle><text x="100" y="105" text-anchor="middle" fill="${stroke}" font-size="14" font-family="JioType,sans-serif">Rukoo</text>`,
+      ),
+      "sharp-exhale": s(
+        `<circle cx="100" cy="100" r="40" fill="${fill}" stroke="${stroke}" stroke-width="2"><animate attributeName="r" values="40;20;40;20;40;20" dur="2s" repeatCount="indefinite"/></circle><path d="M 100 100 L 100 40" stroke="${stroke}" stroke-width="3" stroke-linecap="round" marker-end=""><animate attributeName="opacity" values="0;1;0;1;0" dur="2s" repeatCount="indefinite"/></path><text x="100" y="180" text-anchor="middle" fill="${stroke}" font-size="14" font-family="JioType,sans-serif">Tezi se bahar</text>`,
+      ),
+      "bee-hum": s(
+        `<circle cx="100" cy="100" r="25" fill="${fill}" stroke="${stroke}" stroke-width="2"/><circle cx="100" cy="100" r="25" fill="none" stroke="${stroke}" stroke-width="1.5" opacity=".6"><animate attributeName="r" values="25;90" dur="2.5s" repeatCount="indefinite"/><animate attributeName="opacity" values=".6;0" dur="2.5s" repeatCount="indefinite"/></circle><circle cx="100" cy="100" r="25" fill="none" stroke="${stroke}" stroke-width="1.5" opacity=".4"><animate attributeName="r" values="25;90" dur="2.5s" begin="0.8s" repeatCount="indefinite"/><animate attributeName="opacity" values=".4;0" dur="2.5s" begin="0.8s" repeatCount="indefinite"/></circle><text x="100" y="105" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Mmm...</text>`,
+      ),
+
+      // ── Alt-nostril (anulom-vilom) ──
+      "nostril-left-in": s(
+        `<ellipse cx="100" cy="90" rx="40" ry="55" fill="${fill}" stroke="${stroke}" stroke-width="2"/><circle cx="88" cy="95" r="3" fill="${stroke}"/><circle cx="112" cy="95" r="3" fill="${stroke}"/><circle cx="92" cy="115" r="2" fill="${stroke}"/><circle cx="108" cy="115" r="2" fill="${stroke}" opacity=".3"/><circle cx="108" cy="115" r="6" fill="rgba(255,107,107,.4)"><animate attributeName="r" values="6;8;6" dur="1.5s" repeatCount="indefinite"/></circle><path d="M 70 115 L 88 115" stroke="${stroke}" stroke-width="2" stroke-linecap="round"><animate attributeName="stroke-dasharray" values="0,20;20,0" dur="2s" repeatCount="indefinite"/></path><text x="100" y="180" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Baayi se andar</text>`,
+      ),
+      "nostril-right-out": s(
+        `<ellipse cx="100" cy="90" rx="40" ry="55" fill="${fill}" stroke="${stroke}" stroke-width="2"/><circle cx="88" cy="95" r="3" fill="${stroke}"/><circle cx="112" cy="95" r="3" fill="${stroke}"/><circle cx="92" cy="115" r="2" fill="${stroke}" opacity=".3"/><circle cx="92" cy="115" r="6" fill="rgba(255,107,107,.4)"><animate attributeName="r" values="6;8;6" dur="1.5s" repeatCount="indefinite"/></circle><circle cx="108" cy="115" r="2" fill="${stroke}"/><path d="M 108 115 L 130 115" stroke="${stroke}" stroke-width="2" stroke-linecap="round"><animate attributeName="stroke-dasharray" values="20,0;0,20" dur="2s" repeatCount="indefinite"/></path><text x="100" y="180" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Daahini se bahar</text>`,
+      ),
+      "nostril-alt": s(
+        `<ellipse cx="100" cy="90" rx="40" ry="55" fill="${fill}" stroke="${stroke}" stroke-width="2"/><circle cx="92" cy="115" r="3" fill="${stroke}"><animate attributeName="r" values="3;6;3" dur="4s" repeatCount="indefinite"/></circle><circle cx="108" cy="115" r="3" fill="${stroke}"><animate attributeName="r" values="6;3;6" dur="4s" repeatCount="indefinite"/></circle><text x="100" y="180" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Badal-badal ke</text>`,
+      ),
+      "ears-blocked": s(
+        `<ellipse cx="100" cy="100" rx="42" ry="55" fill="${fill}" stroke="${stroke}" stroke-width="2"/><circle cx="92" cy="100" r="3" fill="${stroke}"/><circle cx="108" cy="100" r="3" fill="${stroke}"/><circle cx="60" cy="100" r="10" fill="${stroke}" opacity=".6"><animate attributeName="opacity" values=".6;1;.6" dur="2s" repeatCount="indefinite"/></circle><circle cx="140" cy="100" r="10" fill="${stroke}" opacity=".6"><animate attributeName="opacity" values=".6;1;.6" dur="2s" repeatCount="indefinite"/></circle><path d="M 90 125 Q 100 130 110 125" stroke="${stroke}" stroke-width="2" fill="none"/><text x="100" y="180" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Kaan band</text>`,
+      ),
+
+      // ── Sitting / kneeling poses ──
+      "sit-spine": s(
+        `<line x1="100" y1="40" x2="100" y2="120" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/><circle cx="100" cy="35" r="14" fill="${fill}" stroke="${stroke}" stroke-width="2"/><path d="M 60 145 Q 100 130 140 145 L 140 160 Q 100 150 60 160 Z" fill="${fill}" stroke="${stroke}" stroke-width="2"/><path d="M 60 145 L 80 120 M 140 145 L 120 120" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/><circle cx="100" cy="80" r="60" fill="none" stroke="${stroke}" stroke-width="1" opacity=".3"><animate attributeName="opacity" values=".15;.4;.15" dur="3s" repeatCount="indefinite"/></circle><text x="100" y="185" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Reedh seedhi</text>`,
+      ),
+      kneel: s(
+        `<circle cx="100" cy="50" r="14" fill="${fill}" stroke="${stroke}" stroke-width="2"/><line x1="100" y1="65" x2="100" y2="120" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/><path d="M 100 120 L 70 145 L 70 165 L 130 165 L 130 145 L 100 120" fill="${fill}" stroke="${stroke}" stroke-width="2"/><text x="100" y="185" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Vajrasana</text>`,
+      ),
+      "lie-still": s(
+        `<rect x="20" y="105" width="160" height="20" rx="10" fill="${fill}" stroke="${stroke}" stroke-width="2"/><circle cx="40" cy="115" r="10" fill="${fill}" stroke="${stroke}" stroke-width="2"/><line x1="55" y1="115" x2="160" y2="115" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/><line x1="160" y1="115" x2="175" y2="100" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/><line x1="160" y1="115" x2="175" y2="130" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/><circle cx="40" cy="115" r="20" fill="none" stroke="${stroke}" stroke-width="1" opacity=".3"><animate attributeName="r" values="20;30;20" dur="4s" repeatCount="indefinite"/><animate attributeName="opacity" values=".3;0;.3" dur="4s" repeatCount="indefinite"/></circle><text x="100" y="170" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Shavasana</text>`,
+      ),
+      "squat-down": s(
+        `<circle cx="100" cy="40" r="13" fill="${fill}" stroke="${stroke}" stroke-width="2"/><line x1="100" y1="53" x2="100" y2="100" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/><line x1="100" y1="100" x2="65" y2="140" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/><line x1="100" y1="100" x2="135" y2="140" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/><line x1="65" y1="140" x2="65" y2="170" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/><line x1="135" y1="140" x2="135" y2="170" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/><line x1="100" y1="75" x2="75" y2="95" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/><line x1="100" y1="75" x2="125" y2="95" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/><text x="100" y="190" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Malasana</text>`,
+      ),
+      "feet-wide": s(
+        `<line x1="65" y1="140" x2="135" y2="140" stroke="${stroke}" stroke-width="2" stroke-dasharray="3,3"/><ellipse cx="65" cy="150" rx="18" ry="8" fill="${fill}" stroke="${stroke}" stroke-width="2"/><ellipse cx="135" cy="150" rx="18" ry="8" fill="${fill}" stroke="${stroke}" stroke-width="2"/><circle cx="100" cy="55" r="13" fill="${fill}" stroke="${stroke}" stroke-width="2"/><line x1="100" y1="68" x2="100" y2="135" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/><text x="100" y="180" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Pair chaudai mein</text>`,
+      ),
+
+      // ── Neck rotation ──
+      "neck-right": s(
+        `<circle cx="100" cy="70" r="22" fill="${fill}" stroke="${stroke}" stroke-width="2"><animateTransform attributeName="transform" type="rotate" values="0 100 100;30 100 100;0 100 100" dur="3s" repeatCount="indefinite"/></circle><line x1="100" y1="92" x2="100" y2="130" stroke="${stroke}" stroke-width="3"/><path d="M 60 145 L 140 145" stroke="${stroke}" stroke-width="4" stroke-linecap="round"/><path d="M 122 65 Q 140 70 145 80" stroke="${stroke}" stroke-width="2" fill="none" stroke-linecap="round"><animate attributeName="opacity" values="0;1;0" dur="3s" repeatCount="indefinite"/></path><text x="100" y="180" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Daahini taraf</text>`,
+      ),
+      "neck-left": s(
+        `<circle cx="100" cy="70" r="22" fill="${fill}" stroke="${stroke}" stroke-width="2"><animateTransform attributeName="transform" type="rotate" values="0 100 100;-30 100 100;0 100 100" dur="3s" repeatCount="indefinite"/></circle><line x1="100" y1="92" x2="100" y2="130" stroke="${stroke}" stroke-width="3"/><path d="M 60 145 L 140 145" stroke="${stroke}" stroke-width="4" stroke-linecap="round"/><path d="M 78 65 Q 60 70 55 80" stroke="${stroke}" stroke-width="2" fill="none" stroke-linecap="round"><animate attributeName="opacity" values="0;1;0" dur="3s" repeatCount="indefinite"/></path><text x="100" y="180" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Baayi taraf</text>`,
+      ),
+      "neck-circle": s(
+        `<circle cx="100" cy="70" r="22" fill="${fill}" stroke="${stroke}" stroke-width="2"><animateTransform attributeName="transform" type="rotate" values="0 100 100;360 100 100" dur="4s" repeatCount="indefinite"/></circle><line x1="100" y1="92" x2="100" y2="130" stroke="${stroke}" stroke-width="3"/><path d="M 60 145 L 140 145" stroke="${stroke}" stroke-width="4" stroke-linecap="round"/><circle cx="100" cy="70" r="35" fill="none" stroke="${stroke}" stroke-width="1" stroke-dasharray="3,3" opacity=".4"/><text x="100" y="180" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">360° ghumao</text>`,
+      ),
+      "shoulders-loose": s(
+        `<circle cx="100" cy="55" r="15" fill="${fill}" stroke="${stroke}" stroke-width="2"/><path d="M 55 90 Q 100 80 145 90" stroke="${stroke}" stroke-width="4" stroke-linecap="round" fill="none"><animate attributeName="d" values="M 55 90 Q 100 80 145 90;M 55 95 Q 100 90 145 95;M 55 90 Q 100 80 145 90" dur="3s" repeatCount="indefinite"/></path><line x1="100" y1="70" x2="100" y2="140" stroke="${stroke}" stroke-width="3"/><text x="100" y="180" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Kandhe dheele</text>`,
+      ),
+
+      // ── Surya Namaskar poses ──
+      "sn-pranama": s(
+        `<circle cx="100" cy="40" r="13" fill="${fill}" stroke="${stroke}" stroke-width="2"/><line x1="100" y1="53" x2="100" y2="140" stroke="${stroke}" stroke-width="3"/><path d="M 100 70 L 100 95 L 85 105 M 100 95 L 115 105" stroke="${stroke}" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="100" cy="100" r="6" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/><line x1="100" y1="140" x2="85" y2="170" stroke="${stroke}" stroke-width="3"/><line x1="100" y1="140" x2="115" y2="170" stroke="${stroke}" stroke-width="3"/><text x="100" y="190" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Pranamasana</text>`,
+      ),
+      "sn-arms-up": s(
+        `<circle cx="100" cy="55" r="13" fill="${fill}" stroke="${stroke}" stroke-width="2"/><line x1="100" y1="68" x2="100" y2="145" stroke="${stroke}" stroke-width="3"/><line x1="100" y1="80" x2="75" y2="30" stroke="${stroke}" stroke-width="3" stroke-linecap="round"><animate attributeName="x2" values="75;72;75" dur="2s" repeatCount="indefinite"/></line><line x1="100" y1="80" x2="125" y2="30" stroke="${stroke}" stroke-width="3" stroke-linecap="round"><animate attributeName="x2" values="125;128;125" dur="2s" repeatCount="indefinite"/></line><line x1="100" y1="145" x2="85" y2="175" stroke="${stroke}" stroke-width="3"/><line x1="100" y1="145" x2="115" y2="175" stroke="${stroke}" stroke-width="3"/><text x="100" y="195" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Haath upar</text>`,
+      ),
+      "sn-fold": s(
+        `<circle cx="100" cy="130" r="13" fill="${fill}" stroke="${stroke}" stroke-width="2"/><path d="M 100 117 Q 130 100 130 70" stroke="${stroke}" stroke-width="3" fill="none"/><line x1="130" y1="70" x2="115" y2="55" stroke="${stroke}" stroke-width="3"/><line x1="130" y1="70" x2="145" y2="55" stroke="${stroke}" stroke-width="3"/><line x1="105" y1="142" x2="95" y2="175" stroke="${stroke}" stroke-width="3"/><line x1="100" y1="135" x2="105" y2="170" stroke="${stroke}" stroke-width="3"/><text x="100" y="195" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Aage jhuko</text>`,
+      ),
+      "sn-lunge": s(
+        `<circle cx="80" cy="55" r="13" fill="${fill}" stroke="${stroke}" stroke-width="2"/><line x1="80" y1="68" x2="100" y2="130" stroke="${stroke}" stroke-width="3"/><line x1="100" y1="130" x2="65" y2="160" stroke="${stroke}" stroke-width="3"/><line x1="100" y1="130" x2="150" y2="160" stroke="${stroke}" stroke-width="3"/><line x1="65" y1="160" x2="55" y2="170" stroke="${stroke}" stroke-width="3"/><line x1="150" y1="160" x2="160" y2="170" stroke="${stroke}" stroke-width="3"/><line x1="80" y1="85" x2="60" y2="95" stroke="${stroke}" stroke-width="3"/><line x1="80" y1="85" x2="100" y2="95" stroke="${stroke}" stroke-width="3"/><text x="100" y="190" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Ashwa sanchalana</text>`,
+      ),
+      "sn-plank": s(
+        `<circle cx="40" cy="100" r="13" fill="${fill}" stroke="${stroke}" stroke-width="2"/><line x1="53" y1="100" x2="160" y2="100" stroke="${stroke}" stroke-width="4" stroke-linecap="round"/><line x1="160" y1="100" x2="170" y2="130" stroke="${stroke}" stroke-width="3"/><line x1="55" y1="105" x2="50" y2="130" stroke="${stroke}" stroke-width="3"/><line x1="120" y1="100" x2="115" y2="130" stroke="${stroke}" stroke-width="3"/><text x="100" y="170" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Dandasana</text>`,
+      ),
+      "sn-cycle": s(
+        `<circle cx="100" cy="100" r="60" fill="none" stroke="${stroke}" stroke-width="2" stroke-dasharray="5,4"><animateTransform attributeName="transform" type="rotate" values="0 100 100;360 100 100" dur="8s" repeatCount="indefinite"/></circle><circle cx="100" cy="40" r="8" fill="${stroke}"/><circle cx="160" cy="100" r="6" fill="${stroke}" opacity=".7"/><circle cx="100" cy="160" r="6" fill="${stroke}" opacity=".5"/><circle cx="40" cy="100" r="6" fill="${stroke}" opacity=".3"/><text x="100" y="105" text-anchor="middle" fill="${stroke}" font-size="14" font-family="JioType,sans-serif" font-weight="bold">5-10 round</text>`,
+      ),
+
+      // ── Habits ──
+      "walk-slow": s(
+        `<circle cx="100" cy="55" r="13" fill="${fill}" stroke="${stroke}" stroke-width="2"><animate attributeName="cx" values="60;140;60" dur="6s" repeatCount="indefinite"/></circle><line x1="100" y1="68" x2="100" y2="125" stroke="${stroke}" stroke-width="3"><animate attributeName="x1" values="60;140;60" dur="6s" repeatCount="indefinite"/><animate attributeName="x2" values="60;140;60" dur="6s" repeatCount="indefinite"/></line><line x1="100" y1="125" x2="85" y2="160" stroke="${stroke}" stroke-width="3"><animate attributeName="x1" values="60;140;60" dur="6s" repeatCount="indefinite"/><animate attributeName="x2" values="45;125;45" dur="6s" repeatCount="indefinite"/></line><line x1="100" y1="125" x2="115" y2="160" stroke="${stroke}" stroke-width="3"><animate attributeName="x1" values="60;140;60" dur="6s" repeatCount="indefinite"/><animate attributeName="x2" values="75;155;75" dur="6s" repeatCount="indefinite"/></line><text x="100" y="185" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Dheere chalo</text>`,
+      ),
+      "walk-brisk": s(
+        `<circle cx="100" cy="55" r="13" fill="${fill}" stroke="${stroke}" stroke-width="2"><animate attributeName="cx" values="60;140;60" dur="2s" repeatCount="indefinite"/></circle><line x1="100" y1="68" x2="100" y2="125" stroke="${stroke}" stroke-width="3"><animate attributeName="x1" values="60;140;60" dur="2s" repeatCount="indefinite"/><animate attributeName="x2" values="60;140;60" dur="2s" repeatCount="indefinite"/></line><line x1="100" y1="125" x2="85" y2="160" stroke="${stroke}" stroke-width="3"><animate attributeName="x1" values="60;140;60" dur="2s" repeatCount="indefinite"/><animate attributeName="x2" values="40;120;40" dur="2s" repeatCount="indefinite"/></line><line x1="100" y1="125" x2="115" y2="160" stroke="${stroke}" stroke-width="3"><animate attributeName="x1" values="60;140;60" dur="2s" repeatCount="indefinite"/><animate attributeName="x2" values="80;160;80" dur="2s" repeatCount="indefinite"/></line><text x="100" y="185" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Tezi se</text>`,
+      ),
+      shoes: s(
+        `<path d="M 50 110 L 50 130 Q 50 145 70 145 L 120 145 Q 150 145 155 130 L 150 110 Z" fill="${fill}" stroke="${stroke}" stroke-width="2"/><line x1="70" y1="115" x2="115" y2="115" stroke="${stroke}" stroke-width="2"/><line x1="75" y1="120" x2="110" y2="120" stroke="${stroke}" stroke-width="1.5" opacity=".6"/><circle cx="60" cy="135" r="2" fill="${stroke}"/><circle cx="140" cy="135" r="2" fill="${stroke}"/><text x="100" y="175" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Joote pehno</text>`,
+      ),
+      "water-glass": s(
+        `<path d="M 70 50 L 75 160 Q 75 170 85 170 L 115 170 Q 125 170 125 160 L 130 50 Z" fill="rgba(34,197,94,.05)" stroke="${stroke}" stroke-width="2"/><path d="M 73 80 L 127 80" stroke="${stroke}" stroke-width="1" opacity=".4"/><rect x="76" y="100" width="48" height="70" fill="${fill}"><animate attributeName="y" values="170;100" dur="3s" fill="freeze"/><animate attributeName="height" values="0;70" dur="3s" fill="freeze"/></rect><ellipse cx="100" cy="80" rx="3" ry="2" fill="${stroke}"><animate attributeName="cy" values="80;60;40" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite"/></ellipse><text x="100" y="195" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Glass paani</text>`,
+      ),
+      "water-day": s(
+        `<g transform="translate(20,40)"><rect x="0" y="0" width="20" height="30" rx="2" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/></g><g transform="translate(50,40)"><rect x="0" y="0" width="20" height="30" rx="2" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/></g><g transform="translate(80,40)"><rect x="0" y="0" width="20" height="30" rx="2" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/></g><g transform="translate(110,40)"><rect x="0" y="0" width="20" height="30" rx="2" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/></g><g transform="translate(140,40)"><rect x="0" y="0" width="20" height="30" rx="2" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/></g><g transform="translate(35,90)"><rect x="0" y="0" width="20" height="30" rx="2" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/></g><g transform="translate(65,90)"><rect x="0" y="0" width="20" height="30" rx="2" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/></g><g transform="translate(95,90)"><rect x="0" y="0" width="20" height="30" rx="2" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/></g><text x="100" y="170" text-anchor="middle" fill="${stroke}" font-size="22" font-family="JioType,sans-serif" font-weight="bold">8 glass</text><text x="100" y="190" text-anchor="middle" fill="${stroke}" font-size="11" font-family="JioType,sans-serif" opacity=".7">poora din</text>`,
+      ),
+      "eye-far": s(
+        `<ellipse cx="100" cy="100" rx="60" ry="35" fill="${fill}" stroke="${stroke}" stroke-width="2"/><circle cx="100" cy="100" r="18" fill="rgba(34,197,94,.3)" stroke="${stroke}" stroke-width="1.5"><animate attributeName="cx" values="100;130;100;70;100" dur="6s" repeatCount="indefinite"/></circle><circle cx="100" cy="100" r="6" fill="${stroke}"><animate attributeName="cx" values="100;130;100;70;100" dur="6s" repeatCount="indefinite"/></circle><text x="100" y="170" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Door dekho</text>`,
+      ),
+      "eye-blink": s(
+        `<path d="M 40 100 Q 100 70 160 100 Q 100 130 40 100 Z" fill="${fill}" stroke="${stroke}" stroke-width="2"><animate attributeName="d" values="M 40 100 Q 100 70 160 100 Q 100 130 40 100 Z;M 40 100 Q 100 95 160 100 Q 100 105 40 100 Z;M 40 100 Q 100 70 160 100 Q 100 130 40 100 Z" dur="1.5s" repeatCount="indefinite"/></path><circle cx="100" cy="100" r="14" fill="${stroke}"><animate attributeName="opacity" values="1;0;1" dur="1.5s" repeatCount="indefinite"/></circle><text x="100" y="160" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">3-4 baar blink</text>`,
+      ),
+      "screen-timer": s(
+        `<rect x="40" y="50" width="120" height="80" rx="6" fill="${fill}" stroke="${stroke}" stroke-width="2"/><rect x="48" y="58" width="104" height="64" fill="rgba(34,197,94,.05)" stroke="${stroke}" stroke-width="1" opacity=".4"/><rect x="80" y="130" width="40" height="6" rx="3" fill="${stroke}"/><rect x="60" y="136" width="80" height="4" rx="2" fill="${fill}" stroke="${stroke}" stroke-width="1"/><circle cx="100" cy="90" r="20" fill="none" stroke="${stroke}" stroke-width="2"/><path d="M 100 75 L 100 90 L 112 90" stroke="${stroke}" stroke-width="2" fill="none" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" values="0 100 90;360 100 90" dur="4s" repeatCount="indefinite"/></path><text x="100" y="175" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Har 20 min</text>`,
+      ),
+      notebook: s(
+        `<rect x="50" y="40" width="100" height="130" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="2"/><line x1="50" y1="60" x2="150" y2="60" stroke="${stroke}" stroke-width="1.5"/><line x1="65" y1="80" x2="135" y2="80" stroke="${stroke}" stroke-width="1" opacity=".6"/><line x1="65" y1="95" x2="135" y2="95" stroke="${stroke}" stroke-width="1" opacity=".6"/><line x1="65" y1="110" x2="125" y2="110" stroke="${stroke}" stroke-width="1" opacity=".6"/><circle cx="58" cy="50" r="2" fill="${stroke}"/><circle cx="58" cy="160" r="2" fill="${stroke}"/><line x1="155" y1="40" x2="170" y2="20" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round"/><text x="100" y="190" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Copy aur pen</text>`,
+      ),
+      "pen-write": s(
+        `<rect x="40" y="60" width="120" height="100" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="2"/><path d="M 60 85 L 140 85" stroke="${stroke}" stroke-width="2" stroke-dasharray="80,80" stroke-dashoffset="80"><animate attributeName="stroke-dashoffset" values="80;0" dur="2s" repeatCount="indefinite"/></path><path d="M 60 110 L 130 110" stroke="${stroke}" stroke-width="2" stroke-dasharray="70,70" stroke-dashoffset="70"><animate attributeName="stroke-dashoffset" values="70;0" dur="2s" begin="0.6s" repeatCount="indefinite"/></path><path d="M 60 135 L 120 135" stroke="${stroke}" stroke-width="2" stroke-dasharray="60,60" stroke-dashoffset="60"><animate attributeName="stroke-dashoffset" values="60;0" dur="2s" begin="1.2s" repeatCount="indefinite"/></path><line x1="130" y1="40" x2="145" y2="30" stroke="${stroke}" stroke-width="3" stroke-linecap="round"><animate attributeName="x1" values="130;120;110;130" dur="2s" repeatCount="indefinite"/><animate attributeName="x2" values="145;135;125;145" dur="2s" repeatCount="indefinite"/></line><text x="100" y="185" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Likho</text>`,
+      ),
+      "meditate-pose": s(
+        `<line x1="100" y1="40" x2="100" y2="120" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/><circle cx="100" cy="35" r="14" fill="${fill}" stroke="${stroke}" stroke-width="2"/><path d="M 60 145 Q 100 130 140 145 L 140 160 Q 100 150 60 160 Z" fill="${fill}" stroke="${stroke}" stroke-width="2"/><path d="M 70 100 L 90 105 M 110 105 L 130 100" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/><circle cx="100" cy="35" r="22" fill="none" stroke="${stroke}" stroke-width="1.5" opacity=".4"><animate attributeName="r" values="22;30;22" dur="4s" repeatCount="indefinite"/><animate attributeName="opacity" values=".4;0;.4" dur="4s" repeatCount="indefinite"/></circle><text x="100" y="185" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Dhyan mudra</text>`,
+      ),
+      "mind-thoughts": s(
+        `<circle cx="100" cy="60" r="22" fill="${fill}" stroke="${stroke}" stroke-width="2"/><circle cx="60" cy="40" r="6" fill="none" stroke="${stroke}" stroke-width="1.5" opacity=".5"><animate attributeName="opacity" values=".5;0" dur="3s" repeatCount="indefinite"/></circle><circle cx="140" cy="40" r="5" fill="none" stroke="${stroke}" stroke-width="1.5" opacity=".5"><animate attributeName="opacity" values=".5;0" dur="3s" begin="0.5s" repeatCount="indefinite"/></circle><circle cx="50" cy="80" r="4" fill="none" stroke="${stroke}" stroke-width="1.5" opacity=".4"><animate attributeName="opacity" values=".4;0" dur="3s" begin="1s" repeatCount="indefinite"/></circle><circle cx="150" cy="80" r="4" fill="none" stroke="${stroke}" stroke-width="1.5" opacity=".4"><animate attributeName="opacity" values=".4;0" dur="3s" begin="1.5s" repeatCount="indefinite"/></circle><line x1="100" y1="82" x2="100" y2="130" stroke="${stroke}" stroke-width="3"/><path d="M 70 145 Q 100 135 130 145" stroke="${stroke}" stroke-width="3" fill="none"/><text x="100" y="175" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Vichar aate jaate</text>`,
+      ),
+      still: s(
+        `<line x1="100" y1="40" x2="100" y2="120" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/><circle cx="100" cy="35" r="14" fill="${fill}" stroke="${stroke}" stroke-width="2"/><path d="M 60 145 Q 100 130 140 145 L 140 160 Q 100 150 60 160 Z" fill="${fill}" stroke="${stroke}" stroke-width="2"/><circle cx="100" cy="100" r="80" fill="none" stroke="${stroke}" stroke-width="1" opacity=".15"><animate attributeName="opacity" values=".15;.4;.15" dur="5s" repeatCount="indefinite"/></circle><text x="100" y="185" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif">Shaant</text>`,
+      ),
+      daily: s(
+        `<circle cx="100" cy="100" r="55" fill="none" stroke="${stroke}" stroke-width="2"/><path d="M 100 45 A 55 55 0 1 1 99 45" fill="none" stroke="${stroke}" stroke-width="4" stroke-linecap="round"><animate attributeName="stroke-dasharray" values="0,346;346,0" dur="4s" repeatCount="indefinite"/></path><text x="100" y="95" text-anchor="middle" fill="${stroke}" font-size="22" font-family="JioType,sans-serif" font-weight="bold">Roz</text><text x="100" y="120" text-anchor="middle" fill="${stroke}" font-size="13" font-family="JioType,sans-serif" opacity=".7">karna hai</text>`,
+      ),
+    };
+  })();
+
+  // v5.4 render helper — sets the move-ov-anim container to the SVG (or emoji fallback).
+  // TODO(port): Lottie branch deferred — lottie-web isn't bundled because layout.tsx
+  // is outside the file-allowlist. Source code has the Lottie path; restore later.
+  let _lottieInstance = null;
+  function renderStepAnim(animKey, lottieUrl) {
+    const el = document.getElementById("move-ov-anim");
+    if (!el) return;
+    if (_lottieInstance) {
+      try {
+        _lottieInstance.destroy();
+      } catch (e) {}
+      _lottieInstance = null;
+    }
+    el.classList.remove("pulse");
+    el.style.background = "transparent";
+    el.style.border = "none";
+
+    // 1) Lottie path — only if lottie-web is loaded at runtime (not bundled here).
+    if (lottieUrl && typeof window.lottie !== "undefined") {
+      el.innerHTML = "";
+      try {
+        _lottieInstance = window.lottie.loadAnimation({
+          container: el,
+          renderer: "svg",
+          loop: true,
+          autoplay: true,
+          path: lottieUrl,
+        });
+        return;
+      } catch (e) {
+        console.warn("[anim] Lottie load failed, falling back to SVG:", e);
+      }
+    }
+
+    // 2) SVG library path
+    if (animKey && ANIM_SVG[animKey]) {
+      el.innerHTML = ANIM_SVG[animKey];
+      return;
+    }
+
+    // 3) Emoji fallback (existing behavior — used by remedy kits which don't have anim)
+    el.classList.add("pulse");
+    el.style.background = "rgba(34,197,94,.1)";
+    el.style.border = "2px solid rgba(34,197,94,.3)";
+    el.style.fontSize = "80px";
+    el.innerHTML = (_moveSkill && _moveSkill.emoji) || "🌬";
+  }
+
   const MOVEMENT_SKILLS = {
     "anulom-vilom": {
       emoji: "🌬",
       title: "Anulom-Vilom Pranayam",
       durSec: 180,
+      anim: ["sit-spine", "nostril-left-in", "nostril-right-out", "nostril-alt", "breath-cycle"],
       steps: [
         "Aaram se baitho. Reedh ki haddi seedhi.",
         "Daahini naak band karo angoothe se. Baayi se saans lo (4 sec).",
@@ -6313,6 +8437,7 @@ Rules:
       emoji: "💨",
       title: "Kapalbhati",
       durSec: 120,
+      anim: ["sit-spine", "breath-in", "sharp-exhale", "sharp-exhale", "still"],
       steps: [
         "Vajrasana mein baitho ya kursi par seedha.",
         "Naak se halki saans andar lo.",
@@ -6332,6 +8457,7 @@ Rules:
       emoji: "🐝",
       title: "Bhramari Pranayam",
       durSec: 150,
+      anim: ["ears-blocked", "breath-in", "bee-hum", "bee-hum", "still"],
       steps: [
         "Aankhein band, kaano mein angoothe se daba lo.",
         "Naak se gehri saans lo.",
@@ -6351,6 +8477,7 @@ Rules:
       emoji: "🧘",
       title: "Vajrasana",
       durSec: 300,
+      anim: ["kneel", "kneel", "sit-spine", "sit-spine", "kneel"],
       steps: [
         "Ghutno ke bal baitho — paav peeche.",
         "Edi par baith jao, paanv ek doosre se sata ke.",
@@ -6370,6 +8497,7 @@ Rules:
       emoji: "☀️",
       title: "Surya Namaskar (1 round)",
       durSec: 90,
+      anim: ["sn-pranama", "sn-arms-up", "sn-fold", "sn-lunge", "sn-plank", "sn-cycle"],
       steps: [
         "Pranamasana — haath jodke khade ho.",
         "Hasta Uttanasana — saans lete hue haath upar.",
@@ -6383,6 +8511,7 @@ Rules:
       emoji: "🦒",
       title: "Gardan ki exercises",
       durSec: 120,
+      anim: ["sit-spine", "neck-right", "neck-left", "neck-circle", "shoulders-loose"],
       steps: [
         "Seedhe baitho. Kandhe dheele.",
         "Gardan dheere se daahini taraf — 5 sec ruko.",
@@ -6395,6 +8524,7 @@ Rules:
       emoji: "🦵",
       title: "Malasana (squat)",
       durSec: 90,
+      anim: ["feet-wide", "squat-down", "squat-down", "squat-down", "squat-down"],
       steps: [
         "Pair kandhe ki chaudaai par.",
         "Dheere dheere niche baitho — squat position.",
@@ -6407,6 +8537,7 @@ Rules:
       emoji: "🛌",
       title: "Shavasana",
       durSec: 240,
+      anim: ["lie-still", "lie-still", "lie-still", "breath-cycle", "lie-still"],
       steps: [
         "Peeth ke bal lete jao. Aankhein band.",
         "Pair thode khule. Haath body se thoda door.",
@@ -6427,6 +8558,7 @@ Rules:
       emoji: "🚶",
       title: "Roz ki 30-min walk",
       durSec: 1800,
+      anim: ["shoes", "walk-slow", "walk-brisk", "walk-slow", "daily"],
       steps: [
         "Comfortable shoes pehno. Subah ya sham — jab time mile.",
         "Pehle 5 min dheere chalo — body warm-up.",
@@ -6446,6 +8578,7 @@ Rules:
       emoji: "💧",
       title: "Pani peene ka routine",
       durSec: 60,
+      anim: ["water-glass", "water-glass", "water-glass", "water-glass", "water-day"],
       steps: [
         "Subah uthke 2 glass paani peelo — khali pet.",
         "Naashte ke 30 min pehle 1 glass.",
@@ -6465,6 +8598,7 @@ Rules:
       emoji: "👁",
       title: "20-20-20 Aankho ka aaram",
       durSec: 60,
+      anim: ["screen-timer", "eye-far", "eye-far", "eye-blink", "daily"],
       steps: [
         "Har 20 minute screen ke baad — break lo.",
         "20 sec ke liye dur dekho — 20 feet.",
@@ -6484,6 +8618,7 @@ Rules:
       emoji: "📔",
       title: "5-min raat ki diary",
       durSec: 300,
+      anim: ["notebook", "pen-write", "pen-write", "pen-write", "daily"],
       steps: [
         "Sone se pehle ek copy aur pen lo.",
         "3 cheezein likho — aaj kya accha hua.",
@@ -6503,6 +8638,7 @@ Rules:
       emoji: "🧘‍♀️",
       title: "5-min mindful saans",
       durSec: 300,
+      anim: ["meditate-pose", "breath-cycle", "mind-thoughts", "still", "daily"],
       steps: [
         "Aaram se baitho. Reedh seedhi. Aankhein band.",
         "Saans pe dhyan lo — andar aati hai, bahar jaati hai.",
@@ -6518,40 +8654,88 @@ Rules:
         "रोज़ सुबह या रात। मन शांत, focus तेज़।",
       ],
     },
+    // v5.5.1: box breathing — a very commonly-requested 4-4-4-4 calming technique.
+    // Added after voice-mode QA: user asked "बॉक्स ब्रीडिंग कैसे करूं" and detection
+    // returned null (skill didn't exist). Now it does + matches Devanagari too.
+    "box-breathing": {
+      emoji: "🟦",
+      title: "Box Breathing (4-4-4-4)",
+      durSec: 240,
+      anim: ["sit-spine", "breath-in", "breath-hold", "breath-out", "breath-cycle"],
+      steps: [
+        "Aaram se baitho. Reedh seedhi, kandhe dheele.",
+        "4 second mein naak se saans andar lo — dheere, gehri.",
+        "4 second saans roko — pet aur sina bhara hua.",
+        "4 second mein saans bahar nikalo — naak ya muh se.",
+        "4 second rukao. Yeh 1 round. Aise 5-10 round karo.",
+      ],
+      tts: [
+        "आराम से बैठो। रीढ़ सीधी, कंधे ढीले।",
+        "चार सेकंड में नाक से साँस अंदर लो — धीरे, गहरी।",
+        "चार सेकंड साँस रोको — पेट और सीना भरा हुआ।",
+        "चार सेकंड में साँस बाहर निकालो — नाक या मुँह से।",
+        "चार सेकंड रुको। यह एक round हुआ। ऐसे पाँच से दस round करो।",
+      ],
+    },
   };
+  // v5.5.1: detection now ALSO matches Devanagari aliases. Earlier regexes were
+  // Roman-only — Sarvam STT returns Devanagari for hi-IN, so detection failed on
+  // every voice-mode question even when the skill was in the catalog.
+  // Note: do NOT use \b with Devanagari — JS \b is ASCII-only. Use (\s|$|[.,!?।])
+  // or bare matches without anchoring.
   function detectMovement(text) {
     if (!text) return null;
     const t = text.toLowerCase();
-    if (/anulom|vilom|nadi\s*shodhana/.test(t))
+    if (/anulom|vilom|nadi\s*shodhana|अनुलोम|विलोम|नाड़ी\s*शोधन/.test(t))
       return ["anulom-vilom", MOVEMENT_SKILLS["anulom-vilom"]];
-    if (/kapalbhati/.test(t)) return ["kapalbhati", MOVEMENT_SKILLS.kapalbhati];
-    if (/bhramari|bhinbh/.test(t)) return ["bhramari", MOVEMENT_SKILLS.bhramari];
-    if (/vajrasana/.test(t)) return ["vajrasana", MOVEMENT_SKILLS.vajrasana];
-    if (/surya\s*namaskar/.test(t)) return ["surya-namaskar", MOVEMENT_SKILLS["surya-namaskar"]];
-    if (/(gardan|neck)\s*(rotation|exercise|ghumao|hila)/.test(t))
+    if (/kapalbhati|कपालभाति|कपाल\s*भाति/.test(t))
+      return ["kapalbhati", MOVEMENT_SKILLS.kapalbhati];
+    if (/bhramari|bhinbh|भ्रामरी|भ्रमरी/.test(t)) return ["bhramari", MOVEMENT_SKILLS.bhramari];
+    if (/vajrasana|वज्रासन/.test(t)) return ["vajrasana", MOVEMENT_SKILLS.vajrasana];
+    if (/surya\s*namaskar|सूर्य\s*नमस्कार/.test(t))
+      return ["surya-namaskar", MOVEMENT_SKILLS["surya-namaskar"]];
+    if (
+      /(gardan|neck)\s*(rotation|exercise|ghumao|hila)|गर्दन\s*(घुम|हिल|एक्सरसाइज़|exercise)/.test(
+        t,
+      )
+    )
       return ["gardan", MOVEMENT_SKILLS.gardan];
-    if (/malasana|squat/.test(t)) return ["malasana", MOVEMENT_SKILLS.malasana];
-    if (/shavasana|relaxation\s*pose/.test(t)) return ["shavasana", MOVEMENT_SKILLS.shavasana];
+    if (/malasana|squat|मालासन|स्क्वैट/.test(t)) return ["malasana", MOVEMENT_SKILLS.malasana];
+    if (/shavasana|relaxation\s*pose|शवासन/.test(t))
+      return ["shavasana", MOVEMENT_SKILLS.shavasana];
+    // v5.5.1: box breathing — Roman + Devanagari (बॉक्स/बाक्स/चौकोर/4-4-4)
+    if (
+      /box\s*breath|box\s*br[ie]+thing|4[\s-]?4[\s-]?4[\s-]?4|बॉक्स\s*ब्र|बाक्स\s*ब्र|चौकोर\s*साँस|चार\s*चार\s*साँस/.test(
+        t,
+      )
+    )
+      return ["box-breathing", MOVEMENT_SKILLS["box-breathing"]];
     // v4.2: wellness habit detection — common lifestyle terms that fire a step card
     if (
-      /(brisk\s*walk|daily\s*walk|tehlna|tehlne|chalna|walking|walk\s*karo|30\s*minute\s*walk|metabolism)/.test(
+      /(brisk\s*walk|daily\s*walk|tehlna|tehlne|chalna|walking|walk\s*karo|30\s*minute\s*walk|metabolism)|टहलन|पैदल\s*चल|रोज़\s*चलन|वॉक\s*कर/.test(
         t,
       )
     )
       return ["daily-walk", MOVEMENT_SKILLS["daily-walk"]];
     if (
-      /(hydration|pani\s*peena|pani\s*piye|water\s*routine|2-3\s*glass\s*pani|glass\s*paani|glasses?\s*water)/.test(
+      /(hydration|pani\s*peena|pani\s*piye|water\s*routine|2-3\s*glass\s*pani|glass\s*paani|glasses?\s*water)|पानी\s*(पी|पीन|पिय|कितन|कब|रोज़|का\s*routine)|आठ\s*गिलास/.test(
         t,
       )
     )
       return ["hydration", MOVEMENT_SKILLS.hydration];
     if (
-      /(20[\s-]?20[\s-]?20|screen\s*break|aankho\s*ka\s*aaram|eye\s*strain|laptop\s*break)/.test(t)
+      /(20[\s-]?20[\s-]?20|screen\s*break|aankho\s*ka\s*aaram|eye\s*strain|laptop\s*break)|आँखों\s*का\s*आराम|स्क्रीन\s*break|बीस\s*बीस\s*बीस/.test(
+        t,
+      )
     )
       return ["screen-break", MOVEMENT_SKILLS["screen-break"]];
-    if (/(journal|diary|likh\s*lo|raat\s*ko\s*likh|gratitude)/.test(t))
+    if (/(journal|diary|likh\s*lo|raat\s*ko\s*likh|gratitude)|डायरी|जर्नल|रात\s*को\s*लिख/.test(t))
       return ["journaling", MOVEMENT_SKILLS.journaling];
-    if (/(meditation|dhyan|mindful|5\s*minute\s*shanti|saans\s*pe\s*dhyan)/.test(t))
+    if (
+      /(meditation|dhyan|mindful|5\s*minute\s*shanti|saans\s*pe\s*dhyan)|ध्यान|मेडिटेशन|माइंडफुल/.test(
+        t,
+      )
+    )
       return ["meditation", MOVEMENT_SKILLS.meditation];
     return null;
   }
@@ -6579,10 +8763,22 @@ Rules:
   function openMovement(key) {
     _moveSkill = MOVEMENT_SKILLS[key];
     if (!_moveSkill) return;
+    // v5.5.4: belt-and-braces — kill any in-flight chat/TTS audio before the
+    // step overlay starts speaking. Prevents 2-voice overlap if the user tapped
+    // a fallback chip / confirmation while the previous reply was still talking.
+    if (_currentAudio) {
+      try {
+        _currentAudio.pause();
+      } catch (e) {}
+      _currentAudio = null;
+    }
+    try {
+      window.speechSynthesis && window.speechSynthesis.cancel();
+    } catch (e) {}
     _moveStepIdx = 0;
     document.getElementById("move-ov").classList.add("on");
     document.getElementById("move-ov-title").textContent = _moveSkill.title;
-    document.getElementById("move-ov-anim").textContent = _moveSkill.emoji;
+    // v5.4: paint first-step animation immediately (renderStepAnim called again by showMoveStep)
     document.getElementById("move-ov-progress").innerHTML = _moveSkill.steps
       .map(() => '<div class="move-ov-progress-dot"></div>')
       .join("");
@@ -6597,6 +8793,14 @@ Rules:
     dots.forEach((d, i) => d.classList.toggle("done", i <= idx));
     document.getElementById("move-ov-counter").textContent =
       idx + 1 + " / " + _moveSkill.steps.length;
+    // v5.4: per-step animation. ONLY runs for MOVEMENT_SKILLS that declare an
+    // anim[] array. REMEDY_KITS (cooking — no animation) and ACUPRESSURE_POINTS
+    // (paints its own body-silhouette SVG in openAcupressure) skip this block.
+    if (_moveSkill.anim || _moveSkill.lottie) {
+      const animKey = (_moveSkill.anim && _moveSkill.anim[idx]) || null;
+      const lottieUrl = (_moveSkill.lottie && _moveSkill.lottie[idx]) || null;
+      renderStepAnim(animKey, lottieUrl);
+    }
     // v4.2: prefer pre-translated Devanagari tts[] for clean read-aloud (avoids
     // ambiguous Roman words like "choddo" being pronounced incorrectly).
     const sayText = (_moveSkill.tts && _moveSkill.tts[idx]) || _moveSkill.steps[idx];
@@ -6635,6 +8839,13 @@ Rules:
         _currentAudio.pause();
       } catch (e) {}
       _currentAudio = null;
+    }
+    // v5.4: tear down any active Lottie instance so it doesn't keep rendering off-screen
+    if (_lottieInstance) {
+      try {
+        _lottieInstance.destroy();
+      } catch (e) {}
+      _lottieInstance = null;
     }
     _moveSkill = null;
     _moveStepIdx = 0;
