@@ -111,13 +111,15 @@ export function VerticalList() {
           return (
             <li key={v.slug}>
               {"externalUrl" in v && v.externalUrl ? (
-                <a
-                  href={v.externalUrl}
-                  className="flex items-center justify-between no-underline transition-transform duration-100 active:scale-95"
+                <button
+                  onClick={() => {
+                    window.location.href = v.externalUrl!;
+                  }}
                   onTouchStart={() => impactLight()}
+                  className="flex w-full cursor-pointer items-center justify-between border-none bg-transparent p-0 transition-transform duration-100 active:scale-95"
                 >
                   {inner}
-                </a>
+                </button>
               ) : (
                 <Link
                   href={`/${v.slug}`}

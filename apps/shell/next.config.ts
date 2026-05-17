@@ -33,6 +33,22 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // In `next dev`, proxy /astro/*.html requests to the astro dev server so
+  // direct HTML navigation works without a build. Static export ignores
+  // rewrites, so this only affects dev.
+  async rewrites() {
+    if (process.env.NODE_ENV !== "development") return [];
+    return [
+      {
+        source: "/astro/:path*.html",
+        destination: "http://localhost:3002/astro/:path*.html",
+      },
+      {
+        source: "/astro/:path*",
+        destination: "http://localhost:3002/astro/:path*",
+      },
+    ];
+  },
 };
 
 export default withSerwist(nextConfig);
