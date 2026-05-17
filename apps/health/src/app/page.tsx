@@ -7,12 +7,14 @@ export default function SehatSaathi() {
   const openaiKey = process.env.NEXT_PUBLIC_OPENAI_KEY ?? "";
   const groqKey = process.env.NEXT_PUBLIC_GROQ_KEY ?? "";
   const sarvamKey = process.env.NEXT_PUBLIC_SARVAM_KEY ?? "";
+  // v6.3: Cerebras Cloud — primary LLM provider, hosts Llama 3.3 70B, free tier
+  const cerebrasKey = process.env.NEXT_PUBLIC_CEREBRAS_KEY ?? "";
 
   return (
     <>
       {/* 1. Config — inject API keys into window so runtime can pick them up */}
       <Script id="ss-config" strategy="afterInteractive">
-        {`window.__SS_CONFIG__ = { openaiKey: "${openaiKey}", groqKey: "${groqKey}", sarvamKey: "${sarvamKey}" };`}
+        {`window.__SS_CONFIG__ = { openaiKey: "${openaiKey}", groqKey: "${groqKey}", sarvamKey: "${sarvamKey}", cerebrasKey: "${cerebrasKey}" };`}
       </Script>
 
       {/* 2. PDF.js — used by the Lab interpreter screen */}
@@ -28,6 +30,14 @@ export default function SehatSaathi() {
       {/* basePath=/health prefixes public files in dev AND the file lands at
           /health/sehat-saathi-runtime.js in the Capacitor bundle (via postbuild cpSync). */}
       <Script src="/health/sehat-saathi-runtime.js" strategy="afterInteractive" />
+
+      {/* 4. v6.2: Lottie player for the Dadi Magic Walkthrough. Loaded lazily so
+          chat-only sessions don't pay the kB. Runtime checks for window.lottie
+          before using it; remedies without Lottie URLs fall back to inline SVG. */}
+      <Script
+        src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"
+        strategy="lazyOnload"
+      />
 
       <div id="app">
         {/* ══════════════ HOME SCREEN ══════════════ */}
@@ -111,20 +121,28 @@ export default function SehatSaathi() {
             <div className="home-section">
               <h3 className="home-section-title">Your Assistants</h3>
               <div className="assistants-row" id="assistants-row">
-                {/* Sehat Saathi — LIVE */}
+                {/* Sehat Saathi — LIVE. v6.1: persona-health.png is a male doctor figure
+                   which conflicts with the Dadi/Nani persona the system prompt + CLAUDE.md
+                   define. Using an emoji-based Dadi avatar until a proper PNG is ready. */}
                 <div className="assistant-card" onClick={() => enterHub()}>
                   <div className="assistant-avatar active-border" id="av-sehat">
-                    <img
-                      src="https://sunit1986.github.io/design-prototypes/Assets/persona-health.png"
-                      alt="Sehat Saathi"
-                      loading="lazy"
+                    <div
+                      role="img"
+                      aria-label="Sehat Saathi Dadi"
                       style={{
                         width: "100%",
                         height: "100%",
-                        objectFit: "cover",
-                        display: "block",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background:
+                          "linear-gradient(135deg, #fde68a 0%, #fb923c 55%, #b45309 100%)",
+                        fontSize: "42px",
+                        lineHeight: 1,
                       }}
-                    />
+                    >
+                      👵🏽
+                    </div>
                   </div>
                   <span className="assistant-name">
                     Sehat
@@ -386,47 +404,106 @@ export default function SehatSaathi() {
               {/* JS renders renderFocusHome() */}
             </div>
 
-            {/* v5.1: Compact warm hero */}
-            <div className="tri-hero">
-              <h1>
-                Namaste<span id="hub3-name"></span> 🙏
-              </h1>
-              <p>Aaj kaisi sehat banayein?</p>
+            {/* v6.0: Warm hero — time-aware greeting hydrated by renderWarmHero() */}
+            <div className="warm-hero" id="warm-hero">
+              {/* JS renders */}
             </div>
 
-            {/* v5: Aham kaam — prescription + lab as first-class entry points (no longer buried in rail) */}
-            <div className="aham-row">
-              <button className="aham-card" onClick={() => startFeature("rx")}>
-                <span className="aham-card-pill" id="aham-rx-pill">
-                  Scan
-                </span>
-                <div className="aham-card-emoji">💊</div>
-                <div className="aham-card-name">Dawai parchi</div>
-                <div className="aham-card-sub">Scan karo · reminder lago · ghar mangao</div>
-              </button>
-              <button className="aham-card warm" onClick={() => startFeature("lab")}>
-                <span className="aham-card-pill">AI</span>
-                <div className="aham-card-emoji">🧪</div>
-                <div className="aham-card-name">Lab report</div>
-                <div className="aham-card-sub">Photo ya PDF · asaan zubaan mein samjhao</div>
-              </button>
+            {/* v6.0: Active Choice — single contextual nudge picked from chatHistory / time / state */}
+            <div className="active-choice-card" id="active-choice-card">
+              {/* JS renders */}
             </div>
 
-            {/* v5.2: Sunita home — auto-shown when profile.age >= 40 OR profile.scope === 'household'.
-               Hidden on body.sunita removal; the dense grids below get `dense-only` so they hide when Sunita mode is on. */}
+            {/* v6.1: Talk to Dadi — voice-first hero card with rotating placeholder + chip rail.
+               Replaces the bottom bar's hub-input (input moved here so it sits prominent, not buried). */}
+            <div className="talk-card">
+              <div className="talk-card-row">
+                <input
+                  className="talk-card-input"
+                  id="hub-input"
+                  placeholder="Dadi se kuch bhi kahein…"
+                  onKeyDown={(e) => hubKey(e)}
+                />
+                <button
+                  className="talk-card-mic"
+                  id="hub-speak"
+                  onClick={() => toggleVoice("hub")}
+                  aria-label="Dadi se awaaz mein baat karein"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+                    <path
+                      d="M12 2a3 3 0 00-3 3v6a3 3 0 006 0V5a3 3 0 00-3-3z"
+                      fill="currentColor"
+                    />
+                    <path
+                      d="M19 11a7 7 0 01-14 0M12 18v3"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <div className="talk-card-chip-rail" id="talk-chip-rail">
+                {/* JS renders chip set */}
+              </div>
+            </div>
+
+            {/* v6.0: Four warm exits — Tabiyat (nushka), Tan-Man (wellness), Report (lab), Dawai (rx) */}
+            <div className="exit-section">
+              <div className="exit-section-lbl">Aaj kya karna hai?</div>
+              <div className="exit-grid">
+                <button
+                  className="exit-tile tile-nushka"
+                  onClick={() => goToFeature("nushke")}
+                  aria-label="Tabiyat poochho"
+                >
+                  <div className="exit-tile-emoji">🌿</div>
+                  <div className="exit-tile-title">Tabiyat poochho</div>
+                  <div className="exit-tile-sub">Sir dard, sardi, pet — Dadi se kahein</div>
+                </button>
+                <button
+                  className="exit-tile tile-wellness"
+                  onClick={() => goToFeature("wellness")}
+                  aria-label="Tan-Man ke saath"
+                >
+                  <div className="exit-tile-emoji">🧘</div>
+                  <div className="exit-tile-title">Tan-Man ke saath</div>
+                  <div className="exit-tile-sub">Saans, neend, energy — chhote skills</div>
+                </button>
+                <button
+                  className="exit-tile tile-lab"
+                  onClick={() => startFeature("lab")}
+                  aria-label="Report samjho"
+                >
+                  <div className="exit-tile-emoji">🧪</div>
+                  <div className="exit-tile-title">Report samjho</div>
+                  <div className="exit-tile-sub">Photo ya PDF — asaan zubaan</div>
+                </button>
+                <button
+                  className="exit-tile tile-dawai"
+                  onClick={() => startFeature("rx")}
+                  aria-label="Dawai ka time"
+                >
+                  <div className="exit-tile-emoji">💊</div>
+                  <div className="exit-tile-title">Dawai ka time</div>
+                  <div className="exit-tile-sub">Parchi scan · reminder · ghar mangao</div>
+                </button>
+              </div>
+            </div>
+
+            {/* v6.0: Aaj ka safar — 6-step gentle path (visual breadcrumb, not habit-tracking) */}
+            <div className="safar-path" id="safar-path">
+              {/* JS renders */}
+            </div>
+
+            {/* v5.2 + v6.0: Sunita home — auto-shown when profile.age >= 40 OR profile.scope === 'household'.
+               Hidden on body.sunita removal; the dense grids below get `dense-only` so they hide when Sunita mode is on.
+               v6.0: the original 4-tile "Aham kaam" block (Dawai parchi + Lab samjho + Dadi ki kahani + Doctor se baat) was a
+               near-duplicate of the new exit-grid above. Dawai + Lab are covered there; only kahani + doctor remain here. */}
             <div className="sunita-home">
-              <div className="sun-lbl">Aham kaam</div>
+              <div className="sun-lbl">Aur kuch?</div>
               <div className="sun-grid">
-                <button className="sunita-tile primary" onClick={() => startFeature("rx")}>
-                  <div className="sunita-tile-emoji">💊</div>
-                  <div className="sunita-tile-name">Dawai parchi</div>
-                  <div className="sunita-tile-sub">Scan · reminder · ghar mangao</div>
-                </button>
-                <button className="sunita-tile warm" onClick={() => startFeature("lab")}>
-                  <div className="sunita-tile-emoji">🧪</div>
-                  <div className="sunita-tile-name">Lab samjho</div>
-                  <div className="sunita-tile-sub">Photo ya PDF · asaan zubaan</div>
-                </button>
                 <button className="sunita-tile" onClick={() => playStory("general")}>
                   <div className="sunita-tile-emoji">📖</div>
                   <div className="sunita-tile-name">Dadi ki kahani</div>
@@ -439,422 +516,516 @@ export default function SehatSaathi() {
                 </button>
               </div>
 
-              <div className="sun-lbl">Aaj kya takleef hai?</div>
-              <div className="sun-grid">
-                <button className="sun-tak-tile" onClick={() => startFocus("sir-dard")}>
-                  <div className="sun-tak-emoji">🤕</div>
-                  <div className="sun-tak-name">Sir dard</div>
-                  <div className="sun-tak-sub">Headache</div>
-                </button>
-                <button className="sun-tak-tile" onClick={() => startFocus("sardi-khansi")}>
-                  <div className="sun-tak-emoji">🤧</div>
-                  <div className="sun-tak-name">Sardi-khansi</div>
-                  <div className="sun-tak-sub">Cold, cough</div>
-                </button>
-                <button className="sun-tak-tile" onClick={() => startFocus("pet")}>
-                  <div className="sun-tak-emoji">🤢</div>
-                  <div className="sun-tak-name">Pet ki dikkat</div>
-                  <div className="sun-tak-sub">Acidity, gas</div>
-                </button>
-                <button className="sun-tak-tile" onClick={() => startFocus("neend")}>
-                  <div className="sun-tak-emoji">😴</div>
-                  <div className="sun-tak-name">Neend nahi</div>
-                  <div className="sun-tak-sub">Sleep issues</div>
-                </button>
-              </div>
-
-              <details className="sun-more">
-                <summary>Aur dekho — wellness aur baaki takleef</summary>
-                <div className="sun-more-body">
-                  <div className="sun-lbl" style={{ paddingTop: "0" }}>
-                    Sehat banao
+              {/* v6.1: removed "Aaj kya takleef hai?" sun-grid + the Aur dekho details
+                 block. The chip rail in .talk-card above (and free-form voice/text input)
+                 covers these intents conversationally; the deeper Energy/Mann shanti/Pachhan
+                 wellness paths reach via the "Tan-Man ke saath" exit tile or by speaking. */}
+              {false && (
+                <details className="sun-more">
+                  <summary>Aur dekho — wellness aur baaki takleef</summary>
+                  <div className="sun-more-body">
+                    <div className="sun-lbl" style={{ paddingTop: "0" }}>
+                      Sehat banao
+                    </div>
+                    <div className="sun-grid">
+                      <button
+                        className="sun-tak-tile"
+                        onClick={() =>
+                          triWellnessTap(
+                            "Energy chahiye, thakaan kam",
+                            "⚡ Mujhe din bhar thakaan rehti hai. Energy badhane ka 1 AYUSH nuska + 1 habit batao — short, practical, Hinglish.",
+                          )
+                        }
+                      >
+                        <div className="sun-tak-emoji">⚡</div>
+                        <div className="sun-tak-name">Energy</div>
+                      </button>
+                      <button
+                        className="sun-tak-tile"
+                        onClick={() =>
+                          triWellnessTap(
+                            "Mann shanti, stress kam",
+                            "🧠 Stress kam karke mann shanti ke liye 1 saans technique + 1 lifestyle tip do — short, Hinglish.",
+                          )
+                        }
+                      >
+                        <div className="sun-tak-emoji">🧠</div>
+                        <div className="sun-tak-name">Mann shanti</div>
+                      </button>
+                      <button
+                        className="sun-tak-tile"
+                        onClick={() =>
+                          triWellnessTap(
+                            "Pachhan strong, pet halka",
+                            "🌱 Pachhan strong, pet halka rakhne ke liye 1 ghar ka tarika + 1 daily habit batao — Hinglish, short.",
+                          )
+                        }
+                      >
+                        <div className="sun-tak-emoji">🌱</div>
+                        <div className="sun-tak-name">Pachhan</div>
+                      </button>
+                      <button
+                        className="sun-tak-tile"
+                        onClick={() =>
+                          triWellnessTap(
+                            "Immunity strong banao",
+                            "💪 Immunity strong banane ke liye 1 daily AYUSH nuska + 1 habit — Hinglish, short.",
+                          )
+                        }
+                      >
+                        <div className="sun-tak-emoji">💪</div>
+                        <div className="sun-tak-name">Immunity</div>
+                      </button>
+                    </div>
+                    <div className="sun-lbl">Aur takleef</div>
+                    <div className="sun-grid">
+                      <button
+                        className="sun-tak-tile"
+                        onClick={() =>
+                          triSymptomTap(
+                            "Ghutno/jodon mein dard",
+                            "🦴 Ghutno aur jodon mein dard ka ghar ka nushka batao",
+                          )
+                        }
+                      >
+                        <div className="sun-tak-emoji">🦴</div>
+                        <div className="sun-tak-name">Ghutno dard</div>
+                      </button>
+                      <button
+                        className="sun-tak-tile"
+                        onClick={() =>
+                          triSymptomTap("Bukhar hai", "🌡 Halka bukhar hai, ghar ka nushka batao")
+                        }
+                      >
+                        <div className="sun-tak-emoji">🌡</div>
+                        <div className="sun-tak-name">Bukhar</div>
+                      </button>
+                      <button
+                        className="sun-tak-tile"
+                        onClick={() =>
+                          triSymptomTap(
+                            "Tension/chinta",
+                            "😰 Tension aur chinta lagi hai, kya karein?",
+                          )
+                        }
+                      >
+                        <div className="sun-tak-emoji">😰</div>
+                        <div className="sun-tak-name">Tension</div>
+                      </button>
+                      <button
+                        className="sun-tak-tile"
+                        onClick={() =>
+                          triSymptomTap(
+                            "Saans/galay ki dikkat",
+                            "🌬 Galay mein khich-khich, saans bhaari — nushka batao",
+                          )
+                        }
+                      >
+                        <div className="sun-tak-emoji">🌬</div>
+                        <div className="sun-tak-name">Saans/galay</div>
+                      </button>
+                    </div>
                   </div>
-                  <div className="sun-grid">
-                    <button
-                      className="sun-tak-tile"
-                      onClick={() =>
-                        triWellnessTap(
-                          "Energy chahiye, thakaan kam",
-                          "⚡ Mujhe din bhar thakaan rehti hai. Energy badhane ka 1 AYUSH nuska + 1 habit batao — short, practical, Hinglish.",
-                        )
-                      }
-                    >
-                      <div className="sun-tak-emoji">⚡</div>
-                      <div className="sun-tak-name">Energy</div>
-                    </button>
-                    <button
-                      className="sun-tak-tile"
-                      onClick={() =>
-                        triWellnessTap(
-                          "Mann shanti, stress kam",
-                          "🧠 Stress kam karke mann shanti ke liye 1 saans technique + 1 lifestyle tip do — short, Hinglish.",
-                        )
-                      }
-                    >
-                      <div className="sun-tak-emoji">🧠</div>
-                      <div className="sun-tak-name">Mann shanti</div>
-                    </button>
-                    <button
-                      className="sun-tak-tile"
-                      onClick={() =>
-                        triWellnessTap(
-                          "Pachhan strong, pet halka",
-                          "🌱 Pachhan strong, pet halka rakhne ke liye 1 ghar ka tarika + 1 daily habit batao — Hinglish, short.",
-                        )
-                      }
-                    >
-                      <div className="sun-tak-emoji">🌱</div>
-                      <div className="sun-tak-name">Pachhan</div>
-                    </button>
-                    <button
-                      className="sun-tak-tile"
-                      onClick={() =>
-                        triWellnessTap(
-                          "Immunity strong banao",
-                          "💪 Immunity strong banane ke liye 1 daily AYUSH nuska + 1 habit — Hinglish, short.",
-                        )
-                      }
-                    >
-                      <div className="sun-tak-emoji">💪</div>
-                      <div className="sun-tak-name">Immunity</div>
-                    </button>
-                  </div>
-                  <div className="sun-lbl">Aur takleef</div>
-                  <div className="sun-grid">
-                    <button
-                      className="sun-tak-tile"
-                      onClick={() =>
-                        triSymptomTap(
-                          "Ghutno/jodon mein dard",
-                          "🦴 Ghutno aur jodon mein dard ka ghar ka nushka batao",
-                        )
-                      }
-                    >
-                      <div className="sun-tak-emoji">🦴</div>
-                      <div className="sun-tak-name">Ghutno dard</div>
-                    </button>
-                    <button
-                      className="sun-tak-tile"
-                      onClick={() =>
-                        triSymptomTap("Bukhar hai", "🌡 Halka bukhar hai, ghar ka nushka batao")
-                      }
-                    >
-                      <div className="sun-tak-emoji">🌡</div>
-                      <div className="sun-tak-name">Bukhar</div>
-                    </button>
-                    <button
-                      className="sun-tak-tile"
-                      onClick={() =>
-                        triSymptomTap(
-                          "Tension/chinta",
-                          "😰 Tension aur chinta lagi hai, kya karein?",
-                        )
-                      }
-                    >
-                      <div className="sun-tak-emoji">😰</div>
-                      <div className="sun-tak-name">Tension</div>
-                    </button>
-                    <button
-                      className="sun-tak-tile"
-                      onClick={() =>
-                        triSymptomTap(
-                          "Saans/galay ki dikkat",
-                          "🌬 Galay mein khich-khich, saans bhaari — nushka batao",
-                        )
-                      }
-                    >
-                      <div className="sun-tak-emoji">🌬</div>
-                      <div className="sun-tak-name">Saans/galay</div>
-                    </button>
-                  </div>
-                </div>
-              </details>
+                </details>
+              )}
             </div>
 
-            {/* v4.1: Wellness goals — proactive path for younger / general audience */}
-            <div className="tri-rail-lbl dense-only">Aaj behtar feel karo</div>
-            <div className="tri-grid dense-only" id="tri-well-grid">
-              <button
-                className="tri-btn"
-                onClick={() =>
-                  triWellnessTap(
-                    "Energy chahiye, thakaan kam",
-                    "⚡ Mujhe din bhar thakaan rehti hai. Energy badhane ka 1 AYUSH nuska + 1 habit batao — short, practical, Hinglish.",
-                  )
-                }
-              >
-                <div className="tri-btn-emoji">⚡</div>
-                <div className="tri-btn-text">
-                  Energy<div className="tri-btn-sub">Thakaan kam</div>
+            {/* v6.1: removed dense-only wellness goals + symptom triage grids + "Aur kya kar sakte ho" tri-rail.
+               Voice-first design — the talk-card above (input + mic + rotating placeholder + chip rail) and the
+               exit-grid (Tabiyat/Tan-Man/Report/Dawai) cover every intent conversationally. Kept wrapped in {false}
+               for now in case a section needs to come back; safe to delete in a follow-up cleanup. */}
+            {false && (
+              <>
+                <div className="tri-rail-lbl dense-only">Aaj behtar feel karo</div>
+                <div className="tri-grid dense-only" id="tri-well-grid">
+                  <button
+                    className="tri-btn"
+                    onClick={() =>
+                      triWellnessTap(
+                        "Energy chahiye, thakaan kam",
+                        "⚡ Mujhe din bhar thakaan rehti hai. Energy badhane ka 1 AYUSH nuska + 1 habit batao — short, practical, Hinglish.",
+                      )
+                    }
+                  >
+                    <div className="tri-btn-emoji">⚡</div>
+                    <div className="tri-btn-text">
+                      Energy<div className="tri-btn-sub">Thakaan kam</div>
+                    </div>
+                  </button>
+                  <button
+                    className="tri-btn"
+                    onClick={() =>
+                      triWellnessTap(
+                        "Achi neend chahiye",
+                        "😴 Achi gehri neend ke liye aaj raat ka ek ritual + 1 ghar ka nuska batao — short, Hinglish.",
+                      )
+                    }
+                  >
+                    <div className="tri-btn-emoji">😴</div>
+                    <div className="tri-btn-text">
+                      Achi neend<div className="tri-btn-sub">Gehri, sukoon</div>
+                    </div>
+                  </button>
+                  <button
+                    className="tri-btn"
+                    onClick={() =>
+                      triWellnessTap(
+                        "Pachhan strong, pet halka",
+                        "🌱 Pachhan strong, pet halka rakhne ke liye 1 ghar ka tarika + 1 daily habit batao — Hinglish, short.",
+                      )
+                    }
+                  >
+                    <div className="tri-btn-emoji">🌱</div>
+                    <div className="tri-btn-text">
+                      Pachhan<div className="tri-btn-sub">Pet halka</div>
+                    </div>
+                  </button>
+                  <button
+                    className="tri-btn"
+                    onClick={() =>
+                      triWellnessTap(
+                        "Mann shanti, stress kam",
+                        "🧠 Stress kam karke mann shanti ke liye 1 saans technique + 1 lifestyle tip do — short, Hinglish.",
+                      )
+                    }
+                  >
+                    <div className="tri-btn-emoji">🧠</div>
+                    <div className="tri-btn-text">
+                      Mann shanti<div className="tri-btn-sub">Stress kam</div>
+                    </div>
+                  </button>
+                  <button
+                    className="tri-btn"
+                    onClick={() =>
+                      triWellnessTap(
+                        "Skin glow chahiye",
+                        "✨ Skin glow ke liye Indian kitchen se 1 daily nuska + 1 habit batao — Hinglish, no chemicals talk.",
+                      )
+                    }
+                  >
+                    <div className="tri-btn-emoji">✨</div>
+                    <div className="tri-btn-text">
+                      Skin glow<div className="tri-btn-sub">Roz nikhar</div>
+                    </div>
+                  </button>
+                  <button
+                    className="tri-btn"
+                    onClick={() =>
+                      triWellnessTap(
+                        "Healthy weight chahiye",
+                        "⚖ Sustainable healthy weight ke liye 1 ghar ka tarika + 1 movement habit — no crash diet, Hinglish.",
+                      )
+                    }
+                  >
+                    <div className="tri-btn-emoji">⚖</div>
+                    <div className="tri-btn-text">
+                      Vajan<div className="tri-btn-sub">Healthy way</div>
+                    </div>
+                  </button>
+                  <button
+                    className="tri-btn"
+                    onClick={() =>
+                      triWellnessTap(
+                        "Focus chahiye padhai/kaam mein",
+                        "🎯 Padhai/kaam mein focus badhane ke 2 practical wellness tips — Hinglish, short, actionable.",
+                      )
+                    }
+                  >
+                    <div className="tri-btn-emoji">🎯</div>
+                    <div className="tri-btn-text">
+                      Focus<div className="tri-btn-sub">Padhai/kaam</div>
+                    </div>
+                  </button>
+                  <button
+                    className="tri-btn"
+                    onClick={() =>
+                      triWellnessTap(
+                        "Immunity strong banao",
+                        "💪 Immunity strong banane ke liye 1 daily AYUSH nuska + 1 habit — Hinglish, short.",
+                      )
+                    }
+                  >
+                    <div className="tri-btn-emoji">💪</div>
+                    <div className="tri-btn-text">
+                      Immunity<div className="tri-btn-sub">Strong rahein</div>
+                    </div>
+                  </button>
                 </div>
-              </button>
-              <button
-                className="tri-btn"
-                onClick={() =>
-                  triWellnessTap(
-                    "Achi neend chahiye",
-                    "😴 Achi gehri neend ke liye aaj raat ka ek ritual + 1 ghar ka nuska batao — short, Hinglish.",
-                  )
-                }
-              >
-                <div className="tri-btn-emoji">😴</div>
-                <div className="tri-btn-text">
-                  Achi neend<div className="tri-btn-sub">Gehri, sukoon</div>
-                </div>
-              </button>
-              <button
-                className="tri-btn"
-                onClick={() =>
-                  triWellnessTap(
-                    "Pachhan strong, pet halka",
-                    "🌱 Pachhan strong, pet halka rakhne ke liye 1 ghar ka tarika + 1 daily habit batao — Hinglish, short.",
-                  )
-                }
-              >
-                <div className="tri-btn-emoji">🌱</div>
-                <div className="tri-btn-text">
-                  Pachhan<div className="tri-btn-sub">Pet halka</div>
-                </div>
-              </button>
-              <button
-                className="tri-btn"
-                onClick={() =>
-                  triWellnessTap(
-                    "Mann shanti, stress kam",
-                    "🧠 Stress kam karke mann shanti ke liye 1 saans technique + 1 lifestyle tip do — short, Hinglish.",
-                  )
-                }
-              >
-                <div className="tri-btn-emoji">🧠</div>
-                <div className="tri-btn-text">
-                  Mann shanti<div className="tri-btn-sub">Stress kam</div>
-                </div>
-              </button>
-              <button
-                className="tri-btn"
-                onClick={() =>
-                  triWellnessTap(
-                    "Skin glow chahiye",
-                    "✨ Skin glow ke liye Indian kitchen se 1 daily nuska + 1 habit batao — Hinglish, no chemicals talk.",
-                  )
-                }
-              >
-                <div className="tri-btn-emoji">✨</div>
-                <div className="tri-btn-text">
-                  Skin glow<div className="tri-btn-sub">Roz nikhar</div>
-                </div>
-              </button>
-              <button
-                className="tri-btn"
-                onClick={() =>
-                  triWellnessTap(
-                    "Healthy weight chahiye",
-                    "⚖ Sustainable healthy weight ke liye 1 ghar ka tarika + 1 movement habit — no crash diet, Hinglish.",
-                  )
-                }
-              >
-                <div className="tri-btn-emoji">⚖</div>
-                <div className="tri-btn-text">
-                  Vajan<div className="tri-btn-sub">Healthy way</div>
-                </div>
-              </button>
-              <button
-                className="tri-btn"
-                onClick={() =>
-                  triWellnessTap(
-                    "Focus chahiye padhai/kaam mein",
-                    "🎯 Padhai/kaam mein focus badhane ke 2 practical wellness tips — Hinglish, short, actionable.",
-                  )
-                }
-              >
-                <div className="tri-btn-emoji">🎯</div>
-                <div className="tri-btn-text">
-                  Focus<div className="tri-btn-sub">Padhai/kaam</div>
-                </div>
-              </button>
-              <button
-                className="tri-btn"
-                onClick={() =>
-                  triWellnessTap(
-                    "Immunity strong banao",
-                    "💪 Immunity strong banane ke liye 1 daily AYUSH nuska + 1 habit — Hinglish, short.",
-                  )
-                }
-              >
-                <div className="tri-btn-emoji">💪</div>
-                <div className="tri-btn-text">
-                  Immunity<div className="tri-btn-sub">Strong rahein</div>
-                </div>
-              </button>
-            </div>
 
-            {/* v4: Symptom triage grid — for the unwell */}
-            <div className="tri-rail-lbl dense-only">Koi takleef hai?</div>
-            <div className="tri-grid dense-only" id="tri-grid">
-              <button className="tri-btn" onClick={() => startFocus("sir-dard")}>
-                <div className="tri-btn-emoji">🤕</div>
-                <div className="tri-btn-text">
-                  Sir dard<div className="tri-btn-sub">Headache, migraine</div>
+                {/* v4: Symptom triage grid — for the unwell */}
+                <div className="tri-rail-lbl dense-only">Koi takleef hai?</div>
+                <div className="tri-grid dense-only" id="tri-grid">
+                  <button className="tri-btn" onClick={() => startFocus("sir-dard")}>
+                    <div className="tri-btn-emoji">🤕</div>
+                    <div className="tri-btn-text">
+                      Sir dard<div className="tri-btn-sub">Headache, migraine</div>
+                    </div>
+                  </button>
+                  <button className="tri-btn" onClick={() => startFocus("sardi-khansi")}>
+                    <div className="tri-btn-emoji">🤧</div>
+                    <div className="tri-btn-text">
+                      Sardi-khansi<div className="tri-btn-sub">Cold, cough</div>
+                    </div>
+                  </button>
+                  <button className="tri-btn" onClick={() => startFocus("pet")}>
+                    <div className="tri-btn-emoji">🤢</div>
+                    <div className="tri-btn-text">
+                      Pet ki dikkat<div className="tri-btn-sub">Acidity, gas, dard</div>
+                    </div>
+                  </button>
+                  <button className="tri-btn" onClick={() => startFocus("neend")}>
+                    <div className="tri-btn-emoji">😴</div>
+                    <div className="tri-btn-text">
+                      Neend nahi<div className="tri-btn-sub">Sleep issues</div>
+                    </div>
+                  </button>
+                  <button
+                    className="tri-btn"
+                    onClick={() =>
+                      triSymptomTap(
+                        "Ghutno/jodon mein dard",
+                        "🦴 Ghutno aur jodon mein dard ka ghar ka nushka batao",
+                      )
+                    }
+                  >
+                    <div className="tri-btn-emoji">🦴</div>
+                    <div className="tri-btn-text">
+                      Ghutno/jodon dard<div className="tri-btn-sub">Joints, knees</div>
+                    </div>
+                  </button>
+                  <button
+                    className="tri-btn"
+                    onClick={() =>
+                      triSymptomTap("Bukhar hai", "🌡 Halka bukhar hai, ghar ka nushka batao")
+                    }
+                  >
+                    <div className="tri-btn-emoji">🌡</div>
+                    <div className="tri-btn-text">
+                      Bukhar<div className="tri-btn-sub">Fever</div>
+                    </div>
+                  </button>
+                  <button
+                    className="tri-btn"
+                    onClick={() =>
+                      triSymptomTap("Tension/chinta", "😰 Tension aur chinta lagi hai, kya karein?")
+                    }
+                  >
+                    <div className="tri-btn-emoji">😰</div>
+                    <div className="tri-btn-text">
+                      Tension<div className="tri-btn-sub">Anxiety, stress</div>
+                    </div>
+                  </button>
+                  <button
+                    className="tri-btn"
+                    onClick={() =>
+                      triSymptomTap(
+                        "Saans/galay ki dikkat",
+                        "🌬 Galay mein khich-khich, saans bhaari — nushka batao",
+                      )
+                    }
+                  >
+                    <div className="tri-btn-emoji">🌬</div>
+                    <div className="tri-btn-text">
+                      Saans/galay<div className="tri-btn-sub">Throat, breath</div>
+                    </div>
+                  </button>
                 </div>
-              </button>
-              <button className="tri-btn" onClick={() => startFocus("sardi-khansi")}>
-                <div className="tri-btn-emoji">🤧</div>
-                <div className="tri-btn-text">
-                  Sardi-khansi<div className="tri-btn-sub">Cold, cough</div>
-                </div>
-              </button>
-              <button className="tri-btn" onClick={() => startFocus("pet")}>
-                <div className="tri-btn-emoji">🤢</div>
-                <div className="tri-btn-text">
-                  Pet ki dikkat<div className="tri-btn-sub">Acidity, gas, dard</div>
-                </div>
-              </button>
-              <button className="tri-btn" onClick={() => startFocus("neend")}>
-                <div className="tri-btn-emoji">😴</div>
-                <div className="tri-btn-text">
-                  Neend nahi<div className="tri-btn-sub">Sleep issues</div>
-                </div>
-              </button>
-              <button
-                className="tri-btn"
-                onClick={() =>
-                  triSymptomTap(
-                    "Ghutno/jodon mein dard",
-                    "🦴 Ghutno aur jodon mein dard ka ghar ka nushka batao",
-                  )
-                }
-              >
-                <div className="tri-btn-emoji">🦴</div>
-                <div className="tri-btn-text">
-                  Ghutno/jodon dard<div className="tri-btn-sub">Joints, knees</div>
-                </div>
-              </button>
-              <button
-                className="tri-btn"
-                onClick={() =>
-                  triSymptomTap("Bukhar hai", "🌡 Halka bukhar hai, ghar ka nushka batao")
-                }
-              >
-                <div className="tri-btn-emoji">🌡</div>
-                <div className="tri-btn-text">
-                  Bukhar<div className="tri-btn-sub">Fever</div>
-                </div>
-              </button>
-              <button
-                className="tri-btn"
-                onClick={() =>
-                  triSymptomTap("Tension/chinta", "😰 Tension aur chinta lagi hai, kya karein?")
-                }
-              >
-                <div className="tri-btn-emoji">😰</div>
-                <div className="tri-btn-text">
-                  Tension<div className="tri-btn-sub">Anxiety, stress</div>
-                </div>
-              </button>
-              <button
-                className="tri-btn"
-                onClick={() =>
-                  triSymptomTap(
-                    "Saans/galay ki dikkat",
-                    "🌬 Galay mein khich-khich, saans bhaari — nushka batao",
-                  )
-                }
-              >
-                <div className="tri-btn-emoji">🌬</div>
-                <div className="tri-btn-text">
-                  Saans/galay<div className="tri-btn-sub">Throat, breath</div>
-                </div>
-              </button>
-            </div>
 
-            {/* v5.1: Mood pulse strip removed for de-cluttering — wellness goals + symptoms grid cover both intents */}
+                {/* v5.1: Mood pulse strip removed for de-cluttering — wellness goals + symptoms grid cover both intents */}
 
-            {/* v4: Aur kya kar sakte ho — subtle horizontal rail of secondary use cases */}
-            <div className="tri-rail-lbl">Aur kya kar sakte ho</div>
-            <div className="tri-rail" id="tri-rail">
-              <button className="tri-rail-card" onClick={() => startFeature("bazaar")}>
-                <span className="tri-rail-emoji">🗂</span>
-                <span className="tri-rail-name">Mera Sehat</span>
-                <span className="tri-rail-sub" id="tri-rail-bazaar-sub">
-                  Reminders · Orders
-                </span>
-              </button>
-              <button className="tri-rail-card" onClick={() => playStory("general")}>
-                <span className="tri-rail-emoji">📖</span>
-                <span className="tri-rail-name">Dadi ki kahani</span>
-                <span className="tri-rail-sub">2 min · Suno</span>
-              </button>
-              <button className="tri-rail-card" onClick={() => goTo("s-breathwork")}>
-                <span className="tri-rail-emoji">🌬</span>
-                <span className="tri-rail-name">Saans karein</span>
-                <span className="tri-rail-sub">2 min · Try</span>
-              </button>
-              <button className="tri-rail-card" onClick={() => startFeature("meal")}>
-                <span className="tri-rail-emoji">🍽</span>
-                <span className="tri-rail-name">Meal plan</span>
-                <span className="tri-rail-sub">3-din ka</span>
-              </button>
-              <button className="tri-rail-card" onClick={() => startFeature("family")}>
-                <span className="tri-rail-emoji">👨‍👩‍👧</span>
-                <span className="tri-rail-name">Parivaar</span>
-                <span className="tri-rail-sub">Sab ek jagah</span>
-              </button>
-            </div>
+                {/* v4: Aur kya kar sakte ho — subtle horizontal rail of secondary use cases */}
+                <div className="tri-rail-lbl">Aur kya kar sakte ho</div>
+                <div className="tri-rail" id="tri-rail">
+                  <button className="tri-rail-card" onClick={() => startFeature("bazaar")}>
+                    <span className="tri-rail-emoji">🗂</span>
+                    <span className="tri-rail-name">Mera Sehat</span>
+                    <span className="tri-rail-sub" id="tri-rail-bazaar-sub">
+                      Reminders · Orders
+                    </span>
+                  </button>
+                  <button className="tri-rail-card" onClick={() => playStory("general")}>
+                    <span className="tri-rail-emoji">📖</span>
+                    <span className="tri-rail-name">Dadi ki kahani</span>
+                    <span className="tri-rail-sub">2 min · Suno</span>
+                  </button>
+                  <button className="tri-rail-card" onClick={() => goTo("s-breathwork")}>
+                    <span className="tri-rail-emoji">🌬</span>
+                    <span className="tri-rail-name">Saans karein</span>
+                    <span className="tri-rail-sub">2 min · Try</span>
+                  </button>
+                  <button className="tri-rail-card" onClick={() => startFeature("meal")}>
+                    <span className="tri-rail-emoji">🍽</span>
+                    <span className="tri-rail-name">Meal plan</span>
+                    <span className="tri-rail-sub">3-din ka</span>
+                  </button>
+                  <button className="tri-rail-card" onClick={() => startFeature("family")}>
+                    <span className="tri-rail-emoji">👨‍👩‍👧</span>
+                    <span className="tri-rail-name">Parivaar</span>
+                    <span className="tri-rail-sub">Sab ek jagah</span>
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
-          {/* Bottom bar — Speak primary CTA */}
-          <div className="bar">
-            <div className="bar-inner">
-              <input
-                className="bar-input"
-                id="hub-input"
-                placeholder="Kuch bhi batao..."
-                onKeyDown={(e) => hubKey(e)}
-              />
+          {/* v6.1: removed bottom hub `<div className="bar">` — hub-input moved into the prominent .talk-card above.
+             s-chat retains its own .bar for in-chat messaging. */}
+          {false && (
+            <div className="bar">
+              <div className="bar-inner">
+                <input
+                  className="bar-input"
+                  id="hub-input"
+                  placeholder="Kuch bhi batao..."
+                  onKeyDown={(e) => hubKey(e)}
+                />
+                <button
+                  className="bar-send"
+                  id="hub-send-btn"
+                  onClick={() => hubSend()}
+                  style={{
+                    display: "none",
+                    background: "rgba(255,255,255,.12)",
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
+                    border: "none",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#fff",
+                    cursor: "pointer",
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
+                    <path
+                      d="M5 12l14 0M13 6l6 6-6 6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+                <button className="bar-speak" id="hub-speak" onClick={() => toggleVoice("hub")}>
+                  <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
+                    <path
+                      d="M12 2a3 3 0 00-3 3v6a3 3 0 006 0V5a3 3 0 00-3-3z"
+                      stroke="white"
+                      strokeWidth="2"
+                      fill="white"
+                    />
+                    <path
+                      d="M19 10a7 7 0 01-14 0M12 17v4"
+                      stroke="white"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <span id="hub-speak-lbl">Speak</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ══════════════ v6.2 MAGIC WALKTHROUGH OVERLAY ══════════════
+           In-app player for "Dadi ke saath karein" experiences. Never leaves the
+           app. Full-screen modal with animation viewport, Dadi-voiced narration,
+           step progress, controls. Activated by openWalkthrough(experienceKey). */}
+        <div className="wt-overlay" id="wt-overlay" aria-hidden="true">
+          <div className="wt-modal" role="dialog" aria-label="Dadi ke saath">
+            <button
+              className="wt-close"
+              onClick={() => closeWalkthrough()}
+              aria-label="Band karein"
+            >
+              ×
+            </button>
+
+            {/* Top: title + step counter */}
+            <div className="wt-hdr">
+              <div className="wt-hdr-title" id="wt-title">
+                {/* JS fills */}
+              </div>
+              <div className="wt-hdr-sub" id="wt-subtitle">
+                {/* JS fills */}
+              </div>
+              <div className="wt-step-counter" id="wt-step-counter">
+                {/* JS fills, e.g. "Step 1 / 5" */}
+              </div>
+            </div>
+
+            {/* Animation viewport — either inline SVG or Lottie container */}
+            <div className="wt-stage">
+              <div className="wt-anim" id="wt-anim">
+                {/* JS injects the active step's inline SVG OR a Lottie player */}
+              </div>
+              <div className="wt-stage-glow" aria-hidden="true"></div>
+            </div>
+
+            {/* Step caption + Dadi line */}
+            <div className="wt-caption">
+              <div className="wt-caption-step" id="wt-step-title">
+                {/* JS fills */}
+              </div>
+              <div className="wt-caption-line" id="wt-step-line">
+                {/* JS fills, e.g. "Pehle ek cup doodh halki aanch par garam karo" */}
+              </div>
+            </div>
+
+            {/* Timer bar */}
+            <div className="wt-timer">
+              <div className="wt-timer-fill" id="wt-timer-fill"></div>
+            </div>
+
+            {/* Progress dots */}
+            <div className="wt-dots" id="wt-dots">
+              {/* JS renders dots */}
+            </div>
+
+            {/* Controls */}
+            <div className="wt-controls">
               <button
-                className="bar-send"
-                id="hub-send-btn"
-                onClick={() => hubSend()}
-                style={{
-                  display: "none",
-                  background: "rgba(255,255,255,.12)",
-                  width: "36px",
-                  height: "36px",
-                  borderRadius: "50%",
-                  border: "none",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#fff",
-                  cursor: "pointer",
-                }}
+                className="wt-btn wt-btn-pause"
+                id="wt-pause-btn"
+                onClick={() => walkthroughPauseToggle()}
+                aria-label="Pause"
               >
-                <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
-                  <path
-                    d="M5 12l14 0M13 6l6 6-6 6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <span id="wt-pause-icon">⏸</span>
               </button>
-              <button className="bar-speak" id="hub-speak" onClick={() => toggleVoice("hub")}>
-                <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
-                  <path
-                    d="M12 2a3 3 0 00-3 3v6a3 3 0 006 0V5a3 3 0 00-3-3z"
-                    stroke="white"
-                    strokeWidth="2"
-                    fill="white"
-                  />
-                  <path
-                    d="M19 10a7 7 0 01-14 0M12 17v4"
-                    stroke="white"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <span id="hub-speak-lbl">Speak</span>
+              <button
+                className="wt-btn wt-btn-next"
+                id="wt-next-btn"
+                onClick={() => walkthroughNext()}
+              >
+                Aage ›
               </button>
+              <button
+                className="wt-btn wt-btn-done"
+                id="wt-done-btn"
+                onClick={() => closeWalkthrough()}
+              >
+                Bas, ho gaya
+              </button>
+            </div>
+
+            {/* Finish state — shown after last step. Hidden by default. */}
+            <div className="wt-finish" id="wt-finish">
+              <div className="wt-finish-emoji">🌿</div>
+              <div className="wt-finish-line" id="wt-finish-line">
+                {/* JS fills */}
+              </div>
+              <div className="wt-finish-citation" id="wt-finish-citation">
+                {/* JS fills (CCRAS citation if applicable) */}
+              </div>
+              <div className="wt-finish-feedback">
+                <button className="wt-feedback-btn" onClick={() => walkthroughFeedback("better")}>
+                  👍 Acha laga
+                </button>
+                <button className="wt-feedback-btn" onClick={() => walkthroughFeedback("same")}>
+                  Theek
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1024,22 +1195,27 @@ export default function SehatSaathi() {
               </svg>
             </button>
             <div className="hdr-center">
+              {/* v6.1: emoji-based Dadi avatar replaces persona-health.png (male doctor figure)
+                 to match the Dadi/Nani persona the system prompt defines. */}
               <div className="hdr-avatar">
                 <div
+                  role="img"
+                  aria-label="Sehat Saathi Dadi"
                   style={{
                     width: "40px",
                     height: "40px",
                     borderRadius: "50%",
                     overflow: "hidden",
                     border: "2px solid #6D17CE",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "linear-gradient(135deg, #fde68a 0%, #fb923c 55%, #b45309 100%)",
+                    fontSize: "24px",
+                    lineHeight: 1,
                   }}
                 >
-                  <img
-                    src="https://sunit1986.github.io/design-prototypes/Assets/persona-health.png"
-                    alt="Sehat Saathi"
-                    loading="lazy"
-                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                  />
+                  👵🏽
                 </div>
                 <div className="hdr-online"></div>
               </div>

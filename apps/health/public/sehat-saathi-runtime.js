@@ -3,6 +3,10 @@ if (!window.__SS_LOADED__) {
 
   const OPENAI_API_KEY = (window.__SS_CONFIG__ && window.__SS_CONFIG__.openaiKey) || "";
   const GROQ_API_KEY = (window.__SS_CONFIG__ && window.__SS_CONFIG__.groqKey) || "";
+  // v6.3: Cerebras Cloud — OpenAI-compatible, hosts Llama 3.3 70B, generous free
+  // tier. Added as primary provider to relieve pressure on Groq's per-account
+  // rate limit. Cascade: Cerebras → Groq → OpenAI.
+  const CEREBRAS_API_KEY = (window.__SS_CONFIG__ && window.__SS_CONFIG__.cerebrasKey) || "";
   const SARVAM_KEY = (window.__SS_CONFIG__ && window.__SS_CONFIG__.sarvamKey) || "";
 
   // PR #16: Sarvam API doesn't return CORS headers, so direct calls from a
@@ -181,8 +185,8 @@ KHAANSI (Cough):
 CRITICAL RULES:
 - NEVER claim "cure" — always say "raahat", "kam karna", "control".
 - NEVER prescribe to infants/pregnant women — say "doctor se poochho".
-- ALWAYS end with: "agar X din mein farak na pade toh doctor se milein".
-- FOR EMERGENCIES (chest pain, breathing, severe headache, infant fever, blood vomit, seizure): ZERO REMEDY — turant doctor.
+- Mention doctor ONLY when symptom is severe, persistent, or genuinely worrying — NOT after every remedy. Dadi is warm, not a clinic. For everyday tabiyat (sardi, gas, sir dard, neend), end with a warm "thodi der mein farak feel hoga, beta" or similar, NOT a disclaimer.
+- FOR EMERGENCIES (chest pain, breathing trouble, severe headache, infant fever, blood vomit, seizure): ZERO REMEDY — turant doctor.
 - Use ONLY ingredients listed above. Don't invent new combinations.
 - Match remedy to specific complaint. Don't dump multiple options unless asked for "aur batao".`;
 
@@ -457,7 +461,7 @@ CRITICAL RULES:
   // Flatten CCRAS_REMEDIES into a plain-text block that sits inside the system
   // prompt next to NUSHKE_KB. Generated once at script load.
   const CCRAS_KB =
-    `CCRAS-VALIDATED REMEDIES (Central Council for Research in Ayurveda and Siddha, Department of ISM&H, Ministry of Health & Family Welfare, Govt of India — PRIMARY CLINICAL AUTHORITY. When you give a remedy that matches an entry below, cite this source.):
+    `CCRAS-VALIDATED REMEDIES (internal reference — Ministry of Health AYUSH catalogue. Use this to choose ingredients and doses correctly. Do NOT cite the Ministry/CCRAS in user-facing replies by default — that breaks the warm Dadi voice. Mention "Sarkari Ayurveda research" only if the user asks "kahan se sikha?" or if you're suggesting an unusual remedy.):
 
 ` +
     Object.values(CCRAS_REMEDIES)
@@ -470,15 +474,17 @@ CRITICAL RULES:
       .join("\n\n") +
     `
 
-CCRAS SAFETY GATE (always include in remedy responses, per the booklet): "Agar 2-3 din mein farak na pade toh paas ke doctor se milein."
+DOCTOR ESCALATION: NOT a default footer. Add the "2-3 din mein farak na pade toh doctor" line ONLY for: severe pain, breathing issues, infant/pregnancy, prolonged fever, blood, sudden weakness, repeated complaints over multiple sessions. For ordinary cold/cough/gas/headache/neend, end warmly without a doctor disclaimer.
 
-CCRAS CITATION TEMPLATE (use when giving a CCRAS-validated remedy — adapt to user's language/script): "Yeh nushka Central Government ke Ayurvedic research (CCRAS) ke mutabik hai — Ministry of Health, Govt of India ne ise validate kiya hai."`;
+CITATION (rare, conversational — never a footer): If you must mention the source, fold it casually: e.g. "Yeh purana Ayurvedic tarika hai, Dadi ke zamane se chala aa raha hai." Never paste Ministry/CCRAS in every reply.`;
 
   const SYSTEM_PROMPT = `You are Sehat Saathi — a warm dadi/nani figure inside JioBharatIQ. NOT a remedy machine.
 
 LANGUAGE: Reply in the user's language and dialect. Match their script (if they wrote in Devanagari, reply in Devanagari; if Roman/Hinglish, reply that way). Never switch language unless they do. Never ask them to change language.
 
 YOUR PERSONALITY: Like a real grandmother — slow, listening, asks back. Vary your tone. Don't sound mechanical. Sometimes you just acknowledge ("achha beta", "samajh gayi"), sometimes you share a tiny relatable memory. Don't use bullet lists.
+
+GRAMMAR — STRICTLY FEMININE FIRST PERSON: You are Dadi/Nani/Maa (female). When you refer to yourself in Hindi/Hinglish, always use feminine verb forms: "karti hoon" (not "karta"), "rahi hoon" (not "raha"), "sunti hoon" (not "sunta"), "bataati hoon" (not "bataata"), "samjhi" (not "samjha"), "gayi" (not "gaya"). Never use masculine first-person verbs to describe yourself. Address the user warmly as "beta" regardless of their gender unless they tell you otherwise.
 
 CRITICAL — DO NOT RUSH TO REMEDIES:
 - If complaint is vague ("pet kharab hai", "tabiyat theek nahi", "neend nahi aati") — ASK 1-2 warm clarifying questions FIRST. Don't suggest haldi/ajwain in the first reply unless they describe a clear specific issue.
@@ -491,9 +497,9 @@ SERIOUS EMERGENCY (escalate immediately, NO remedy, NO question):
 Chest pain, breathing trouble, infant <3 months with fever, seizure, sudden worst-ever headache, vomiting blood, loss of consciousness, sudden face droop or arm weakness. Tell them warmly but firmly: doctor ke paas turant jao, der mat karo.
 
 KNOWLEDGE BASE: Two layered sources back every remedy you give.
-1. CCRAS (Central Council for Research in Ayurveda and Siddha, Ministry of Health & Family Welfare, Govt of India) — PRIMARY CLINICAL AUTHORITY. Validated ingredient × condition entries with doses. When a user's complaint matches a CCRAS entry, prefer that remedy and cite the source (template below in the CCRAS block).
-2. NUSHKE_KB (Ghar Ka Vaidh traditional reference) — secondary, broader catalogue in Hindi/Hinglish. Use when CCRAS doesn't cover the complaint.
-Always end remedy responses with the CCRAS safety gate ("Agar 2-3 din mein farak na pade toh paas ke doctor se milein"). Adapt the wording to the user's language/script.
+1. CCRAS (Central Council for Research in Ayurveda and Siddha, Ministry of Health & Family Welfare, Govt of India) — clinical reference behind ingredient choices and doses. Use it to PICK the right remedy. Do NOT cite "CCRAS / Ministry of Health" in every reply — this is Dadi's voice, not a regulator's. Cite at most once per conversation, and only if the user asks where the nushka comes from or if it's a non-obvious remedy. Never paste the full Ministry citation as a footer.
+2. NUSHKE_KB (Ghar Ka Vaidh traditional reference) — secondary, broader catalogue. Use when CCRAS doesn't cover the complaint.
+Do NOT append the "2-3 din mein farak na pade toh doctor se milein" line by default. Only add doctor escalation when the symptom is severe, recurring, or the user mentions red flags. Otherwise end warmly (e.g., "thodi der baad farak feel hoga, beta").
 If neither source covers the complaint, fall back to the kitchen ingredient bank (ajwain, haldi, adrak, tulsi, neem, amla, mulethi, saunf, methi, jeera, coconut water, warm milk, honey, rock salt, nimbu, cloves, cinnamon, hing).
 
 ${CCRAS_KB}
@@ -510,6 +516,8 @@ Second line onward: your warm reply.`;
 
   // ── v2: Wellness + Community system prompts ──
   const WELLNESS_SYSTEM_PROMPT = `You are Sehat Saathi — Wellness mode. You speak with the WARM, CARING VOICE of an Indian mother or grandmother (Maa / Dadi) — talking to a young adult (18–35) about everyday wellness on JioBharatIQ.
+
+GRAMMAR — STRICTLY FEMININE FIRST PERSON: You are Dadi/Nani/Maa (female). When referring to yourself in Hindi/Hinglish, always use feminine verb forms: "karti hoon" (not "karta"), "rahi hoon" (not "raha"), "sunti hoon" (not "sunta"), "bataati hoon" (not "bataata"). Never use masculine first-person verbs. Call the user "beta".
 
 LANGUAGE: Detect the user's language. Reply in code-mixed Hindi-English (Hinglish) if they wrote in Roman; otherwise in their script. Words you naturally use: "beta", "bachha", "suno beta", "haan beta", "aaram se", "khayal rakhna", "main batati hoon".
 
@@ -1172,7 +1180,1350 @@ Second line onward: your warm response.`;
     if (typeof applySunitaMode === "function") applySunitaMode();
     // v5.1: Aaj ki Sehat stories rail
     if (typeof renderHubStories === "function") renderHubStories();
+    // v6.0: warm landing — time-aware greeting, Active Choice nudge, safar path
+    renderWarmHero();
+    renderActiveChoice();
+    renderSafarPath();
+    // v6.1: voice-first talk-card — chip rail + rotating placeholder
+    renderHubChipRail();
+    startHubPlaceholderRotation();
+    // mark last-visit so next session's recall logic knows when we were here
+    try {
+      localStorage.setItem("ss_last_visit", String(Date.now()));
+    } catch (e) {}
   }
+
+  // ── v6.0: Warm landing — time-of-day, Active Choice, safar path ──
+  // The goal of these three blocks is to make s-hub feel like a friend who
+  // notices the user, not a feature directory. None of them require habit
+  // tracking; they read whatever signals already exist (chatHistory, profile,
+  // recentFeatures, the wall clock) and degrade gracefully when those are empty.
+
+  // Renamed from getTimeOfDay — another function with that name exists later
+  // in this file (returns a different shape for the TOD tip carousel). JS
+  // last-declaration-wins for `function`, so leaving them both named the
+  // same shadowed this one and broke renderWarmHero / Active Choice TOD.
+  function getTodWarm() {
+    const h = new Date().getHours();
+    if (h >= 5 && h < 12) return { bucket: "morning", emoji: "🌅", label: "Subah" };
+    if (h >= 12 && h < 16) return { bucket: "noon", emoji: "☀️", label: "Dopahar" };
+    if (h >= 16 && h < 19) return { bucket: "evening", emoji: "🌇", label: "Shaam" };
+    return { bucket: "night", emoji: "🌙", label: "Raat" };
+  }
+
+  function getWarmGreeting(tod, name) {
+    const who = name ? ", " + name : "";
+    const h = new Date().getHours();
+    const time = h % 12 === 0 ? 12 : h % 12;
+    const meridian = h < 12 ? "subah" : h < 17 ? "dopahar" : h < 20 ? "shaam" : "raat";
+    const ask = {
+      morning: "Chai pi li? Aaj ke liye taiyaar ho?",
+      noon: "Khaana time pe khaya? Thoda saans le lo.",
+      evening: "Din kaisa raha? Thoda halka feel karein?",
+      night: "Raat ho gayi. Neend ke pehle gehri saans?",
+    }[tod.bucket];
+    return {
+      title: "Namaste" + who,
+      time: tod.label + " ke " + time + " baj rahe hain.",
+      ask: ask,
+    };
+  }
+
+  function renderWarmHero() {
+    const el = document.getElementById("warm-hero");
+    if (!el) return;
+    const tod = getTodWarm();
+    const profile = ST.userProfile || (typeof loadProfile === "function" ? loadProfile() : null);
+    const name = profile && profile.name ? profile.name : "";
+    const g = getWarmGreeting(tod, name);
+    el.innerHTML =
+      '<div class="warm-hero-emoji">' +
+      tod.emoji +
+      '</div><div class="warm-hero-text"><div class="warm-hero-title">' +
+      g.title +
+      '</div><div class="warm-hero-time">' +
+      g.time +
+      '</div><div class="warm-hero-ask">' +
+      g.ask +
+      "</div></div>";
+  }
+
+  // Pick the most relevant nudge — one card, intentional, not a stack.
+  // Priority: recent unresolved complaint > returning-user welcome > time-of-day default.
+  function pickActiveChoice() {
+    // 1. Recent unresolved complaint — pull last user line from chatHistory
+    const hist = (ST.chatHistory || []).slice().reverse();
+    const lastUser = hist.find((m) => m && m.role === "user");
+    if (lastUser && lastUser.content) {
+      // Trim to first sentence / 80 chars for the recall blurb
+      const snippet = String(lastUser.content)
+        .split(/[.!?।\n]/)[0]
+        .trim()
+        .slice(0, 80);
+      if (snippet) {
+        return {
+          kind: "recall",
+          icon: "💭",
+          text: 'Pichli baar aapne kaha tha: "' + snippet + '". Aaj kaisa hai?',
+          primary: { label: "Theek hai", action: "ac_resolve" },
+          secondary: { label: "Aur batao →", action: "ac_continue" },
+        };
+      }
+    }
+    // 2. Returner — last visit > 3 days ago
+    try {
+      const last = parseInt(localStorage.getItem("ss_last_visit") || "0", 10);
+      if (last && Date.now() - last > 3 * 24 * 60 * 60 * 1000) {
+        return {
+          kind: "returner",
+          icon: "👋",
+          text: "Kuch din ho gaye. Sab theek? Aaj kaise feel kar rahe hain?",
+          primary: { label: "Sab badhiya", action: "ac_resolve" },
+          secondary: { label: "Thoda batao →", action: "ac_continue" },
+        };
+      }
+    } catch (e) {}
+    // 3. Time-of-day default
+    const tod = getTodWarm();
+    const todMap = {
+      morning: {
+        icon: "🍵",
+        text: "Subah ki shuruaat — ek glass garam paani + nimbu se din halka shuru karein?",
+      },
+      noon: {
+        icon: "🚶",
+        text: "Khaane ke baad 10 minute walk pet halka rakhta hai. Try karein?",
+      },
+      evening: {
+        icon: "🧘",
+        text: "Din thakaan utaarne ke liye 5 minute Anulom-Vilom — saath karein?",
+      },
+      night: {
+        icon: "🌙",
+        text: "Sone se pehle gehri 4-4-4 saans — neend gehri aati hai.",
+      },
+    };
+    const t = todMap[tod.bucket];
+    return {
+      kind: "tod",
+      icon: t.icon,
+      text: t.text,
+      primary: { label: "Chalo karein", action: "ac_do_tod" },
+      secondary: { label: "Baad mein", action: "ac_dismiss" },
+    };
+  }
+
+  function renderActiveChoice() {
+    const el = document.getElementById("active-choice-card");
+    if (!el) return;
+    const ac = pickActiveChoice();
+    el.dataset.kind = ac.kind;
+    el.innerHTML =
+      '<div class="ac-icon" aria-hidden="true">' +
+      ac.icon +
+      '</div><div class="ac-body"><div class="ac-text">' +
+      ac.text +
+      '</div><div class="ac-actions"><button class="ac-btn ac-btn-primary" onclick="handleActiveChoice(\'' +
+      ac.primary.action +
+      "')\">" +
+      ac.primary.label +
+      '</button><button class="ac-btn ac-btn-secondary" onclick="handleActiveChoice(\'' +
+      ac.secondary.action +
+      "')\">" +
+      ac.secondary.label +
+      "</button></div></div>";
+  }
+
+  // Handle Active Choice button taps. Kept narrow on purpose — each action
+  // either acks (positive), opens a deeper flow, or dismisses.
+  async function handleActiveChoice(action) {
+    if (action === "ac_resolve") {
+      if (typeof bumpScore === "function") bumpScore(1);
+      if (typeof showToast === "function") showToast("Achha laga sun ke 💚");
+      const el = document.getElementById("active-choice-card");
+      if (el) el.style.display = "none";
+      return;
+    }
+    if (action === "ac_continue") {
+      goToFeature("nushke");
+      return;
+    }
+    if (action === "ac_do_tod") {
+      const tod = getTodWarm();
+      if (tod.bucket === "morning") {
+        if (typeof bumpScore === "function") bumpScore(1);
+        showToast("Paani piyo, ⭐ +1");
+        markRitual("paani");
+      } else if (tod.bucket === "noon") {
+        markRitual("walk");
+        showToast("10 min walk pe nikal jao");
+      } else if (tod.bucket === "evening" || tod.bucket === "night") {
+        if (typeof openMovement === "function") openMovement("box-breathing");
+      }
+      const el = document.getElementById("active-choice-card");
+      if (el) el.style.display = "none";
+      return;
+    }
+    if (action === "ac_dismiss") {
+      const el = document.getElementById("active-choice-card");
+      if (el) el.style.display = "none";
+    }
+  }
+  window.handleActiveChoice = handleActiveChoice;
+
+  // Aaj ka safar — 6 light suggestions. Not a tracker; current time-of-day
+  // determines what's "passed" (filled). User can tap to mark done — but the
+  // feature works fine even if they never tap anything.
+  const SAFAR_STEPS = [
+    { id: "paani", label: "Paani", emoji: "💧", whenHour: 6 },
+    { id: "stretch", label: "Stretch", emoji: "🧘", whenHour: 8 },
+    { id: "naashta", label: "Naashta", emoji: "🍵", whenHour: 9 },
+    { id: "walk", label: "Walk", emoji: "🚶", whenHour: 14 },
+    { id: "saans", label: "Saans", emoji: "🌬", whenHour: 18 },
+    { id: "neend", label: "Neend", emoji: "🌙", whenHour: 22 },
+  ];
+
+  function loadRituals() {
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const raw = localStorage.getItem("ss_rituals_" + today);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      return {};
+    }
+  }
+  function markRitual(id) {
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const r = loadRituals();
+      r[id] = Date.now();
+      localStorage.setItem("ss_rituals_" + today, JSON.stringify(r));
+      renderSafarPath();
+    } catch (e) {}
+  }
+  window.markRitual = markRitual;
+
+  // ── v6.1: Talk-to-Dadi card — rotating placeholder + chip rail ──
+  // The 5 chips are quick-tap entry points for older users who read faster
+  // than they speak. The rotating placeholder hints at the same intents in
+  // a vernacular voice without claiming pixel space at rest.
+
+  const HUB_CHIPS = [
+    {
+      label: "Sir dard",
+      ai: "🤕 Sir dard ho raha hai. Ek ghar ka nuska + kab doctor ke paas jaayein — short, Hinglish.",
+    },
+    {
+      label: "Sardi-khansi",
+      ai: "🤧 Sardi aur khansi ke liye Dadi ka ek ghar ka nuska batao — short, Hinglish.",
+    },
+    {
+      label: "Pet ki dikkat",
+      ai: "🤢 Pet mein gas/acidity ho rahi hai, ek ghar ka tarika batao — Hinglish, short.",
+    },
+    {
+      label: "Neend nahi",
+      ai: "😴 Raat ko neend nahi aati — ek ghar ka tarika + raat ka ritual batao — Hinglish, short.",
+    },
+    {
+      label: "Tension",
+      ai: "😰 Tension aur chinta lagi hai, kya karein? — short, Hinglish, warm.",
+    },
+  ];
+
+  // Prompts feel different by time-of-day because users ask different things
+  // morning vs night. Each bucket has 5 short Hinglish examples cycled
+  // through the input placeholder every ~3.5s.
+  const HUB_PROMPTS_BY_TOD = {
+    morning: [
+      "sir dard hai…",
+      "subah weakness lag rahi…",
+      "khaali pet acidity…",
+      "saans bhaari hai…",
+      "naashta hi kya khaaun?",
+    ],
+    noon: [
+      "khaane ke baad gas…",
+      "thakaan lag rahi…",
+      "pet mein hawa bhar gayi…",
+      "sir dard ho raha…",
+      "neend aa rahi…",
+    ],
+    evening: [
+      "shaam tak thak gaye…",
+      "mood theek nahi…",
+      "kal ki sardi-khansi…",
+      "sir dard ho raha…",
+      "kuch halka khaaun?",
+    ],
+    night: [
+      "neend nahi aati…",
+      "tension lag rahi…",
+      "raat ko pet mein dard…",
+      "dimaag chal raha…",
+      "gehri saans kaise lein?",
+    ],
+  };
+
+  function renderHubChipRail() {
+    const el = document.getElementById("talk-chip-rail");
+    if (!el) return;
+    el.innerHTML = HUB_CHIPS.map(
+      (c, i) =>
+        '<button class="talk-chip" onclick="tapHubChip(' + i + ')">' + c.label + "</button>",
+    ).join("");
+  }
+
+  function tapHubChip(i) {
+    const c = HUB_CHIPS[i];
+    if (!c) return;
+    if (typeof triSymptomTap === "function") {
+      triSymptomTap(c.label, c.ai);
+    }
+  }
+  window.tapHubChip = tapHubChip;
+
+  // Single setInterval; if rotation is already running we tear it down first
+  // so we don't stack timers when the user re-enters the hub.
+  let _hubPlaceholderTimer = null;
+  let _hubPlaceholderIdx = 0;
+  function startHubPlaceholderRotation() {
+    if (_hubPlaceholderTimer) {
+      clearInterval(_hubPlaceholderTimer);
+      _hubPlaceholderTimer = null;
+    }
+    const input = document.getElementById("hub-input");
+    if (!input) return;
+    const tod = typeof getTodWarm === "function" ? getTodWarm() : { bucket: "noon" };
+    const pool = HUB_PROMPTS_BY_TOD[tod.bucket] || HUB_PROMPTS_BY_TOD.noon;
+    _hubPlaceholderIdx = 0;
+    const apply = () => {
+      // Don't override while user is typing.
+      if (input.value && input.value.length > 0) return;
+      input.placeholder = "Try: " + pool[_hubPlaceholderIdx % pool.length];
+      _hubPlaceholderIdx++;
+    };
+    apply();
+    _hubPlaceholderTimer = setInterval(apply, 3500);
+  }
+  function stopHubPlaceholderRotation() {
+    if (_hubPlaceholderTimer) {
+      clearInterval(_hubPlaceholderTimer);
+      _hubPlaceholderTimer = null;
+    }
+  }
+  window.stopHubPlaceholderRotation = stopHubPlaceholderRotation;
+
+  function renderSafarPath() {
+    const el = document.getElementById("safar-path");
+    if (!el) return;
+    const now = new Date().getHours();
+    const done = loadRituals();
+    const parts = SAFAR_STEPS.map((s, i) => {
+      // A step is "ready" if the current hour has passed its whenHour; done
+      // if user explicitly tapped it or auto-passed (>2h past).
+      const passed = now >= s.whenHour;
+      const userDone = !!done[s.id];
+      const autoDone = passed && now >= s.whenHour + 2 && !userDone;
+      const isDone = userDone || autoDone;
+      const isNow = passed && !isDone;
+      const cls = isDone ? "safar-dot done" : isNow ? "safar-dot now" : "safar-dot";
+      const dot =
+        '<button class="' +
+        cls +
+        '" onclick="markRitual(\'' +
+        s.id +
+        '\')" aria-label="' +
+        s.label +
+        '"><span class="safar-dot-emoji">' +
+        s.emoji +
+        '</span></button><div class="safar-dot-lbl">' +
+        s.label +
+        "</div>";
+      const sep = i < SAFAR_STEPS.length - 1 ? '<div class="safar-sep"></div>' : "";
+      return '<div class="safar-step">' + dot + "</div>" + sep;
+    }).join("");
+    const completed = SAFAR_STEPS.filter((s) => done[s.id] || now >= s.whenHour + 2).length;
+    el.innerHTML =
+      '<div class="safar-hdr"><span class="safar-title">Aaj ka safar</span><span class="safar-count">' +
+      completed +
+      "/" +
+      SAFAR_STEPS.length +
+      '</span></div><div class="safar-track">' +
+      parts +
+      "</div>";
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // v6.2 — Magic Walkthrough: "Dadi ke saath karein"
+  //
+  // Embodied remedy player. After every AI reply that mentions a remedy we
+  // recognise, a green CTA is appended in chat. Tap → full-screen overlay
+  // plays the experience step-by-step with synced Dadi voice (Sarvam TTS),
+  // inline kitchen-scene SVG animations, a step timer, and a "kaisa laga?"
+  // outcome capture at the end.
+  //
+  // Schema (REMEDY_EXPERIENCES[key]):
+  //   title        — short display name ("Haldi-Doodh")
+  //   subtitle     — context blurb shown in CTA + header ("zukaam ke liye")
+  //   kindIcon     — emoji for the CTA tile (e.g. "🌿")
+  //   match        — array of lowercased substrings; if any appears in an AI
+  //                  reply, we offer this experience. Multilingual on purpose.
+  //   steps[]      — { titleHi, lineHi, sayHi, svg | lottieUrl, durationSec }
+  //   finishLine   — Dadi's closing line
+  //   citation     — CCRAS attribution if applicable
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // — Kitchen-scene SVG library. Five hand-crafted scenes, CSS-driven motion
+  //   via classes that match keyframes in globals.css (.flame, .steam, etc.).
+  //   Realistic warm palette: cream, gold, terracotta, charcoal. No faces, no
+  //   googly eyes — the brief was "not cartoony". Each is 200x200 viewBox.
+  const KITCHEN_SVG = {
+    "pan-milk-heat": `
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="kitchen-svg">
+  <defs>
+    <radialGradient id="ks-flame" cx="50%" cy="100%" r="65%">
+      <stop offset="0%" stop-color="#fde047"/>
+      <stop offset="55%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#dc2626"/>
+    </radialGradient>
+  </defs>
+  <g class="steam">
+    <path d="M 88 70 Q 92 58 86 46 Q 82 34 88 22" stroke="#cbd5e1" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.55"/>
+  </g>
+  <g class="steam s2">
+    <path d="M 108 70 Q 104 56 110 44 Q 114 32 108 20" stroke="#cbd5e1" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.55"/>
+  </g>
+  <g class="steam s3">
+    <path d="M 128 72 Q 132 60 126 48 Q 122 36 128 26" stroke="#cbd5e1" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.45"/>
+  </g>
+  <path d="M 55 92 L 55 138 Q 55 154 71 154 L 129 154 Q 145 154 145 138 L 145 92 Z" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+  <rect x="60" y="96" width="80" height="40" rx="2" fill="#fef9c3"/>
+  <ellipse cx="100" cy="96" rx="40" ry="3" fill="#fef9c3" opacity="0.7"/>
+  <rect x="145" y="115" width="38" height="6" rx="3" fill="#334155"/>
+  <ellipse cx="100" cy="168" rx="55" ry="6" fill="#1e293b"/>
+  <g transform="translate(100 162)">
+    <g class="flame">
+      <path d="M -22 0 Q -26 -14 -16 -22 Q -10 -16 -6 -24 Q -2 -16 2 -26 Q 6 -16 12 -24 Q 18 -16 22 -22 Q 26 -14 22 0 Z" fill="url(#ks-flame)"/>
+    </g>
+  </g>
+</svg>`,
+    "spoon-haldi-pour": `
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="kitchen-svg">
+  <defs>
+    <linearGradient id="ks-cupg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fef9c3"/>
+      <stop offset="100%" stop-color="#fde68a"/>
+    </linearGradient>
+  </defs>
+  <g class="spoon-pour" transform="translate(125 35)">
+    <rect x="0" y="0" width="32" height="6" rx="2" fill="#7c2d12"/>
+    <ellipse cx="-4" cy="3" rx="9" ry="7" fill="#a16207"/>
+    <ellipse cx="-4" cy="2" rx="7" ry="5" fill="#ca8a04"/>
+  </g>
+  <g>
+    <circle cx="100" cy="90" r="3" fill="#ca8a04" class="particle"/>
+    <circle cx="95" cy="95" r="2" fill="#ca8a04" class="particle p2"/>
+    <circle cx="105" cy="100" r="2.5" fill="#a16207" class="particle p3"/>
+    <circle cx="100" cy="108" r="2" fill="#ca8a04" class="particle p4"/>
+  </g>
+  <path d="M 60 115 L 65 165 Q 65 175 75 175 L 125 175 Q 135 175 135 165 L 140 115 Z" fill="#475569" stroke="#64748b" stroke-width="1.5"/>
+  <ellipse cx="100" cy="115" rx="40" ry="5" fill="url(#ks-cupg)"/>
+  <ellipse cx="100" cy="115" rx="36" ry="3" fill="#fef3c7" opacity="0.6"/>
+  <rect x="135" y="130" width="20" height="4" rx="2" fill="#334155"/>
+</svg>`,
+    "spoon-stir": `
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="kitchen-svg">
+  <defs>
+    <radialGradient id="ks-swirl" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fef3c7"/>
+      <stop offset="60%" stop-color="#fde68a"/>
+      <stop offset="100%" stop-color="#facc15"/>
+    </radialGradient>
+  </defs>
+  <circle cx="100" cy="110" r="58" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+  <circle cx="100" cy="110" r="52" fill="url(#ks-swirl)"/>
+  <g opacity="0.45">
+    <circle cx="100" cy="110" r="34" fill="none" stroke="#fff" stroke-width="1.3" stroke-dasharray="3 4"/>
+    <circle cx="100" cy="110" r="22" fill="none" stroke="#fff" stroke-width="1" stroke-dasharray="2 3"/>
+  </g>
+  <g class="spoon-stir">
+    <rect x="98" y="62" width="6" height="58" rx="2" fill="#7c2d12"/>
+    <ellipse cx="101" cy="120" rx="9" ry="7" fill="#a16207"/>
+  </g>
+</svg>`,
+    "pan-boil": `
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="kitchen-svg">
+  <defs>
+    <radialGradient id="ks-flame2" cx="50%" cy="100%" r="65%">
+      <stop offset="0%" stop-color="#fde047"/>
+      <stop offset="55%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#dc2626"/>
+    </radialGradient>
+  </defs>
+  <g class="steam">
+    <path d="M 80 56 Q 84 44 78 30 Q 76 18 82 8" stroke="#e2e8f0" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.55"/>
+  </g>
+  <g class="steam s2">
+    <path d="M 100 52 Q 96 38 102 24 Q 104 12 100 2" stroke="#e2e8f0" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.55"/>
+  </g>
+  <g class="steam s3">
+    <path d="M 122 56 Q 126 44 120 30 Q 118 18 124 8" stroke="#e2e8f0" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.45"/>
+  </g>
+  <path d="M 55 92 L 55 138 Q 55 154 71 154 L 129 154 Q 145 154 145 138 L 145 92 Z" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+  <rect x="60" y="96" width="80" height="40" rx="2" fill="#fbbf24"/>
+  <ellipse cx="100" cy="96" rx="40" ry="3" fill="#fde68a" opacity="0.8"/>
+  <circle cx="82" cy="128" r="4" fill="#fef3c7" class="bubble"/>
+  <circle cx="100" cy="132" r="5" fill="#fef3c7" class="bubble b2"/>
+  <circle cx="118" cy="128" r="3.5" fill="#fef3c7" class="bubble b3"/>
+  <circle cx="90" cy="124" r="3" fill="#fef3c7" class="bubble b4"/>
+  <rect x="145" y="115" width="38" height="6" rx="3" fill="#334155"/>
+  <ellipse cx="100" cy="168" rx="55" ry="6" fill="#1e293b"/>
+  <g transform="translate(100 162)">
+    <g class="flame">
+      <path d="M -18 0 Q -22 -12 -14 -18 Q -8 -14 -4 -20 Q 0 -14 4 -22 Q 8 -14 14 -18 Q 22 -12 18 0 Z" fill="url(#ks-flame2)"/>
+    </g>
+  </g>
+</svg>`,
+    "drink-rest": `
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="kitchen-svg">
+  <g class="steam" transform="translate(160 60)">
+    <path d="M 0 25 Q 4 12 -2 0 Q -6 -10 0 -22" stroke="#cbd5e1" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.55"/>
+  </g>
+  <g class="steam s2" transform="translate(170 64)">
+    <path d="M 0 24 Q -4 12 2 -2 Q 4 -14 -2 -24" stroke="#cbd5e1" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.5"/>
+  </g>
+  <g transform="translate(155 85)">
+    <path d="M 0 0 L 0 32 Q 0 40 8 40 L 22 40 Q 30 40 30 32 L 30 0 Z" fill="#475569" stroke="#64748b" stroke-width="1.5"/>
+    <rect x="2" y="3" width="26" height="10" rx="2" fill="#fbbf24"/>
+  </g>
+  <g class="body-rest">
+    <ellipse cx="80" cy="160" rx="70" ry="12" fill="#334155" opacity="0.4"/>
+    <rect x="20" y="120" width="120" height="32" rx="16" fill="#94a3b8"/>
+    <circle cx="44" cy="120" r="22" fill="#fbcfe8"/>
+    <path d="M 28 110 Q 44 96 60 110 L 60 120 L 28 120 Z" fill="#4c1d95"/>
+    <rect x="10" y="145" width="135" height="8" rx="4" fill="#1e293b"/>
+  </g>
+  <text x="100" y="74" font-size="22" fill="#94a3b8" class="zzz" font-family="system-ui">z</text>
+  <text x="112" y="60" font-size="18" fill="#94a3b8" class="zzz z2" font-family="system-ui">z</text>
+</svg>`,
+    // v6.3.2 — two new scenes for leaf-based and skin-application remedies
+    "leaf-grind": `
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="kitchen-svg">
+  <ellipse cx="100" cy="180" rx="74" ry="6" fill="#1e1b18" opacity="0.5"/>
+  <path d="M 50 130 Q 50 175 100 178 Q 150 175 150 130 Z" fill="#78350f" stroke="#451a03" stroke-width="2"/>
+  <path d="M 60 130 Q 60 162 100 165 Q 140 162 140 130 Z" fill="#1c1917"/>
+  <ellipse cx="100" cy="130" rx="50" ry="6" fill="#a16207" opacity="0.6"/>
+  <ellipse cx="78" cy="140" rx="8" ry="5" fill="#16a34a" transform="rotate(-14 78 140)"/>
+  <ellipse cx="100" cy="145" rx="9" ry="6" fill="#15803d" transform="rotate(8 100 145)"/>
+  <ellipse cx="122" cy="140" rx="8" ry="5" fill="#16a34a" transform="rotate(22 122 140)"/>
+  <ellipse cx="90" cy="153" rx="5" ry="3" fill="#22c55e"/>
+  <ellipse cx="110" cy="153" rx="5" ry="3" fill="#22c55e"/>
+  <g class="pestle-grind">
+    <rect x="94" y="50" width="12" height="92" rx="6" fill="#7c2d12" stroke="#451a03" stroke-width="1.2"/>
+    <ellipse cx="100" cy="50" rx="9" ry="4" fill="#a16207"/>
+    <ellipse cx="100" cy="142" rx="11" ry="5" fill="#451a03"/>
+  </g>
+</svg>`,
+    "paste-apply": `
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="kitchen-svg">
+  <ellipse cx="100" cy="110" rx="70" ry="58" fill="#fde2c8" stroke="#f5cba7" stroke-width="1.5"/>
+  <ellipse cx="100" cy="100" rx="62" ry="48" fill="#fef0e0" opacity="0.7"/>
+  <ellipse cx="100" cy="110" rx="32" ry="18" fill="#fbbf24" opacity="0.9" class="paste-smear"/>
+  <ellipse cx="100" cy="110" rx="20" ry="12" fill="#f59e0b" opacity="0.6" class="paste-smear"/>
+  <g class="finger-sweep">
+    <rect x="36" y="68" width="22" height="58" rx="11" fill="#fde2c8" stroke="#f5cba7" stroke-width="1.5"/>
+    <ellipse cx="47" cy="68" rx="11" ry="7" fill="#fde2c8" stroke="#f5cba7" stroke-width="1.5"/>
+    <ellipse cx="47" cy="68" rx="6" ry="3" fill="#f5cba7" opacity="0.6"/>
+  </g>
+</svg>`,
+  };
+
+  // — Library of fully-embodied remedies. v6.2 ships ONE polished exemplar
+  //   (haldi-doodh for zukaam) to prove the experience pattern. Subsequent
+  //   entries are data-only and reuse the engine below. The schema also
+  //   supports lottieUrl for richer animations once we source/host JSONs.
+  const REMEDY_EXPERIENCES = {
+    "haldi-doodh": {
+      title: "Haldi-Doodh",
+      subtitle: "Zukaam ke liye Dadi ka nuska",
+      kindIcon: "🌿",
+      match: [
+        "haldi-doodh",
+        "haldi doodh",
+        "हल्दी दूध",
+        "हल्दी-दूध",
+        "turmeric milk",
+        "golden milk",
+        "haldi wala doodh",
+      ],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 30,
+          titleHi: "Doodh garam karein",
+          lineHi: "Pehle ek cup doodh halki aanch par garam karo.",
+          sayHi: "पहले एक कप दूध हल्की आंच पर गरम करो।",
+          svg: "pan-milk-heat",
+        },
+        {
+          ix: 2,
+          durationSec: 22,
+          titleHi: "Haldi daalo",
+          lineHi: "Aadha chamach haldi daalo — sirf aadha, zyada nahi.",
+          sayHi: "अब आधा चम्मच हल्दी डालो — सिर्फ आधा, ज़्यादा नहीं।",
+          svg: "spoon-haldi-pour",
+        },
+        {
+          ix: 3,
+          durationSec: 22,
+          titleHi: "Acche se hilao",
+          lineHi: "Chamach se acche se hilao, gaanth na rahe.",
+          sayHi: "चम्मच से अच्छे से हिलाओ, गांठ ना रहे।",
+          svg: "spoon-stir",
+        },
+        {
+          ix: 4,
+          durationSec: 45,
+          titleHi: "Halki aanch pe ubaalo",
+          lineHi: "Halki aanch pe ek minute aur ubaalo, jhaag aaye toh utar lo.",
+          sayHi: "हल्की आंच पर एक मिनट और उबालो, झाग आए तो उतार लो।",
+          svg: "pan-boil",
+        },
+        {
+          ix: 5,
+          durationSec: 50,
+          titleHi: "Piyo aur let jao",
+          lineHi: "Garam-garam piyo aur kambal odhke let jao. Subah farak dikhega.",
+          sayHi: "गरम गरम पियो और कंबल ओढ़ के लेट जाओ। सुबह फ़र्क दिखेगा।",
+          svg: "drink-rest",
+        },
+      ],
+      finishLine: "Bas beta, ho gaya. Thodi der aaraam karo. Subah tak farak dikhega.",
+      finishLineHi: "बस बेटा, हो गया। थोड़ी देर आराम करो। सुबह तक फ़र्क दिखेगा।",
+      citation:
+        "Yeh nushka Central Government ke Ayurvedic research (CCRAS) ke mutabik hai — Ministry of Health ne ise validate kiya hai. 2-3 din mein farak na pade toh paas ke doctor se milein.",
+    },
+    // Key matches REMEDY_KITS["adrak-chai"] so the existing recipe-card play
+    // button (onclick="openRemedy('adrak-chai')") routes here automatically.
+    "adrak-chai": {
+      title: "Adrak ki chai",
+      subtitle: "Sardi-khansi ka Dadi ka nuska",
+      kindIcon: "🫚",
+      match: [
+        "adrak-chai",
+        "adrak ki chai",
+        "adrak chai",
+        "अदरक की चाय",
+        "अदरक चाय",
+        "ginger tea",
+        "ginger chai",
+      ],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 25,
+          titleHi: "Adrak chhote tukde karein",
+          lineHi: "Ek inch adrak ke chhote tukde karo, halka sa kuto taaki rass nikle.",
+          sayHi: "एक इंच अदरक के छोटे टुकड़े करो, हल्का सा कूटो ताकि रस निकले।",
+          svg: "spoon-haldi-pour",
+        },
+        {
+          ix: 2,
+          durationSec: 50,
+          titleHi: "Paani + adrak ubaalo",
+          lineHi: "Aadha cup paani mein adrak aur chai patti daal ke ubaalo.",
+          sayHi: "आधा कप पानी में अदरक और चाय पत्ती डाल के उबालो।",
+          svg: "pan-boil",
+        },
+        {
+          ix: 3,
+          durationSec: 50,
+          titleHi: "Doodh daalo",
+          lineHi: "Ab aadha cup doodh daal do. Teen-chaar minute aur ubaalo.",
+          sayHi: "अब आधा कप दूध डाल दो। तीन चार मिनट और उबालो।",
+          svg: "pan-milk-heat",
+        },
+        {
+          ix: 4,
+          durationSec: 25,
+          titleHi: "Chhan lo · gud daalo",
+          lineHi: "Chhanke cup mein nikaalo. Cheeni nahi — gud mila lo.",
+          sayHi: "छान के कप में निकालो। चीनी नहीं — गुड़ मिला लो।",
+          svg: "spoon-stir",
+        },
+        {
+          ix: 5,
+          durationSec: 40,
+          titleHi: "Garam piyo",
+          lineHi: "Garam-garam ghoont-ghoont piyo. Subah-shaam, 2 din. Galay khulta jaayega.",
+          sayHi: "गरम गरम घूंट घूंट पियो। सुबह शाम दो दिन। गला खुलता जाएगा।",
+          svg: "drink-rest",
+        },
+      ],
+      finishLine: "Beta, garam-garam pi liya. Ab thoda aaraam karo. Galay khulega.",
+      finishLineHi: "बेटा, गरम गरम पी लिया। अब थोड़ा आराम करो। गला खुलेगा।",
+      citation:
+        "Adrak ka use sardi-khansi ke liye CCRAS (Govt of India) ke Ayurvedic Home Remedies booklet mein documented hai. Agar 2-3 din mein farak na pade toh doctor se milein.",
+    },
+
+    // ───────────────────────────────────────────────────────────────────────
+    // v6.3.2 — 10 more embodied remedies, reusing the 5 kitchen scenes + the
+    // 2 new ones (leaf-grind, paste-apply). Each follows the same schema as
+    // haldi-doodh / adrak-chai. Keys match REMEDY_KITS so the existing
+    // recipe-card play button auto-routes through openRemedy → openWalkthrough.
+    // No CCRAS citation field — that decision is documented in the prompt
+    // softening (citing every nushka was reading as spam).
+    // ───────────────────────────────────────────────────────────────────────
+
+    "jeera-paani": {
+      title: "Jeera paani",
+      subtitle: "Pet halka, gas ke liye",
+      kindIcon: "🟤",
+      match: ["jeera paani", "जीरा पानी", "cumin water", "jeera water"],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 25,
+          titleHi: "Paani garam karo",
+          lineHi: "Ek glass paani halki aanch par garam karo.",
+          sayHi: "एक गिलास पानी हल्की आंच पर गरम करो।",
+          svg: "pan-milk-heat",
+        },
+        {
+          ix: 2,
+          durationSec: 35,
+          titleHi: "Jeera daal ke ubaalo",
+          lineHi: "Ek chamach jeera daalo aur do minute aur ubaalo.",
+          sayHi: "एक चम्मच जीरा डालो और दो मिनट और उबालो।",
+          svg: "pan-boil",
+        },
+        {
+          ix: 3,
+          durationSec: 30,
+          titleHi: "Chhan ke garam piyo",
+          lineHi: "Chhan ke garam-garam ghoont-ghoont piyo. Pet halka feel hoga.",
+          sayHi: "छान के गरम गरम घूंट घूंट पियो। पेट हल्का लगेगा।",
+          svg: "drink-rest",
+        },
+      ],
+      finishLine: "Pet ko aaraam mil gaya hoga, beta.",
+      finishLineHi: "पेट को आराम मिल गया होगा, बेटा।",
+    },
+
+    "tulsi-kadha": {
+      title: "Tulsi kadha",
+      subtitle: "Sardi-khansi aur immunity ke liye",
+      kindIcon: "🌿",
+      match: ["tulsi kadha", "तुलसी काढ़ा", "tulsi tea", "तुलसी चाय"],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 25,
+          titleHi: "Tulsi patte kuto",
+          lineHi: "8-10 taza tulsi patte tod ke halka kuto, taaki rass nikle.",
+          sayHi: "आठ दस ताज़े तुलसी पत्ते तोड़ के हल्का कूटो, ताकि रस निकले।",
+          svg: "leaf-grind",
+        },
+        {
+          ix: 2,
+          durationSec: 50,
+          titleHi: "Paani mein ubaalo",
+          lineHi: "Ek cup paani mein tulsi, 2 kali mirch aur thodi adrak daal ke 5 min ubaalo.",
+          sayHi: "एक कप पानी में तुलसी, दो काली मिर्च और थोड़ी अदरक डाल के पांच मिनट उबालो।",
+          svg: "pan-boil",
+        },
+        {
+          ix: 3,
+          durationSec: 30,
+          titleHi: "Garam piyo",
+          lineHi: "Chhan ke shahad mila lo, garam-garam piyo. Galay aur sardi dono ko aaraam.",
+          sayHi: "छान के शहद मिला लो, गरम गरम पियो। गला और सर्दी दोनों को आराम।",
+          svg: "drink-rest",
+        },
+      ],
+      finishLine: "Tulsi ka asar zaroor dikhega, beta. Aaraam karo.",
+      finishLineHi: "तुलसी का असर ज़रूर दिखेगा, बेटा। आराम करो।",
+    },
+
+    "methi-paani": {
+      title: "Methi paani",
+      subtitle: "Pet aur sugar ke liye",
+      kindIcon: "🟡",
+      match: ["methi paani", "मेथी पानी", "fenugreek water"],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 20,
+          titleHi: "Methi raat bhar bhigao",
+          lineHi: "Ek chamach methi ke daane ek glass paani mein raat bhar bhigao.",
+          sayHi: "एक चम्मच मेथी के दाने एक गिलास पानी में रात भर भिगाओ।",
+          svg: "spoon-haldi-pour",
+        },
+        {
+          ix: 2,
+          durationSec: 20,
+          titleHi: "Subah chhano",
+          lineHi: "Subah uthkar woh paani chhan lo. Daane chaba lo ya phenk do.",
+          sayHi: "सुबह उठ कर वो पानी छान लो। दाने चबा लो या फेंक दो।",
+          svg: "spoon-stir",
+        },
+        {
+          ix: 3,
+          durationSec: 30,
+          titleHi: "Khali pet piyo",
+          lineHi: "Khali pet woh paani piyo. Roz karne se pachhan strong rahegi.",
+          sayHi: "खाली पेट वो पानी पियो। रोज़ करने से पाचन मज़बूत रहेगा।",
+          svg: "drink-rest",
+        },
+      ],
+      finishLine: "Roz subah karoge toh pet halka aur energy zyada rahegi.",
+      finishLineHi: "रोज़ सुबह करोगे तो पेट हल्का और ऊर्जा ज़्यादा रहेगी।",
+    },
+
+    "nimbu-shahad": {
+      title: "Nimbu-shahad paani",
+      subtitle: "Subah ka detox",
+      kindIcon: "🍋",
+      match: ["nimbu shahad", "नींबू शहद", "lemon honey", "warm lemon water"],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 25,
+          titleHi: "Paani halka garam karo",
+          lineHi: "Ek glass paani halka garam karo, ubalna nahi.",
+          sayHi: "एक गिलास पानी हल्का गरम करो, उबालना नहीं।",
+          svg: "pan-milk-heat",
+        },
+        {
+          ix: 2,
+          durationSec: 25,
+          titleHi: "Nimbu aur shahad daalo",
+          lineHi: "Aadha nimbu nichodo aur ek chamach shahad daalo.",
+          sayHi: "आधा नींबू निचोड़ो और एक चम्मच शहद डालो।",
+          svg: "spoon-haldi-pour",
+        },
+        {
+          ix: 3,
+          durationSec: 20,
+          titleHi: "Hilao",
+          lineHi: "Acche se hilao. Shahad ghulna chahiye.",
+          sayHi: "अच्छे से हिलाओ। शहद घुलना चाहिए।",
+          svg: "spoon-stir",
+        },
+        {
+          ix: 4,
+          durationSec: 30,
+          titleHi: "Khali pet piyo",
+          lineHi: "Subah khali pet piyo. Body halki feel hogi.",
+          sayHi: "सुबह खाली पेट पियो। शरीर हल्का लगेगा।",
+          svg: "drink-rest",
+        },
+      ],
+      finishLine: "Roz karne se sehat mein farak dikhega, beta.",
+      finishLineHi: "रोज़ करने से सेहत में फ़र्क दिखेगा, बेटा।",
+    },
+
+    "dalchini-shahad": {
+      title: "Dalchini-shahad",
+      subtitle: "Cold, sugar control",
+      kindIcon: "🤎",
+      match: ["dalchini shahad", "दालचीनी शहद", "cinnamon honey"],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 25,
+          titleHi: "Dalchini powder lo",
+          lineHi: "Aadha chamach dalchini powder ek katori mein nikalo.",
+          sayHi: "आधा चम्मच दालचीनी पाउडर एक कटोरी में निकालो।",
+          svg: "spoon-haldi-pour",
+        },
+        {
+          ix: 2,
+          durationSec: 25,
+          titleHi: "Shahad mix karo",
+          lineHi: "Ek chamach shahad daal ke acche se hilao taaki paste ban jaaye.",
+          sayHi: "एक चम्मच शहद डाल के अच्छे से हिलाओ ताकि पेस्ट बन जाए।",
+          svg: "spoon-stir",
+        },
+        {
+          ix: 3,
+          durationSec: 25,
+          titleHi: "Khali pet chaato",
+          lineHi: "Subah khali pet aadha chamach chaato. Garam paani upar se piyo.",
+          sayHi: "सुबह खाली पेट आधा चम्मच चाटो। गरम पानी ऊपर से पियो।",
+          svg: "drink-rest",
+        },
+      ],
+      finishLine: "Hofta-bhar karne se asar dikhega, beta.",
+      finishLineHi: "हफ़्ता भर करने से असर दिखेगा, बेटा।",
+    },
+
+    "tulsi-shahad": {
+      title: "Tulsi-shahad",
+      subtitle: "Khansi aur galay ke liye",
+      kindIcon: "🌿",
+      match: ["tulsi shahad", "तुलसी शहद", "tulsi honey"],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 25,
+          titleHi: "Tulsi patte kuto",
+          lineHi: "5-6 tulsi patte halka kuto taaki rass nikle.",
+          sayHi: "पांच छह तुलसी पत्ते हल्का कूटो ताकि रस निकले।",
+          svg: "leaf-grind",
+        },
+        {
+          ix: 2,
+          durationSec: 25,
+          titleHi: "Shahad ke saath mix karo",
+          lineHi: "Ek chamach shahad daal ke acche se mila lo.",
+          sayHi: "एक चम्मच शहद डाल के अच्छे से मिला लो।",
+          svg: "spoon-stir",
+        },
+        {
+          ix: 3,
+          durationSec: 30,
+          titleHi: "Dheere dheere chaato",
+          lineHi: "Mooh mein rakh ke dheere dheere chaato. Din mein 2-3 baar.",
+          sayHi: "मुंह में रख के धीरे धीरे चाटो। दिन में दो तीन बार।",
+          svg: "drink-rest",
+        },
+      ],
+      finishLine: "Galay ki khich-khich kam hogi, beta.",
+      finishLineHi: "गले की खिच खिच कम होगी, बेटा।",
+    },
+
+    "lasun-shahad": {
+      title: "Lasun-shahad",
+      subtitle: "Khansi aur immunity ke liye",
+      kindIcon: "🧄",
+      match: ["lasun shahad", "लहसुन शहद", "garlic honey", "lehsun shahad"],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 25,
+          titleHi: "Lasun ki 2 kaliyaan kuto",
+          lineHi: "Lasun ki 2 kaliyaan chhilke acche se kuto.",
+          sayHi: "लहसुन की दो कलियां छील के अच्छे से कूटो।",
+          svg: "leaf-grind",
+        },
+        {
+          ix: 2,
+          durationSec: 25,
+          titleHi: "Shahad daal ke mix karo",
+          lineHi: "Ek chamach shahad daal ke 2 minute chhod do, taaki ras mix ho jaaye.",
+          sayHi: "एक चम्मच शहद डाल के दो मिनट छोड़ दो, ताकि रस मिक्स हो जाए।",
+          svg: "spoon-stir",
+        },
+        {
+          ix: 3,
+          durationSec: 25,
+          titleHi: "Khali pet khao",
+          lineHi: "Subah khali pet khao. Strong taste hai, paani peelo upar se.",
+          sayHi: "सुबह खाली पेट खाओ। तेज़ स्वाद है, पानी पी लो ऊपर से।",
+          svg: "drink-rest",
+        },
+      ],
+      finishLine: "Immunity strong banegi, beta. Roz karoge toh kamaal.",
+      finishLineHi: "इम्यूनिटी मज़बूत बनेगी, बेटा। रोज़ करोगे तो कमाल।",
+    },
+
+    "saunf-paani": {
+      title: "Saunf paani",
+      subtitle: "Pet aur saans ke liye",
+      kindIcon: "🟢",
+      match: ["saunf paani", "सौंफ पानी", "fennel water"],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 25,
+          titleHi: "Paani garam karo",
+          lineHi: "Ek glass paani halki aanch par garam karo.",
+          sayHi: "एक गिलास पानी हल्की आंच पर गरम करो।",
+          svg: "pan-milk-heat",
+        },
+        {
+          ix: 2,
+          durationSec: 40,
+          titleHi: "Saunf daal ke ubaalo",
+          lineHi: "Ek chamach saunf daalo aur 3-4 min ubaalo.",
+          sayHi: "एक चम्मच सौंफ डालो और तीन चार मिनट उबालो।",
+          svg: "pan-boil",
+        },
+        {
+          ix: 3,
+          durationSec: 30,
+          titleHi: "Chhan ke garam piyo",
+          lineHi: "Chhan ke garam-garam ghoont-ghoont piyo. Khaane ke baad behtar.",
+          sayHi: "छान के गरम गरम घूंट घूंट पियो। खाने के बाद बेहतर।",
+          svg: "drink-rest",
+        },
+      ],
+      finishLine: "Pet halka aur saans bhi taza feel hoga.",
+      finishLineHi: "पेट हल्का और साँस भी ताज़ी लगेगी।",
+    },
+
+    "dhaniya-paani": {
+      title: "Dhaniya paani",
+      subtitle: "Pet thanda, dehydration ke liye",
+      kindIcon: "🌱",
+      match: ["dhaniya paani", "धनिया पानी", "coriander water"],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 20,
+          titleHi: "Dhaniya bhigao",
+          lineHi: "Ek chamach saabut dhaniya raat bhar paani mein bhigao.",
+          sayHi: "एक चम्मच साबुत धनिया रात भर पानी में भिगाओ।",
+          svg: "spoon-haldi-pour",
+        },
+        {
+          ix: 2,
+          durationSec: 25,
+          titleHi: "Subah chhano",
+          lineHi: "Subah uthkar chhan lo. Paani halka peela ho jaayega.",
+          sayHi: "सुबह उठ कर छान लो। पानी हल्का पीला हो जाएगा।",
+          svg: "spoon-stir",
+        },
+        {
+          ix: 3,
+          durationSec: 30,
+          titleHi: "Khali pet piyo",
+          lineHi: "Khali pet pi lo. Pet ki garmi shaant karta hai.",
+          sayHi: "खाली पेट पी लो। पेट की गर्मी शांत करता है।",
+          svg: "drink-rest",
+        },
+      ],
+      finishLine: "Pet thanda aur halka feel hoga, beta.",
+      finishLineHi: "पेट ठंडा और हल्का लगेगा, बेटा।",
+    },
+
+    "neem-haldi-paste": {
+      title: "Neem-haldi paste",
+      subtitle: "Skin, daane, pimples ke liye",
+      kindIcon: "🌿",
+      match: ["neem haldi paste", "नीम हल्दी पेस्ट", "neem turmeric paste"],
+      steps: [
+        {
+          ix: 1,
+          durationSec: 30,
+          titleHi: "Neem patte peeso",
+          lineHi: "8-10 taza neem patte aur thodi haldi mil ke peeso, paste banayein.",
+          sayHi: "आठ दस ताज़े नीम पत्ते और थोड़ी हल्दी मिला के पीसो, पेस्ट बनाओ।",
+          svg: "leaf-grind",
+        },
+        {
+          ix: 2,
+          durationSec: 20,
+          titleHi: "Haldi mila lo",
+          lineHi: "Chutki bhar haldi daal ke paste ko chikna karo.",
+          sayHi: "चुटकी भर हल्दी डाल के पेस्ट को चिकना करो।",
+          svg: "spoon-stir",
+        },
+        {
+          ix: 3,
+          durationSec: 40,
+          titleHi: "Affected jagah par lagao",
+          lineHi: "Paste ko prabhavit jagah par halke haath se lagao. 15-20 min sookhne do.",
+          sayHi: "पेस्ट को प्रभावित जगह पर हल्के हाथ से लगाओ। पंद्रह बीस मिनट सूखने दो।",
+          svg: "paste-apply",
+        },
+        {
+          ix: 4,
+          durationSec: 20,
+          titleHi: "Gunguna paani se dhoyo",
+          lineHi: "Gunguna paani se halke haath se dho lo. Roz raat ko karein.",
+          sayHi: "गुनगुने पानी से हल्के हाथ से धो लो। रोज़ रात को करें।",
+          svg: "drink-rest",
+        },
+      ],
+      finishLine: "Hofta bhar karoge toh chamak laut aayegi.",
+      finishLineHi: "हफ़्ता भर करोगे तो चमक लौट आएगी।",
+    },
+  };
+
+  // ── Engine state ──
+  let _wt = null; // { exp, idx, timerId, paused, startedAtMs }
+  // v6.2.1: published flag the voice loop reads to avoid echo-cycle (its own
+  // TTS being captured by the mic and re-triggered through the fast-path).
+  window._walkthroughOpen = false;
+
+  function openWalkthrough(experienceKey) {
+    // v6.2.1: hard re-entry guard. If a walkthrough is already running and a
+    // duplicate trigger comes in (echo loop, double-tap CTA, fast-path firing
+    // mid-step), drop it on the floor instead of resetting idx to 0.
+    if (_wt && _wt.key === experienceKey) {
+      console.info("[walkthrough] already running, ignoring duplicate open for", experienceKey);
+      return;
+    }
+    const exp = REMEDY_EXPERIENCES[experienceKey];
+    if (!exp) {
+      console.warn("[walkthrough] no experience for", experienceKey);
+      return;
+    }
+    // v6.2.1: ALWAYS kill voice before walkthrough opens, regardless of
+    // _convActive. The recorder may be in mid-callback even after _convActive
+    // flips, so we explicitly tear it down and also hide the voice overlay.
+    if (typeof stopVoice === "function") stopVoice();
+    if (typeof hideVoiceOverlay === "function") {
+      try {
+        hideVoiceOverlay();
+      } catch (e) {}
+    }
+    // Publish the flag BEFORE any DOM work, so a concurrent convHandleTranscript
+    // sees walkthrough as open and skips its skill-detection pass.
+    window._walkthroughOpen = true;
+
+    const overlay = document.getElementById("wt-overlay");
+    const modal = overlay && overlay.querySelector(".wt-modal");
+    const finishEl = document.getElementById("wt-finish");
+    if (!overlay) return;
+    if (modal) modal.classList.remove("finished");
+    if (finishEl) finishEl.classList.remove("open");
+    overlay.classList.add("open");
+    overlay.setAttribute("aria-hidden", "false");
+    _wt = { exp, idx: 0, timerId: null, paused: false, key: experienceKey };
+    // Set top fields once
+    setText("wt-title", exp.title);
+    setText("wt-subtitle", exp.subtitle);
+    renderWtDots();
+    runWalkthroughStep();
+    console.info("[walkthrough] opened", experienceKey);
+  }
+
+  function setText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+
+  function renderWtDots() {
+    const dotsEl = document.getElementById("wt-dots");
+    if (!dotsEl || !_wt) return;
+    const total = _wt.exp.steps.length;
+    let html = "";
+    for (let i = 0; i < total; i++) {
+      const cls = i < _wt.idx ? "wt-dot done" : i === _wt.idx ? "wt-dot active" : "wt-dot";
+      html += '<span class="' + cls + '"></span>';
+    }
+    dotsEl.innerHTML = html;
+  }
+
+  function runWalkthroughStep() {
+    if (!_wt) return;
+    const step = _wt.exp.steps[_wt.idx];
+    if (!step) {
+      finishWalkthrough();
+      return;
+    }
+    // Render the inline SVG for this step
+    const stage = document.getElementById("wt-anim");
+    if (stage) {
+      if (step.svg && KITCHEN_SVG[step.svg]) {
+        stage.innerHTML = KITCHEN_SVG[step.svg];
+      } else if (step.lottieUrl && typeof window.lottie !== "undefined") {
+        stage.innerHTML = "";
+        try {
+          window.lottie.loadAnimation({
+            container: stage,
+            renderer: "svg",
+            loop: true,
+            autoplay: true,
+            path: step.lottieUrl,
+          });
+        } catch (e) {
+          console.warn("[walkthrough] lottie failed for", step.lottieUrl, e);
+        }
+      } else {
+        stage.innerHTML = '<div style="font-size:60px;opacity:.5">🌿</div>';
+      }
+    }
+    setText("wt-step-counter", "Step " + step.ix + " / " + _wt.exp.steps.length);
+    setText("wt-step-title", step.titleHi);
+    setText("wt-step-line", step.lineHi);
+    renderWtDots();
+    // Speak this step's Dadi line (Sarvam TTS via existing speak())
+    if (typeof speak === "function") {
+      speak(step.lineHi, { ttsText: step.sayHi || step.lineHi });
+    }
+    console.info("[walkthrough] step", step.ix, step.titleHi);
+    startWalkthroughTimer(step.durationSec);
+  }
+
+  function startWalkthroughTimer(seconds) {
+    if (_wt && _wt.timerId) {
+      clearTimeout(_wt.timerId);
+      _wt.timerId = null;
+    }
+    const fill = document.getElementById("wt-timer-fill");
+    if (fill) {
+      fill.style.transition = "none";
+      fill.style.width = "0%";
+      // Force reflow so the next assignment animates
+      void fill.offsetWidth;
+      fill.style.transition = "width " + seconds + "s linear";
+      fill.style.width = "100%";
+    }
+    if (!_wt) return;
+    _wt.startedAtMs = Date.now();
+    _wt.timerId = setTimeout(() => {
+      if (!_wt || _wt.paused) return;
+      walkthroughNext();
+    }, seconds * 1000);
+  }
+
+  function walkthroughNext() {
+    if (!_wt) return;
+    if (_wt.timerId) {
+      clearTimeout(_wt.timerId);
+      _wt.timerId = null;
+    }
+    _wt.idx++;
+    runWalkthroughStep();
+  }
+  window.walkthroughNext = walkthroughNext;
+
+  function walkthroughPauseToggle() {
+    if (!_wt) return;
+    _wt.paused = !_wt.paused;
+    const icon = document.getElementById("wt-pause-icon");
+    if (icon) icon.textContent = _wt.paused ? "▶" : "⏸";
+    if (_wt.paused) {
+      if (_wt.timerId) {
+        clearTimeout(_wt.timerId);
+        _wt.timerId = null;
+      }
+      const fill = document.getElementById("wt-timer-fill");
+      if (fill) {
+        // Freeze visual progress at current width
+        const cs = window.getComputedStyle(fill);
+        fill.style.transition = "none";
+        fill.style.width = cs.width;
+      }
+    } else {
+      // Resume — compute remaining time from current step, restart timer
+      const step = _wt.exp.steps[_wt.idx];
+      if (step) startWalkthroughTimer(Math.max(2, Math.round(step.durationSec * 0.5)));
+    }
+  }
+  window.walkthroughPauseToggle = walkthroughPauseToggle;
+
+  function finishWalkthrough() {
+    if (!_wt) return;
+    const modal = document.querySelector(".wt-modal");
+    const finishEl = document.getElementById("wt-finish");
+    if (modal) modal.classList.add("finished");
+    if (finishEl) finishEl.classList.add("open");
+    setText("wt-finish-line", _wt.exp.finishLine || "Bas beta, ho gaya.");
+    setText("wt-finish-citation", _wt.exp.citation || "");
+    if (typeof speak === "function") {
+      speak(_wt.exp.finishLine, {
+        ttsText: _wt.exp.finishLineHi || _wt.exp.finishLine,
+      });
+    }
+    console.info("[walkthrough] finished", _wt.key);
+  }
+
+  function walkthroughFeedback(answer) {
+    if (typeof bumpScore === "function") bumpScore(answer === "better" ? 3 : 1);
+    if (typeof showToast === "function") {
+      showToast(answer === "better" ? "Achha laga sun ke 💚" : "Theek hai beta, dhyan rakhna");
+    }
+    if (_wt) {
+      // Persist outcome for future Active Choice recall
+      try {
+        const log = JSON.parse(localStorage.getItem("ss_remedy_log") || "[]");
+        log.unshift({ key: _wt.key, answer, at: Date.now() });
+        localStorage.setItem("ss_remedy_log", JSON.stringify(log.slice(0, 20)));
+      } catch (e) {}
+    }
+    closeWalkthrough();
+  }
+  window.walkthroughFeedback = walkthroughFeedback;
+
+  function closeWalkthrough() {
+    const overlay = document.getElementById("wt-overlay");
+    if (overlay) {
+      // v6.2.1: blur any focused element inside the overlay BEFORE marking it
+      // aria-hidden, otherwise Chrome logs a WAI-ARIA violation (focus retained
+      // inside an aria-hidden subtree).
+      const focused = overlay.querySelector(":focus");
+      if (focused && typeof focused.blur === "function") {
+        try {
+          focused.blur();
+        } catch (e) {}
+      }
+      overlay.classList.remove("open");
+      overlay.setAttribute("aria-hidden", "true");
+    }
+    if (_wt && _wt.timerId) {
+      clearTimeout(_wt.timerId);
+    }
+    // Stop any in-flight TTS audio too — Sarvam Bulbul writes to _currentAudio
+    if (typeof _currentAudio !== "undefined" && _currentAudio) {
+      try {
+        _currentAudio.pause();
+      } catch (e) {}
+      _currentAudio = null;
+    }
+    if (typeof window.speechSynthesis !== "undefined") {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (e) {}
+    }
+    if (typeof _isSpeaking !== "undefined") _isSpeaking = false;
+    _wt = null;
+    // v6.2.1: release the gate so future voice transcripts route normally
+    window._walkthroughOpen = false;
+  }
+  window.closeWalkthrough = closeWalkthrough;
+  window.openWalkthrough = openWalkthrough;
+
+  // — CTA hook: after every AI reply we detect a known experience and append
+  //   a "Dadi ke saath karein" tile inside the chat. Tap → openWalkthrough.
+  //   Idempotent per turn (chat-msgs gets cleared between sessions). The
+  //   detection is substring-based across Roman + Devanagari (see exp.match).
+  function detectExperienceInReply(text) {
+    if (!text) return null;
+    const t = String(text).toLowerCase();
+    for (const [key, exp] of Object.entries(REMEDY_EXPERIENCES)) {
+      for (const needle of exp.match || []) {
+        if (t.includes(String(needle).toLowerCase())) {
+          return { key, exp };
+        }
+      }
+    }
+    return null;
+  }
+
+  function maybeAppendRemedyCta(replyText) {
+    const hit = detectExperienceInReply(replyText);
+    if (!hit) return;
+    const msgs = document.getElementById("chat-msgs");
+    if (!msgs) return;
+    // Avoid double-appending if the last bot turn already has a CTA for this key.
+    const last = msgs.lastElementChild;
+    if (last && last.querySelector && last.querySelector('[data-cta-key="' + hit.key + '"]'))
+      return;
+    const cta = document.createElement("button");
+    cta.className = "remedy-cta";
+    cta.setAttribute("data-cta-key", hit.key);
+    cta.onclick = function () {
+      openWalkthrough(hit.key);
+    };
+    cta.innerHTML =
+      '<div class="remedy-cta-emoji">' +
+      (hit.exp.kindIcon || "🌿") +
+      '</div><div class="remedy-cta-text"><div class="remedy-cta-title">Dadi ke saath ' +
+      hit.exp.title +
+      ' banayein?</div><div class="remedy-cta-sub">' +
+      hit.exp.subtitle +
+      ' · Step-by-step</div></div><div class="remedy-cta-arrow">›</div>';
+    msgs.appendChild(cta);
+    msgs.scrollTop = msgs.scrollHeight;
+    console.info("[walkthrough] cta appended for", hit.key);
+  }
+  window.maybeAppendRemedyCta = maybeAppendRemedyCta;
 
   // ── v5.2: Sunita-archetype simplified home (Miller's Law) ──
   // Toggles a body.sunita class which hides the dense .dense-only wellness +
@@ -2375,6 +3726,22 @@ Second line onward: your warm response.`;
       try {
         removeVoiceThinkingLine();
         appendVoiceLine("bot", text);
+        // v6.2.2: mirror the chat skill cards (Adrak ki chai · ▶, LU-7 acupressure,
+        // movement skills) into the voice transcript area so the voice experience
+        // matches the chat experience. Tapping a card still routes through
+        // openRemedy → openWalkthrough (the new magical player).
+        const voiceTa = document.getElementById("voice-transcript-area");
+        if (voiceTa) {
+          if (typeof injectRemedyCard === "function") {
+            setTimeout(() => injectRemedyCard(text, voiceTa), 80);
+          }
+          if (typeof injectAcupressureCard === "function") {
+            setTimeout(() => injectAcupressureCard(text, voiceTa), 160);
+          }
+          if (typeof injectMovementCard === "function") {
+            setTimeout(() => injectMovementCard(text, voiceTa), 220);
+          }
+        }
       } catch (e) {}
     }
     const row = document.createElement("div");
@@ -2472,12 +3839,23 @@ Second line onward: your warm response.`;
 
   // ── AI call — tries OpenAI, falls back to Groq ──
 
-  // v3.6: Provider-agnostic JSON-mode helper (Groq primary, OpenAI fallback)
+  // v3.6 / v6.3: Provider-agnostic JSON-mode helper. Cascade: Cerebras → Groq → OpenAI.
   async function callAIJSON(systemPrompt, userPrompt, opts) {
     const hasOpenAI =
       OPENAI_API_KEY && OPENAI_API_KEY.length > 20 && !OPENAI_API_KEY.includes("REPLACE");
     const hasGroq = GROQ_API_KEY && GROQ_API_KEY.length > 20 && !GROQ_API_KEY.includes("REPLACE");
+    const hasCerebras =
+      CEREBRAS_API_KEY && CEREBRAS_API_KEY.length > 20 && !CEREBRAS_API_KEY.includes("REPLACE");
     const providers = [];
+    if (hasCerebras)
+      providers.push({
+        url: "https://api.cerebras.ai/v1/chat/completions",
+        key: CEREBRAS_API_KEY,
+        // v6.3.1: Qwen 3 235B MoE — strongest Hindi/Devanagari + Hinglish in
+        // Cerebras's current catalog. Available IDs were discovered via
+        // GET /v1/models. Llama 3.3 70B is no longer hosted on Cerebras (404).
+        model: "qwen-3-235b-a22b-instruct-2507",
+      });
     if (hasGroq)
       providers.push({
         url: "https://api.groq.com/openai/v1/chat/completions",
@@ -2525,10 +3903,12 @@ Second line onward: your warm response.`;
     const hasOpenAI =
       OPENAI_API_KEY && OPENAI_API_KEY.length > 20 && !OPENAI_API_KEY.includes("REPLACE");
     const hasGroq = GROQ_API_KEY && GROQ_API_KEY.length > 20 && !GROQ_API_KEY.includes("REPLACE");
-    if (!hasOpenAI && !hasGroq) {
+    const hasCerebras =
+      CEREBRAS_API_KEY && CEREBRAS_API_KEY.length > 20 && !CEREBRAS_API_KEY.includes("REPLACE");
+    if (!hasOpenAI && !hasGroq && !hasCerebras) {
       addMsg(
         "bot",
-        "⚙️ API key set nahi hai — GitHub Secrets mein OPENAI_API_KEY ya GROQ_API_KEY daalo.",
+        "⚙️ API key set nahi hai — .env.local mein NEXT_PUBLIC_CEREBRAS_KEY, NEXT_PUBLIC_GROQ_KEY ya NEXT_PUBLIC_OPENAI_KEY daalo.",
         false,
       );
       return;
@@ -2538,8 +3918,19 @@ Second line onward: your warm response.`;
 
     const msgs = [{ role: "system", content: systemOverride || SYSTEM_PROMPT }, ...ST.chatHistory];
 
-    // v3.6: Groq first (~1s, reliable), OpenAI fallback (currently key may be invalid in live env)
+    // v6.3: Cerebras primary (free tier, Llama 3.3 70B, very fast), Groq next,
+    // OpenAI last. Each provider tried in order on the first; falls through
+    // on 429 / 5xx / network error.
     const providers = [];
+    if (hasCerebras)
+      providers.push({
+        url: "https://api.cerebras.ai/v1/chat/completions",
+        key: CEREBRAS_API_KEY,
+        // v6.3.1: Qwen 3 235B MoE — strongest Hindi/Devanagari + Hinglish in
+        // Cerebras's current catalog. Available IDs were discovered via
+        // GET /v1/models. Llama 3.3 70B is no longer hosted on Cerebras (404).
+        model: "qwen-3-235b-a22b-instruct-2507",
+      });
     if (hasGroq)
       providers.push({
         url: "https://api.groq.com/openai/v1/chat/completions",
@@ -2598,6 +3989,8 @@ Second line onward: your warm response.`;
         ST.isFirstMsg = false;
         addMsg("bot", reply, isFirst);
         speak(reply);
+        // v6.2: append "Dadi ke saath karein" CTA if the reply matches a known experience
+        if (typeof maybeAppendRemedyCta === "function") maybeAppendRemedyCta(reply);
         return; // success
       } catch (e) {
         lastErr = "🌐 " + p.url.split("/")[2] + " tak connection nahi bana";
@@ -2652,6 +4045,7 @@ Second line onward: your warm response.`;
       hideThinking();
       addMsg("bot", reply, true);
       speak(reply);
+      if (typeof maybeAppendRemedyCta === "function") maybeAppendRemedyCta(reply);
     } catch (e) {
       hideThinking();
       const msg =
@@ -2898,7 +4292,7 @@ Rules:
         <div class="thinking-bub" style="display:inline-flex;background:var(--bold)">
           <div class="dot"></div><div class="dot"></div><div class="dot"></div>
         </div>
-        <p style="margin-top:18px;color:var(--text2);font-size:14px">Report padh raha hoon... thoda waqt lagega</p>
+        <p style="margin-top:18px;color:var(--text2);font-size:14px">Report padh rahi hoon... thoda waqt lagega</p>
       </div>`;
     } else if (step === 3) {
       // Result
@@ -3240,11 +4634,11 @@ Rules:
     msgs.innerHTML = "";
     ST.chatHistory = [];
     const intro =
-      "Hey 👋 Wellness Baat mein swagat! Main fitness, neend, stress, khaane-peene aur lifestyle ki baat karta hoon. Diagnosis nahi karta — bas practical tips. Kya try karna hai aaj?";
+      "Aao beta 🙏 baith jao mere paas. Khaana, neend, thakaan, mann ki baat — jo bhi ho, Dadi se share karo. Doctor ki nahi, ghar ki baat karenge. Aaj kya pareshaani hai?";
     addMsg("bot", intro, false);
     speak(intro, {
       ttsText:
-        "हाय! Wellness बात में स्वागत है। मैं fitness, नींद, stress, खाने पीने और lifestyle की बात करता हूं। Diagnosis नहीं करता — बस practical tips। क्या try करना है आज?",
+        "आओ बेटा, बैठ जाओ मेरे पास। खाना, नींद, थकान, मन की बात — जो भी हो, दादी से बताओ। डॉक्टर की नहीं, घर की बात करेंगे। आज क्या परेशानी है?",
     });
     addQuickReplies(
       [
@@ -3314,15 +4708,23 @@ Rules:
 
   // Hub input
   function hubSend() {
-    const txt = document.getElementById("hub-input").value.trim();
+    // The hub-input now lives inside the v6.1 .talk-card (the old bottom .bar
+    // and its hub-send-btn were removed). Null-guard every DOM lookup — voice
+    // path (convHandleTranscript → hubSend) hits this without a click and used
+    // to crash when hub-send-btn was already gone.
+    const inputEl = document.getElementById("hub-input");
+    const txt = inputEl ? inputEl.value.trim() : "";
     if (!txt) return;
-    document.getElementById("hub-input").value = "";
-    document.getElementById("hub-send-btn").style.display = "none";
-    document.getElementById("hub-speak").style.display = "";
+    if (inputEl) inputEl.value = "";
+    const sendBtn = document.getElementById("hub-send-btn");
+    if (sendBtn) sendBtn.style.display = "none";
+    const speakBtn = document.getElementById("hub-speak");
+    if (speakBtn) speakBtn.style.display = "";
     ST.chatCtx = "general";
     ST.chatHistory = [];
     ST.isFirstMsg = true;
-    document.getElementById("chat-ctx-label").textContent = "Sehat Saathi";
+    const ctxLbl = document.getElementById("chat-ctx-label");
+    if (ctxLbl) ctxLbl.textContent = "Sehat Saathi";
     goTo("s-chat");
     setTimeout(() => {
       addMsg("user", txt, false);
@@ -4232,7 +5634,7 @@ Rules:
 
     if (step === 2) {
       // Scanning anim then auto-advance to review
-      if (titleEl) titleEl.textContent = "Padh raha hoon...";
+      if (titleEl) titleEl.textContent = "Padh rahi hoon...";
       if (subEl) subEl.textContent = "Thoda waqt";
       el.innerHTML = `<div class="rx-body">
       <div class="rx-scan-wrap">
@@ -4245,16 +5647,16 @@ Rules:
             <div class="ln short"></div><div class="ln med"></div>
           </div>
         </div>
-        <div class="rx-scan-status" id="rx-scan-msg">Doctor ka likha padh raha hoon<span class="blink"></span></div>
+        <div class="rx-scan-status" id="rx-scan-msg">Doctor ka likha padh rahi hoon<span class="blink"></span></div>
       </div>
     </div>`;
       setTimeout(() => {
         const m = document.getElementById("rx-scan-msg");
-        if (m) m.innerHTML = 'Dawaiyaan dhoondh raha hoon<span class="blink"></span>';
+        if (m) m.innerHTML = 'Dawaiyaan dhoondh rahi hoon<span class="blink"></span>';
       }, 900);
       setTimeout(() => {
         const m = document.getElementById("rx-scan-msg");
-        if (m) m.innerHTML = 'Dose aur timing nikaal raha hoon<span class="blink"></span>';
+        if (m) m.innerHTML = 'Dose aur timing nikaal rahi hoon<span class="blink"></span>';
       }, 1700);
       setTimeout(() => renderRxStep(3), 2500);
       return;
@@ -5762,6 +7164,14 @@ Rules:
   }
 
   async function convHandleTranscript(transcript) {
+    // v6.2.1: if a Magic Walkthrough is open, the recorder may have fired
+    // one last onstop with the walkthrough's own TTS audio captured before
+    // stopVoice could tear it down. Dropping it on the floor prevents an
+    // echo cycle (transcript → fast-path skill detect → re-opens walkthrough).
+    if (window._walkthroughOpen) {
+      console.info("[voice-skill] transcript dropped — walkthrough is open");
+      return;
+    }
     const target = ST.voiceTarget || "chat";
     // v4: Show user's spoken text in the overlay BEFORE sending to AI
     appendVoiceLine("user", transcript);
@@ -7928,6 +9338,22 @@ Rules:
       const kit = REMEDY_KITS[key];
       for (const k of kit.kw) if (t.includes(k)) return [key, kit];
     }
+    // v6.2.2: when the AI replies in Devanagari ("अदरक की चाय") the Romanized
+    // kw lists above miss it and a less-relevant card (e.g. movement) wins.
+    // Fall back to REMEDY_EXPERIENCES.match arrays which carry both Devanagari
+    // and Hinglish needles for the same keys.
+    if (typeof REMEDY_EXPERIENCES !== "undefined") {
+      for (const key in REMEDY_EXPERIENCES) {
+        if (!REMEDY_KITS[key]) continue;
+        const exp = REMEDY_EXPERIENCES[key];
+        const needles = exp.match || [];
+        for (const n of needles) {
+          if (t.includes(String(n).toLowerCase())) {
+            return [key, REMEDY_KITS[key]];
+          }
+        }
+      }
+    }
     return null;
   }
   function injectRemedyCard(text, msgsContainer) {
@@ -7949,6 +9375,15 @@ Rules:
     msgsContainer.scrollTop = msgsContainer.scrollHeight;
   }
   function openRemedy(key) {
+    // v6.2: if we have a magical Walkthrough authored for this remedy, route
+    // there instead of the legacy move-ov player. Falls through to the old
+    // path for remedies without an experience yet (the other ~98 nushke).
+    if (typeof REMEDY_EXPERIENCES !== "undefined" && REMEDY_EXPERIENCES[key]) {
+      if (typeof openWalkthrough === "function") {
+        openWalkthrough(key);
+        return;
+      }
+    }
     const kit = REMEDY_KITS[key];
     if (!kit) return;
     // v5.5.4: kill any in-flight TTS before remedy walkthrough starts speaking
