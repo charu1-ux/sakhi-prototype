@@ -169,3 +169,10 @@ declare function orderBack(...args: any[]): any;
 declare function saveVoicePick(...args: any[]): any;
 declare function snoozeReminder(...args: any[]): any;
 declare function trackFeature(...args: any[]): any;
+
+// v6.2 — Magic Walkthrough engine (Dadi ke saath karein)
+declare function openWalkthrough(...args: any[]): any;
+declare function closeWalkthrough(...args: any[]): any;
+declare function walkthroughNext(...args: any[]): any;
+declare function walkthroughPauseToggle(...args: any[]): any;
+declare function walkthroughFeedback(...args: any[]): any;

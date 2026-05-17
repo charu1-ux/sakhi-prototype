@@ -5905,3 +5905,913 @@ body:not(.focus) .focus-home {
   color: var(--text3);
   line-height: 1.4;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   v6.0 — Warm landing (warm-hero, active-choice, exit-grid, safar-path)
+   The goal is a hub that feels like a friend who remembers you, not a
+   feature directory. Reuses existing tokens (--surface, --text, --accent2).
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* — Warm hero: time-aware greeting block, replaces the old tri-hero — */
+.warm-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 16px 14px;
+  margin: 0 0 12px;
+}
+.warm-hero-emoji {
+  font-size: 44px;
+  line-height: 1;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.12));
+}
+.warm-hero-text {
+  flex: 1;
+  min-width: 0;
+}
+.warm-hero-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+.warm-hero-time {
+  font-size: 13px;
+  color: var(--text3);
+  margin-top: 2px;
+  font-weight: 500;
+}
+.warm-hero-ask {
+  font-size: 14px;
+  color: var(--text2);
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+/* — Active Choice card: single contextual nudge picked from history — */
+.active-choice-card {
+  display: flex;
+  gap: 12px;
+  margin: 0 16px 16px;
+  padding: 14px 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(107, 33, 168, 0.1), rgba(20, 184, 166, 0.08));
+  border: 1px solid rgba(107, 33, 168, 0.18);
+}
+.active-choice-card .ac-icon {
+  font-size: 26px;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+.active-choice-card .ac-body {
+  flex: 1;
+  min-width: 0;
+}
+.active-choice-card .ac-text {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.45;
+  font-weight: 500;
+}
+.active-choice-card .ac-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.ac-btn {
+  border: 0;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 10px;
+  transition:
+    transform 0.08s,
+    opacity 0.15s;
+  font-family: inherit;
+}
+.ac-btn:active {
+  transform: scale(0.96);
+}
+.ac-btn-primary {
+  background: var(--accent2, #6b21a8);
+  color: #fff;
+}
+.ac-btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
+}
+
+/* — Exit grid: 4 warm verb-based entry points, replaces aham-row — */
+.exit-section {
+  margin: 4px 0 18px;
+}
+.exit-section-lbl {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  padding: 0 16px;
+  margin: 0 0 10px;
+  letter-spacing: 0.02em;
+}
+.exit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 16px;
+}
+.exit-tile {
+  position: relative;
+  text-align: left;
+  border: 0;
+  cursor: pointer;
+  padding: 14px 13px;
+  border-radius: 16px;
+  background: var(--surface, #1a1a26);
+  color: var(--text);
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition:
+    transform 0.08s,
+    background 0.15s;
+  min-height: 96px;
+}
+.exit-tile:active {
+  transform: scale(0.97);
+}
+.exit-tile-emoji {
+  font-size: 28px;
+  line-height: 1;
+}
+.exit-tile-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+.exit-tile-sub {
+  font-size: 11px;
+  color: var(--text3);
+  line-height: 1.35;
+}
+/* Tile accent variants — subtle washes, not loud */
+.exit-tile.tile-nushka {
+  background: linear-gradient(160deg, rgba(34, 197, 94, 0.12), rgba(34, 197, 94, 0.03));
+  border: 1px solid rgba(34, 197, 94, 0.18);
+}
+.exit-tile.tile-wellness {
+  background: linear-gradient(160deg, rgba(20, 184, 166, 0.12), rgba(20, 184, 166, 0.03));
+  border: 1px solid rgba(20, 184, 166, 0.18);
+}
+.exit-tile.tile-lab {
+  background: linear-gradient(160deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.03));
+  border: 1px solid rgba(245, 158, 11, 0.18);
+}
+.exit-tile.tile-dawai {
+  background: linear-gradient(160deg, rgba(236, 72, 153, 0.12), rgba(236, 72, 153, 0.03));
+  border: 1px solid rgba(236, 72, 153, 0.18);
+}
+
+/* — Aaj ka safar: gamified path (visual breadcrumb, not a tracker) — */
+.safar-path {
+  margin: 4px 16px 18px;
+  padding: 14px 14px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+}
+.safar-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12px;
+}
+.safar-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+.safar-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text3);
+}
+.safar-track {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.safar-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.safar-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border, rgba(255, 255, 255, 0.15));
+  background: var(--surface2, rgba(255, 255, 255, 0.04));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    transform 0.08s,
+    background 0.15s,
+    border-color 0.15s;
+  padding: 0;
+  font-family: inherit;
+}
+.safar-dot:active {
+  transform: scale(0.92);
+}
+.safar-dot-emoji {
+  font-size: 18px;
+  line-height: 1;
+  filter: grayscale(0.6) opacity(0.55);
+  transition: filter 0.2s;
+}
+.safar-dot.now {
+  border-color: var(--accent2, #6b21a8);
+  background: rgba(107, 33, 168, 0.18);
+  box-shadow: 0 0 0 4px rgba(107, 33, 168, 0.12);
+}
+.safar-dot.now .safar-dot-emoji {
+  filter: none;
+}
+.safar-dot.done {
+  border-color: rgba(34, 197, 94, 0.6);
+  background: rgba(34, 197, 94, 0.16);
+}
+.safar-dot.done .safar-dot-emoji {
+  filter: none;
+}
+.safar-dot-lbl {
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 600;
+  margin-top: 2px;
+}
+.safar-sep {
+  flex: 1;
+  height: 1.5px;
+  background: var(--border, rgba(255, 255, 255, 0.08));
+  margin: 0 2px;
+  margin-bottom: 16px; /* visually center with dots (which have labels below) */
+  align-self: center;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   v6.1 — Talk to Dadi card (voice-first hero with rotating placeholder + chip rail)
+   ══════════════════════════════════════════════════════════════════════════ */
+.talk-card {
+  margin: 0 16px 16px;
+  padding: 12px 12px 10px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.talk-card-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.talk-card-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  color: var(--text, #fff);
+  font-family: inherit;
+  font-size: 15px;
+  padding: 13px 16px;
+  border-radius: 14px;
+  outline: none;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.talk-card-input::placeholder {
+  color: var(--text3, rgba(255, 255, 255, 0.42));
+  font-style: italic;
+}
+.talk-card-input:focus {
+  border-color: var(--accent2, #6b21a8);
+  background: var(--surface2, rgba(255, 255, 255, 0.08));
+}
+.talk-card-mic {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 0;
+  cursor: pointer;
+  background: linear-gradient(135deg, #6b21a8, #14b8a6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 0 rgba(107, 33, 168, 0.45);
+  animation: talk-mic-pulse 3s ease-in-out infinite;
+  transition: transform 0.1s;
+  font-family: inherit;
+}
+.talk-card-mic:active {
+  transform: scale(0.94);
+  animation: none;
+}
+@keyframes talk-mic-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(107, 33, 168, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(107, 33, 168, 0);
+  }
+}
+.talk-card-chip-rail {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+.talk-card-chip-rail::-webkit-scrollbar {
+  display: none;
+}
+.talk-chip {
+  flex-shrink: 0;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text2, #d1d5db);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    transform 0.08s,
+    background 0.15s,
+    border-color 0.15s;
+  white-space: nowrap;
+}
+.talk-chip:active {
+  transform: scale(0.95);
+  background: rgba(107, 33, 168, 0.18);
+  border-color: var(--accent2, #6b21a8);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   v6.2 — Magic Walkthrough overlay (Dadi ke saath karein)
+   Full-screen in-app player for embodied remedy experiences. Never leaves
+   the app. Animation viewport top, Dadi-narrated step below, progress and
+   controls at the bottom.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.wt-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background:
+    radial-gradient(ellipse at top, rgba(34, 197, 94, 0.1), rgba(2, 6, 23, 0.92) 60%),
+    rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: wt-fade-in 0.32s ease-out;
+}
+.wt-overlay.open {
+  display: flex;
+}
+@keyframes wt-fade-in {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(8px);
+  }
+}
+
+.wt-modal {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(20, 24, 36, 0.96), rgba(8, 10, 18, 0.98));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(34, 197, 94, 0.08);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.wt-modal::-webkit-scrollbar {
+  display: none;
+}
+
+.wt-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text, #fff);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 1;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wt-close:active {
+  transform: scale(0.9);
+}
+
+.wt-hdr {
+  padding: 4px 30px 0 4px;
+}
+.wt-hdr-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+.wt-hdr-sub {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 3px;
+}
+.wt-step-counter {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(34, 197, 94, 0.85);
+  margin-top: 6px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.wt-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-height: 320px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(34, 197, 94, 0.06),
+    rgba(255, 255, 255, 0.02)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+.wt-anim {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wt-anim svg {
+  max-width: 90%;
+  max-height: 90%;
+}
+.wt-stage-glow {
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(ellipse at center, rgba(34, 197, 94, 0.15), transparent 60%);
+  pointer-events: none;
+  opacity: 0.6;
+  animation: wt-glow-breathe 4s ease-in-out infinite;
+}
+@keyframes wt-glow-breathe {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.wt-caption {
+  text-align: center;
+  padding: 0 8px;
+}
+.wt-caption-step {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(34, 197, 94, 0.9);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.wt-caption-line {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.wt-timer {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.wt-timer-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #14b8a6);
+  width: 0%;
+  border-radius: 999px;
+  transition: width 1s linear;
+}
+
+.wt-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+.wt-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  transition:
+    background 0.25s,
+    transform 0.25s;
+}
+.wt-dot.active {
+  background: #22c55e;
+  transform: scale(1.4);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+}
+.wt-dot.done {
+  background: rgba(34, 197, 94, 0.5);
+}
+
+.wt-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.wt-btn {
+  cursor: pointer;
+  border: 0;
+  font-family: inherit;
+  font-weight: 600;
+  transition:
+    transform 0.08s,
+    opacity 0.15s;
+  font-size: 14px;
+}
+.wt-btn:active {
+  transform: scale(0.96);
+}
+.wt-btn-pause {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.wt-btn-next {
+  flex: 1;
+  padding: 13px 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #22c55e, #14b8a6);
+  color: #fff;
+}
+.wt-btn-done {
+  padding: 13px 14px;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Finish state */
+.wt-finish {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  text-align: center;
+  padding: 8px 8px 4px;
+}
+.wt-finish.open {
+  display: flex;
+}
+.wt-finish-emoji {
+  font-size: 50px;
+  line-height: 1;
+}
+.wt-finish-line {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.4;
+}
+.wt-finish-citation {
+  font-size: 12px;
+  color: var(--text3);
+  line-height: 1.5;
+  font-style: italic;
+  padding: 0 6px;
+}
+.wt-finish-feedback {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+.wt-feedback-btn {
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.wt-feedback-btn:active {
+  transform: scale(0.96);
+}
+
+/* When the player is in finished mode, hide active-step controls */
+.wt-modal.finished .wt-stage,
+.wt-modal.finished .wt-caption,
+.wt-modal.finished .wt-timer,
+.wt-modal.finished .wt-dots,
+.wt-modal.finished .wt-controls,
+.wt-modal.finished .wt-step-counter {
+  display: none;
+}
+
+/* — CTA appended after a remedy reply in chat ("Dadi ke saath karein") — */
+.remedy-cta {
+  margin: 6px 0 10px 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.16), rgba(20, 184, 166, 0.08));
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition:
+    transform 0.08s,
+    background 0.15s;
+  font-family: inherit;
+  width: 100%;
+  text-align: left;
+}
+.remedy-cta:active {
+  transform: scale(0.98);
+}
+.remedy-cta-emoji {
+  font-size: 24px;
+  line-height: 1;
+}
+.remedy-cta-text {
+  flex: 1;
+  min-width: 0;
+}
+.remedy-cta-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+.remedy-cta-sub {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+.remedy-cta-arrow {
+  font-size: 18px;
+  color: rgba(34, 197, 94, 0.9);
+}
+
+/* — Kitchen SVG animations (used inside .wt-anim) — */
+@keyframes wt-flame-flicker {
+  0%,
+  100% {
+    transform: scale(1, 1);
+  }
+  50% {
+    transform: scale(1.04, 1.15);
+  }
+}
+@keyframes wt-steam-rise {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.6;
+  }
+  80% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(-30px) scale(0.7);
+    opacity: 0;
+  }
+}
+@keyframes wt-particle-fall {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+}
+@keyframes wt-stir-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes wt-bubble-rise {
+  0% {
+    transform: translateY(0) scale(0.3);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-50px) scale(1.2);
+    opacity: 0;
+  }
+}
+@keyframes wt-pour-tilt {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-25deg);
+  }
+}
+@keyframes wt-zzz-rise {
+  0% {
+    transform: translate(0, 0) scale(0.8);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(8px, -28px) scale(1.2);
+    opacity: 0;
+  }
+}
+@keyframes wt-breathe-soft {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.07);
+  }
+}
+
+.kitchen-svg .flame {
+  animation: wt-flame-flicker 0.7s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+.kitchen-svg .steam {
+  animation: wt-steam-rise 2.4s ease-out infinite;
+}
+.kitchen-svg .steam.s2 {
+  animation-delay: 0.8s;
+}
+.kitchen-svg .steam.s3 {
+  animation-delay: 1.5s;
+}
+.kitchen-svg .particle {
+  animation: wt-particle-fall 1.6s ease-in infinite;
+}
+.kitchen-svg .particle.p2 {
+  animation-delay: 0.3s;
+}
+.kitchen-svg .particle.p3 {
+  animation-delay: 0.6s;
+}
+.kitchen-svg .particle.p4 {
+  animation-delay: 0.9s;
+}
+.kitchen-svg .spoon-stir {
+  animation: wt-stir-spin 1.4s linear infinite;
+  transform-origin: 100px 110px;
+}
+.kitchen-svg .bubble {
+  animation: wt-bubble-rise 1.8s ease-out infinite;
+}
+.kitchen-svg .bubble.b2 {
+  animation-delay: 0.5s;
+}
+.kitchen-svg .bubble.b3 {
+  animation-delay: 1s;
+}
+.kitchen-svg .bubble.b4 {
+  animation-delay: 1.4s;
+}
+.kitchen-svg .spoon-pour {
+  animation: wt-pour-tilt 2s ease-in-out infinite;
+  transform-origin: top right;
+}
+.kitchen-svg .body-rest {
+  animation: wt-breathe-soft 3.2s ease-in-out infinite;
+  transform-origin: center center;
+}
+.kitchen-svg .zzz {
+  animation: wt-zzz-rise 2.4s ease-out infinite;
+}
+.kitchen-svg .zzz.z2 {
+  animation-delay: 0.8s;
+}
+
+/* v6.3.2 — keyframes for the two new kitchen SVGs (leaf-grind, paste-apply) */
+@keyframes wt-pestle-grind {
+  0%,
+  100% {
+    transform: rotate(-14deg);
+  }
+  50% {
+    transform: rotate(14deg);
+  }
+}
+.kitchen-svg .pestle-grind {
+  animation: wt-pestle-grind 1.4s ease-in-out infinite;
+  transform-origin: 100px 50px;
+}
+@keyframes wt-paste-spread {
+  0%,
+  100% {
+    transform: scale(0.85, 1);
+  }
+  50% {
+    transform: scale(1.25, 1.1);
+  }
+}
+.kitchen-svg .paste-smear {
+  animation: wt-paste-spread 2.4s ease-in-out infinite;
+  transform-origin: 100px 110px;
+}
+@keyframes wt-finger-sweep {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(-10deg);
+  }
+  50% {
+    transform: translate(75px, 5px) rotate(10deg);
+  }
+}
+.kitchen-svg .finger-sweep {
+  animation: wt-finger-sweep 2.4s ease-in-out infinite;
+}
