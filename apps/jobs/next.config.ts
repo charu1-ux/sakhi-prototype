@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "export",
+  basePath: "/jobs",
   trailingSlash: true,
   images: { unoptimized: true },
 };

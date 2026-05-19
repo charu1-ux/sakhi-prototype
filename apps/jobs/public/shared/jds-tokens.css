@@ -1,0 +1,300 @@
+/* JDS Tokens — strict JDS-only palette
+ * Source of truth for all colors, type, radius, spacing.
+ * No custom hex values, no per-vertical accent gradients.
+ *
+ * Visual language: monochromatic (white + greys) with primary-dark (#3900ad
+ * a.k.a surface-bold) as the accent of the JCS vertical. JDS primary-50
+ * (#3535f3) is reserved for active/CTA states only.
+ */
+
+@font-face {
+  font-family: "JioType";
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/JioTypeVarW05-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JioType";
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/JioTypeW05-Medium.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JioType";
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/JioTypeW05-Bold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JioType";
+  font-weight: 900;
+  font-display: swap;
+  src: url("../fonts/JioTypeW05-Black.woff2") format("woff2");
+}
+
+:root {
+  /* ===== JDS color tokens (resolved from mcp__JioBharatIQ__resolve_token) ===== */
+  --primary-20: #e8e8fc;
+  --primary-30: #9999ff;
+  --primary-40: #6464ff;
+  --primary-50: #3535f3;
+  --primary-60: #000093;
+  --primary-70: #00004c;
+  --primary-80: #010029;
+
+  --secondary-20: #fef7e9;
+  --secondary-50: #f7ab20;
+  --secondary-60: #ac660c;
+
+  --sparkle-20: #e8faf7;
+  --sparkle-50: #1eccb0;
+
+  --error: #fa2f40;
+  --warning: #f06d0f;
+  --success: #25ab21;
+
+  --grey-100: #141414;
+  --grey-80: rgba(0, 0, 0, 0.66);
+  --grey-60: #b5b5b5;
+  --grey-40: #e0e0e0;
+  --grey-20: #f5f5f5;
+  --white: #ffffff;
+  --black: #141414;
+
+  --surface-default: #ffffff;
+  --surface-ghost: #eeeeef;
+  --surface-ghost-icon: #e7e9ff;
+  --surface-bold: #3900ad; /* "purple dark" — the JCS vertical accent */
+  --surface-minimal: #f5f5f5;
+  --surface-moderate: #e3e3e4;
+
+  --text-high: #141414;
+  --text-low: rgba(25, 27, 30, 0.65);
+  --text-disabled: rgba(25, 27, 30, 0.38);
+  --text-on-bold: #ffffff;
+
+  --icon-medium: #170054; /* the deep purple — refined accent */
+  --icon-high: #141414;
+
+  --stroke-subtle: rgba(36, 38, 43, 0.12);
+  --stroke-minimal: rgba(36, 38, 43, 0.13);
+
+  /* ===== Aliases used throughout the prototype suite ===== */
+  --primary: var(--primary-50);
+  --primary-light: var(--primary-20);
+  --primary-dark: var(--surface-bold);
+  --secondary: var(--secondary-50);
+  --sparkle: var(--sparkle-50);
+
+  /* Vertical accents — subtle differentiation per use case, all JDS tokens.
+     Default is surface-bold (purple-dark = JCS vertical accent).
+     Each use case page can override --v-accent / --v-accent-soft / --v-accent-deep
+     in :root to get a slightly different signature without bright pastels. */
+  --v-accent: var(--surface-bold); /* primary accent */
+  --v-accent-soft: var(--primary-20); /* tinted background */
+  --v-accent-deep: var(--icon-medium); /* deepest hue */
+  /* Backwards-compat: */
+  --vertical-accent: var(--v-accent);
+  --vertical-accent-soft: var(--v-accent-soft);
+  --vertical-accent-deep: var(--v-accent-deep);
+
+  /* ===== Radii ===== */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  /* ===== Spacing ===== */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* ===== Typography (JDS scale, mobile) ===== */
+  --font: "JioType", sans-serif;
+  --text-display: 28px;
+  --text-h1: 22px;
+  --text-h2: 18px;
+  --text-h3: 16px;
+  --text-body: 14px;
+  --text-small: 12px;
+  --text-tiny: 10px;
+
+  /* ===== Shadows — minimal, monochromatic ===== */
+  --shadow-sm: 0 1px 2px rgba(20, 20, 20, 0.04);
+  --shadow-md: 0 2px 8px rgba(20, 20, 20, 0.06);
+  --shadow-lg: 0 12px 32px rgba(20, 20, 20, 0.1);
+}
+
+/* ===== Reset ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+body {
+  font-family: var(--font);
+  font-size: var(--text-body);
+  color: var(--text-high);
+  background: var(--surface-default);
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.phone-frame {
+  width: 100%;
+  max-width: 390px;
+  height: 100%;
+  margin: 0 auto;
+  background: var(--surface-default);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== Buttons ===== */
+.btn {
+  font-family: var(--font);
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+  user-select: none;
+}
+.btn-primary {
+  background: var(--surface-bold);
+  color: var(--text-on-bold);
+  padding: 14px 24px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-body);
+  font-weight: 700;
+}
+.btn-primary:hover {
+  background: var(--primary-70);
+}
+.btn-primary:active {
+  transform: scale(0.97);
+}
+.btn-secondary {
+  background: var(--surface-default);
+  color: var(--surface-bold);
+  border: 1.5px solid var(--surface-bold);
+  padding: 12px 22px;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+}
+.btn-secondary:hover {
+  background: var(--primary-20);
+}
+
+/* ===== Chips ===== */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--stroke-subtle);
+  color: var(--text-high);
+  font-size: var(--text-small);
+  font-weight: 600;
+  background: var(--surface-default);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  font-family: var(--font);
+}
+.chip:hover {
+  background: var(--surface-ghost);
+  border-color: var(--surface-bold);
+  color: var(--surface-bold);
+}
+.chip.active {
+  background: var(--surface-bold);
+  color: var(--text-on-bold);
+  border-color: var(--surface-bold);
+}
+
+/* ===== Cards ===== */
+.card {
+  background: var(--surface-default);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--stroke-subtle);
+  padding: var(--space-4);
+  transition: all 0.15s;
+}
+
+/* ===== Animations ===== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+.fade-in-up {
+  animation: fadeInUp 0.35s ease-out;
+}
+
+/* Hide scrollbars (mobile-style) */
+::-webkit-scrollbar {
+  display: none;
+}
+* {
+  scrollbar-width: none;
+}
+
+/* ===== JBIQ pill — vertical identifier ===== */
+.jbiq-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--primary-20);
+  color: var(--surface-bold);
+  font-size: var(--text-tiny);
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+/* ===== Icon helpers ===== */
+.jds-icon {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+[data-icon] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 0;
+}

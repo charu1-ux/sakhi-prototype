@@ -1833,12 +1833,12 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`);
   new eR({
     precacheEntries: [
       {
-        revision: "411adca5a5dd382b4ec676aa8b09ee91",
-        url: "/_next/static/NhfwuPzQ4AgOKjuY_w_zW/_buildManifest.js",
+        revision: "baaf0dc8dd8d9bc2ae6d6bad798cf9ea",
+        url: "/_next/static/Ii-A1GQBz5FoFYGJstSeZ/_buildManifest.js",
       },
       {
         revision: "b6652df95db52feb4daf4eca35380933",
-        url: "/_next/static/NhfwuPzQ4AgOKjuY_w_zW/_ssgManifest.js",
+        url: "/_next/static/Ii-A1GQBz5FoFYGJstSeZ/_ssgManifest.js",
       },
       { revision: null, url: "/_next/static/chunks/239-fc5aeed65bdef089.js" },
       { revision: null, url: "/_next/static/chunks/301-711822084df62ade.js" },
@@ -1849,8 +1849,9 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`);
       { revision: null, url: "/_next/static/chunks/app/_not-found/page-a3885bca1e346abe.js" },
       { revision: null, url: "/_next/static/chunks/app/astro/page-22bed08fe36e4e09.js" },
       { revision: null, url: "/_next/static/chunks/app/health/page-f8e5cabd44612679.js" },
+      { revision: null, url: "/_next/static/chunks/app/jobs/page-81ac1144f83fd8de.js" },
       { revision: null, url: "/_next/static/chunks/app/layout-3d839854b710f7c0.js" },
-      { revision: null, url: "/_next/static/chunks/app/page-c36d300d5ad38eee.js" },
+      { revision: null, url: "/_next/static/chunks/app/page-dd63ec7204619b94.js" },
       { revision: null, url: "/_next/static/chunks/framework-369218c9910949e7.js" },
       { revision: null, url: "/_next/static/chunks/main-app-655b766c2b5f225f.js" },
       { revision: null, url: "/_next/static/chunks/main-bbe9be3c0dbf93b5.js" },
@@ -1879,7 +1880,7 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`);
         url: "/_next/static/chunks/polyfills-42372ed130431b0a.js",
       },
       { revision: null, url: "/_next/static/chunks/webpack-1dfcc0e66d6ce68c.js" },
-      { revision: null, url: "/_next/static/css/36b6393e9503df12.css" },
+      { revision: null, url: "/_next/static/css/bab8887d15211164.css" },
       {
         revision: "b39676298197422e3f5284bfafdc7dc3",
         url: "/_next/static/media/27834908180db20f-s.p.woff2",
@@ -1898,10 +1899,1173 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`);
       { revision: "efee4114e91a59ff7f9e5e2d7034fc03", url: "/assets/shell/ico-menu.svg" },
       { revision: "f163741b2d3250754cd062d9f48526d4", url: "/assets/shell/ico-news.svg" },
       { revision: "81682f89e35daad7d48aaa1781499211", url: "/assets/shell/jio-logo.png" },
+      {
+        revision: "8e89a34f7ec3f6ae94e1f9096355edb2",
+        url: "/astro/assets/audio/om-namah-shivay.mp3",
+      },
+      { revision: "630b23a78d156cc9c0261867072e0f06", url: "/astro/assets/audio/shankh.mp3" },
+      { revision: "5032e0860c29f128ceb2fd959e886d9f", url: "/astro/assets/audio/shiva-aarti.mp3" },
+      { revision: "56c4285cfbf3d1eb05d460ea7d7c1958", url: "/astro/assets/audio/vrat-katha.mp3" },
+      { revision: "afcd102eea0575411e64bbec2b204028", url: "/astro/assets/deities/shiva/1.png" },
+      { revision: "0e3d4c1d9de71e03ac52e002aa701ff0", url: "/astro/assets/deities/shiva/2.png" },
+      { revision: "7e90194bd4a65f57a3df62f5473183d0", url: "/astro/assets/deities/shiva/3.png" },
+      { revision: "4e7357ea6197a50ffc14553a91507112", url: "/astro/assets/temples/kashi.jpg" },
+      { revision: "5981ff6a3c564fb64f95346fa2ee26eb", url: "/astro/assets/temples/kedarnath.jpg" },
+      { revision: "1eda33ad3be579dad037e73c1f139580", url: "/astro/assets/temples/puri.jpg" },
+      { revision: "f643d5b8aa508b893d21229a83b65dab", url: "/astro/assets/temples/rameshwar.jpg" },
+      { revision: "dadb0a7ea86894a251f9cbc7c51d9def", url: "/astro/assets/temples/somnath.jpg" },
+      { revision: "adc0e5163cbd54d95c0ebc3ffbc073a0", url: "/astro/assets/temples/ujjain.jpg" },
+      { revision: "7eb358f838c66da84aef7a0718ae2f69", url: "/astro/astro-home-daily-v2.html" },
+      { revision: "a0ec6101d86883a0dcac3a476266d2b7", url: "/astro/astro-home.html" },
+      { revision: "1cafb2b62328cb5b074db8ba12a42661", url: "/astro/astro-phase0.html" },
+      { revision: "a262cb1ea2e5678051f2996fa918120a", url: "/astro/astro-phase1.html" },
+      { revision: "5be20d05eccbfcfba83a446e0d79fa49", url: "/astro/astro-unified.html" },
+      { revision: "23cb70ed13265d677c6a743a4c2efdb7", url: "/astro/astrologer.png" },
+      { revision: "9beeeb301cae4cd44059ebae0acf2f39", url: "/astro/cosmic_bg.wav" },
+      { revision: "152800d4ee193990b27b552f031303fd", url: "/astro/jbiq-homepage.html" },
+      { revision: "db3140b73327b00811665a6c1a75d177", url: "/astro/kirana-list.png" },
+      { revision: "6641b1b1b78818b17fb955e91ba2c94f", url: "/astro/live-darshan.html" },
+      { revision: "44ee3ea3b26f9bec4508506328786691", url: "/astro/narration.wav" },
+      { revision: "7a76bab266c2d04b80b29fecac6f891a", url: "/astro/vendor/babel.min.js" },
+      {
+        revision: "c4df83c59489e285a6b9856303d1a05b",
+        url: "/astro/vendor/react-dom.production.min.js",
+      },
+      {
+        revision: "78cf3d80e45e6c4ab93859581b657df2",
+        url: "/astro/vendor/react.production.min.js",
+      },
+      { revision: "ed9df9958adc1dc3cb03305479f37eac", url: "/astro/zepto-cart.png" },
       { revision: "587920b6476d66fa55e08d152f2ddeb5", url: "/icons/icon-192.svg" },
       { revision: "61b614d3fff55487dcde895235efd74d", url: "/icons/icon-512.svg" },
       { revision: "76bee6349266e69109d3a599230e87fb", url: "/icons/icon-maskable.svg" },
       { revision: "c15bc9d018aeef5ce672f6ded8d0666a", url: "/icons/icon.svg" },
+      {
+        revision: "f393e49623e61f8221ee2fc34b3a915d",
+        url: "/jobs/assets/audio/00a70bf8edb64f88.mp3",
+      },
+      {
+        revision: "3317904b10459cf331761a262cf8d085",
+        url: "/jobs/assets/audio/01a97c399696017e.mp3",
+      },
+      {
+        revision: "04a11acfbe8b5a8ea1b500526354f7fb",
+        url: "/jobs/assets/audio/02d7388c96500bf5.mp3",
+      },
+      {
+        revision: "0d1d7f77876d0d18954a1fa257d25340",
+        url: "/jobs/assets/audio/03561cc794a7ae05.mp3",
+      },
+      {
+        revision: "20203a4898a63c912277ddfb57469213",
+        url: "/jobs/assets/audio/036ef4beccadb38f.mp3",
+      },
+      {
+        revision: "de852ce911d8b0c4b35d79fea900f4cb",
+        url: "/jobs/assets/audio/03ab7b61d625a84d.mp3",
+      },
+      {
+        revision: "e88d5dbac50ec28367bbd2510dee6876",
+        url: "/jobs/assets/audio/0525928ce225f420.mp3",
+      },
+      {
+        revision: "f5b17b2cc2cc52d67295dabf3886dca3",
+        url: "/jobs/assets/audio/05701cd6a78fb5ae.mp3",
+      },
+      {
+        revision: "12a6bf8e09e8d2237f46362337f14782",
+        url: "/jobs/assets/audio/05ba3ce3b4082144.mp3",
+      },
+      {
+        revision: "6e59332c48af27c163c2d855d93bbbc9",
+        url: "/jobs/assets/audio/079a6740202882bf.mp3",
+      },
+      {
+        revision: "db0099bebd442a0913d056f2e93ac366",
+        url: "/jobs/assets/audio/08dbf7b0e1010a2e.mp3",
+      },
+      {
+        revision: "2645dec0703c7666495de29ea02c38a4",
+        url: "/jobs/assets/audio/09a42b25ae0b1eb2.mp3",
+      },
+      {
+        revision: "d37ac0aff25aa8d0eab2ddcedd981449",
+        url: "/jobs/assets/audio/09b02166b4130363.mp3",
+      },
+      {
+        revision: "d7746137264f26e06e5fbbba64cdb1f9",
+        url: "/jobs/assets/audio/09b4c2e7d2151578.mp3",
+      },
+      {
+        revision: "085f0f168081d1f89d22f3c877b3ba78",
+        url: "/jobs/assets/audio/0a7c6b1784d63df9.mp3",
+      },
+      {
+        revision: "5d138388276b23c4870e9cd898a1e615",
+        url: "/jobs/assets/audio/0d4a97153691551c.mp3",
+      },
+      {
+        revision: "afd8ed4e9cc06a424c8805aa06bf9dea",
+        url: "/jobs/assets/audio/0d4cb1b5fe347d3f.mp3",
+      },
+      {
+        revision: "98b947530377eb7f99a6d67de38a0891",
+        url: "/jobs/assets/audio/0e12f7341c20ef8e.mp3",
+      },
+      {
+        revision: "627143aab3413af9363307283d8351fd",
+        url: "/jobs/assets/audio/117145bcce23fba5.mp3",
+      },
+      {
+        revision: "fe204f309f811320992efe5fb5b7bff4",
+        url: "/jobs/assets/audio/120e7d4638b080fb.mp3",
+      },
+      {
+        revision: "a00781276dece0cb1a590e19ca111591",
+        url: "/jobs/assets/audio/128375188bb43f4c.mp3",
+      },
+      {
+        revision: "f9759716346b5b8e61c0d04c55b91002",
+        url: "/jobs/assets/audio/141764362062438b.mp3",
+      },
+      {
+        revision: "86bd5596eb9715a8fec52a2a27382076",
+        url: "/jobs/assets/audio/148fa8d37324a147.mp3",
+      },
+      {
+        revision: "17d81b63f41e42615af902964a791a0a",
+        url: "/jobs/assets/audio/170519cebcfa9241.mp3",
+      },
+      {
+        revision: "8b9cbea8e39a82ac8ab236d42bb6beaf",
+        url: "/jobs/assets/audio/17e37cf2c6ba5db1.mp3",
+      },
+      {
+        revision: "01d664164c96b2289fedb4a3f93b23ae",
+        url: "/jobs/assets/audio/18452209aab53b02.mp3",
+      },
+      {
+        revision: "96fb162d79b3c772e1138c28d4797959",
+        url: "/jobs/assets/audio/1ad65912088764d2.mp3",
+      },
+      {
+        revision: "8bb992f77a3085c4d5a5609f8a4c61be",
+        url: "/jobs/assets/audio/1b1940bf2d6f4e9c.mp3",
+      },
+      {
+        revision: "3c4e81fc6413665d934388d88c4bdd48",
+        url: "/jobs/assets/audio/1c51cae68a52c6c2.mp3",
+      },
+      {
+        revision: "af230f032bc733c6f8b69ab8dc166b30",
+        url: "/jobs/assets/audio/1c939a74b3c652dd.mp3",
+      },
+      {
+        revision: "53a6a20e8aa67767d4b09f483610f39a",
+        url: "/jobs/assets/audio/1ddcc843af86adf3.mp3",
+      },
+      {
+        revision: "2aa3fbea7440b46d79dc8f5a1259d437",
+        url: "/jobs/assets/audio/1ea0378867696dbb.mp3",
+      },
+      {
+        revision: "4b0bdfb0221fb3231563f239ba6d0479",
+        url: "/jobs/assets/audio/1ea59486c6837968.mp3",
+      },
+      {
+        revision: "ef28fa5f5deb8639ac7c687cce617462",
+        url: "/jobs/assets/audio/2375635edfe674f1.mp3",
+      },
+      {
+        revision: "c9a49540579402578b8ed8088d2b1b27",
+        url: "/jobs/assets/audio/23a852072f007d1b.mp3",
+      },
+      {
+        revision: "42421d0e714aaceaf5eb0fac02f87810",
+        url: "/jobs/assets/audio/23e1c7dfc154d4b1.mp3",
+      },
+      {
+        revision: "836ac14eb3a6f30e25f12c8131d7e25f",
+        url: "/jobs/assets/audio/247bc3ba9a80d27a.mp3",
+      },
+      {
+        revision: "69b2cde7252484016db696723ca5c7c4",
+        url: "/jobs/assets/audio/26786a13309451c4.mp3",
+      },
+      {
+        revision: "c8e57d54dfc80564e5ca424e06b0d329",
+        url: "/jobs/assets/audio/276208672bc44909.mp3",
+      },
+      {
+        revision: "6a436c8f3a364eb7ddc5c0df8433bab0",
+        url: "/jobs/assets/audio/2839aa17c5f1c262.mp3",
+      },
+      {
+        revision: "e35193860e125e87f54a4daae6c18c10",
+        url: "/jobs/assets/audio/2879bb3ae10b1f27.mp3",
+      },
+      {
+        revision: "bd61851fd63627118e134b8c35d7baf1",
+        url: "/jobs/assets/audio/294fce84080135ac.mp3",
+      },
+      {
+        revision: "f622754d20cc28ac80bd5d83e5b1dad6",
+        url: "/jobs/assets/audio/297d0bdf65c711ae.mp3",
+      },
+      {
+        revision: "c5393822b1b6acca6ddd64b93f97a00d",
+        url: "/jobs/assets/audio/29f1ca410f4545d5.mp3",
+      },
+      {
+        revision: "bd58c94357c6dafd810ae8cd1af9b490",
+        url: "/jobs/assets/audio/2af4088082747567.mp3",
+      },
+      {
+        revision: "fbe73aff7e586fceb50b1541b3815aa1",
+        url: "/jobs/assets/audio/2b08dd055e588a4b.mp3",
+      },
+      {
+        revision: "b07ae718870053553827f509289e3719",
+        url: "/jobs/assets/audio/2bb1c4436fb775ce.mp3",
+      },
+      {
+        revision: "216c4020d3492374a1abf6ea548415db",
+        url: "/jobs/assets/audio/2d7d48abf0b8d513.mp3",
+      },
+      {
+        revision: "efd3f3766d8f11c4b0215c65eb6e0324",
+        url: "/jobs/assets/audio/2e0f6cb49a88e1a9.mp3",
+      },
+      {
+        revision: "ddc71e3c03a8c96180981e2745740f4f",
+        url: "/jobs/assets/audio/2ebe6dbfa01da242.mp3",
+      },
+      {
+        revision: "d360b588352219f0fc9e27be38273f35",
+        url: "/jobs/assets/audio/30667b3882f5d7d3.mp3",
+      },
+      {
+        revision: "26e6afa52aa2cbf640303ecb73838c39",
+        url: "/jobs/assets/audio/30800850196e1106.mp3",
+      },
+      {
+        revision: "0c7204f2fcdc182ba346ee9b29543a8f",
+        url: "/jobs/assets/audio/308d09eac85d4d0f.mp3",
+      },
+      {
+        revision: "5a96de8edb1d045f0c928f368832b075",
+        url: "/jobs/assets/audio/310fca198dba03c7.mp3",
+      },
+      {
+        revision: "719ed4a178ae8581c89ac4391173203a",
+        url: "/jobs/assets/audio/312439d30a34b93e.mp3",
+      },
+      {
+        revision: "360e683af6eb4d5cdaccda88652eabe0",
+        url: "/jobs/assets/audio/32c081061b433527.mp3",
+      },
+      {
+        revision: "29bbd2233970647cfa06fbdb552d317b",
+        url: "/jobs/assets/audio/34a7fb42a40516a6.mp3",
+      },
+      {
+        revision: "68af3e1e964dddb14438dd8c58156f79",
+        url: "/jobs/assets/audio/350ee9feddd8526a.mp3",
+      },
+      {
+        revision: "d97f534f51d38e864c3a84d67fb66654",
+        url: "/jobs/assets/audio/353853ddb229ac96.mp3",
+      },
+      {
+        revision: "632d14102360ba63422015ea0cf8fcca",
+        url: "/jobs/assets/audio/360e06bde5f5425f.mp3",
+      },
+      {
+        revision: "e549eb6557584a59ef34426fcd554c4b",
+        url: "/jobs/assets/audio/3727e99267822b55.mp3",
+      },
+      {
+        revision: "0f89de8993b3a9624d849629545b59b8",
+        url: "/jobs/assets/audio/375ef72ec351c352.mp3",
+      },
+      {
+        revision: "2949c782469fff360538ac3ae42d98ec",
+        url: "/jobs/assets/audio/37a42183be17ec74.mp3",
+      },
+      {
+        revision: "752bc75002de01285cb6c89c3c075ec9",
+        url: "/jobs/assets/audio/386dbe73ee6e6a3d.mp3",
+      },
+      {
+        revision: "82eeb5bb6bc4d72cae4f390597542f71",
+        url: "/jobs/assets/audio/38d7262cd6796195.mp3",
+      },
+      {
+        revision: "fd20f23709853f2a1325550a25cdbc97",
+        url: "/jobs/assets/audio/39d16b8b1ef60883.mp3",
+      },
+      {
+        revision: "3dba0b223dd4b2637d6f12d1b1f5fb31",
+        url: "/jobs/assets/audio/3a233274457c0b55.mp3",
+      },
+      {
+        revision: "28355308f13f05e9818e87a06efbb4cb",
+        url: "/jobs/assets/audio/3ab0e0f9a9c90f78.mp3",
+      },
+      {
+        revision: "17e53fdafab4eda4167dbbc0e9865b05",
+        url: "/jobs/assets/audio/3afb4b7e848fd28f.mp3",
+      },
+      {
+        revision: "2fbc8df5a24584711eb1bd0c93ccae46",
+        url: "/jobs/assets/audio/3b0c6bd6f99493e9.mp3",
+      },
+      {
+        revision: "c4a684664d08e3fc0fc52c9ffda28a80",
+        url: "/jobs/assets/audio/3be2c4cfb90fc517.mp3",
+      },
+      {
+        revision: "1e941caa33399b28c2a22765e5aaeec4",
+        url: "/jobs/assets/audio/3c4664349eff1dcf.mp3",
+      },
+      {
+        revision: "5044d41f0ee17b855323e56a1ec8abcf",
+        url: "/jobs/assets/audio/3c8c24e7ba35a1f3.mp3",
+      },
+      {
+        revision: "a6acf23d5a5f5740dbdfa82681eee465",
+        url: "/jobs/assets/audio/3d31b6c1a39eec22.mp3",
+      },
+      {
+        revision: "9c70c6a919c5c93f060ab6ca5f727c2d",
+        url: "/jobs/assets/audio/3e69f4e2048c6ccd.mp3",
+      },
+      {
+        revision: "15eca9d59db6f4a441c8a0a3aab0cb1a",
+        url: "/jobs/assets/audio/3e7a9310d804be13.mp3",
+      },
+      {
+        revision: "dac9a8829fce86a7f6458d1afc4752d8",
+        url: "/jobs/assets/audio/3eeee0726683b1f8.mp3",
+      },
+      {
+        revision: "a6d24e7c521d724900004a9ed2cfd8d2",
+        url: "/jobs/assets/audio/401cf4189116ca09.mp3",
+      },
+      {
+        revision: "d751b043b7a7cc03dcc14d362146ff2d",
+        url: "/jobs/assets/audio/42d743a3c4c11e40.mp3",
+      },
+      {
+        revision: "aa45ee433d032edfa50ede8ce9b57520",
+        url: "/jobs/assets/audio/43cd4432d9447c2b.mp3",
+      },
+      {
+        revision: "4835d596cc2fa6aa281a2669547ab6a6",
+        url: "/jobs/assets/audio/43fe983d6a788daf.mp3",
+      },
+      {
+        revision: "df72d6b3d209a6a8216c504c0365a325",
+        url: "/jobs/assets/audio/45c0aa9ea0f581cf.mp3",
+      },
+      {
+        revision: "b38df7c40254cabe4705545d3726b638",
+        url: "/jobs/assets/audio/48be524fbc35a370.mp3",
+      },
+      {
+        revision: "b16bf86c49c963bef6b394a06d097bad",
+        url: "/jobs/assets/audio/49cc2569e1c421a6.mp3",
+      },
+      {
+        revision: "246a0542d615228f6010b663fb7e7737",
+        url: "/jobs/assets/audio/4a3996e0a9b1a572.mp3",
+      },
+      {
+        revision: "bc7f79796e7bf51b17e1b07c9fd32add",
+        url: "/jobs/assets/audio/4ae325ba7f9a7127.mp3",
+      },
+      {
+        revision: "6884130c878a713f0ca91f3240f34066",
+        url: "/jobs/assets/audio/4b530793c98ff327.mp3",
+      },
+      {
+        revision: "4d573e86d2a01ab1ccf8e20e49340d1c",
+        url: "/jobs/assets/audio/4bd9591ee9bc87f7.mp3",
+      },
+      {
+        revision: "b544f7f09bc6c1ee8a5ff54f375bb2f0",
+        url: "/jobs/assets/audio/4dbcfee371ac61d2.mp3",
+      },
+      {
+        revision: "5a0e9d5afe427708040148a773f020a6",
+        url: "/jobs/assets/audio/4e5852e631968dbb.mp3",
+      },
+      {
+        revision: "b5e746ee21774cc7a5469f38f05f84c5",
+        url: "/jobs/assets/audio/4fa8d8d7b275a2e2.mp3",
+      },
+      {
+        revision: "f26485a7502fd5fc0b98f450d8cdb894",
+        url: "/jobs/assets/audio/50b49dabccb90de1.mp3",
+      },
+      {
+        revision: "c7d6d688a0bd25ef861984695a3155c0",
+        url: "/jobs/assets/audio/519a1227cb7790b5.mp3",
+      },
+      {
+        revision: "785700a697a8ebaf80b0811e5144c125",
+        url: "/jobs/assets/audio/51a67e3839448a0b.mp3",
+      },
+      {
+        revision: "a3f2ad7c58ee43b706f96a32c5b5fd4f",
+        url: "/jobs/assets/audio/51af0f7213cef577.mp3",
+      },
+      {
+        revision: "b0a436bcd7617580952bdd5d4b03c0c9",
+        url: "/jobs/assets/audio/52eac420918a5b70.mp3",
+      },
+      {
+        revision: "4cd95d32cd00377f74dd2d327a5cd300",
+        url: "/jobs/assets/audio/53ad6da42c849943.mp3",
+      },
+      {
+        revision: "b18a225f0783105ba0950726a3cab3ad",
+        url: "/jobs/assets/audio/542f7f3cfa13659b.mp3",
+      },
+      {
+        revision: "48a36f45e797b8765a2c27868b43e006",
+        url: "/jobs/assets/audio/5485eadbea4655d8.mp3",
+      },
+      {
+        revision: "80cdd9cb1135c6f64bc1d0d5d831bbad",
+        url: "/jobs/assets/audio/555fdaa5e2f296d4.mp3",
+      },
+      {
+        revision: "75ef4bdfd06da6cbabf553f23d434808",
+        url: "/jobs/assets/audio/57059ded599fb919.mp3",
+      },
+      {
+        revision: "6c4b2de891cde1ac62832c8eec918d17",
+        url: "/jobs/assets/audio/57b87480780efce1.mp3",
+      },
+      {
+        revision: "1224d1f821387815f345dde8a2c85477",
+        url: "/jobs/assets/audio/5904525643e465ce.mp3",
+      },
+      {
+        revision: "0e7e778c1c73a413acf31b77487b5ba2",
+        url: "/jobs/assets/audio/59361a00755c7169.mp3",
+      },
+      {
+        revision: "1f341965602fe64dce774be331df4097",
+        url: "/jobs/assets/audio/59991084409776c4.mp3",
+      },
+      {
+        revision: "6b553775a28372e41756b970a35c3c1a",
+        url: "/jobs/assets/audio/5a913a1b2f90cd7f.mp3",
+      },
+      {
+        revision: "cd6dddd347b88fc734cdf137b5444134",
+        url: "/jobs/assets/audio/5b07b3a855c7d71a.mp3",
+      },
+      {
+        revision: "2a4dbc8bfbd6cb2e23c6cff459bd52e3",
+        url: "/jobs/assets/audio/5b3707dae855f82c.mp3",
+      },
+      {
+        revision: "691c1ee9c6be8bdfaf619389b3824461",
+        url: "/jobs/assets/audio/5b9b12f0a78630ec.mp3",
+      },
+      {
+        revision: "de632c7d6c64f3e7faffd942daa92e96",
+        url: "/jobs/assets/audio/5dd6a0b28da37224.mp3",
+      },
+      {
+        revision: "3012306629409ac6f89c129d3e8ce226",
+        url: "/jobs/assets/audio/5f5dbc877fcc4f2d.mp3",
+      },
+      {
+        revision: "d2622123991520552219169097256e15",
+        url: "/jobs/assets/audio/5fa095387f0e25f2.mp3",
+      },
+      {
+        revision: "ca581c12c909e0a696891031efbef604",
+        url: "/jobs/assets/audio/605eebde4c441dc8.mp3",
+      },
+      {
+        revision: "190f8558b4f5302af616b16f9f00b012",
+        url: "/jobs/assets/audio/60cf35ce5a2b10db.mp3",
+      },
+      {
+        revision: "a6c4ce60d40215e9d90a565e4eb6766d",
+        url: "/jobs/assets/audio/619956c5aad0dd5d.mp3",
+      },
+      {
+        revision: "14025c3a67a59b64b59fc2f7266afa36",
+        url: "/jobs/assets/audio/66096794e188c97e.mp3",
+      },
+      {
+        revision: "d269bd9855d8a76be5e380d52625d108",
+        url: "/jobs/assets/audio/66113779eb9ffce6.mp3",
+      },
+      {
+        revision: "1186ccbe24008a3cdc44fa42bc86ac2d",
+        url: "/jobs/assets/audio/6733409bf49f1a44.mp3",
+      },
+      {
+        revision: "13591551b59a370df7fb02b106f231fe",
+        url: "/jobs/assets/audio/68cc5f0bd5fcfcc0.mp3",
+      },
+      {
+        revision: "c30e74f5a5d91f81c6f328e35ae77779",
+        url: "/jobs/assets/audio/698df1a22d71beb0.mp3",
+      },
+      {
+        revision: "3111f00fc53ba517d43dfb7716019652",
+        url: "/jobs/assets/audio/69a34ab2f23d490a.mp3",
+      },
+      {
+        revision: "548d58f375e1a458638e248c79c6e0ac",
+        url: "/jobs/assets/audio/6ae856bd458031d9.mp3",
+      },
+      {
+        revision: "5fe4ad0a42cab42daf0854e3f666fbe9",
+        url: "/jobs/assets/audio/6b8e57f822d2bcdf.mp3",
+      },
+      {
+        revision: "ccce13db87112273c4e3ea26bde82ada",
+        url: "/jobs/assets/audio/706a7efe680b69a2.mp3",
+      },
+      {
+        revision: "284d9306fe3e3bd93ce8465c8571ffe0",
+        url: "/jobs/assets/audio/714d0eefc0b10f5b.mp3",
+      },
+      {
+        revision: "7a0154757bcf3a59ec8774f123ef42d7",
+        url: "/jobs/assets/audio/72292fedf3db7dbf.mp3",
+      },
+      {
+        revision: "ff05ef391d416fcbce82c8e83ea60f6e",
+        url: "/jobs/assets/audio/732fa6daf9ead049.mp3",
+      },
+      {
+        revision: "075c2b13bf0c7a00cc184084330e77ed",
+        url: "/jobs/assets/audio/75722adb981824da.mp3",
+      },
+      {
+        revision: "7f3a1e625d656bf0f5407537b3982ac6",
+        url: "/jobs/assets/audio/762a74c7510eaf4a.mp3",
+      },
+      {
+        revision: "0041965780719b7a40f032ad5784be65",
+        url: "/jobs/assets/audio/76db6de6591fca73.mp3",
+      },
+      {
+        revision: "2ca1bb5044daafd829117a4eab229840",
+        url: "/jobs/assets/audio/783d5b115f3d0dc5.mp3",
+      },
+      {
+        revision: "b18e481f0b42e2c3aefa3391336c13d9",
+        url: "/jobs/assets/audio/78db28a7577dc2c7.mp3",
+      },
+      {
+        revision: "a21babe0ae97a866e0079105f73fba51",
+        url: "/jobs/assets/audio/7954c50e4d1d4b06.mp3",
+      },
+      {
+        revision: "642ebcc1dc848b5057ac2d1379e30feb",
+        url: "/jobs/assets/audio/7cb728dce3ef0716.mp3",
+      },
+      {
+        revision: "e59898d9b547b9c48fd152d40f33d303",
+        url: "/jobs/assets/audio/7d1f5561c232951c.mp3",
+      },
+      {
+        revision: "296739bfd935f6335ea272d1fffb61fb",
+        url: "/jobs/assets/audio/7e29a19013228f1a.mp3",
+      },
+      {
+        revision: "8d507b421d5c77bb7d05028704b8a94d",
+        url: "/jobs/assets/audio/7e92d1baef30a301.mp3",
+      },
+      {
+        revision: "1012f74bfa9fce4214dbef3a5240b8b3",
+        url: "/jobs/assets/audio/7f93f9c2dac7430a.mp3",
+      },
+      {
+        revision: "8fb4d6380a3bb515a56dd88c22734a3c",
+        url: "/jobs/assets/audio/7ff2cbf011287cfe.mp3",
+      },
+      {
+        revision: "4ab732cd13bfde109af1b9a76725bb14",
+        url: "/jobs/assets/audio/815fd85fbe481f6c.mp3",
+      },
+      {
+        revision: "d7714545c702f686a4b15583b5ec63cb",
+        url: "/jobs/assets/audio/81e9566e1cad649a.mp3",
+      },
+      {
+        revision: "6b78bbb8d2262e557595553dcd2eb18f",
+        url: "/jobs/assets/audio/81ea6eff6df3ed9a.mp3",
+      },
+      {
+        revision: "a2a292f0e33d82c1d44cc32f9c91197a",
+        url: "/jobs/assets/audio/829f7b1a040b4579.mp3",
+      },
+      {
+        revision: "5a0fcd5953ed329ff65db515c3af58c6",
+        url: "/jobs/assets/audio/82ae3fc7fa4d4983.mp3",
+      },
+      {
+        revision: "9ed93618c4fe0fde9e78d246c00ee4d0",
+        url: "/jobs/assets/audio/8667a6333b436bca.mp3",
+      },
+      {
+        revision: "78f299bb51dd8f974b01a8e71d160aef",
+        url: "/jobs/assets/audio/881f6160021666f4.mp3",
+      },
+      {
+        revision: "47d7def077b72706b69894c5cf5b74a0",
+        url: "/jobs/assets/audio/8afdf5a73dbdba97.mp3",
+      },
+      {
+        revision: "e2bf94e5a8102768f7b0745099445cfc",
+        url: "/jobs/assets/audio/8affb567c9fb7581.mp3",
+      },
+      {
+        revision: "ae707b460363eee6358b9939f7656f9e",
+        url: "/jobs/assets/audio/8b17ba1bc7884d4d.mp3",
+      },
+      {
+        revision: "bea08a0a9b33fe181687095e4c8819f3",
+        url: "/jobs/assets/audio/8b52637a1ebd3735.mp3",
+      },
+      {
+        revision: "3849b834877a9ae57f95821bddf87dd8",
+        url: "/jobs/assets/audio/8b6973404e2db873.mp3",
+      },
+      {
+        revision: "5a115e7a0fae80854694d7a1431e766f",
+        url: "/jobs/assets/audio/8b76b981af4e9f67.mp3",
+      },
+      {
+        revision: "ce6ff1c64bfa9da75c838413a754cc80",
+        url: "/jobs/assets/audio/8bd0628f31c15a07.mp3",
+      },
+      {
+        revision: "0253b0610cebd4bba0ae493b6ba853db",
+        url: "/jobs/assets/audio/8bee8c91bfc013cb.mp3",
+      },
+      {
+        revision: "4e995c9b7584355fe94519c3a6eabaef",
+        url: "/jobs/assets/audio/8d32903bee90a021.mp3",
+      },
+      {
+        revision: "453d40f2c097b6b5bdbd0b61b144f928",
+        url: "/jobs/assets/audio/8f4267b72b460368.mp3",
+      },
+      {
+        revision: "cc4eea7d96bf493edf47aa0c8d72bae5",
+        url: "/jobs/assets/audio/91562039a00c2a97.mp3",
+      },
+      {
+        revision: "9f2eacf0ed477c273e864a35aaabfe84",
+        url: "/jobs/assets/audio/91db7a694cd1e7e7.mp3",
+      },
+      {
+        revision: "92b94518552a237f5c0826e46aa2dd2b",
+        url: "/jobs/assets/audio/929df99c957c4220.mp3",
+      },
+      {
+        revision: "8abb520cdcdac715b4c396026a38acc0",
+        url: "/jobs/assets/audio/92d83609f8fe4a12.mp3",
+      },
+      {
+        revision: "89609a80d870ff2a848d347aee7347d5",
+        url: "/jobs/assets/audio/9375634a3274def4.mp3",
+      },
+      {
+        revision: "25bf74e578c5fe94b687a01e0781150a",
+        url: "/jobs/assets/audio/93c2e36960312e66.mp3",
+      },
+      {
+        revision: "8fec567024db089f15f602a1aa5e456e",
+        url: "/jobs/assets/audio/94ed43629951389a.mp3",
+      },
+      {
+        revision: "0f3255279ec8c3f8f18cb47bd12e8fa9",
+        url: "/jobs/assets/audio/95828c270daeebd1.mp3",
+      },
+      {
+        revision: "f977a567d131c123e73339b908d32ee8",
+        url: "/jobs/assets/audio/959cb15477574c53.mp3",
+      },
+      {
+        revision: "73f2f9ac0fa4bfd6748e8623bb4ffc9c",
+        url: "/jobs/assets/audio/95addf263eb08044.mp3",
+      },
+      {
+        revision: "e16e274d91a93e532b2c5fb8d1ce0140",
+        url: "/jobs/assets/audio/96a41125833bee95.mp3",
+      },
+      {
+        revision: "4ea86fd661a23bdd91f4c4291ad6435f",
+        url: "/jobs/assets/audio/9704c907294475fd.mp3",
+      },
+      {
+        revision: "51250573d0e45066a4c7f3da60f32219",
+        url: "/jobs/assets/audio/97e5cb63d1bd27ec.mp3",
+      },
+      {
+        revision: "2ffb6ea2239b8a7f3b27269b269fd1e0",
+        url: "/jobs/assets/audio/98330faa70338224.mp3",
+      },
+      {
+        revision: "d5db90c218ca8c3f219d3b818b9d4cf0",
+        url: "/jobs/assets/audio/98b3ef3820bd97f3.mp3",
+      },
+      {
+        revision: "bd6f9b07cefb5dbe9b9b147dd684ccfe",
+        url: "/jobs/assets/audio/998542e514a56efb.mp3",
+      },
+      {
+        revision: "dc2487c64b57ca6f02684a78ee29e311",
+        url: "/jobs/assets/audio/99c00bd3c0a16d37.mp3",
+      },
+      {
+        revision: "41fb12282620c96ac101af4c24c9c5a2",
+        url: "/jobs/assets/audio/9addc30323e3dcb8.mp3",
+      },
+      {
+        revision: "ac120be851f84b00290bf4cc680ebf13",
+        url: "/jobs/assets/audio/9b334fd86701386f.mp3",
+      },
+      {
+        revision: "f1f057edbb5130ed9f7677371d1c9463",
+        url: "/jobs/assets/audio/9b3ccf0a5cfb9ed4.mp3",
+      },
+      {
+        revision: "ed3b085d289b0f3a88b2edfbcd4056a5",
+        url: "/jobs/assets/audio/9c27dc8c7f22b1ef.mp3",
+      },
+      {
+        revision: "26235057c4b37ca19ef54cc022d8424f",
+        url: "/jobs/assets/audio/9d5f5a895946aebf.mp3",
+      },
+      {
+        revision: "dd145919b447b5830c389d940aacd7ec",
+        url: "/jobs/assets/audio/9f0cde3617853721.mp3",
+      },
+      {
+        revision: "55fc8704103fd12636d0d8ca16b60ad3",
+        url: "/jobs/assets/audio/9faf1b06e2068192.mp3",
+      },
+      {
+        revision: "9c88bb33e2a8d4f0b91ca8290f725acb",
+        url: "/jobs/assets/audio/a4c73d68fedbae54.mp3",
+      },
+      {
+        revision: "88547bb97eb7441daf70cc0fb7b29da0",
+        url: "/jobs/assets/audio/a52c8f27c80ec094.mp3",
+      },
+      {
+        revision: "4fcce8d77eca670f7db985559701a3d6",
+        url: "/jobs/assets/audio/a62aaa1ed3c11a69.mp3",
+      },
+      {
+        revision: "d65a2100f972adffec281f61ca25db3e",
+        url: "/jobs/assets/audio/a66e49c6f48aff17.mp3",
+      },
+      {
+        revision: "8e966cbbf9948e3759f90878da21f31d",
+        url: "/jobs/assets/audio/a6b3aebf5af81fb7.mp3",
+      },
+      {
+        revision: "b1ea7bdc0369cf1cf9a780b25e2aa880",
+        url: "/jobs/assets/audio/a6c044b345dec3c2.mp3",
+      },
+      {
+        revision: "bc322e966b60773ab46e2744d1f00482",
+        url: "/jobs/assets/audio/a8a9c9a6b883b8bc.mp3",
+      },
+      {
+        revision: "39a3ad5b1f692040e4e328731eb9692f",
+        url: "/jobs/assets/audio/ad78050aa8ad9c81.mp3",
+      },
+      {
+        revision: "a6535111d15ca76040dc5e79cd034d5f",
+        url: "/jobs/assets/audio/ae1c6666138abd6e.mp3",
+      },
+      {
+        revision: "ff31316976019ed4e243bf552735718f",
+        url: "/jobs/assets/audio/aea23a076487951c.mp3",
+      },
+      {
+        revision: "5d0a0849d1bc41d554eaa0ab28aa0103",
+        url: "/jobs/assets/audio/af9152f854798f86.mp3",
+      },
+      {
+        revision: "ab5517fbd7e55dfb4cda192cfbe0cb34",
+        url: "/jobs/assets/audio/afa76a1b54c425ea.mp3",
+      },
+      {
+        revision: "b681d1c8e177a39ed3e154a695e1dd5d",
+        url: "/jobs/assets/audio/afa9fa84ff06b52b.mp3",
+      },
+      {
+        revision: "86d38abd877c1fa5611955bce6ea17b1",
+        url: "/jobs/assets/audio/b168ea1ee88907be.mp3",
+      },
+      {
+        revision: "e183d0622289de2b6c5b2c4fb6546684",
+        url: "/jobs/assets/audio/b20b20e6aadb22f0.mp3",
+      },
+      {
+        revision: "10725e1625348ba87e7c2394407e4645",
+        url: "/jobs/assets/audio/b2c51ead1a954219.mp3",
+      },
+      {
+        revision: "b754511d080d1d81e016a177f0aba914",
+        url: "/jobs/assets/audio/b341245562581f34.mp3",
+      },
+      {
+        revision: "179b0bd166c452d8c0a8dfb2a4a7b77c",
+        url: "/jobs/assets/audio/b425fa26a2d0d0f6.mp3",
+      },
+      {
+        revision: "f7f41b0892055f6ef38b5b2462b1ed87",
+        url: "/jobs/assets/audio/b5d36a8c78cb0e08.mp3",
+      },
+      {
+        revision: "3b2e624743357a04fae133f861d6c6b9",
+        url: "/jobs/assets/audio/b69f45060f65d7ab.mp3",
+      },
+      {
+        revision: "cdd01a4d4b643563ee50e341bba09e31",
+        url: "/jobs/assets/audio/b7510ccec779f05f.mp3",
+      },
+      {
+        revision: "e4e159f401802093eef110a13f0c109d",
+        url: "/jobs/assets/audio/b910d4640020fe64.mp3",
+      },
+      {
+        revision: "aa28db9aec122e20e5557cf238deee43",
+        url: "/jobs/assets/audio/b9290b5dd4cc8bdb.mp3",
+      },
+      {
+        revision: "dc9b8f3cd36ab6a3eb649193c4af1b97",
+        url: "/jobs/assets/audio/b9f75a295d7c3a6e.mp3",
+      },
+      {
+        revision: "251ae1e508386cf5c155a92b579d88bc",
+        url: "/jobs/assets/audio/ba346de6f5fe46ea.mp3",
+      },
+      {
+        revision: "f39e12e1a3c1e68cb49608bce1e51fa5",
+        url: "/jobs/assets/audio/ba55d0cb7c9388b5.mp3",
+      },
+      {
+        revision: "33769d30b9c19dc3e949760d29b1947b",
+        url: "/jobs/assets/audio/bbb4c19be2b3f56a.mp3",
+      },
+      {
+        revision: "b6a0dec6d2b0f295ff5f93bd2212b016",
+        url: "/jobs/assets/audio/bc1e279828b8ed6f.mp3",
+      },
+      {
+        revision: "2711ecf38f02d2a6cd42299bda99e056",
+        url: "/jobs/assets/audio/bc3695728fae1d23.mp3",
+      },
+      {
+        revision: "0ce8f854d6fefc8216bdbdb6b87b90d2",
+        url: "/jobs/assets/audio/bce7fbf348b24a2d.mp3",
+      },
+      {
+        revision: "23640987e04f09d6967095deafa03c28",
+        url: "/jobs/assets/audio/bd83f754ec27ea11.mp3",
+      },
+      {
+        revision: "28d51805e95bd5a7c1e17891cd78cb08",
+        url: "/jobs/assets/audio/becd84f49c37ca8a.mp3",
+      },
+      {
+        revision: "c7c2b6d7394accd0e871eafe473a4608",
+        url: "/jobs/assets/audio/c06f22339c47a03f.mp3",
+      },
+      {
+        revision: "22ffd9d94dd2ac069985d90411c79e41",
+        url: "/jobs/assets/audio/c245a0bb9b3d39c9.mp3",
+      },
+      {
+        revision: "917067d9b2c17287dcd3d188eeb3dada",
+        url: "/jobs/assets/audio/c303243a2db16e54.mp3",
+      },
+      {
+        revision: "c4ee18f4142245e4cd5e8e2412dff1f5",
+        url: "/jobs/assets/audio/c3b8374a409464d8.mp3",
+      },
+      {
+        revision: "51c3a3481f436f02e0cf2425e98a99ee",
+        url: "/jobs/assets/audio/c4130f16442d2098.mp3",
+      },
+      {
+        revision: "20247c6367617510d77967a52bdb98f3",
+        url: "/jobs/assets/audio/c5b4476065b3085c.mp3",
+      },
+      {
+        revision: "ee4e7f67305ed242a7c9eadaec00ba53",
+        url: "/jobs/assets/audio/c5c1927b1c1c5407.mp3",
+      },
+      {
+        revision: "ea012e8ee0c84b283da4f9452f431668",
+        url: "/jobs/assets/audio/c5e2035ff5a563fc.mp3",
+      },
+      {
+        revision: "a76d0363c8fe5314769638ad488fa235",
+        url: "/jobs/assets/audio/c7ada417e8858992.mp3",
+      },
+      {
+        revision: "236ce4722f61af8733c17c509d7f7be9",
+        url: "/jobs/assets/audio/c81e5129db0432ec.mp3",
+      },
+      {
+        revision: "6ca82eec3594daed26ccdc48f7070feb",
+        url: "/jobs/assets/audio/c84f3fb48435a2ec.mp3",
+      },
+      {
+        revision: "ea5157625c23a11dcbcb78c0968fe514",
+        url: "/jobs/assets/audio/c87498a6b52bcafe.mp3",
+      },
+      {
+        revision: "ceffe65c0983bf12b86915b37446ded3",
+        url: "/jobs/assets/audio/ca9a0d88b35b675f.mp3",
+      },
+      {
+        revision: "4c9998c572252d005827a89d21aa941b",
+        url: "/jobs/assets/audio/cac9622ff68fc498.mp3",
+      },
+      {
+        revision: "6274ac1c4434a00393bf3c2fc8315cf3",
+        url: "/jobs/assets/audio/cb5e14725d4d7b51.mp3",
+      },
+      {
+        revision: "bf3881e388f9efbadcaa916cfbbdd117",
+        url: "/jobs/assets/audio/cb9174e35f2808d9.mp3",
+      },
+      {
+        revision: "e3dc31aee479049c15ea556c653daef2",
+        url: "/jobs/assets/audio/cd3574cd7bfddd59.mp3",
+      },
+      {
+        revision: "9f896d938d23cc93ed6cfcedcc4ac6d2",
+        url: "/jobs/assets/audio/d0638750d08a8dab.mp3",
+      },
+      {
+        revision: "ce0e28c934cd9153361534ca2090124f",
+        url: "/jobs/assets/audio/d198e972327e6d82.mp3",
+      },
+      {
+        revision: "ddf8ebdf308432bd4e83d61dc8bae71b",
+        url: "/jobs/assets/audio/d597e8172b0619ab.mp3",
+      },
+      {
+        revision: "4252c379382642e1260afb1e9e8349ec",
+        url: "/jobs/assets/audio/d5e33ced8c7ce0c1.mp3",
+      },
+      {
+        revision: "e5fc73688e6c28f71a57c5a5e61e3746",
+        url: "/jobs/assets/audio/d6a5ca158b373ad7.mp3",
+      },
+      {
+        revision: "955af8fc8a23ab9b413d56029bf12bd4",
+        url: "/jobs/assets/audio/d87042ec38b98af8.mp3",
+      },
+      {
+        revision: "645d0057ad34eda457a5c1580277f472",
+        url: "/jobs/assets/audio/d8e593ac846e0fcf.mp3",
+      },
+      {
+        revision: "cb9f115827ce719ed97c869c021bf6c9",
+        url: "/jobs/assets/audio/db2231d431916479.mp3",
+      },
+      {
+        revision: "ce9260c40af7db0de533d23ecfbf7e1b",
+        url: "/jobs/assets/audio/dc2d01f3bef77081.mp3",
+      },
+      {
+        revision: "bb231dc8caa17cc54a7f62951263d01e",
+        url: "/jobs/assets/audio/dc7d16f605be163a.mp3",
+      },
+      {
+        revision: "dcbcb65aa83c5fcea0663a81a35573d9",
+        url: "/jobs/assets/audio/dd071297d5bf751c.mp3",
+      },
+      {
+        revision: "7f419908b6fd2dd4194aff07be058bd2",
+        url: "/jobs/assets/audio/ddcce597b546a4e0.mp3",
+      },
+      {
+        revision: "006c84be30290d899837ee7c62c64d8d",
+        url: "/jobs/assets/audio/dddf760c8c649364.mp3",
+      },
+      {
+        revision: "e72355db36e09c8a3db4fe1cb1470402",
+        url: "/jobs/assets/audio/de1ac178a948deca.mp3",
+      },
+      {
+        revision: "2fa0462b79e70b016756a30b6adeb095",
+        url: "/jobs/assets/audio/dee86330367c75e1.mp3",
+      },
+      {
+        revision: "3ccd194ef1c9476cb752bccf5238d465",
+        url: "/jobs/assets/audio/df4c3112fdd5e548.mp3",
+      },
+      {
+        revision: "728a19dcbf2a55443ea1027d5244b954",
+        url: "/jobs/assets/audio/df91a5911eca0a82.mp3",
+      },
+      {
+        revision: "8015c024a52b9793ca3ae8bcb5fbed42",
+        url: "/jobs/assets/audio/e158b3980a02e301.mp3",
+      },
+      {
+        revision: "372572a1838f2e2e6c7bf95d7136a50f",
+        url: "/jobs/assets/audio/e15f711a972dd6bb.mp3",
+      },
+      {
+        revision: "77400081a380cc6a8d391e385c2231e2",
+        url: "/jobs/assets/audio/e1be16b7f7935f29.mp3",
+      },
+      {
+        revision: "06b76dbce22c5638e2c51c9ab5e79de4",
+        url: "/jobs/assets/audio/e3bafa8a1a323d6b.mp3",
+      },
+      {
+        revision: "7626ad22c2c3cc7f49aa01e42515bb67",
+        url: "/jobs/assets/audio/e422937bc44ed0f8.mp3",
+      },
+      {
+        revision: "d850aac9a1d5950ad1d62db905249a24",
+        url: "/jobs/assets/audio/e5d77ba99fc0e586.mp3",
+      },
+      {
+        revision: "1e80699a604ef4cf3a2aab9af252addc",
+        url: "/jobs/assets/audio/e6a4b0ca8f5261ed.mp3",
+      },
+      {
+        revision: "9e8c82c39d2de14bc1cb9b11e92f7f84",
+        url: "/jobs/assets/audio/e6a825cf8376a267.mp3",
+      },
+      {
+        revision: "2df3243871f752d079fcbe8892c897a6",
+        url: "/jobs/assets/audio/e6f1edb35078fc2a.mp3",
+      },
+      {
+        revision: "e4b68bd86249361b38e93e91cf73baf7",
+        url: "/jobs/assets/audio/e93a424c7bc23336.mp3",
+      },
+      {
+        revision: "2e03b577aec811c5ed47eeebee02c9c5",
+        url: "/jobs/assets/audio/e9e8dd92a6e5acd0.mp3",
+      },
+      {
+        revision: "ea62899b7b8a4ac85370bcd7cce5f692",
+        url: "/jobs/assets/audio/ec639e86b2d38591.mp3",
+      },
+      {
+        revision: "3f0c350360bfb30053de3e45eab69587",
+        url: "/jobs/assets/audio/f0326cb6804f7156.mp3",
+      },
+      {
+        revision: "0e3ed86dc4d940b3d4e6e021439c728b",
+        url: "/jobs/assets/audio/f12e8dd4a537319a.mp3",
+      },
+      {
+        revision: "ac6c2f4370dd03eb439df51a5624d696",
+        url: "/jobs/assets/audio/f2791bd14c4c5140.mp3",
+      },
+      {
+        revision: "c6bde8744e371b03b17882358065ea55",
+        url: "/jobs/assets/audio/f34cd7896e627638.mp3",
+      },
+      {
+        revision: "fcb949087c0c52d43a78c72d952a262a",
+        url: "/jobs/assets/audio/f3a765282b1a9153.mp3",
+      },
+      {
+        revision: "bbf72bb6a526c4cb5ea43afcdaf1f6e8",
+        url: "/jobs/assets/audio/f3f3df4368e0efd6.mp3",
+      },
+      {
+        revision: "1836f65141bbbcf4c179d051d4d76127",
+        url: "/jobs/assets/audio/f4a71558181770a6.mp3",
+      },
+      {
+        revision: "88fe0af66889fe020a6f66c40efba780",
+        url: "/jobs/assets/audio/f619ff42b18fba1d.mp3",
+      },
+      {
+        revision: "6f71ead20fa90da422793f6b639f7167",
+        url: "/jobs/assets/audio/f63a55b10f60ca32.mp3",
+      },
+      {
+        revision: "ed792851cef78da37f63e9059902d560",
+        url: "/jobs/assets/audio/f68079ed148fa314.mp3",
+      },
+      {
+        revision: "04e33e9eceb5544c4a251eb8c6e917a8",
+        url: "/jobs/assets/audio/f6b60132c6e2c774.mp3",
+      },
+      {
+        revision: "032d7072e3b4e1109de5ad3bf1cb410d",
+        url: "/jobs/assets/audio/f6badc560a9b0f1f.mp3",
+      },
+      {
+        revision: "841f5c28f43fe81a5737ba678c884d56",
+        url: "/jobs/assets/audio/f72ce1d27a6925bd.mp3",
+      },
+      {
+        revision: "69e50ca436085281fdb182110af1fef4",
+        url: "/jobs/assets/audio/f77ffe6a0b592bab.mp3",
+      },
+      {
+        revision: "4f5ba69a7066a7673b1beaeae8db2a37",
+        url: "/jobs/assets/audio/fe16808f539b6caa.mp3",
+      },
+      {
+        revision: "8d8878373dd7b1b7105db0fe4ba326aa",
+        url: "/jobs/assets/audio/fe51da0b7b81e4b6.mp3",
+      },
+      {
+        revision: "98b2267f684bd193a07546e432aee052",
+        url: "/jobs/assets/audio/fe669ee1f03a2821.mp3",
+      },
+      { revision: "3ef06feffffdaa97854b21e68d905ff9", url: "/jobs/english.html" },
+      {
+        revision: "ec1857220ecad46a6287fac74029fe22",
+        url: "/jobs/fonts/JioTypeVarW05-Regular.woff2",
+      },
+      { revision: "105a84129a97e03deb48f930e8c81c85", url: "/jobs/fonts/JioTypeW05-Black.woff2" },
+      { revision: "20bb3fb8a0f265ea810957a19aa287b7", url: "/jobs/fonts/JioTypeW05-Bold.woff2" },
+      { revision: "65e2367820f81a1279978784965a5d21", url: "/jobs/fonts/JioTypeW05-Medium.woff2" },
+      { revision: "3c48ff4358b8481e32ee9c254a21b4d5", url: "/jobs/govt-exam.html" },
+      { revision: "97b3ee19b2212f89a2b47b3b4f04af33", url: "/jobs/index.html" },
+      { revision: "a7e069dac6a326ae2026e36384544e65", url: "/jobs/interview-prep.html" },
+      { revision: "b976689a8c29072f72d8d682e4e45139", url: "/jobs/microlearning.html" },
+      { revision: "b52b6ec9b1b372ed27465a48cf05b23e", url: "/jobs/shared/ambient-glow.css" },
+      { revision: "f6f406078fa8756808c8cede8ae60203", url: "/jobs/shared/guided-chat.css" },
+      { revision: "835798edced277f3ab38ee477f057d9b", url: "/jobs/shared/guided-chat.js" },
+      { revision: "7cff400e78f9cc60d84f8473cdb7a0bb", url: "/jobs/shared/icons.js" },
+      { revision: "94b95f7265a24f28742ed45b9bc37824", url: "/jobs/shared/jbiq-voice.js" },
+      { revision: "8bedd32f3c346bb797acafb12c3c70ed", url: "/jobs/shared/jds-tokens.css" },
+      { revision: "29e2fd78b15405f844fe8ff66e1eb375", url: "/jobs/shared/multimodal.js" },
+      { revision: "d762294ea9fb158e3d16d4ddf7a13f47", url: "/jobs/shared/personas.js" },
+      { revision: "41943bd7683bf575bede4e0619ab5eca", url: "/jobs/shared/tts-cache.js" },
+      { revision: "cae87e3f89bf6bde35a18a91e909bc91", url: "/jobs/zero/english.html" },
+      { revision: "2f059d5df7d8f02015883b00180cf65e", url: "/jobs/zero/govt-exam.html" },
+      { revision: "5bb3a6eeb943ffd522730158f07fb56c", url: "/jobs/zero/index.html" },
+      { revision: "5f5fd7a5760452518e8f7b1d5e087520", url: "/jobs/zero/interview-prep.html" },
+      { revision: "056ab72b30d645682913de90bfb4b47e", url: "/jobs/zero/microlearning.html" },
       { revision: "0c6e2625bc15a1b949b284e94b045979", url: "/manifest.webmanifest" },
       { revision: "1666c6f1e8ae3b302483082700dd1822", url: "/swe-worker-f61931bc2770d10b.js" },
     ],
