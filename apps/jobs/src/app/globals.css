@@ -14,17 +14,31 @@
   --color-bg: rgb(var(--color-bg) / <alpha-value>);
   --color-surface: rgb(var(--color-surface) / <alpha-value>);
   --color-surface-elevated: rgb(var(--color-surface-elevated) / <alpha-value>);
+  --color-canvas-grey: rgb(var(--color-canvas-grey) / <alpha-value>);
   --color-fg: rgb(var(--color-fg) / <alpha-value>);
   --color-fg-muted: rgb(var(--color-fg-muted) / <alpha-value>);
   --color-border: rgb(var(--color-border) / <alpha-value>);
   --color-border-strong: rgb(var(--color-border-strong) / <alpha-value>);
   --color-primary: rgb(var(--color-primary) / <alpha-value>);
   --color-primary-fg: rgb(var(--color-primary-fg) / <alpha-value>);
+  --color-dock-accent: rgb(var(--color-dock-accent) / <alpha-value>);
+  --color-dock-accent-fg: rgb(var(--color-dock-accent-fg) / <alpha-value>);
   --color-success: rgb(var(--color-success) / <alpha-value>);
   --color-warning: rgb(var(--color-warning) / <alpha-value>);
   --color-danger: rgb(var(--color-danger) / <alpha-value>);
   --color-info: rgb(var(--color-info) / <alpha-value>);
   --color-live: rgb(var(--color-live) / <alpha-value>);
+  --color-stack-coral: rgb(var(--color-stack-coral) / <alpha-value>);
+  --color-stack-ocean: rgb(var(--color-stack-ocean) / <alpha-value>);
+  --color-stack-orchid: rgb(var(--color-stack-orchid) / <alpha-value>);
+  --color-activity-resume-fg: rgb(var(--color-activity-resume-fg) / <alpha-value>);
+  --color-activity-resume-progress: rgb(var(--color-activity-resume-progress) / <alpha-value>);
+  --color-activity-card-surface-front: rgb(
+    var(--color-activity-card-surface-front) / <alpha-value>
+  );
+  --color-activity-card-surface-mid: rgb(var(--color-activity-card-surface-mid) / <alpha-value>);
+  --color-activity-card-surface-back: rgb(var(--color-activity-card-surface-back) / <alpha-value>);
+  --color-activity-percent: rgb(var(--color-activity-percent) / <alpha-value>);
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
@@ -32,12 +46,52 @@
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
+  --radius-activity-card: var(--radius-activity-card);
   --radius-full: var(--radius-full);
+
+  --spacing-activity-stack-overlap: var(--space-activity-stack-overlap);
+  --spacing-activity-inset-step: var(--space-activity-inset-step);
+  --spacing-activity-inset-double: var(--space-activity-inset-double);
+  --spacing-activity-section-gap: var(--space-activity-section-gap);
+
+  --blur-activity-card: var(--blur-activity-card);
+
+  --size-activity-guide-icon: var(--size-activity-guide-icon);
+  --tracking-activity-title: var(--letter-spacing-activity-title);
+  --tracking-activity-percent: var(--letter-spacing-activity-percent);
 
   --shadow-flat: var(--shadow-flat);
   --shadow-low: var(--shadow-low);
   --shadow-mid: var(--shadow-mid);
   --shadow-high: var(--shadow-high);
+
+  --height-chat-home-strip: var(--height-chat-home-strip);
+}
+
+/*
+ * Jobs design-prototype route: Figma screen is light-mode. Without this scope,
+ * `data-theme=dark` on <html> reshapes tokens so `bg-dock-accent`, `bg-bg`, and
+ * `text-dock-accent-fg` drift from the mock.
+ */
+[data-design-prototype] {
+  color-scheme: light;
+  --color-bg: 255 255 255;
+  /* #F5F5F5 */
+  --color-canvas-grey: 245 245 245;
+  --color-fg: 23 23 23;
+  --color-fg-muted: 113 113 122;
+  --color-border: 228 228 231;
+  --color-border-strong: 161 161 170;
+  /* #3E0084 */
+  --color-dock-accent: 62 0 132;
+  --color-dock-accent-fg: 255 255 255;
+  /* JBIQ Verticals resume stack (Figma 74:217) — pin to canvas so dark UI theme does not remap */
+  --color-activity-resume-fg: 27 6 51;
+  --color-activity-resume-progress: 49 10 93;
+  --color-activity-card-surface-front: 227 203 255;
+  --color-activity-card-surface-mid: 238 223 255;
+  --color-activity-card-surface-back: 241 234 250;
+  --color-activity-percent: 20 20 20;
 }
 
 /* Safe-area utilities — keep content out of the iOS notch and bottom handle. */

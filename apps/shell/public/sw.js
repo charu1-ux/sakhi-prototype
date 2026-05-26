@@ -1844,7 +1844,7 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`);
       { revision: null, url: "/_next/static/chunks/app/health/page-82eea3b62dbf1996.js" },
       { revision: null, url: "/_next/static/chunks/app/jobs/page-81ac1144f83fd8de.js" },
       { revision: null, url: "/_next/static/chunks/app/layout-3d839854b710f7c0.js" },
-      { revision: null, url: "/_next/static/chunks/app/page-3cafc5b4878ebec2.js" },
+      { revision: null, url: "/_next/static/chunks/app/page-a93941323316c180.js" },
       { revision: null, url: "/_next/static/chunks/framework-369218c9910949e7.js" },
       { revision: null, url: "/_next/static/chunks/main-app-655b766c2b5f225f.js" },
       { revision: null, url: "/_next/static/chunks/main-bbe9be3c0dbf93b5.js" },
@@ -1873,7 +1873,15 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`);
         url: "/_next/static/chunks/polyfills-42372ed130431b0a.js",
       },
       { revision: null, url: "/_next/static/chunks/webpack-1dfcc0e66d6ce68c.js" },
-      { revision: null, url: "/_next/static/css/530b6cefcf0c0f44.css" },
+      { revision: null, url: "/_next/static/css/70bd2ce6cd42ec96.css" },
+      {
+        revision: "6e0c8e20ca5fc7d353d64504d4b96823",
+        url: "/_next/static/loxTMjHo5qOrtrBTkRKzX/_buildManifest.js",
+      },
+      {
+        revision: "b6652df95db52feb4daf4eca35380933",
+        url: "/_next/static/loxTMjHo5qOrtrBTkRKzX/_ssgManifest.js",
+      },
       {
         revision: "b39676298197422e3f5284bfafdc7dc3",
         url: "/_next/static/media/27834908180db20f-s.p.woff2",
@@ -1881,14 +1889,6 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`);
       {
         revision: "8383036bed6b5635fbd81508767479af",
         url: "/_next/static/media/78fec81b34c4a365.p.woff2",
-      },
-      {
-        revision: "6e0c8e20ca5fc7d353d64504d4b96823",
-        url: "/_next/static/rz6FYKIMS7y7Cv17DUD4O/_buildManifest.js",
-      },
-      {
-        revision: "b6652df95db52feb4daf4eca35380933",
-        url: "/_next/static/rz6FYKIMS7y7Cv17DUD4O/_ssgManifest.js",
       },
       { revision: "93b90b5712eeadea50c45ee26f31fda0", url: "/assets/shell/ico-astro.svg" },
       { revision: "851325be8d5430cfc0a7ad31b007fad1", url: "/assets/shell/ico-chevron-right.svg" },
@@ -3042,6 +3042,29 @@ This is generally NOT safe. Learn more at https://bit.ly/wb-precache`);
         revision: "98b2267f684bd193a07546e432aee052",
         url: "/jobs/assets/audio/fe669ee1f03a2821.mp3",
       },
+      { revision: "f46976db0ebeb92c3c1af95481a9fb5e", url: "/jobs/assets/design-assets/add.svg" },
+      {
+        revision: "e970a1d7ba0e42e1433740e5cab1596e",
+        url: "/jobs/assets/design-assets/chevron-right.svg",
+      },
+      {
+        revision: "ce88d4106283091e983219350b81a93f",
+        url: "/jobs/assets/design-assets/english-learning.png",
+      },
+      {
+        revision: "1c5fd4dbbea9e02a703ed61ced143ab8",
+        url: "/jobs/assets/design-assets/govt-exams.png",
+      },
+      {
+        revision: "1c5fd4dbbea9e02a703ed61ced143ab8",
+        url: "/jobs/assets/design-assets/interview-prep.png",
+      },
+      {
+        revision: "7dba094b0f85928f2ceb214c6cd03456",
+        url: "/jobs/assets/design-assets/micro-learning.png",
+      },
+      { revision: "0ad5a9c6a54470e403a41401393bdd5c", url: "/jobs/assets/design-assets/speak.svg" },
+      { revision: "62e508d1623c9a7bd5871a3af073a911", url: "/jobs/design-prototype.html" },
       { revision: "3ef06feffffdaa97854b21e68d905ff9", url: "/jobs/english.html" },
       {
         revision: "ec1857220ecad46a6287fac74029fe22",

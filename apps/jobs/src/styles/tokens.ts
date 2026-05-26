@@ -36,6 +36,8 @@ export const radius = {
   sm: 6,
   md: 10,
   lg: 16,
+  /** JBIQ Verticals resume cards (Figma 74:217) */
+  activityCard: 11,
   full: 9999,
 } as const;
 

@@ -36,6 +36,33 @@ const nextConfig: NextConfig = {
         destination: "/commerce",
         permanent: false,
       },
+      {
+        source: "/jobs/design-prototype/index.html",
+        destination: "/jobs/design-prototype/",
+        permanent: false,
+      },
+    ];
+  },
+  // Dev: Jobs React hub + bundles are served by @intelligence/jobs (3003).
+  async rewrites() {
+    if (process.env.NODE_ENV !== "development") return [];
+    return [
+      {
+        source: "/jobs/design-prototype",
+        destination: "http://localhost:3003/jobs/design-prototype/",
+      },
+      {
+        source: "/jobs/design-prototype/",
+        destination: "http://localhost:3003/jobs/design-prototype/",
+      },
+      {
+        source: "/jobs/_next/:path*",
+        destination: "http://localhost:3003/jobs/_next/:path*",
+      },
+      {
+        source: "/jobs/assets/:path*",
+        destination: "http://localhost:3003/jobs/assets/:path*",
+      },
     ];
   },
 };
