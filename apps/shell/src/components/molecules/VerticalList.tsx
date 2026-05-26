@@ -29,6 +29,7 @@ const verticalJobs: Vertical = {
   dropdownItems: [
     { label: "Old user", url: "/jobs/index.html" },
     { label: "New user", url: "/jobs/zero/index.html" },
+    { label: "Design Prototype", url: "/jobs/design-prototype/index.html" },
   ],
 };
 
@@ -165,21 +166,25 @@ function VerticalListItem({ v, isOpen, setOpenSlug, interactive }: VerticalListI
           {chevron}
         </button>
         {isOpen && (
-          <ul className="mt-2 ml-12 flex flex-row gap-2">
-            {v.dropdownItems.map((item) => (
-              <li key={item.label} className="flex-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    window.location.href = item.url;
-                  }}
-                  onTouchStart={() => impactLight()}
-                  className="border-border flex w-full cursor-pointer items-center justify-center rounded-md border bg-transparent px-3 py-2.5 text-center transition-transform duration-100 active:scale-95"
-                >
-                  <span className="text-fg-muted text-sm">{item.label}</span>
-                </button>
-              </li>
-            ))}
+          <ul className="mt-2 ml-12 grid grid-cols-2 gap-2">
+            {v.dropdownItems!.map((item, index) => {
+              const items = v.dropdownItems!;
+              const oddLastSpansFullRow = index === items.length - 1 && items.length % 2 === 1;
+              return (
+                <li key={item.label} className={cn(oddLastSpansFullRow && "col-span-2")}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.location.href = item.url;
+                    }}
+                    onTouchStart={() => impactLight()}
+                    className="border-border flex w-full cursor-pointer items-center justify-center rounded-md border bg-transparent px-3 py-2.5 text-center transition-transform duration-100 active:scale-95"
+                  >
+                    <span className="text-fg-muted text-sm">{item.label}</span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
       </>
