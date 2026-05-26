@@ -1,11 +1,11 @@
 {
-  "name": "@intelligence/health",
+  "name": "@intelligence/commerce",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --webpack --port ${PORT:-3004}",
+    "dev": "next dev --webpack --port 3006",
     "build": "next build --webpack",
-    "start": "next start --port 3004",
+    "start": "next start --port 3006",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

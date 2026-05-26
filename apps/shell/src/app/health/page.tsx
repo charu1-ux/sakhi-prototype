@@ -15,9 +15,15 @@ import { useRouter } from "next/navigation";
  * pointing to the health dev server (basePath=/health). Because the iframe is
  * cross-origin (port 3004 vs 3000), the health app cannot access window.top
  * directly and instead posts a 'health:navigate' message — we handle it here.
+ *
+ * Override dev URL via `NEXT_PUBLIC_HEALTH_DEV_URL` on the shell (e.g. if
+ * health runs on another port via `PORT=3010`). Health default remains 3004
+ * (`PORT` in apps/health when running `npm run dev`).
  */
 export default function HealthDevFrame() {
   const router = useRouter();
+
+  const iframeSrc = process.env.NEXT_PUBLIC_HEALTH_DEV_URL ?? "http://localhost:3004/health/";
 
   useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
@@ -31,7 +37,7 @@ export default function HealthDevFrame() {
 
   return (
     <iframe
-      src="http://localhost:3004/health/"
+      src={iframeSrc}
       title="Sehat Saathi"
       className="fixed inset-0 size-full border-0"
       allow="microphone; camera"

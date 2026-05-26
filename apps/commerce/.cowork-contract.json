@@ -1,0 +1,13 @@
+{
+  "version": "1.0",
+  "vertical": "commerce",
+  "lead": "TBD",
+  "color": "#D4AF8C",
+  "devPort": 3006,
+  "rules": {
+    "allowedImportPrefixes": ["@/components/", "@/lib/", "react", "next", "lucide-react"],
+    "forbiddenPatterns": ["@radix-ui", "gsap", "@gsap", "framer-motion"],
+    "requiredFiles": ["src/app/page.tsx", "src/app/layout.tsx"]
+  },
+  "screens": []
+}

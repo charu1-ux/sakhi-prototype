@@ -31,6 +31,11 @@ const nextConfig: NextConfig = {
         destination: "/astro",
         permanent: false,
       },
+      {
+        source: "/commerce/index.html",
+        destination: "/commerce",
+        permanent: false,
+      },
     ];
   },
 };

@@ -57,7 +57,20 @@ const verticalAstrology: Vertical = {
   externalUrl: "/astro/jbiq-homepage.html",
 };
 
-const verticalsFeatured: Vertical[] = [verticalJobs, verticalHealth, verticalAstrology];
+const verticalCommerce: Vertical = {
+  name: "Commerce",
+  slug: "commerce",
+  icon: "/assets/shell/ico-commerce.svg",
+  gradientFrom: "from-vertical-commerce",
+  externalUrl: "/commerce/index.html",
+};
+
+const verticalsFeatured: Vertical[] = [
+  verticalJobs,
+  verticalHealth,
+  verticalAstrology,
+  verticalCommerce,
+];
 
 const verticalsComingSoon: Vertical[] = [
   {

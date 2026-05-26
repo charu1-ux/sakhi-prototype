@@ -13,6 +13,7 @@
     "dev:jobs": "turbo run dev --filter=@intelligence/jobs",
     "dev:health": "turbo run dev --filter=@intelligence/health",
     "dev:finance": "turbo run dev --filter=@intelligence/finance",
+    "dev:commerce": "turbo run dev --filter=@intelligence/commerce",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",

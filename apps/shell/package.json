@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
-    "postbuild": "node -e \"require('fs').cpSync('../health/out','out/health',{recursive:true,force:true});require('fs').cpSync('../astro/out','out/astro',{recursive:true,force:true});require('fs').cpSync('../jobs/public','out/jobs',{recursive:true,force:true})\"",
+    "postbuild": "node -e \"require('fs').cpSync('../health/out','out/health',{recursive:true,force:true});require('fs').cpSync('../astro/out','out/astro',{recursive:true,force:true});require('fs').cpSync('../commerce/out','out/commerce',{recursive:true,force:true});require('fs').cpSync('../jobs/public','out/jobs',{recursive:true,force:true})\"",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit"
@@ -14,6 +14,7 @@
     "@capacitor/haptics": "^8.0.2",
     "@gsap/react": "^2.1.2",
     "@intelligence/astro": "*",
+    "@intelligence/commerce": "*",
     "@intelligence/health": "*",
     "@intelligence/tokens": "*",
     "@intelligence/ui": "*",
