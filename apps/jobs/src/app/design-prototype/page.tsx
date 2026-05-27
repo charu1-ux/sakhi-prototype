@@ -9,8 +9,8 @@ import { ChevronLeftIcon, HubAddIcon, HubSpeakIcon } from "./hub-icons";
 
 export default function DesignPrototypePage() {
   return (
-    <div className="bg-gray-50 flex h-full flex-col overflow-hidden text-fg">
-      <main className="bg-gray-50 min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-4 pt-4">
+    <div className="bg-bg flex h-full flex-col overflow-hidden text-fg">
+      <main className="bg-bg min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-4 pt-4">
         <div className="mx-auto flex w-full max-w-md flex-col gap-6">
           <header className="flex items-center gap-3">
             <button
