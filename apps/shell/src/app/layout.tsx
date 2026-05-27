@@ -70,6 +70,8 @@ export default function RootLayout({
                 "md:shadow-[0_0_0_12px_#1c1c1e,0_48px_96px_rgba(0,0,0,0.65)]",
               ].join(" ")}
             >
+              {/* Top safe area — visible on mobile (env), fixed 44px inside phone frame on desktop */}
+              <div className="h-[env(safe-area-inset-top)] w-full shrink-0 md:h-[44px]" />
               {children}
             </div>
           </div>
