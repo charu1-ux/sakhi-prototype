@@ -6,24 +6,17 @@ import { useRouter } from "next/navigation";
 /**
  * Dev-only health frame.
  *
- * Production: the shell postbuild overwrites out/health/index.html with the
- * @intelligence/health static export. The shell home's <a href="/health/">
- * forces a full page load, so Capacitor serves that file directly — this
- * component is never rendered in production.
+ * The iframe src uses a same-origin path (/health/index.html) which the shell
+ * dev server proxies to the health app (port 3004) via next.config rewrites.
+ * This eliminates cross-origin restrictions and lets browser history work
+ * correctly — the URL bar always stays on localhost:3000.
  *
- * Dev: Next.js serves this page at /health/ and shows a full-screen iframe
- * pointing to the health dev server (basePath=/health). Because the iframe is
- * cross-origin (port 3004 vs 3000), the health app cannot access window.top
- * directly and instead posts a 'health:navigate' message — we handle it here.
- *
- * Override dev URL via `NEXT_PUBLIC_HEALTH_DEV_URL` on the shell (e.g. if
- * health runs on another port via `PORT=3010`). Health default remains 3004
- * (`PORT` in apps/health when running `npm run dev`).
+ * Production: postbuild copies @intelligence/health static export into
+ * out/health/. Capacitor loads that directly — this component is never
+ * rendered in production.
  */
 export default function HealthDevFrame() {
   const router = useRouter();
-
-  const iframeSrc = process.env.NEXT_PUBLIC_HEALTH_DEV_URL ?? "http://localhost:3004/health/";
 
   useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
@@ -36,11 +29,13 @@ export default function HealthDevFrame() {
   }, [router]);
 
   return (
-    <iframe
-      src={iframeSrc}
-      title="Sehat Saathi"
-      className="fixed inset-0 size-full border-0"
-      allow="microphone; camera"
-    />
+    <div className="flex h-full w-full flex-col">
+      <iframe
+        src="/health/index.html"
+        title="Sehat Saathi"
+        className="block min-h-0 w-full flex-1 border-0"
+        allow="microphone; camera"
+      />
+    </div>
   );
 }

@@ -6,15 +6,12 @@ import { useRouter } from "next/navigation";
 /**
  * Dev-only astro frame.
  *
- * Production: the shell postbuild overwrites out/astro/index.html with the
- * @intelligence/astro static export. The shell home's <a href="/astro/index.html">
- * forces a full page load, so Capacitor serves that file directly — this
- * component is never rendered in production.
+ * The iframe src uses a same-origin path proxied from the astro dev server
+ * (port 3002) via shell rewrites, keeping everything on localhost:3000.
  *
- * Dev: Next.js serves this page at /astro/ and shows a full-screen iframe
- * pointing to the astro dev server (basePath=/astro). Because the iframe is
- * cross-origin (port 3002 vs 3000), the astro app cannot access window.top
- * directly and instead posts a 'astro:navigate' message — we handle it here.
+ * Production: postbuild copies @intelligence/astro static export into
+ * out/astro/. Capacitor loads that directly — this component is never
+ * rendered in production.
  */
 export default function AstroDevFrame() {
   const router = useRouter();
@@ -30,11 +27,13 @@ export default function AstroDevFrame() {
   }, [router]);
 
   return (
-    <iframe
-      src="http://localhost:3002/astro/"
-      title="Jio Astro"
-      className="fixed inset-0 size-full border-0"
-      allow="microphone; camera"
-    />
+    <div className="flex h-full w-full flex-col">
+      <iframe
+        src="/astro/jbiq-homepage.html"
+        title="Jio Astro"
+        className="block min-h-0 w-full flex-1 border-0"
+        allow="microphone; camera"
+      />
+    </div>
   );
 }

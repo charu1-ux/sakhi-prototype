@@ -53,8 +53,22 @@ export default function RootLayout({
       className={`${GeistSans.variable} ${GeistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="bg-bg text-fg pt-safe pb-safe px-safe flex min-h-dvh flex-col">
-        <ThemeProvider>{children}</ThemeProvider>
+      {/*
+       * Mobile: body safe-area padding keeps content away from the notch/home bar.
+       * Desktop: white bg outside the phone frame; the inner div becomes the
+       * phone-frame container (390×844 px, dark bezel shadow, rounded corners).
+       */}
+      <body className="bg-bg text-fg flex min-h-dvh flex-col md:items-center md:justify-center md:bg-white md:p-0">
+        {/* Phone frame — visible only on desktop (md+). Mobile fills full screen. */}
+        <div
+          className={[
+            "flex w-full flex-1 flex-col overflow-hidden",
+            "md:flex-none md:h-[844px] md:w-[390px] md:rounded-[3rem]",
+            "md:shadow-[0_0_0_12px_#1c1c1e,0_32px_64px_rgba(0,0,0,0.18)]",
+          ].join(" ")}
+        >
+          <ThemeProvider>{children}</ThemeProvider>
+        </div>
       </body>
     </html>
   );

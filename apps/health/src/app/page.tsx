@@ -153,17 +153,22 @@ export default function SehatSaathi() {
                 {/* Cricket Dost */}
                 <div className="assistant-card" onClick={() => showComingSoon()}>
                   <div className="assistant-avatar">
-                    <img
-                      src="https://sunit1986.github.io/design-prototypes/Assets/persona-cricket.png"
-                      alt="Cricket Dost"
-                      loading="lazy"
+                    <div
+                      role="img"
+                      aria-label="Cricket Dost"
                       style={{
                         width: "100%",
                         height: "100%",
-                        objectFit: "cover",
-                        display: "block",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "linear-gradient(135deg,#bbf7d0 0%,#16a34a 100%)",
+                        fontSize: "42px",
+                        lineHeight: 1,
                       }}
-                    />
+                    >
+                      🏏
+                    </div>
                   </div>
                   <span className="assistant-name">
                     Cricket
@@ -174,17 +179,22 @@ export default function SehatSaathi() {
                 {/* Astro */}
                 <div className="assistant-card" onClick={() => showComingSoon()}>
                   <div className="assistant-avatar">
-                    <img
-                      src="https://sunit1986.github.io/design-prototypes/Assets/persona-astrology.png"
-                      alt="Astro Companion"
-                      loading="lazy"
+                    <div
+                      role="img"
+                      aria-label="Astro Companion"
                       style={{
                         width: "100%",
                         height: "100%",
-                        objectFit: "cover",
-                        display: "block",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "linear-gradient(135deg,#e9d5ff 0%,#7c3aed 100%)",
+                        fontSize: "42px",
+                        lineHeight: 1,
                       }}
-                    />
+                    >
+                      🔮
+                    </div>
                   </div>
                   <span className="assistant-name">
                     Astro
@@ -195,17 +205,22 @@ export default function SehatSaathi() {
                 {/* Devotional */}
                 <div className="assistant-card" onClick={() => showComingSoon()}>
                   <div className="assistant-avatar">
-                    <img
-                      src="https://sunit1986.github.io/design-prototypes/Assets/persona-devotion.png"
-                      alt="Devotional Companion"
-                      loading="lazy"
+                    <div
+                      role="img"
+                      aria-label="Devotional Companion"
                       style={{
                         width: "100%",
                         height: "100%",
-                        objectFit: "cover",
-                        display: "block",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "linear-gradient(135deg,#fed7aa 0%,#ea580c 100%)",
+                        fontSize: "42px",
+                        lineHeight: 1,
                       }}
-                    />
+                    >
+                      🙏
+                    </div>
                   </div>
                   <span className="assistant-name">
                     Devotional
@@ -216,17 +231,22 @@ export default function SehatSaathi() {
                 {/* Career */}
                 <div className="assistant-card" onClick={() => showComingSoon()}>
                   <div className="assistant-avatar">
-                    <img
-                      src="https://sunit1986.github.io/design-prototypes/Assets/persona-education.png"
-                      alt="Career and Skills"
-                      loading="lazy"
+                    <div
+                      role="img"
+                      aria-label="Career and Skills"
                       style={{
                         width: "100%",
                         height: "100%",
-                        objectFit: "cover",
-                        display: "block",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "linear-gradient(135deg,#bfdbfe 0%,#1d4ed8 100%)",
+                        fontSize: "42px",
+                        lineHeight: 1,
                       }}
-                    />
+                    >
+                      💼
+                    </div>
                   </div>
                   <span className="assistant-name">
                     Career &<br />
@@ -1225,13 +1245,29 @@ export default function SehatSaathi() {
               </div>
             </div>
             <button className="hdr-btn" onClick={() => clearChat()}>
-              <img
-                src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/icons/svg/ic_edit_pen.svg"
+              <svg
                 width="20"
                 height="20"
-                style={{ filter: "invert(1)", opacity: ".8" }}
-                alt="New"
-              />
+                viewBox="0 0 24 24"
+                fill="none"
+                style={{ opacity: ".8" }}
+                aria-label="New"
+              >
+                <path
+                  d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </button>
           </div>
           <div className="chat-messages" id="chat-msgs"></div>
@@ -1253,13 +1289,22 @@ export default function SehatSaathi() {
                 <span id="chat-speak-lbl">Speak</span>
               </button>
               <button className="bar-send" onClick={() => chatSend()}>
-                <img
-                  src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/icons/svg/ic_message_send.svg"
-                  width="20"
-                  height="20"
-                  style={{ filter: "invert(1)" }}
-                  alt="Send"
-                />
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-label="Send">
+                  <path
+                    d="M22 2L11 13"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M22 2L15 22l-4-9-9-4 20-7z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </button>
             </div>
           </div>
@@ -1672,7 +1717,7 @@ export default function SehatSaathi() {
             loop
             muted
             playsInline
-            src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/states/Dark/HelloJio_Listening_242.mp4"
+            src=""
           ></video>
           <div className="voice-bars" id="voice-bars">
             <div className="voice-bar"></div>
@@ -1696,13 +1741,22 @@ export default function SehatSaathi() {
         {/* ══════════════ REMINDER OVERLAY ══════════════ */}
         <div id="reminder-ov">
           <div className="reminder-glow">
-            <img
-              src="https://raw.githubusercontent.com/sunit1986/JioBharatIQ_Server/main/assets/icons/svg/ic_alarm.svg"
-              width="48"
-              height="48"
-              style={{ filter: "invert(1)" }}
-              alt=""
-            />
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M13.73 21a2 2 0 0 1-3.46 0"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </div>
           <div className="reminder-ov-title" id="rov-title">
             Dawai ka Waqt!

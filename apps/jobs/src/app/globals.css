@@ -1,24 +1,8 @@
 @import "tailwindcss";
 @import "../styles/tokens.css";
 
-/*
- * Dark variant — fires on either signal so components respond to both
- * explicit next-themes overrides AND the OS-level colour scheme.
- *   data-theme="dark"             → dark (regardless of OS)
- *   data-theme="light"            → light (regardless of OS)
- *   no data-theme + OS dark       → dark (CSS-only, pre-hydration safe)
- *   no data-theme + OS light      → light
- */
-@custom-variant dark {
-  &:where([data-theme="dark"], [data-theme="dark"] *) {
-    @slot;
-  }
-  @media (prefers-color-scheme: dark) {
-    &:where(:not([data-theme="light"]) *, :not([data-theme="light"])) {
-      @slot;
-    }
-  }
-}
+/* next-themes sets data-theme on <html>; wire the Tailwind `dark:` variant to it. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /*
  * Map design tokens onto Tailwind v4 utilities so utilities like `bg-bg`,
@@ -84,51 +68,30 @@
   --height-chat-home-strip: var(--height-chat-home-strip);
 }
 
-/* Jobs design-prototype — light defaults */
+/*
+ * Jobs design-prototype route: Figma screen is light-mode. Without this scope,
+ * `data-theme=dark` on <html> reshapes tokens so `bg-dock-accent`, `bg-bg`, and
+ * `text-dock-accent-fg` drift from the mock.
+ */
 [data-design-prototype] {
-  color-scheme: light dark;
+  color-scheme: light;
   --color-bg: 255 255 255;
+  /* #F5F5F5 */
   --color-canvas-grey: 245 245 245;
   --color-fg: 23 23 23;
   --color-fg-muted: 113 113 122;
   --color-border: 228 228 231;
   --color-border-strong: 161 161 170;
+  /* #3E0084 */
   --color-dock-accent: 62 0 132;
   --color-dock-accent-fg: 255 255 255;
-  /* Activity card colours — same in both modes (purple palette) */
+  /* JBIQ Verticals resume stack (Figma 74:217) — pin to canvas so dark UI theme does not remap */
   --color-activity-resume-fg: 27 6 51;
   --color-activity-resume-progress: 49 10 93;
   --color-activity-card-surface-front: 227 203 255;
   --color-activity-card-surface-mid: 238 223 255;
   --color-activity-card-surface-back: 241 234 250;
   --color-activity-percent: 20 20 20;
-}
-
-/* Jobs design-prototype — dark overrides (system preference) */
-@media (prefers-color-scheme: dark) {
-  [data-design-prototype] {
-    --color-bg: 10 10 10;
-    --color-canvas-grey: 17 17 19;
-    --color-fg: 237 237 237;
-    --color-fg-muted: 161 161 170;
-    --color-border: 39 39 42;
-    --color-border-strong: 82 82 91;
-    --color-dock-accent: 167 139 250;
-    --color-dock-accent-fg: 10 10 10;
-  }
-}
-
-/* Jobs design-prototype — dark overrides (explicit data-theme from next-themes) */
-[data-theme="dark"] [data-design-prototype],
-[data-theme="dark"][data-design-prototype] {
-  --color-bg: 10 10 10;
-  --color-canvas-grey: 17 17 19;
-  --color-fg: 237 237 237;
-  --color-fg-muted: 161 161 170;
-  --color-border: 39 39 42;
-  --color-border-strong: 82 82 91;
-  --color-dock-accent: 167 139 250;
-  --color-dock-accent-fg: 10 10 10;
 }
 
 /* Safe-area utilities — keep content out of the iOS notch and bottom handle. */

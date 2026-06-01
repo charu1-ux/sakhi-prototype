@@ -9,7 +9,8 @@ import { impactLight } from "@/lib/haptics";
 
 type DropdownItem = {
   label: string;
-  url: string;
+  url: string; // web URL (shell Next.js route)
+  capacitorUrl?: string; // Capacitor URL (explicit index.html path)
 };
 
 type Vertical = {
@@ -26,10 +27,16 @@ const verticalJobs: Vertical = {
   slug: "jobs",
   icon: "/assets/shell/ico-jobs.svg",
   gradientFrom: "from-vertical-jobs",
+  // Full-page loads so the shell's server rewrites proxy to the jobs app.
+  // Client-side <Link> would skip server-side rewrites.
   dropdownItems: [
-    { label: "Old user", url: "/jobs/index.html" },
-    { label: "New user", url: "/jobs/zero/index.html" },
-    { label: "Design Prototype", url: "/jobs/design-prototype/index.html" },
+    { label: "Old user", url: "/jobs/old/", capacitorUrl: "/jobs/old/index.html" },
+    { label: "New user", url: "/jobs/new/", capacitorUrl: "/jobs/new/index.html" },
+    {
+      label: "Design Prototype",
+      url: "/jobs/design-prototype/",
+      capacitorUrl: "/jobs/design-prototype/index.html",
+    },
   ],
 };
 
@@ -38,12 +45,6 @@ const verticalHealth: Vertical = {
   slug: "health",
   icon: "/assets/shell/ico-health.svg",
   gradientFrom: "from-vertical-health",
-  // Explicit file path required for Capacitor: WKURLSchemeHandler does not
-  // resolve directory URLs (e.g. /health/) to index.html — it falls back to
-  // the shell's index.html instead. Pointing directly to /health/index.html
-  // lets Capacitor find the file and serve the real health app.
-  // Also bypasses Next.js client-side routing (which would render the
-  // dev-only iframe page that tries localhost:3004 — unavailable on device).
   externalUrl: "/health/index.html",
 };
 
@@ -52,10 +53,7 @@ const verticalAstrology: Vertical = {
   slug: "astro",
   icon: "/assets/shell/ico-astro.svg",
   gradientFrom: "from-vertical-astro",
-  // Same Capacitor WKURLSchemeHandler fix as health — point directly to
-  // index.html so the static file is served on device instead of falling
-  // back to the shell. Also skips the Next.js dev iframe route on device.
-  externalUrl: "/astro/jbiq-homepage.html",
+  externalUrl: "/astro/index.html",
 };
 
 const verticalCommerce: Vertical = {
@@ -175,7 +173,9 @@ function VerticalListItem({ v, isOpen, setOpenSlug, interactive }: VerticalListI
                   <button
                     type="button"
                     onClick={() => {
-                      window.location.href = item.url;
+                      const isCapacitor = window.location.protocol === "capacitor:";
+                      window.location.href =
+                        isCapacitor && item.capacitorUrl ? item.capacitorUrl : item.url;
                     }}
                     onTouchStart={() => impactLight()}
                     className="border-border flex w-full cursor-pointer items-center justify-center rounded-md border bg-transparent px-3 py-2.5 text-center transition-transform duration-100 active:scale-95"
@@ -192,11 +192,16 @@ function VerticalListItem({ v, isOpen, setOpenSlug, interactive }: VerticalListI
   }
 
   if ("externalUrl" in v && v.externalUrl) {
+    // Capacitor: protocol is "capacitor:" — use explicit index.html path so
+    // WKURLSchemeHandler can resolve the file directly.
+    // Web: navigate to the shell route (Next.js page with phone frame wrapper).
+    const isCapacitor = typeof window !== "undefined" && window.location.protocol === "capacitor:";
+    const href = isCapacitor ? v.externalUrl : `/${v.slug}/`;
     return (
       <button
         type="button"
         onClick={() => {
-          window.location.href = v.externalUrl!;
+          window.location.href = href;
         }}
         onTouchStart={() => impactLight()}
         className="flex w-full cursor-pointer items-center justify-between border-none bg-transparent p-0 transition-transform duration-100 active:scale-95"

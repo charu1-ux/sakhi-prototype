@@ -57,21 +57,19 @@ export default function RootLayout({
       className={`${GeistSans.variable} ${GeistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="text-fg flex h-full flex-col md:bg-neutral-950">
+      <body className="text-fg flex h-full flex-col md:bg-white">
         <ThemeProvider>
           <EdgeSwipeBack />
           <ShellJobsMessageBridge />
-          {/* Mobile: full-screen direct. Desktop: centered phone frame on dark bg. */}
+          {/* Mobile: full-screen direct. Desktop: centered phone frame on light bg. */}
           <div className="flex h-full flex-1 flex-col md:items-center md:justify-center md:py-8">
             <div
               className={[
                 "flex h-full w-full flex-1 flex-col overflow-hidden",
                 "md:h-[844px] md:w-[390px] md:flex-none md:rounded-[3rem]",
-                "md:shadow-[0_0_0_12px_#1c1c1e,0_48px_96px_rgba(0,0,0,0.65)]",
+                "md:shadow-[0_0_0_12px_#1c1c1e,0_32px_64px_rgba(0,0,0,0.18)]",
               ].join(" ")}
             >
-              {/* Top safe area — visible on mobile (env), fixed 44px inside phone frame on desktop */}
-              <div className="h-[env(safe-area-inset-top)] w-full shrink-0 md:h-[44px]" />
               {children}
             </div>
           </div>

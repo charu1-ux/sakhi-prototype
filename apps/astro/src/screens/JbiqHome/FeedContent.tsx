@@ -27,11 +27,24 @@ export function FeedContent({ onAstrologyClick }: FeedContentProps) {
             <div className="jh-assistant-avatar-wrap">
               <div className="jh-assistant-ring" />
               <div className="jh-assistant-img-inner">
-                <img
+                <div
                   className="jh-assistant-img jh-assistant-img-scaled"
-                  src="https://sunit1986.github.io/design-prototypes/Assets/persona-astrology.png"
-                  alt="Astrology"
-                />
+                  role="img"
+                  aria-label="Astrology"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "linear-gradient(135deg,#e9d5ff 0%,#7c3aed 100%)",
+                    fontSize: "28px",
+                    lineHeight: 1,
+                    borderRadius: "50%",
+                    width: "100%",
+                    height: "100%",
+                  }}
+                >
+                  🔮
+                </div>
               </div>
             </div>
             <span className="jh-assistant-label">Astrology</span>
@@ -42,11 +55,24 @@ export function FeedContent({ onAstrologyClick }: FeedContentProps) {
             <div className="jh-assistant-avatar-wrap">
               <div className="jh-assistant-ring" />
               <div className="jh-assistant-img-inner">
-                <img
+                <div
                   className="jh-assistant-img jh-assistant-img-scaled"
-                  src="https://sunit1986.github.io/design-prototypes/Assets/persona-career.png"
-                  alt="Career"
-                />
+                  role="img"
+                  aria-label="Career"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "linear-gradient(135deg,#bfdbfe 0%,#1d4ed8 100%)",
+                    fontSize: "28px",
+                    lineHeight: 1,
+                    borderRadius: "50%",
+                    width: "100%",
+                    height: "100%",
+                  }}
+                >
+                  💼
+                </div>
               </div>
             </div>
             <span className="jh-assistant-label">Career</span>
@@ -56,11 +82,24 @@ export function FeedContent({ onAstrologyClick }: FeedContentProps) {
           <a className="jh-assistant-item" href="javascript:void(0)">
             <div className="jh-assistant-avatar-wrap">
               <div className="jh-assistant-ring" />
-              <img
+              <div
                 className="jh-assistant-img"
-                src="https://sunit1986.github.io/design-prototypes/Assets/persona-bollywood.png"
-                alt="Entertainment"
-              />
+                role="img"
+                aria-label="Entertainment"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "linear-gradient(135deg,#fde68a 0%,#f59e0b 100%)",
+                  fontSize: "26px",
+                  lineHeight: 1,
+                  borderRadius: "50%",
+                  width: "100%",
+                  height: "100%",
+                }}
+              >
+                🎬
+              </div>
             </div>
             <span className="jh-assistant-label">Entertainment</span>
           </a>
@@ -69,11 +108,24 @@ export function FeedContent({ onAstrologyClick }: FeedContentProps) {
           <a className="jh-assistant-item" href="javascript:void(0)">
             <div className="jh-assistant-avatar-wrap">
               <div className="jh-assistant-ring" />
-              <img
+              <div
                 className="jh-assistant-img"
-                src="https://sunit1986.github.io/design-prototypes/Assets/persona-cricket.png"
-                alt="Cricket"
-              />
+                role="img"
+                aria-label="Cricket"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "linear-gradient(135deg,#bbf7d0 0%,#16a34a 100%)",
+                  fontSize: "26px",
+                  lineHeight: 1,
+                  borderRadius: "50%",
+                  width: "100%",
+                  height: "100%",
+                }}
+              >
+                🏏
+              </div>
             </div>
             <span className="jh-assistant-label">Cricket</span>
           </a>
@@ -86,11 +138,24 @@ export function FeedContent({ onAstrologyClick }: FeedContentProps) {
           >
             <div className="jh-assistant-avatar-wrap">
               <div className="jh-assistant-ring" />
-              <img
+              <div
                 className="jh-assistant-img"
-                src="https://sunit1986.github.io/design-prototypes/Assets/persona-devotion.png"
-                alt="Devotion"
-              />
+                role="img"
+                aria-label="Devotion"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "linear-gradient(135deg,#fed7aa 0%,#ea580c 100%)",
+                  fontSize: "26px",
+                  lineHeight: 1,
+                  borderRadius: "50%",
+                  width: "100%",
+                  height: "100%",
+                }}
+              >
+                🙏
+              </div>
             </div>
             <span className="jh-assistant-label">Devotion</span>
           </a>
@@ -99,11 +164,24 @@ export function FeedContent({ onAstrologyClick }: FeedContentProps) {
           <a className="jh-assistant-item" href="javascript:void(0)" id="assistant-news">
             <div className="jh-assistant-avatar-wrap">
               <div className="jh-assistant-ring" />
-              <img
+              <div
                 className="jh-assistant-img"
-                src="https://sunit1986.github.io/design-prototypes/Assets/persona-education.png"
-                alt="News"
-              />
+                role="img"
+                aria-label="News"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "linear-gradient(135deg,#e0f2fe 0%,#0284c7 100%)",
+                  fontSize: "26px",
+                  lineHeight: 1,
+                  borderRadius: "50%",
+                  width: "100%",
+                  height: "100%",
+                }}
+              >
+                📰
+              </div>
             </div>
             <span className="jh-assistant-label">News</span>
           </a>
@@ -112,11 +190,24 @@ export function FeedContent({ onAstrologyClick }: FeedContentProps) {
           <div className="jh-assistant-item jh-inactive">
             <div className="jh-assistant-avatar-wrap">
               <div className="jh-assistant-ring jh-grey" />
-              <img
+              <div
                 className="jh-assistant-img"
-                src="https://sunit1986.github.io/design-prototypes/Assets/persona-finance.png"
-                alt="Finance"
-              />
+                role="img"
+                aria-label="Finance"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "linear-gradient(135deg,#d1fae5 0%,#059669 100%)",
+                  fontSize: "26px",
+                  lineHeight: 1,
+                  borderRadius: "50%",
+                  width: "100%",
+                  height: "100%",
+                }}
+              >
+                💰
+              </div>
             </div>
             <span className="jh-assistant-label">Finance</span>
           </div>
@@ -125,11 +216,24 @@ export function FeedContent({ onAstrologyClick }: FeedContentProps) {
           <div className="jh-assistant-item jh-inactive">
             <div className="jh-assistant-avatar-wrap">
               <div className="jh-assistant-ring jh-grey" />
-              <img
+              <div
                 className="jh-assistant-img"
-                src="https://sunit1986.github.io/design-prototypes/Assets/persona-govt.png"
-                alt="Government"
-              />
+                role="img"
+                aria-label="Government"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "linear-gradient(135deg,#fee2e2 0%,#dc2626 100%)",
+                  fontSize: "26px",
+                  lineHeight: 1,
+                  borderRadius: "50%",
+                  width: "100%",
+                  height: "100%",
+                }}
+              >
+                🏛️
+              </div>
             </div>
             <span className="jh-assistant-label">Government</span>
           </div>
@@ -296,11 +400,18 @@ export function FeedContent({ onAstrologyClick }: FeedContentProps) {
             <div className="jh-ucard-title">Trending songs</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <div className="jh-song-item">
-                <div className="jh-art">
-                  <img
-                    src="https://sunit1986.github.io/design-prototypes/Assets/song-rockstar.png"
-                    alt="Rockstar"
-                  />
+                <div
+                  className="jh-art"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "linear-gradient(135deg,#fde68a,#f59e0b)",
+                    borderRadius: 8,
+                    fontSize: "24px",
+                  }}
+                >
+                  🎸
                 </div>
                 <div className="jh-meta">
                   <span className="jh-name">Phir Se Ud Chala</span>
@@ -311,11 +422,18 @@ export function FeedContent({ onAstrologyClick }: FeedContentProps) {
                 </svg>
               </div>
               <div className="jh-song-item">
-                <div className="jh-art">
-                  <img
-                    src="https://sunit1986.github.io/design-prototypes/Assets/song-andhadhun.png"
-                    alt="Andhadhun"
-                  />
+                <div
+                  className="jh-art"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "linear-gradient(135deg,#e0e7ff,#4f46e5)",
+                    borderRadius: 8,
+                    fontSize: "24px",
+                  }}
+                >
+                  🎵
                 </div>
                 <div className="jh-meta">
                   <span className="jh-name">Naina Da Kya Kasoor</span>
@@ -326,11 +444,18 @@ export function FeedContent({ onAstrologyClick }: FeedContentProps) {
                 </svg>
               </div>
               <div className="jh-song-item">
-                <div className="jh-art">
-                  <img
-                    src="https://sunit1986.github.io/design-prototypes/Assets/song-border2.png"
-                    alt="Border 2"
-                  />
+                <div
+                  className="jh-art"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "linear-gradient(135deg,#fecaca,#dc2626)",
+                    borderRadius: 8,
+                    fontSize: "24px",
+                  }}
+                >
+                  🎶
                 </div>
                 <div className="jh-meta">
                   <span className="jh-name">Mohabbat Ho Gayi Hai</span>
@@ -401,11 +526,8 @@ export function FeedContent({ onAstrologyClick }: FeedContentProps) {
                     <span className="jh-weather-desc">Sunny day</span>
                   </div>
                 </div>
-                <div className="jh-weather-icon">
-                  <img
-                    src="https://sunit1986.github.io/design-prototypes/Assets/weather-sunny.png"
-                    alt="Sunny"
-                  />
+                <div className="jh-weather-icon" style={{ fontSize: "48px", lineHeight: 1 }}>
+                  ☀️
                 </div>
               </div>
               <div className="jh-weather-stats">

@@ -1,137 +1,242 @@
+"use client";
+
 import Image from "next/image";
+import { useState } from "react";
 
-import { cn } from "@/lib/cn";
-
-import { DESIGN_ASSETS_PREFIX } from "./hub-data";
+import { HOME_ASSETS } from "./hub-data";
 
 type ResumeCard = {
   id: number;
   title: string;
   percent: number;
+  steps?: string;
   tier: "front" | "mid" | "back";
 };
 
 const RESUME_CARDS: ResumeCard[] = [
-  { id: 1, title: "Youtube hook pattern", percent: 76, tier: "front" },
-  { id: 2, title: "Micro Learning", percent: 76, tier: "mid" },
-  { id: 3, title: "Micro Learning", percent: 76, tier: "back" },
+  { id: 1, title: "Youtube hook pattern", percent: 76, steps: "Step 3/5", tier: "front" },
+  { id: 2, title: "Micro Learning", percent: 60, tier: "mid" },
+  { id: 3, title: "Reels script writing", percent: 40, tier: "back" },
 ];
 
-const LEARNING_ICON_SRC = `${DESIGN_ASSETS_PREFIX}/learning.svg`;
+const LEARNING_ICON_SRC = `${HOME_ASSETS}/learning.svg`;
 
-// front→mid→back: front at top, mid/back peek below it
-const STACKED_CARDS = RESUME_CARDS;
-
-// 6px peek per card; overlap is 3.125rem (50px), so stub height = 50+6 = 56px = 3.5rem
 const PEEK_PX = 6;
 const OVERLAP_REM = 3.125;
 const STUB_HEIGHT = `${OVERLAP_REM + PEEK_PX / 16}rem`;
 
 const TIER_BG: Record<ResumeCard["tier"], string> = {
-  front: "#E3CBFF",
-  mid: "#EEDFFF",
-  back: "#F1EAFA",
+  front: "#ffffff",
+  mid: "#f9f9f9",
+  back: "#f3f3f3",
 };
 
 const ACTIVITY_COLORS = {
   titleFg: "#1B0633",
   progress: "#310A5D",
-  progressTrack: "rgba(49,10,93,0.24)",
+  progressTrack: "rgba(0,0,0,0.10)",
   percent: "#141414",
 } as const;
 
-function tierWidthClass(tier: ResumeCard["tier"]) {
-  if (tier === "front") return "w-full";
-  if (tier === "mid") return "w-[95%]";
-  return "w-[90%]";
-}
-
-function tierZClass(tier: ResumeCard["tier"]) {
-  if (tier === "front") return "z-[3]";
-  if (tier === "mid") return "z-[2]";
-  return "z-[1]";
-}
-
-export function ActivityCardStack() {
+function CardContent({ card }: { card: ResumeCard }) {
   return (
-    <section
-      className={cn("flex w-full min-w-0 flex-col", "gap-2")}
-      aria-labelledby="resume-activities-heading"
-    >
-      <h2
-        id="resume-activities-heading"
-        className="m-0 w-full text-base font-base leading-normal text-fg"
+    <>
+      <div className="flex-[75] min-w-0 flex flex-col gap-2">
+        <div className="flex items-center gap-1.5">
+          <span className="relative inline-flex shrink-0 size-[length:var(--size-activity-guide-icon)]">
+            <Image
+              src={LEARNING_ICON_SRC}
+              alt=""
+              width={18}
+              height={18}
+              className="pointer-events-none size-[length:var(--size-activity-guide-icon)]"
+              unoptimized
+            />
+          </span>
+          <p
+            style={{ color: ACTIVITY_COLORS.titleFg }}
+            className="m-0 truncate text-[length:var(--font-size-activity-title)] font-normal leading-normal"
+          >
+            {card.title}
+          </p>
+        </div>
+        <div
+          style={{ backgroundColor: ACTIVITY_COLORS.progressTrack }}
+          className="h-1.5 w-full overflow-hidden rounded-full"
+          role="presentation"
+          aria-hidden
+        >
+          <div
+            style={{
+              width: `${card.percent}%`,
+              background: "linear-gradient(90deg, #A556FE 0%, #5600B7 81%, #310068 100%)",
+            }}
+            className="h-full rounded-full"
+          />
+        </div>
+      </div>
+      <span
+        style={{ color: ACTIVITY_COLORS.percent }}
+        className="flex-[35] shrink-0 text-right text-[18px] font-medium leading-normal"
       >
-        Continue where you left off
-      </h2>
-      <ul className="relative isolate m-0 flex list-none flex-col items-center p-0">
-        {STACKED_CARDS.map((card, idx) => {
-          const isLast = idx === STACKED_CARDS.length - 1;
-          const isFront = card.tier === "front";
+        {card.steps ?? `${card.percent}%`}
+      </span>
+    </>
+  );
+}
 
-          return (
-            <li
-              key={card.id}
-              style={{
-                backgroundColor: TIER_BG[card.tier],
-                ...(isFront ? {} : { height: STUB_HEIGHT }),
-              }}
-              className={cn(
-                "relative flex shrink-0 rounded-activity-card",
-                tierWidthClass(card.tier),
-                tierZClass(card.tier),
-                !isLast && "-mb-[length:var(--space-activity-stack-overlap)]",
-                isFront ? "pointer-events-auto items-center gap-3 p-3" : "pointer-events-none",
-              )}
-            >
-              {isFront && (
-                <>
-                  <div className="flex min-w-0 flex-1 flex-col gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <span className="relative inline-flex shrink-0 size-[length:var(--size-activity-guide-icon)]">
-                        <Image
-                          src={LEARNING_ICON_SRC}
-                          alt=""
-                          width={18}
-                          height={18}
-                          className="pointer-events-none size-[length:var(--size-activity-guide-icon)]"
-                          unoptimized
-                        />
-                      </span>
-                      <p
-                        style={{ color: ACTIVITY_COLORS.titleFg }}
-                        className="m-0 truncate text-[length:var(--font-size-activity-title)] font-normal leading-normal"
-                      >
-                        {card.title}
-                      </p>
-                    </div>
-                    <div
-                      style={{ backgroundColor: ACTIVITY_COLORS.progressTrack }}
-                      className="h-1.5 w-full overflow-hidden rounded-full"
-                      role="presentation"
-                      aria-hidden
-                    >
-                      <div
-                        style={{
-                          width: `${card.percent}%`,
-                          backgroundColor: ACTIVITY_COLORS.progress,
-                        }}
-                        className="h-full rounded-full"
-                      />
-                    </div>
-                  </div>
-                  <span
-                    style={{ color: ACTIVITY_COLORS.percent }}
-                    className="shrink-0 whitespace-nowrap text-[length:var(--font-size-activity-percent)] font-medium leading-normal"
-                  >
-                    {card.percent}%
-                  </span>
-                </>
-              )}
-            </li>
-          );
-        })}
+// ─── Expanded overlay ─────────────────────────────────────────────────────────
+
+export function ExpandedOverlay({ onClose }: { onClose: () => void }) {
+  const [closing, setClosing] = useState(false);
+
+  function handleClose() {
+    setClosing(true);
+    setTimeout(onClose, 220);
+  }
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        zIndex: 9999,
+        display: "flex",
+        flexDirection: "column",
+        padding: "0 16px",
+        backgroundColor: "rgba(0,0,0,0.2)",
+        backdropFilter: "blur(6px)",
+        WebkitBackdropFilter: "blur(6px)",
+        opacity: closing ? 0 : 1,
+        transition: "opacity 220ms ease",
+      }}
+    >
+      <ul
+        style={{
+          marginTop: "calc(env(safe-area-inset-top, 0px) + 24px)",
+          padding: 0,
+          listStyle: "none",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 12,
+        }}
+      >
+        {RESUME_CARDS.map((card) => (
+          <li
+            key={card.id}
+            style={{
+              backgroundColor: TIER_BG[card.tier],
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: 12,
+              borderRadius: "var(--radius-activity-card, 12px)",
+              border: "1px solid #e5e7eb",
+              userSelect: "none",
+              width: "100%",
+            }}
+          >
+            <CardContent card={card} />
+          </li>
+        ))}
       </ul>
-    </section>
+
+      <div style={{ flex: 1 }} />
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)",
+        }}
+      >
+        <button
+          type="button"
+          onClick={handleClose}
+          aria-label="Close"
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: "50%",
+            background: "white",
+            border: "none",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
+            touchAction: "manipulation",
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
+            <path d="M15 5L5 15M5 5l10 10" stroke="#141414" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
+export function ActivityCardStack({ onExpand }: { onExpand: () => void }) {
+  return (
+    <>
+      <section
+        className="flex w-full min-w-0 flex-col gap-2"
+        aria-labelledby="resume-activities-heading"
+      >
+        <h2
+          id="resume-activities-heading"
+          className="m-0 w-full text-base font-medium leading-normal text-black"
+        >
+          Continue where you left off
+        </h2>
+
+        <div style={{ position: "relative", cursor: "pointer" }} className="w-full select-none">
+          {/* Transparent click catcher — sits above all card stacking contexts */}
+          <div
+            aria-label="Expand activity cards"
+            role="button"
+            tabIndex={0}
+            onClick={onExpand}
+            onKeyDown={(e) => e.key === "Enter" && onExpand()}
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 10,
+              cursor: "pointer",
+              touchAction: "manipulation",
+              WebkitTapHighlightColor: "transparent",
+            }}
+          />
+          {RESUME_CARDS.map((card, idx) => {
+            const isLast = idx === RESUME_CARDS.length - 1;
+            const isFront = card.tier === "front";
+            return (
+              <div
+                key={card.id}
+                style={{
+                  backgroundColor: TIER_BG[card.tier],
+                  borderRadius: "var(--radius-activity-card, 12px)",
+                  border: "1px solid #e5e7eb",
+                  position: "relative",
+                  zIndex: isFront ? 3 : card.tier === "mid" ? 2 : 1,
+                  ...(isFront
+                    ? { display: "flex", alignItems: "center", gap: 12, padding: 12 }
+                    : { height: STUB_HEIGHT }),
+                  ...(!isLast
+                    ? { marginBottom: `calc(-1 * var(--spacing-activity-stack-overlap, 3.125rem))` }
+                    : {}),
+                }}
+              >
+                {isFront && <CardContent card={card} />}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    </>
   );
 }
