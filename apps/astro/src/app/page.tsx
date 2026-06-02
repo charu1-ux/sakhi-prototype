@@ -1,9 +1,8 @@
-"use client";
-import { useEffect } from "react";
-
 export default function AstroPage() {
-  useEffect(() => {
-    window.location.replace("/astro/jbiq-homepage.html");
-  }, []);
-  return <div style={{ position: "fixed", inset: 0, background: "#000" }} />;
+  return (
+    <main className="bg-bg text-fg flex min-h-dvh flex-col items-center justify-center gap-3">
+      <span className="text-4xl">♏</span>
+      <p className="text-fg-muted text-sm">Astrology — design prototype coming soon</p>
+    </main>
+  );
 }

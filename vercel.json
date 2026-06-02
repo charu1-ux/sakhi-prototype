@@ -2,5 +2,7 @@
   "buildCommand": "turbo run build",
   "outputDirectory": "apps/shell/out",
   "installCommand": "npm install",
-  "framework": null
+  "framework": null,
+  "trailingSlash": true,
+  "cleanUrls": true
 }
