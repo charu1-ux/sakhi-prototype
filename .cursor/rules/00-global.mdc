@@ -10,8 +10,9 @@ alwaysApply: true
 - Next.js 16 App Router · React 19 · TypeScript 5
 - Tailwind v4 (classes-only styling — see `99-tailwind-only.mdc`)
 - Radix UI primitives wrapped under `src/components/primitives/`
+- HeroUI v3 via `@intelligence/ui/heroui` + `@import "@heroui/styles"` in `globals.css` (after `tailwindcss`)
 - Design tokens at `src/styles/tokens.css` + `src/styles/tokens.ts`
-- GSAP via `@/lib/motion`
+- GSAP via `@/lib/motion` (re-exports `@intelligence/motion`; init via `GsapProvider` in root layout)
 - next-themes (`attribute="data-theme"`) for dark/light
 
 ## Layout

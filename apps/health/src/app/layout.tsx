@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 
+import { GsapProvider } from "@/lib/motion";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -52,7 +54,9 @@ export default function RootLayout({
       className={`${GeistSans.variable} ${GeistMono.variable}`}
       suppressHydrationWarning
     >
-      <body style={{ margin: 0, padding: 0, overflow: "hidden", height: "100%" }}>{children}</body>
+      <body style={{ margin: 0, padding: 0, overflow: "hidden", height: "100%" }}>
+        <GsapProvider>{children}</GsapProvider>
+      </body>
     </html>
   );
 }

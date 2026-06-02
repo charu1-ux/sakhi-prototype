@@ -3,6 +3,7 @@ import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { GsapProvider } from "@/lib/motion";
 
 import "./globals.css";
 
@@ -54,7 +55,9 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="bg-bg text-fg pt-safe pb-safe px-safe flex min-h-dvh flex-col">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <GsapProvider>{children}</GsapProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

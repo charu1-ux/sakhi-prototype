@@ -1,4 +1,4 @@
-import { motion } from "../../styles/tokens";
+import { motion } from "@intelligence/tokens";
 
 /**
  * GSAP preset library. Every animation in the app should compose one of these
@@ -9,6 +9,12 @@ import { motion } from "../../styles/tokens";
 export const fadeIn = {
   opacity: 0,
   duration: motion.duration.base,
+  ease: motion.ease.standard,
+} as const;
+
+export const fadeOut = {
+  opacity: 0,
+  duration: motion.duration.fast,
   ease: motion.ease.standard,
 } as const;
 
@@ -42,3 +48,5 @@ export const springy = {
   duration: motion.duration.slow,
   ease: motion.ease.bounce,
 } as const;
+
+export type MotionPreset = typeof fadeIn | typeof slideUp | typeof scaleIn;
