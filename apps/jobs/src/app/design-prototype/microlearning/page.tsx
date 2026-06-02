@@ -3,68 +3,11 @@
 import Image from "next/image";
 import { useCallback, useRef, useState } from "react";
 
+import { ActivityCardStack, ExpandedOverlay } from "../ActivityCardStack";
 import { HubChatInput } from "../HubChatInput";
 import { HubHeader } from "../HubHeader";
 import { SkillsEarned } from "../SkillsEarned";
 import { HOME_ASSETS, JOBS_APP_BASE_PATH, MICROLEARN_ASSETS } from "../hub-data";
-
-// ── Continue where you left off carousel ─────────────────────────────────────
-
-type ResumeCard = { title: string; percent: number };
-
-const RESUME_CARDS: ResumeCard[] = [
-  { title: "Youtube hook pattern", percent: 76 },
-  { title: "Micro Learning", percent: 60 },
-];
-
-function ContinueCarousel() {
-  return (
-    <section className="flex flex-col gap-[11px] select-none ">
-      <h2 className="m-0 px-4 text-base font-medium leading-normal text-black">
-        Continue where you left off
-      </h2>
-      <div
-        className="flex gap-[4px] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-4"
-        style={{ touchAction: "pan-x" }}
-      >
-        {RESUME_CARDS.map((card) => (
-          <div
-            key={card.title}
-            className="flex shrink-0 w-[300px] items-center justify-between rounded-[11px] border border-[#f3e9ff] bg-white p-3 gap-3"
-          >
-            <div className="flex flex-col gap-2 min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <Image
-                  src={`${HOME_ASSETS}/learning.svg`}
-                  alt=""
-                  width={18}
-                  height={18}
-                  className="size-[18px] shrink-0 pointer-events-none"
-                  unoptimized
-                />
-                <span className="text-[15px] text-[#1b0633] tracking-[-0.3px] truncate">
-                  {card.title}
-                </span>
-              </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#e0e0e0]">
-                <div
-                  className="h-full rounded-full"
-                  style={{
-                    width: `${card.percent}%`,
-                    background: "linear-gradient(90deg, #A556FE 0%, #5600B7 81%, #310068 100%)",
-                  }}
-                />
-              </div>
-            </div>
-            <span className="shrink-0 text-[20px] font-medium text-[#141414] tracking-[-0.4px]">
-              {card.percent}%
-            </span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 // ── Microlearning topic cards ─────────────────────────────────────────────────
 
@@ -82,7 +25,7 @@ const TOPIC_CARDS: TopicCard[] = [
     subtitle: "Hooks · Titles · Thumbnails · Edits",
     iconBg: "#edf7ff",
     iconSrc: `${MICROLEARN_ASSETS}/creator.svg`,
-    href: `${JOBS_APP_BASE_PATH}/design-prototype/microlearning/creator/index.html`,
+    href: `${JOBS_APP_BASE_PATH}/design-prototype/microlearning/creator/`,
   },
   {
     title: "Shopkeeper",
@@ -108,6 +51,7 @@ const TOPIC_CARDS: TopicCard[] = [
 
 export default function MicrolearningPage() {
   const [scrolled, setScrolled] = useState(false);
+  const [cardsExpanded, setCardsExpanded] = useState(false);
   const scrollRef = useRef(false);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
@@ -126,8 +70,10 @@ export default function MicrolearningPage() {
         onScroll={handleScroll}
       >
         <div className="flex w-full flex-col gap-6">
-          {/* Carousel — full width, manages its own padding */}
-          <ContinueCarousel />
+          {/* Continue where you left off — same stacked card stack as jobs home */}
+          <div className="px-4">
+            <ActivityCardStack onExpand={() => setCardsExpanded(true)} />
+          </div>
 
           {/* Topic cards */}
           <ul className="flex list-none flex-col gap-3 p-0 px-4 select-none">
@@ -166,9 +112,14 @@ export default function MicrolearningPage() {
               return (
                 <li key={card.title}>
                   {card.href ? (
-                    <a href={card.href} className="block no-underline outline-none">
+                    <div
+                      className="cursor-pointer"
+                      onClick={() => {
+                        window.location.href = card.href!;
+                      }}
+                    >
                       {inner}
-                    </a>
+                    </div>
                   ) : (
                     inner
                   )}
@@ -183,9 +134,11 @@ export default function MicrolearningPage() {
         </div>
       </main>
 
+      {cardsExpanded && <ExpandedOverlay onClose={() => setCardsExpanded(false)} />}
+
       <HubHeader
         title="Microlearning"
-        backHref={`${JOBS_APP_BASE_PATH}/design-prototype/index.html`}
+        backHref={`${JOBS_APP_BASE_PATH}/design-prototype/`}
         scrolled={scrolled}
       />
       <HubChatInput />

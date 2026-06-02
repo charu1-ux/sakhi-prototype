@@ -3,6 +3,7 @@ import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { GsapProvider } from "@/lib/motion";
 
 import "./globals.css";
 
@@ -58,7 +59,7 @@ export default function RootLayout({
        * Desktop: white bg outside the phone frame; the inner div becomes the
        * phone-frame container (390×844 px, dark bezel shadow, rounded corners).
        */}
-      <body className="bg-bg text-fg flex min-h-dvh flex-col md:items-center md:justify-center md:bg-white md:p-0">
+      <body className="bg-bg text-fg flex h-full flex-col md:items-center md:justify-center md:bg-white md:p-0">
         {/* Phone frame — visible only on desktop (md+). Mobile fills full screen. */}
         <div
           className={[
@@ -67,7 +68,9 @@ export default function RootLayout({
             "md:shadow-[0_0_0_12px_#1c1c1e,0_32px_64px_rgba(0,0,0,0.18)]",
           ].join(" ")}
         >
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <GsapProvider>{children}</GsapProvider>
+          </ThemeProvider>
         </div>
       </body>
     </html>

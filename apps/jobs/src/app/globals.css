@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@heroui/styles";
 @import "../styles/tokens.css";
 
 /* next-themes sets data-theme on <html>; wire the Tailwind `dark:` variant to it. */

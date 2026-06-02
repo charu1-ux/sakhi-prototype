@@ -30,7 +30,7 @@ export const HUB_CARDS: HubCard[] = [
     title: "Micro Learning",
     subtitle: "मेरा थंबनेल क्लिक क्यों नहीं हो रहा है?",
     thumbnail: `${HOME_ASSETS}/micro-learning.png`,
-    href: `${JOBS_APP_BASE_PATH}/design-prototype/microlearning/index.html`,
+    href: `${JOBS_APP_BASE_PATH}/design-prototype/microlearning/`,
   },
   {
     title: "English learning",

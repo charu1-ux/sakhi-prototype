@@ -97,6 +97,7 @@ export function ExpandedOverlay({ onClose }: { onClose: () => void }) {
 
   return (
     <div
+      onClick={handleClose}
       style={{
         position: "absolute",
         inset: 0,
@@ -112,6 +113,7 @@ export function ExpandedOverlay({ onClose }: { onClose: () => void }) {
       }}
     >
       <ul
+        onClick={(e) => e.stopPropagation()}
         style={{
           marginTop: "calc(env(safe-area-inset-top, 0px) + 24px)",
           padding: 0,
@@ -132,7 +134,6 @@ export function ExpandedOverlay({ onClose }: { onClose: () => void }) {
               gap: 12,
               padding: 12,
               borderRadius: "var(--radius-activity-card, 12px)",
-              border: "1px solid #e5e7eb",
               userSelect: "none",
               width: "100%",
             }}
@@ -143,37 +144,6 @@ export function ExpandedOverlay({ onClose }: { onClose: () => void }) {
       </ul>
 
       <div style={{ flex: 1 }} />
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)",
-        }}
-      >
-        <button
-          type="button"
-          onClick={handleClose}
-          aria-label="Close"
-          style={{
-            width: 48,
-            height: 48,
-            borderRadius: "50%",
-            background: "white",
-            border: "none",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
-            touchAction: "manipulation",
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-            <path d="M15 5L5 15M5 5l10 10" stroke="#141414" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        </button>
-      </div>
     </div>
   );
 }
@@ -220,7 +190,6 @@ export function ActivityCardStack({ onExpand }: { onExpand: () => void }) {
                 style={{
                   backgroundColor: TIER_BG[card.tier],
                   borderRadius: "var(--radius-activity-card, 12px)",
-                  border: "1px solid #e5e7eb",
                   position: "relative",
                   zIndex: isFront ? 3 : card.tier === "mid" ? 2 : 1,
                   ...(isFront

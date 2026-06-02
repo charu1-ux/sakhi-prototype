@@ -22,21 +22,6 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
-        source: "/jobs/design-prototype/index.html",
-        destination: "/jobs/design-prototype/",
-        permanent: false,
-      },
-      {
-        source: "/jobs/design-prototype/microlearning/index.html",
-        destination: "/jobs/design-prototype/microlearning/",
-        permanent: false,
-      },
-      {
-        source: "/jobs/design-prototype/microlearning/creator/index.html",
-        destination: "/jobs/design-prototype/microlearning/creator/",
-        permanent: false,
-      },
-      {
         source: "/jobs/old/index.html",
         destination: "/jobs/old/",
         permanent: false,

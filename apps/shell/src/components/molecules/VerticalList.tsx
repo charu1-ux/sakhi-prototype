@@ -34,7 +34,7 @@ const verticalJobs: Vertical = {
     { label: "New user", url: "/jobs/new/", capacitorUrl: "/jobs/new/index.html" },
     {
       label: "Design Prototype",
-      url: "/jobs/design-prototype/",
+      url: "/jobs/",
       capacitorUrl: "/jobs/design-prototype/index.html",
     },
   ],

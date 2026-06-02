@@ -29,7 +29,7 @@ export default function DesignPrototypePage() {
        * The header overlay sits absolutely on top, so content scrolls under it.
        */}
       <main
-        className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="overflow-x-hidden overflow-y-auto px-4 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex-1 min-h-0"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 68px)" }}
         onScroll={handleScroll}
       >
@@ -71,9 +71,14 @@ export default function DesignPrototypePage() {
               return (
                 <li key={card.title}>
                   {card.href ? (
-                    <a href={card.href} className="block no-underline outline-none">
+                    <div
+                      className="cursor-pointer"
+                      onClick={() => {
+                        window.location.href = card.href!;
+                      }}
+                    >
                       {inner}
-                    </a>
+                    </div>
                   ) : (
                     inner
                   )}
