@@ -3,8 +3,6 @@ import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
-import { GsapProvider } from "@/lib/motion";
-
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -68,9 +66,7 @@ export default function RootLayout({
             "md:shadow-[0_0_0_12px_#1c1c1e,0_32px_64px_rgba(0,0,0,0.18)]",
           ].join(" ")}
         >
-          <ThemeProvider>
-            <GsapProvider>{children}</GsapProvider>
-          </ThemeProvider>
+          <ThemeProvider>{children}</ThemeProvider>
         </div>
       </body>
     </html>

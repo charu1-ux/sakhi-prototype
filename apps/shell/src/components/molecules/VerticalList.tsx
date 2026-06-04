@@ -39,7 +39,6 @@ const verticalHealth: Vertical = {
   slug: "health",
   icon: "/assets/shell/ico-health.svg",
   gradientFrom: "from-vertical-health",
-  externalUrl: "/health/index.html",
 };
 
 const verticalAstrology: Vertical = {
@@ -58,14 +57,10 @@ const verticalCommerce: Vertical = {
   externalUrl: "/commerce/index.html",
 };
 
-const verticalsFeatured: Vertical[] = [
-  verticalJobs,
-  verticalHealth,
-  verticalAstrology,
-  verticalCommerce,
-];
+const verticalsFeatured: Vertical[] = [verticalJobs, verticalAstrology, verticalCommerce];
 
 const verticalsComingSoon: Vertical[] = [
+  verticalHealth,
   {
     name: "News",
     slug: "news",

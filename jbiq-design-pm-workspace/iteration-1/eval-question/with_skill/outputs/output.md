@@ -1,0 +1,5 @@
+**On drop shadows:** No — shadows are not part of this design system. Cards are always flat (no shadow). The way depth is created here is through surface contrast: a card on a white screen uses a light grey background, and a card on a grey screen uses white. That flip in background colour gives the card its presence without any shadow. It's a considered, clean approach that keeps the visual language calm and uncluttered.
+
+If you want the card to feel more prominent, the right lever is **spacing** — more padding inside the card, more breathing room between cards. That communicates premium without adding visual noise.
+
+**On the font:** The font is always JioType across the entire product — this is fixed at the system level and cannot be changed per screen or vertical. JioType is a variable font with a very wide weight range (from very thin to very heavy), so there's a lot of expressive range available within it. For headlines, the **Black weight** (heaviest) gives a compressed, confident quality that naturally feels strong and distinctive. If the current headline feels plain, check whether the heaviest weight is being used — that's usually the lever.

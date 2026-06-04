@@ -1,0 +1,40 @@
+{
+  "skill_name": "jbiq-design-pm",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "I want a card that shows the user's Jio account balance. It should have the account number, the balance amount in big text, and a 'Recharge' button. We're on the Finance vertical.",
+      "expected_output": "A structured Design Brief with surface context, component specs, colour intent, spacing, states, and flags for unconfirmed values",
+      "assertions": [
+        "Output includes a surface context section explaining card-on-surface pairing rule",
+        "Recharge button is specified as pill-shaped (rounded-full)",
+        "Balance amount uses a headline type token (not a raw px value)",
+        "Loading state specifies skeleton shimmer, not a spinner",
+        "A 🚩 flag is raised for the unconfirmed Finance vertical action colour"
+      ]
+    },
+    {
+      "id": 1,
+      "prompt": "Can you check if the home screen follows our design system? It has a spinner while loading, the CTA button has slightly rounded corners (not fully pill-shaped), and there's a gradient on the hero banner.",
+      "expected_output": "A compliance review with clear PASS/FAIL for each item, and plain-language instructions on how to fix each failure",
+      "assertions": [
+        "Spinner is marked as FAIL with a clear fix (skeleton shimmer)",
+        "Button corners are marked as FAIL with the correct fix (rounded-full / pill shape)",
+        "Gradient is marked as FAIL with the correct fix (flat colour only)",
+        "Output is understandable to a non-technical reader",
+        "No code syntax or class names leak into the plain-language summary"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Hey, can I add a drop shadow to make our cards look more premium? Also can I use a different font for the headline to make it feel more unique?",
+      "expected_output": "Clear plain-language answers explaining why both are not allowed, with an alternative suggestion for each",
+      "assertions": [
+        "Shadow is correctly refused with an explanation of the alternative (surface contrast)",
+        "Font change is correctly refused with explanation (JioType is fixed)",
+        "An alternative is offered for each request (spacing for premium feel, Black weight for distinctive headlines)",
+        "Answer uses no code or class names — entirely plain language"
+      ]
+    }
+  ]
+}

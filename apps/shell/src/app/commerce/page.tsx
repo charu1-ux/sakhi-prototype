@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 /**
@@ -15,15 +15,24 @@ import { useRouter } from "next/navigation";
  */
 export default function CommerceDevFrame() {
   const router = useRouter();
+  const ready = useRef(false);
 
   useEffect(() => {
+    ready.current = true;
     const handleMessage = (e: MessageEvent) => {
-      if (e.data?.type === "commerce:navigate" && typeof e.data.href === "string") {
+      if (
+        ready.current &&
+        e.data?.type === "commerce:navigate" &&
+        typeof e.data.href === "string"
+      ) {
         router.push(e.data.href);
       }
     };
     window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
+    return () => {
+      ready.current = false;
+      window.removeEventListener("message", handleMessage);
+    };
   }, [router]);
 
   return (

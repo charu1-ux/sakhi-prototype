@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 
-import { GsapProvider, ThemeProvider } from "@intelligence/ui";
+import { ThemeProvider } from "@intelligence/ui";
 
 import { EdgeSwipeBack } from "@/components/atoms/EdgeSwipeBack";
 import { ShellJobsMessageBridge } from "@/components/ShellJobsMessageBridge";
@@ -59,22 +59,20 @@ export default function RootLayout({
     >
       <body className="text-fg flex h-full flex-col md:bg-white">
         <ThemeProvider>
-          <GsapProvider>
-            <EdgeSwipeBack />
-            <ShellJobsMessageBridge />
-            {/* Mobile: full-screen direct. Desktop: centered phone frame on light bg. */}
-            <div className="flex h-full flex-1 flex-col md:items-center md:justify-center md:py-8">
-              <div
-                className={[
-                  "flex h-full w-full flex-1 flex-col overflow-hidden",
-                  "md:h-[844px] md:w-[390px] md:flex-none md:rounded-[3rem]",
-                  "md:shadow-[0_0_0_12px_#1c1c1e,0_32px_64px_rgba(0,0,0,0.18)]",
-                ].join(" ")}
-              >
-                {children}
-              </div>
+          <EdgeSwipeBack />
+          <ShellJobsMessageBridge />
+          {/* Mobile: full-screen direct. Desktop: centered phone frame on light bg. */}
+          <div className="flex h-full flex-1 flex-col md:items-center md:justify-center md:py-8">
+            <div
+              className={[
+                "flex h-full w-full flex-1 flex-col overflow-hidden",
+                "md:h-[844px] md:w-[390px] md:flex-none md:rounded-[3rem]",
+                "md:shadow-[0_0_0_12px_#1c1c1e,0_32px_64px_rgba(0,0,0,0.18)]",
+              ].join(" ")}
+            >
+              {children}
             </div>
-          </GsapProvider>
+          </div>
         </ThemeProvider>
       </body>
     </html>

@@ -18,7 +18,13 @@ export function SkillsEarned() {
         {SKILLS_EARNED.map((skill, idx) => (
           <Fragment key={idx}>
             {idx > 0 && <hr className="m-0 border-none h-px bg-[#f0f0f0]" />}
-            <div className="flex items-center justify-between gap-3">
+            <div
+              className="flex items-center justify-between gap-3"
+              style={{ cursor: skill.href ? "pointer" : "default" }}
+              onClick={() => {
+                if (skill.href) window.location.href = skill.href;
+              }}
+            >
               <div className="flex items-center gap-3 min-w-0">
                 <div className="flex shrink-0 items-center justify-center rounded-md bg-[#f0e8fa] p-2">
                   <Image

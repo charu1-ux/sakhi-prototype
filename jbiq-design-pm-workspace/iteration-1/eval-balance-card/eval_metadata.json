@@ -1,0 +1,12 @@
+{
+  "eval_id": 0,
+  "eval_name": "balance-card-spec",
+  "prompt": "I want a card that shows the user's Jio account balance. It should have the account number, the balance amount in big text, and a 'Recharge' button. We're on the Finance vertical.",
+  "assertions": [
+    "Output includes a surface context section explaining card-on-surface pairing rule",
+    "Recharge button is specified as pill-shaped (rounded-full)",
+    "Balance amount uses a headline type token (not a raw px value)",
+    "Loading state specifies skeleton shimmer, not a spinner",
+    "A flag is raised for the unconfirmed Finance vertical action colour"
+  ]
+}

@@ -4,13 +4,11 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./heroui": "./src/lib/heroui.ts",
-    "./motion": "./src/lib/motion/index.ts"
+    "./heroui": "./src/lib/heroui.ts"
   },
   "dependencies": {
     "@heroui/react": "^3.1.0",
     "@heroui/styles": "^3.1.0",
-    "@intelligence/motion": "*",
     "@intelligence/tokens": "*"
   },
   "peerDependencies": {

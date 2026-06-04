@@ -1,0 +1,12 @@
+{
+  "eval_id": 1,
+  "eval_name": "home-screen-compliance",
+  "prompt": "Can you check if the home screen follows our design system? It has a spinner while loading, the CTA button has slightly rounded corners (not fully pill-shaped), and there's a gradient on the hero banner.",
+  "assertions": [
+    "Spinner is marked as FAIL with a clear fix (skeleton shimmer)",
+    "Button corners are marked as FAIL with the correct fix (pill shape)",
+    "Gradient is marked as FAIL with the correct fix (flat colour only)",
+    "Output is understandable to a non-technical reader",
+    "No code syntax or class names in the plain-language summary"
+  ]
+}

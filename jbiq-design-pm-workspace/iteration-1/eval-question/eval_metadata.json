@@ -1,0 +1,11 @@
+{
+  "eval_id": 2,
+  "eval_name": "shadow-font-question",
+  "prompt": "Hey, can I add a drop shadow to make our cards look more premium? Also can I use a different font for the headline to make it feel more unique?",
+  "assertions": [
+    "Shadow is correctly refused with explanation of alternative (surface contrast / spacing)",
+    "Font change is correctly refused with explanation (JioType is fixed)",
+    "An alternative is offered for each request",
+    "Answer uses no code or class names — entirely plain language"
+  ]
+}

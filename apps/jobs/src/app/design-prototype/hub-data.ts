@@ -17,10 +17,16 @@ export type SkillEarned = {
   name: string;
   date: string;
   iconSrc: string;
+  href?: string;
 };
 
 export const SKILLS_EARNED: SkillEarned[] = [
-  { name: "Thumbnail hooks", date: "Apr 28, 2026", iconSrc: `${HOME_ASSETS}/image-thumbnail.svg` },
+  {
+    name: "Thumbnail hooks",
+    date: "Apr 28, 2026",
+    iconSrc: `${HOME_ASSETS}/image-thumbnail.svg`,
+    href: `${JOBS_APP_BASE_PATH}/design-prototype/microlearning/creator/?resume=true`,
+  },
   { name: "ChatGPT Prompting", date: "Apr 28, 2026", iconSrc: `${HOME_ASSETS}/sparkle.svg` },
   { name: "ChatGPT Prompting", date: "Apr 28, 2026", iconSrc: `${HOME_ASSETS}/sparkle.svg` },
 ];

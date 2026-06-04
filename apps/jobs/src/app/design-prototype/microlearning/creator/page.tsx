@@ -181,6 +181,13 @@ function StepCard({
   );
 }
 
+const WHATS_NEXT_OPTIONS = [
+  { label: "Excel : VLOOKUP + Pivot Table", iconSrc: `${MICROLEARN_ASSETS}/excel.svg` },
+  { label: "Titles that get clicks — 5 formulas", iconSrc: `${MICROLEARN_ASSETS}/subtitle.svg` },
+  { label: "ChatGPT prompts for creators", iconSrc: `${MICROLEARN_ASSETS}/ai-sparkle.svg` },
+  { label: "Grow views with Shorts strategy", iconSrc: `${MICROLEARN_ASSETS}/views.svg` },
+];
+
 function WhatsNext() {
   return (
     <div
@@ -188,45 +195,47 @@ function WhatsNext() {
       style={{ animation: "bubbleIn 0.3s ease-out both" }}
     >
       <span style={{ fontSize: "16px", fontWeight: 500, color: "#000" }}>What&apos;s next?</span>
-      <button
-        type="button"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "8px",
-          padding: "8px 12px",
-          borderRadius: "30px",
-          background: "#f0e8fa",
-          border: "none",
-          cursor: "pointer",
-          alignSelf: "flex-start",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <Image
-            src={`${MICROLEARN_ASSETS}/excel.svg`}
-            alt=""
-            width={20}
-            height={20}
-            className="size-5 shrink-0"
-            unoptimized
-          />
-          <span
-            style={{ fontSize: "14px", fontWeight: 600, color: "#310a5d", whiteSpace: "nowrap" }}
+      <div className="flex flex-col gap-2">
+        {WHATS_NEXT_OPTIONS.map((opt) => (
+          <button
+            key={opt.label}
+            type="button"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "8px 12px",
+              borderRadius: "30px",
+              background: "#f0e8fa",
+              border: "none",
+              cursor: "pointer",
+              width: "fit-content",
+            }}
           >
-            Excel : VLOOKUP + Pivot Table
-          </span>
-        </div>
-        <Image
-          src={`${MICROLEARN_ASSETS}/chevron-right.svg`}
-          alt=""
-          width={16}
-          height={16}
-          className="size-4 shrink-0"
-          unoptimized
-        />
-      </button>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <Image
+                src={opt.iconSrc}
+                alt=""
+                width={20}
+                height={20}
+                className="size-5 shrink-0"
+                unoptimized
+              />
+              <span style={{ fontSize: "14px", fontWeight: 400, color: "#310a5d" }}>
+                {opt.label}
+              </span>
+            </div>
+            <Image
+              src={`${MICROLEARN_ASSETS}/chevron-right.svg`}
+              alt=""
+              width={16}
+              height={16}
+              className="size-4 shrink-0"
+              unoptimized
+            />
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -292,10 +301,16 @@ function CourseComplete({ onRestart }: { onRestart: () => void }) {
   );
 }
 
-function StepperCourse({ containerRef }: { containerRef: React.RefObject<HTMLElement | null> }) {
-  const [visibleCount, setVisibleCount] = useState(1);
-  const [finished, setFinished] = useState(false);
-  const [showWhatsNext, setShowWhatsNext] = useState(false);
+function StepperCourse({
+  containerRef,
+  initialComplete = false,
+}: {
+  containerRef: React.RefObject<HTMLElement | null>;
+  initialComplete?: boolean;
+}) {
+  const [visibleCount, setVisibleCount] = useState(initialComplete ? COURSE_STEPS.length : 1);
+  const [finished, setFinished] = useState(initialComplete);
+  const [showWhatsNext, setShowWhatsNext] = useState(initialComplete);
   const newCardRef = useRef<HTMLDivElement>(null);
   const whatsNextRef = useRef<HTMLDivElement>(null);
 
@@ -335,8 +350,9 @@ function StepperCourse({ containerRef }: { containerRef: React.RefObject<HTMLEle
     });
   }
 
-  // Scroll first card into view on mount
+  // Scroll first card into view on mount — skip on resume
   useEffect(() => {
+    if (initialComplete) return;
     scrollNewCardToTop();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -423,32 +439,17 @@ function AiReply({ onStart, started }: { onStart: () => void; started: boolean }
 
       {/* Plan section */}
       <div className="flex flex-col gap-[10px] w-full items-start">
-        {/* Plan badge — shrinks to content */}
-        <div
+        <p
           style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "8px 12px",
-            borderRadius: "30px",
-            background: "#f0e8fa",
-            alignSelf: "flex-start",
+            fontSize: "16px",
+            fontWeight: 500,
+            lineHeight: "22px",
+            color: "#000",
+            margin: 0,
           }}
         >
-          <Image
-            src={`${MICROLEARN_ASSETS}/thumbnail.svg`}
-            alt=""
-            width={20}
-            height={20}
-            className="size-5 shrink-0"
-            unoptimized
-          />
-          <span
-            style={{ fontSize: "14px", fontWeight: 600, color: "#310a5d", whiteSpace: "nowrap" }}
-          >
-            {THUMBNAIL_ANSWER.planTitle}
-          </span>
-        </div>
+          {THUMBNAIL_ANSWER.planTitle}
+        </p>
 
         {/* Steps card */}
         <div
@@ -529,8 +530,10 @@ function AiReply({ onStart, started }: { onStart: () => void; started: boolean }
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function CreatorChatPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    { id: _uid++, role: "user", text: USER_TRIGGER_TEXT },
+  const [mounted, setMounted] = useState(false);
+  const [isResume, setIsResume] = useState(false);
+  const [messages, setMessages] = useState<Message[]>(() => [
+    { id: 0, role: "user" as const, text: USER_TRIGGER_TEXT },
   ]);
   const [stage, setStage] = useState<Stage>("ai");
   const [input, setInput] = useState("");
@@ -540,15 +543,28 @@ export default function CreatorChatPage() {
   const lastMsgRef = useRef<HTMLDivElement>(null);
   const scrollPending = useRef(false);
 
-  // Initial sequence: spinner → chips
+  // First effect: detect URL, set all state, then mark mounted
+  // Nothing renders until this fires — no flash of wrong state
   useEffect(() => {
+    const resume = new URLSearchParams(window.location.search).get("resume") === "true";
+    if (resume) {
+      setIsResume(true);
+      setStage("ai-reply");
+      setShowStepper(true);
+    }
+    setMounted(true);
+  }, []);
+
+  // Initial sequence: spinner → chips (skip if resuming)
+  useEffect(() => {
+    if (!mounted || isResume) return;
     const t1 = setTimeout(() => setStage("spinner"), SPINNER_DELAY_MS);
     const t2 = setTimeout(() => setStage("chips"), SPINNER_DELAY_MS + SPINNER_HOLD_MS);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, []);
+  }, [mounted, isResume]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // After every render — only scroll when user just sent a message
   useEffect(() => {
@@ -582,6 +598,9 @@ export default function CreatorChatPage() {
     setTimeout(() => setStage("ai-reply"), AI_REPLY_DELAY_MS);
   }
 
+  // Don't render until mounted so we know the URL (prevents SSR flash)
+  if (!mounted) return null;
+
   return (
     <div className="relative flex flex-col bg-white text-fg" style={{ minHeight: "100dvh" }}>
       <style>{BUBBLE_CSS}</style>
@@ -592,44 +611,45 @@ export default function CreatorChatPage() {
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 72px)" }}
       >
         <div className="flex w-full flex-col gap-4" style={{ paddingBottom: "10vh" }}>
-          {messages.map((msg, idx) => {
-            const isUser = msg.role === "user";
-            const isLast = idx === messages.length - 1;
-            return (
-              <div key={`wrap-${msg.id}`}>
-                <div
-                  ref={isLast ? lastMsgRef : undefined}
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    flexDirection: "row",
-                    justifyContent: isUser ? "flex-end" : "flex-start",
-                  }}
-                >
+          {!isResume &&
+            messages.map((msg, idx) => {
+              const isUser = msg.role === "user";
+              const isLast = idx === messages.length - 1;
+              return (
+                <div key={`wrap-${msg.id}`}>
                   <div
+                    ref={isLast ? lastMsgRef : undefined}
                     style={{
-                      maxWidth: "75%",
-                      padding: "10px 12px",
-                      fontSize: "14px",
-                      lineHeight: "1.5",
-                      borderRadius: isUser ? "18px 18px 4px 18px" : "4px 18px 18px 18px",
-                      background: isUser ? "#f5f5f5" : "#f0e8fa",
-                      color: "#1b0633",
-                      animation: "bubbleIn 0.3s ease-out both",
+                      width: "100%",
+                      display: "flex",
+                      flexDirection: "row",
+                      justifyContent: isUser ? "flex-end" : "flex-start",
                     }}
                   >
-                    {msg.text}
+                    <div
+                      style={{
+                        maxWidth: "75%",
+                        padding: "10px 12px",
+                        fontSize: "14px",
+                        lineHeight: "1.5",
+                        borderRadius: isUser ? "18px 18px 4px 18px" : "4px 18px 18px 18px",
+                        background: isUser ? "#f5f5f5" : "#f0e8fa",
+                        color: "#1b0633",
+                        animation: "bubbleIn 0.3s ease-out both",
+                      }}
+                    >
+                      {msg.text}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
 
           {/* Initial spinner (before chips) */}
-          {stage === "spinner" && <LottieSpinner />}
+          {!isResume && stage === "spinner" && <LottieSpinner />}
 
           {/* Chips */}
-          {stage === "chips" && (
+          {!isResume && stage === "chips" && (
             <div className="flex flex-col gap-[6px]">
               {CHIPS.map((chip, i) => (
                 <button
@@ -665,7 +685,7 @@ export default function CreatorChatPage() {
           )}
 
           {/* Spinner after user sends a message */}
-          {stage === "user-spinner" && (
+          {!isResume && stage === "user-spinner" && (
             <div>
               <LottieSpinner />
             </div>
@@ -679,7 +699,7 @@ export default function CreatorChatPage() {
           )}
 
           {/* Stepper course — shown after Start course tapped */}
-          {showStepper && <StepperCourse containerRef={mainRef} />}
+          {showStepper && <StepperCourse containerRef={mainRef} initialComplete={isResume} />}
         </div>
       </main>
 
