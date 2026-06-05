@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 
 import { HOME_ASSETS } from "./hub-data";
 
@@ -77,12 +78,34 @@ function CardContent({ card }: { card: ResumeCard }) {
 
 // ─── Expanded overlay ─────────────────────────────────────────────────────────
 
+const CARD_COUNT = RESUME_CARDS.length;
+
+const cardVariants: Variants = {
+  hidden: { opacity: 0, y: 18 },
+  visible: (idx: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.28, delay: idx * 0.08, ease: [0.2, 0, 0, 1] },
+  }),
+  exit: (idx: number) => ({
+    opacity: 0,
+    y: 12,
+    transition: {
+      duration: 0.2,
+      delay: (CARD_COUNT - 1 - idx) * 0.06,
+      ease: [0.4, 0, 1, 1],
+    },
+  }),
+};
+
 export function ExpandedOverlay({ onClose }: { onClose: () => void }) {
   const [closing, setClosing] = useState(false);
 
   function handleClose() {
     setClosing(true);
-    setTimeout(onClose, 220);
+    // wait for all exit animations: last card delay = (n-1)*0.06s + 0.2s duration
+    const totalMs = (CARD_COUNT - 1) * 60 + 200 + 30;
+    setTimeout(onClose, totalMs);
   }
 
   return (
@@ -91,7 +114,7 @@ export function ExpandedOverlay({ onClose }: { onClose: () => void }) {
       className="absolute inset-0 z-[9999] flex flex-col bg-black/20 px-4 backdrop-blur-[6px]"
       style={{
         opacity: closing ? 0 : 1,
-        transition: "opacity 220ms ease",
+        transition: `opacity ${(CARD_COUNT - 1) * 60 + 220}ms ease`,
         WebkitBackdropFilter: "blur(6px)",
       }}
     >
@@ -100,14 +123,18 @@ export function ExpandedOverlay({ onClose }: { onClose: () => void }) {
         className="flex list-none flex-col items-center gap-3 p-0"
         style={{ marginTop: "calc(env(safe-area-inset-top, 0px) + 24px)" }}
       >
-        {RESUME_CARDS.map((card) => (
-          <li
+        {RESUME_CARDS.map((card, idx) => (
+          <motion.li
             key={card.id}
+            custom={idx}
+            variants={cardVariants}
+            initial="hidden"
+            animate={closing ? "exit" : "visible"}
             className={`${TIER_BG[card.tier]} rounded-activity-card flex w-full items-center gap-3 p-3 select-none`}
             style={CARD_STYLE}
           >
             <CardContent card={card} />
-          </li>
+          </motion.li>
         ))}
       </ul>
 

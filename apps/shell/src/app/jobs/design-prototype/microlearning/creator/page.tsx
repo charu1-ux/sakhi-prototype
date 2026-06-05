@@ -437,9 +437,9 @@ export default function CreatorChatPage() {
     snapMain();
   });
 
-  // AI reply renders → snap bottom (shows plan title + Start course btn)
+  // AI reply renders → snap bottom. Skip in resume mode — user reads top-down.
   useEffect(() => {
-    if (stage !== "ai-reply") return;
+    if (stage !== "ai-reply" || isResume) return;
     snapMain();
   }, [stage]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -462,7 +462,7 @@ export default function CreatorChatPage() {
   if (!mounted) return null;
 
   return (
-    <div className="text-fg relative flex min-h-dvh flex-col bg-white">
+    <div className="text-fg relative flex h-full flex-col bg-white">
       <main
         ref={mainRef}
         className="min-h-0 flex-1 overflow-y-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"

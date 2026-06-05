@@ -83,6 +83,7 @@
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
   --radius-full: var(--radius-full);
+  --radius-activity-card: var(--radius-activity-card);
 
   --shadow-flat: var(--shadow-flat);
   --shadow-low: var(--shadow-low);
@@ -106,7 +107,7 @@
   --color-activity-card-surface-back: 241 234 250;
   --color-activity-percent: 20 20 20;
   --height-chat-home-strip: 2.125rem;
-  --radius-activity-card: 0.6875rem;
+  --radius-activity-card: 1.25rem;
   --space-activity-stack-overlap: 3.125rem;
   --space-activity-inset-step: 0.3125rem;
   --font-size-activity-title: 0.9375rem;
@@ -139,7 +140,7 @@
   --color-activity-card-surface-back: 241 234 250;
   --color-activity-percent: 20 20 20;
   --height-chat-home-strip: 2.125rem;
-  --radius-activity-card: 0.6875rem;
+  --radius-activity-card: 1.25rem;
   --space-activity-stack-overlap: 3.125rem;
   --space-activity-inset-step: 0.3125rem;
   --font-size-activity-title: 0.9375rem;
