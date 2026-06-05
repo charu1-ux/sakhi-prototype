@@ -31,7 +31,7 @@ export function HubHeader({
       : "linear-gradient(180deg, #F5F5F5 0%, #F5F5F5 73.27%, rgba(245,245,245,0.60) 86.13%, rgba(245,245,245,0.00) 100%)";
   return (
     <header
-      className="pointer-events-none fixed inset-x-0 top-0 z-10"
+      className="pointer-events-none absolute inset-x-0 top-0 z-10"
       style={{ height: "calc(env(safe-area-inset-top, 0px) + 60px)" }}
     >
       <div
