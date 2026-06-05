@@ -345,26 +345,6 @@ function AiReply({ onStart, started }: { onStart: () => void; started: boolean }
           {THUMBNAIL_ANSWER.planTitle}
         </p>
 
-        {/* Steps card */}
-        <div
-          className="flex w-full flex-col gap-4 rounded-xl p-3"
-          style={{ border: "1px solid #E5E5E5" }}
-        >
-          {THUMBNAIL_ANSWER.steps.map((step, i) => (
-            <div key={i}>
-              <div className="flex items-center gap-[13px]">
-                <div className="bg-step-track text-activity-percent flex size-5 shrink-0 items-center justify-center rounded-full text-xs">
-                  {i + 1}
-                </div>
-                <span className="flex-1 text-sm leading-snug text-black">{step}</span>
-              </div>
-              {i < THUMBNAIL_ANSWER.steps.length - 1 && (
-                <div className="mt-4 h-px" style={{ backgroundColor: "#F0F0F0" }} />
-              )}
-            </div>
-          ))}
-        </div>
-
         {/* Start course button */}
         {!started && (
           <button
@@ -411,6 +391,7 @@ export default function CreatorChatPage() {
 
   const mainRef = useRef<HTMLElement>(null);
   const lastMsgRef = useRef<HTMLDivElement>(null);
+  const aiReplyRef = useRef<HTMLDivElement>(null);
   const scrollPending = useRef(false);
 
   useEffect(() => {
@@ -465,6 +446,20 @@ export default function CreatorChatPage() {
     const t = setTimeout(() => scrollToBottom(true), 80);
     return () => clearTimeout(t);
   }, [stage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!showStepper || isResume) return;
+    // Scroll so AI reply text is at top — step card appears just below
+    const t = setTimeout(() => {
+      const el = aiReplyRef.current;
+      const container = mainRef.current;
+      if (!el || !container) return;
+      const elTop = el.getBoundingClientRect().top;
+      const containerTop = container.getBoundingClientRect().top;
+      container.scrollTo({ top: container.scrollTop + (elTop - containerTop), behavior: "smooth" });
+    }, 50);
+    return () => clearTimeout(t);
+  }, [showStepper, isResume]);
 
   function sendMessage(text: string) {
     const trimmed = text.trim();
@@ -549,7 +544,7 @@ export default function CreatorChatPage() {
 
           {/* AI reply */}
           {stage === "ai-reply" && (
-            <div className="w-full">
+            <div ref={aiReplyRef} className="w-full">
               <AiReply onStart={() => setShowStepper(true)} started={showStepper} />
             </div>
           )}
