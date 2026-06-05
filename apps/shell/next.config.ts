@@ -43,66 +43,9 @@ const nextConfig: NextConfig = {
   // vertical "frame" pages (apps/shell/src/app/health/page.tsx etc.) are
   // still served for the bare /health/ route. The rewrites below cover
   // the specific paths those pages embed in iframes (index.html, assets).
+  // No dev rewrites needed — all vertical routes are served directly by the shell.
   async rewrites() {
-    if (process.env.NODE_ENV !== "development") return [];
-    return [
-      // ── Jobs ──────────────────────────────────────────────────────────
-      {
-        source: "/jobs/design-prototype",
-        destination: "http://localhost:3003/jobs/design-prototype/",
-      },
-      {
-        source: "/jobs/design-prototype/",
-        destination: "http://localhost:3003/jobs/design-prototype/",
-      },
-      {
-        source: "/jobs/design-prototype/microlearning",
-        destination: "http://localhost:3003/jobs/design-prototype/microlearning/",
-      },
-      {
-        source: "/jobs/design-prototype/microlearning/",
-        destination: "http://localhost:3003/jobs/design-prototype/microlearning/",
-      },
-      {
-        source: "/jobs/design-prototype/microlearning/creator",
-        destination: "http://localhost:3003/jobs/design-prototype/microlearning/creator/",
-      },
-      {
-        source: "/jobs/design-prototype/microlearning/creator/",
-        destination: "http://localhost:3003/jobs/design-prototype/microlearning/creator/",
-      },
-      {
-        source: "/jobs/design-prototype/:path*",
-        destination: "http://localhost:3003/jobs/design-prototype/:path*",
-      },
-      { source: "/jobs/index.html", destination: "http://localhost:3003/jobs/" },
-      { source: "/jobs/zero/:path*", destination: "http://localhost:3003/jobs/zero/:path*" },
-      { source: "/jobs/shared/:path*", destination: "http://localhost:3003/jobs/shared/:path*" },
-      { source: "/jobs/fonts/:path*", destination: "http://localhost:3003/jobs/fonts/:path*" },
-      { source: "/jobs/assets/:path*", destination: "http://localhost:3003/jobs/assets/:path*" },
-      { source: "/jobs/_next/:path*", destination: "http://localhost:3003/jobs/_next/:path*" },
-      { source: "/jobs/:file*.html", destination: "http://localhost:3003/jobs/:file*.html" },
-
-      // ── Health ────────────────────────────────────────────────────────
-      { source: "/health/", destination: "http://localhost:3004/health/" },
-      { source: "/health/:path*", destination: "http://localhost:3004/health/:path*" },
-
-      // ── Astro ─────────────────────────────────────────────────────────
-      { source: "/astro/", destination: "http://localhost:3002/astro/" },
-      { source: "/astro/:path*", destination: "http://localhost:3002/astro/:path*" },
-
-      // ── Commerce ──────────────────────────────────────────────────────
-      { source: "/commerce/", destination: "http://localhost:3006/commerce/" },
-      { source: "/commerce/:path*", destination: "http://localhost:3006/commerce/:path*" },
-
-      // ── Finance ───────────────────────────────────────────────────────
-      { source: "/finance/", destination: "http://localhost:3005/finance/" },
-      { source: "/finance/:path*", destination: "http://localhost:3005/finance/:path*" },
-
-      // ── News ──────────────────────────────────────────────────────────
-      { source: "/news/", destination: "http://localhost:3001/news/" },
-      { source: "/news/:path*", destination: "http://localhost:3001/news/:path*" },
-    ];
+    return [];
   },
 };
 

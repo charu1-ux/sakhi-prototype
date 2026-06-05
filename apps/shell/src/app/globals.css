@@ -61,6 +61,21 @@
   --color-vertical-commerce: #ddb892;
   --color-vertical-glow: #f5fafe;
 
+  /* Jobs design-prototype tokens */
+  --color-canvas-grey: rgb(var(--color-canvas-grey));
+  --color-dock-accent: rgb(var(--color-dock-accent));
+  --color-dock-accent-fg: rgb(var(--color-dock-accent-fg));
+  --color-chip-surface: rgb(var(--color-chip-surface));
+  --color-chip-fg: rgb(var(--color-chip-fg));
+  --color-step-track: rgb(var(--color-step-track));
+  --color-course-done: rgb(var(--color-course-done));
+  --color-activity-resume-fg: rgb(var(--color-activity-resume-fg));
+  --color-activity-resume-progress: rgb(var(--color-activity-resume-progress));
+  --color-activity-card-surface-front: rgb(var(--color-activity-card-surface-front));
+  --color-activity-card-surface-mid: rgb(var(--color-activity-card-surface-mid));
+  --color-activity-card-surface-back: rgb(var(--color-activity-card-surface-back));
+  --color-activity-percent: rgb(var(--color-activity-percent));
+
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
 
@@ -73,6 +88,65 @@
   --shadow-low: var(--shadow-low);
   --shadow-mid: var(--shadow-mid);
   --shadow-high: var(--shadow-high);
+}
+
+/* Jobs design-prototype token defaults (light; [data-design-prototype] re-pins them) */
+:root {
+  --color-canvas-grey: 245 245 245;
+  --color-dock-accent: 62 0 132;
+  --color-dock-accent-fg: 255 255 255;
+  --color-chip-surface: 237 232 255;
+  --color-chip-fg: 62 0 132;
+  --color-step-track: 228 220 255;
+  --color-course-done: 22 163 74;
+  --color-activity-resume-fg: 27 6 51;
+  --color-activity-resume-progress: 49 10 93;
+  --color-activity-card-surface-front: 227 203 255;
+  --color-activity-card-surface-mid: 238 223 255;
+  --color-activity-card-surface-back: 241 234 250;
+  --color-activity-percent: 20 20 20;
+  --height-chat-home-strip: 2.125rem;
+  --radius-activity-card: 0.6875rem;
+  --space-activity-stack-overlap: 3.125rem;
+  --space-activity-inset-step: 0.3125rem;
+  --font-size-activity-title: 0.9375rem;
+  --size-activity-guide-icon: 1.125rem;
+  --blur-activity-card: 7px;
+  --letter-spacing-activity-title: -0.02em;
+  --letter-spacing-activity-percent: -0.02em;
+  --space-activity-inset-double: 0.625rem;
+  --space-activity-section-gap: 0.6875rem;
+}
+
+/* Jobs design-prototype: pin light-mode token values */
+[data-design-prototype] {
+  color-scheme: light;
+  --color-bg: 255 255 255;
+  --color-canvas-grey: 245 245 245;
+  --color-fg: 23 23 23;
+  --color-fg-muted: 113 113 122;
+  --color-border: 228 228 231;
+  --color-dock-accent: 62 0 132;
+  --color-dock-accent-fg: 255 255 255;
+  --color-chip-surface: 237 232 255;
+  --color-chip-fg: 62 0 132;
+  --color-step-track: 228 220 255;
+  --color-course-done: 22 163 74;
+  --color-activity-resume-fg: 27 6 51;
+  --color-activity-resume-progress: 49 10 93;
+  --color-activity-card-surface-front: 227 203 255;
+  --color-activity-card-surface-mid: 238 223 255;
+  --color-activity-card-surface-back: 241 234 250;
+  --color-activity-percent: 20 20 20;
+  --height-chat-home-strip: 2.125rem;
+  --radius-activity-card: 0.6875rem;
+  --space-activity-stack-overlap: 3.125rem;
+  --space-activity-inset-step: 0.3125rem;
+  --font-size-activity-title: 0.9375rem;
+  --size-activity-guide-icon: 1.125rem;
+  --blur-activity-card: 7px;
+  --letter-spacing-activity-title: -0.02em;
+  --letter-spacing-activity-percent: -0.02em;
 }
 
 /* Safe-area utilities — keep content out of the iOS notch and bottom handle. */

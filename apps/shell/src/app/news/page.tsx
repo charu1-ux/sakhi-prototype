@@ -1,9 +1,8 @@
-"use client";
-import { useEffect } from "react";
-
 export default function NewsPage() {
-  useEffect(() => {
-    window.location.replace("/news/");
-  }, []);
-  return null;
+  return (
+    <main className="flex min-h-dvh flex-col items-center justify-center gap-3">
+      <span className="text-4xl">📰</span>
+      <p className="text-fg-muted text-sm">News — design prototype coming soon</p>
+    </main>
+  );
 }

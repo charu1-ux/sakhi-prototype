@@ -69,6 +69,7 @@ export default function RootLayout({
                 "md:h-[844px] md:w-[390px] md:flex-none md:rounded-[3rem]",
                 "md:shadow-[0_0_0_12px_#1c1c1e,0_32px_64px_rgba(0,0,0,0.18)]",
               ].join(" ")}
+              style={{ transform: "translateZ(0)" }}
             >
               {children}
             </div>

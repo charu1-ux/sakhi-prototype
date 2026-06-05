@@ -87,23 +87,23 @@ function StepCard({
   return (
     <div
       ref={cardRef}
-      className="rounded-xl p-4 flex flex-col gap-4 animate-bubble-in"
+      className="animate-bubble-in flex flex-col gap-4 rounded-xl p-4"
       style={{ border: "1px solid #E5E5E5" }}
     >
       {/* Step counter + title */}
       <div className="flex flex-col gap-3">
-        <span className="text-sm text-fg-muted">
+        <span className="text-fg-muted text-sm">
           Step {stepIdx + 1} of {COURSE_STEPS.length}
         </span>
-        <span className="text-base font-medium text-black leading-snug">{step.title}</span>
+        <span className="text-base leading-snug font-medium text-black">{step.title}</span>
       </div>
 
       {/* Video placeholder */}
       <div
-        className="bg-black rounded-xl flex items-center justify-center overflow-hidden"
+        className="flex items-center justify-center overflow-hidden rounded-xl bg-black"
         style={{ height: "194px" }}
       >
-        <div className="bg-white/10 rounded-[30px] p-[10px] flex">
+        <div className="flex rounded-[30px] bg-white/10 p-[10px]">
           <Image
             src={`${MICROLEARN_ASSETS}/play.svg`}
             alt="Play"
@@ -116,7 +116,7 @@ function StepCard({
       </div>
 
       {/* Content */}
-      <p className="text-sm text-black leading-5 m-0">{step.content}</p>
+      <p className="m-0 text-sm leading-5 text-black">{step.content}</p>
 
       {/* Continue button — only on the current step */}
       {isCurrent && (
@@ -124,7 +124,7 @@ function StepCard({
           <button
             type="button"
             onClick={onContinue}
-            className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-full bg-chip-surface border-none cursor-pointer"
+            className="bg-chip-surface inline-flex cursor-pointer items-center gap-1.5 rounded-full border-none px-3 py-2.5"
           >
             <span className="text-sm whitespace-nowrap" style={{ color: "#1B0633" }}>
               {isLast ? "Finish course" : "Continue"}
@@ -155,14 +155,14 @@ const WHATS_NEXT_OPTIONS = [
 
 function WhatsNext() {
   return (
-    <div className="flex w-full flex-col gap-3 animate-bubble-in">
+    <div className="animate-bubble-in flex w-full flex-col gap-3">
       <span className="text-base font-medium text-black">What&apos;s next?</span>
       <div className="flex flex-col gap-2">
         {WHATS_NEXT_OPTIONS.map((opt) => (
           <button
             key={opt.label}
             type="button"
-            className="inline-flex w-fit items-center gap-2 px-3 py-2 rounded-[30px] bg-chip-surface border-none cursor-pointer"
+            className="bg-chip-surface inline-flex w-fit cursor-pointer items-center gap-2 rounded-[30px] border-none px-3 py-2"
           >
             <Image
               src={opt.iconSrc}
@@ -195,11 +195,11 @@ function WhatsNext() {
 function CourseComplete({ onRestart }: { onRestart: () => void }) {
   return (
     <div
-      className="rounded-xl p-4 flex items-center justify-between animate-bubble-in"
+      className="animate-bubble-in flex items-center justify-between rounded-xl p-4"
       style={{ border: "1px solid #E5E5E5" }}
     >
-      <div className="flex gap-3 items-center">
-        <div className="bg-course-done rounded-full p-3 flex shrink-0">
+      <div className="flex items-center gap-3">
+        <div className="bg-course-done flex shrink-0 rounded-full p-3">
           <Image
             src={`${MICROLEARN_ASSETS}/check-white.svg`}
             alt=""
@@ -210,16 +210,16 @@ function CourseComplete({ onRestart }: { onRestart: () => void }) {
           />
         </div>
         <div className="flex flex-col gap-1">
-          <span className="text-base font-medium text-black whitespace-nowrap">
+          <span className="text-base font-medium whitespace-nowrap text-black">
             Course complete
           </span>
-          <span className="text-xs text-fg-muted whitespace-nowrap">YouTube Hook Patterns</span>
+          <span className="text-fg-muted text-xs whitespace-nowrap">YouTube Hook Patterns</span>
         </div>
       </div>
       <button
         type="button"
         onClick={onRestart}
-        className="inline-flex items-center px-3 py-2.5 rounded-full bg-chip-surface border-none cursor-pointer shrink-0"
+        className="bg-chip-surface inline-flex shrink-0 cursor-pointer items-center rounded-full border-none px-3 py-2.5"
       >
         <span className="text-sm whitespace-nowrap" style={{ color: "#1B0633" }}>
           Restart
@@ -323,7 +323,7 @@ function StepperCourse({
           </div>
           {showWhatsNext && (
             <>
-              <div className="h-px bg-canvas-grey w-full my-1" />
+              <div className="bg-canvas-grey my-1 h-px w-full" />
               <div ref={whatsNextRef}>
                 <WhatsNext />
               </div>
@@ -353,29 +353,29 @@ function LottieSpinner() {
 
 function AiReply({ onStart, started }: { onStart: () => void; started: boolean }) {
   return (
-    <div className="flex w-full flex-col items-start gap-4 animate-bubble-in">
-      <p className="text-base font-medium leading-snug text-black m-0">{THUMBNAIL_ANSWER.text}</p>
+    <div className="animate-bubble-in flex w-full flex-col items-start gap-4">
+      <p className="m-0 text-base leading-snug font-medium text-black">{THUMBNAIL_ANSWER.text}</p>
 
       <div className="flex w-full flex-col items-start gap-[10px]">
-        <p className="text-base font-medium leading-snug text-black m-0">
+        <p className="m-0 text-base leading-snug font-medium text-black">
           {THUMBNAIL_ANSWER.planTitle}
         </p>
 
         {/* Steps card */}
         <div
-          className="rounded-xl p-3 flex flex-col gap-4 w-full"
+          className="flex w-full flex-col gap-4 rounded-xl p-3"
           style={{ border: "1px solid #E5E5E5" }}
         >
           {THUMBNAIL_ANSWER.steps.map((step, i) => (
             <div key={i}>
-              <div className="flex gap-[13px] items-center">
-                <div className="size-5 rounded-full bg-step-track flex items-center justify-center shrink-0 text-xs text-activity-percent">
+              <div className="flex items-center gap-[13px]">
+                <div className="bg-step-track text-activity-percent flex size-5 shrink-0 items-center justify-center rounded-full text-xs">
                   {i + 1}
                 </div>
-                <span className="text-sm text-black leading-snug flex-1">{step}</span>
+                <span className="flex-1 text-sm leading-snug text-black">{step}</span>
               </div>
               {i < THUMBNAIL_ANSWER.steps.length - 1 && (
-                <div className="h-px mt-4" style={{ backgroundColor: "#F0F0F0" }} />
+                <div className="mt-4 h-px" style={{ backgroundColor: "#F0F0F0" }} />
               )}
             </div>
           ))}
@@ -386,7 +386,7 @@ function AiReply({ onStart, started }: { onStart: () => void; started: boolean }
           <button
             type="button"
             onClick={onStart}
-            className="inline-flex items-center self-start gap-1.5 px-3 py-2.5 rounded-full border-none cursor-pointer"
+            className="inline-flex cursor-pointer items-center gap-1.5 self-start rounded-full border-none px-3 py-2.5"
             style={{ backgroundColor: "#3E0084" }}
           >
             <span className="text-sm whitespace-nowrap text-white">Start course</span>
@@ -481,7 +481,7 @@ export default function CreatorChatPage() {
   if (!mounted) return null;
 
   return (
-    <div className="relative flex flex-col bg-white text-fg min-h-dvh">
+    <div className="text-fg relative flex min-h-dvh flex-col bg-white">
       <main
         ref={mainRef}
         className="min-h-0 flex-1 overflow-y-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -499,7 +499,7 @@ export default function CreatorChatPage() {
                   className={`flex w-full flex-row ${isUser ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className="max-w-[75%] px-3 py-2.5 text-sm leading-relaxed animate-bubble-in"
+                    className="animate-bubble-in max-w-[75%] px-3 py-2.5 text-sm leading-relaxed"
                     style={{
                       borderRadius: isUser ? "18px 18px 4px 18px" : "4px 18px 18px 18px",
                       background: isUser ? "#F5F5F5" : "rgb(var(--color-chip-surface))",
@@ -524,7 +524,7 @@ export default function CreatorChatPage() {
                   key={chip.label}
                   type="button"
                   onClick={() => sendMessage(chip.label)}
-                  className="w-fit flex items-center gap-2 px-3 py-2 rounded-[30px] bg-chip-surface border-none cursor-pointer select-none touch-manipulation outline-none active:opacity-70 transition-opacity"
+                  className="bg-chip-surface flex w-fit cursor-pointer touch-manipulation items-center gap-2 rounded-[30px] border-none px-3 py-2 transition-opacity outline-none select-none active:opacity-70"
                   style={{
                     animation: "bubbleIn 0.3s ease-out both",
                     animationDelay: `${i * CHIP_STAGGER_MS}ms`,
@@ -535,7 +535,7 @@ export default function CreatorChatPage() {
                     alt=""
                     width={16}
                     height={16}
-                    className="size-4 shrink-0 pointer-events-none"
+                    className="pointer-events-none size-4 shrink-0"
                     unoptimized
                   />
                   <span className="text-sm whitespace-nowrap" style={{ color: "#1B0633" }}>

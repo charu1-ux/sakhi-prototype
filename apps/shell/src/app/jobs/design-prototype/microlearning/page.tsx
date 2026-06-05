@@ -64,7 +64,7 @@ export default function MicrolearningPage() {
   }, []);
 
   return (
-    <div className="relative flex h-full flex-col bg-canvas-grey text-fg">
+    <div className="bg-canvas-grey text-fg relative flex h-full flex-col">
       <main
         className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 68px)" }}
@@ -80,7 +80,7 @@ export default function MicrolearningPage() {
           <ul className="flex list-none flex-col gap-3 p-0 px-4 select-none">
             {TOPIC_CARDS.map((card) => {
               const inner = (
-                <div className="flex items-center gap-3 rounded-2xl bg-white p-3 active:opacity-70 transition-opacity">
+                <div className="flex items-center gap-3 rounded-2xl bg-white p-3 transition-opacity active:opacity-70">
                   <div
                     className={`flex size-12 shrink-0 items-center justify-center rounded-md p-3 ${card.iconBg}`}
                   >
@@ -89,12 +89,12 @@ export default function MicrolearningPage() {
                       alt=""
                       width={24}
                       height={24}
-                      className="size-6 pointer-events-none"
+                      className="pointer-events-none size-6"
                       unoptimized
                     />
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                    <span className="block text-base tracking-[-0.32px] text-activity-percent">
+                    <span className="text-activity-percent block text-base tracking-[-0.32px]">
                       {card.title}
                     </span>
                     <span className="block text-sm text-black/65">{card.subtitle}</span>
@@ -104,7 +104,7 @@ export default function MicrolearningPage() {
                     alt=""
                     width={16}
                     height={16}
-                    className="size-4 shrink-0 pointer-events-none"
+                    className="pointer-events-none size-4 shrink-0"
                     unoptimized
                   />
                 </div>

@@ -43,7 +43,6 @@ const verticalHealth: Vertical = {
   slug: "health",
   icon: "/assets/shell/ico-health.svg",
   gradientFrom: "from-vertical-health",
-  externalUrl: "/health/index.html",
 };
 
 const verticalAstrology: Vertical = {
@@ -51,7 +50,6 @@ const verticalAstrology: Vertical = {
   slug: "astro",
   icon: "/assets/shell/ico-astro.svg",
   gradientFrom: "from-vertical-astro",
-  externalUrl: "/astro/index.html",
 };
 
 const verticalCommerce: Vertical = {
@@ -59,7 +57,6 @@ const verticalCommerce: Vertical = {
   slug: "commerce",
   icon: "/assets/shell/ico-commerce.svg",
   gradientFrom: "from-vertical-commerce",
-  externalUrl: "/commerce/index.html",
 };
 
 const verticalFinance: Vertical = {
@@ -67,7 +64,6 @@ const verticalFinance: Vertical = {
   slug: "finance",
   icon: "/assets/shell/ico-finance.svg",
   gradientFrom: "from-vertical-finance",
-  externalUrl: "/finance/index.html",
 };
 
 const verticalNews: Vertical = {
@@ -75,7 +71,6 @@ const verticalNews: Vertical = {
   slug: "news",
   icon: "/assets/shell/ico-news.svg",
   gradientFrom: "from-vertical-news",
-  externalUrl: "/news/index.html",
 };
 
 const verticalsFeatured: Vertical[] = [

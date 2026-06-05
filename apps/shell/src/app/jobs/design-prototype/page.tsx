@@ -23,13 +23,13 @@ export default function DesignPrototypePage() {
   }, []);
 
   return (
-    <div className="relative flex h-full flex-col bg-canvas-grey text-fg">
+    <div className="bg-canvas-grey text-fg relative flex h-full flex-col">
       {/*
        * Scrollable content fills the whole column.
        * The header overlay sits absolutely on top, so content scrolls under it.
        */}
       <main
-        className="overflow-x-hidden overflow-y-auto px-4 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex-1 min-h-0"
+        className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 68px)" }}
         onScroll={handleScroll}
       >
@@ -38,20 +38,20 @@ export default function DesignPrototypePage() {
           <ul className="flex list-none flex-col gap-3 p-0">
             {HUB_CARDS.map((card) => {
               const inner = (
-                <div className="flex gap-3 rounded-2xl bg-white p-2 select-none active:opacity-70 transition-opacity">
-                  <div className="bg-white h-20 w-[108px] shrink-0 overflow-hidden rounded-xl">
+                <div className="flex gap-3 rounded-2xl bg-white p-2 transition-opacity select-none active:opacity-70">
+                  <div className="h-20 w-[108px] shrink-0 overflow-hidden rounded-xl bg-white">
                     <Image
                       src={card.thumbnail}
                       alt=""
                       width={108}
                       height={80}
-                      className="size-full object-cover pointer-events-none"
+                      className="pointer-events-none size-full object-cover"
                       sizes="108px"
                       unoptimized
                     />
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
-                    <span className="text-fg block text-sm font-medium leading-normal tracking-normal">
+                    <span className="text-fg block text-sm leading-normal font-medium tracking-normal">
                       {card.title}
                     </span>
                     <span className="text-fg-muted block text-sm leading-snug">
@@ -63,7 +63,7 @@ export default function DesignPrototypePage() {
                     alt=""
                     width={16}
                     height={16}
-                    className="mt-px size-4 shrink-0 self-center pointer-events-none"
+                    className="pointer-events-none mt-px size-4 shrink-0 self-center"
                     unoptimized
                   />
                 </div>
