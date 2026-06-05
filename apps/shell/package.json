@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
-    "postbuild": "node -e \"const fs=require('fs');['health','astro','commerce','jobs','finance','news'].forEach(app=>{try{fs.cpSync('../'+app+'/out','out/'+app,{recursive:true,force:true})}catch(e){}})\"",
+    "postbuild": "node -e \"const fs=require('fs');try{fs.cpSync('../jobs/out','out/jobs',{recursive:true,force:true})}catch(e){}\"",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit"
@@ -13,9 +13,6 @@
   "dependencies": {
     "@capacitor/haptics": "^8.0.2",
     "@heroui/styles": "^3.1.0",
-    "@intelligence/astro": "*",
-    "@intelligence/commerce": "*",
-    "@intelligence/health": "*",
     "@intelligence/jobs": "*",
     "@intelligence/tokens": "*",
     "@intelligence/ui": "*",

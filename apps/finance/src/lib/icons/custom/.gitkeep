@@ -1,3 +1,0 @@
-# Drop vertical-specific SVGs (kundali, diya, cricket bat, etc.) here as
-# `name.svg`, then run `npx svgr --typescript --jsx-runtime automatic --out-dir . svg/`
-# to generate accompanying React components.
