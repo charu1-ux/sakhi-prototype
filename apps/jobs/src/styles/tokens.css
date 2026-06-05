@@ -59,8 +59,8 @@
   --letter-spacing-activity-percent: -0.02em;
 
   /* Typography */
-  --font-sans: var(--font-geist-sans, ui-sans-serif, system-ui, sans-serif);
-  --font-mono: var(--font-geist-mono, ui-monospace, SFMono-Regular, monospace);
+  --font-sans: var(--font-jio-type, "JioType", ui-sans-serif, system-ui, sans-serif);
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", monospace;
 
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;

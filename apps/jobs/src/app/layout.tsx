@@ -1,9 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { GeistMono } from "geist/font/mono";
-import { GeistSans } from "geist/font/sans";
-
+import localFont from "next/font/local";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import "./globals.css";
+
+const jioType = localFont({
+  src: [
+    {
+      path: "../../public/fonts/JioTypeVarW05-Regular.woff2",
+      weight: "100 900",
+      style: "normal",
+    },
+  ],
+  variable: "--font-jio-type",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -47,11 +57,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${GeistSans.variable} ${GeistMono.variable} h-full antialiased`}
-      suppressHydrationWarning
-    >
+    <html lang="en" className={`${jioType.variable} h-full antialiased`} suppressHydrationWarning>
       {/*
        * Mobile: body safe-area padding keeps content away from the notch/home bar.
        * Desktop: white bg outside the phone frame; the inner div becomes the
