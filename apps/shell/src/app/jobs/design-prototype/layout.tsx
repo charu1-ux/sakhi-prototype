@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 const jioType = localFont({
   src: [
     {
-      path: "../../../../../../public/fonts/JioTypeVarW05-Regular.woff2",
+      path: "../../../../../public/fonts/JioTypeVarW05-Regular.woff2",
       weight: "100 900",
       style: "normal",
     },
