@@ -51,7 +51,11 @@ export function HubHeader({
         <button
           type="button"
           onClick={() => {
-            window.location.href = backHref;
+            if (backHref === "/" && window.parent !== window) {
+              window.parent.postMessage({ type: "jobs:navigate", href: "/" }, "*");
+            } else {
+              window.location.href = backHref;
+            }
           }}
           className={`flex size-10 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full outline-none ring-0 focus-visible:ring-2 focus-visible:ring-dock-accent ${btnBg}`}
           aria-label="Back"
