@@ -1,5 +1,9 @@
-import { redirect } from "next/navigation";
+"use client";
+import { useEffect } from "react";
 
 export default function HomePage() {
-  redirect("/jobs/design-prototype/");
+  useEffect(() => {
+    window.location.replace("/jobs/design-prototype/");
+  }, []);
+  return null;
 }

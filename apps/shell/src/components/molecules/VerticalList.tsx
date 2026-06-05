@@ -30,7 +30,11 @@ const verticalJobs: Vertical = {
   // Full-page loads so the shell's server rewrites proxy to the jobs app.
   // Client-side <Link> would skip server-side rewrites.
   dropdownItems: [
-    { label: "Design Prototype", url: "/jobs/", capacitorUrl: "/jobs/design-prototype/index.html" },
+    {
+      label: "Design Prototype",
+      url: "/jobs/design-prototype/",
+      capacitorUrl: "/jobs/design-prototype/index.html",
+    },
   ],
 };
 

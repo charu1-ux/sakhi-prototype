@@ -24,7 +24,7 @@ export default function JobsDevFrame() {
   return (
     <div className="flex h-full w-full flex-col">
       <iframe
-        src="http://localhost:3003/jobs/design-prototype/"
+        src="/jobs/design-prototype/"
         title="Jobs & Careers"
         className="block min-h-0 w-full flex-1 border-0"
         allow="microphone; camera"
