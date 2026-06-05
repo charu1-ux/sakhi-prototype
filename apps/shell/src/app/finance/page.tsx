@@ -1,9 +1,9 @@
 "use client";
 import { useEffect } from "react";
 
-export default function HealthPage() {
+export default function FinancePage() {
   useEffect(() => {
-    window.location.replace("/health/");
+    window.location.replace("/finance/");
   }, []);
   return null;
 }

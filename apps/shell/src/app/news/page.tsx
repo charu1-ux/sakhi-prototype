@@ -1,9 +1,9 @@
 "use client";
 import { useEffect } from "react";
 
-export default function HealthPage() {
+export default function NewsPage() {
   useEffect(() => {
-    window.location.replace("/health/");
+    window.location.replace("/news/");
   }, []);
   return null;
 }

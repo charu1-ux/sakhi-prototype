@@ -84,32 +84,24 @@ const nextConfig: NextConfig = {
       { source: "/jobs/:file*.html", destination: "http://localhost:3003/jobs/:file*.html" },
 
       // ── Health ────────────────────────────────────────────────────────
-      { source: "/health/index.html", destination: "http://localhost:3004/health/" },
-      { source: "/health/_next/:path*", destination: "http://localhost:3004/health/_next/:path*" },
-      {
-        source: "/health/assets/:path*",
-        destination: "http://localhost:3004/health/assets/:path*",
-      },
+      { source: "/health/", destination: "http://localhost:3004/health/" },
+      { source: "/health/:path*", destination: "http://localhost:3004/health/:path*" },
 
       // ── Astro ─────────────────────────────────────────────────────────
-      {
-        source: "/astro/jbiq-homepage.html",
-        destination: "http://localhost:3002/astro/jbiq-homepage.html",
-      },
-      { source: "/astro/index.html", destination: "http://localhost:3002/astro/" },
-      { source: "/astro/_next/:path*", destination: "http://localhost:3002/astro/_next/:path*" },
-      { source: "/astro/assets/:path*", destination: "http://localhost:3002/astro/assets/:path*" },
+      { source: "/astro/", destination: "http://localhost:3002/astro/" },
+      { source: "/astro/:path*", destination: "http://localhost:3002/astro/:path*" },
 
       // ── Commerce ──────────────────────────────────────────────────────
-      { source: "/commerce/index.html", destination: "http://localhost:3006/commerce/" },
-      {
-        source: "/commerce/_next/:path*",
-        destination: "http://localhost:3006/commerce/_next/:path*",
-      },
-      {
-        source: "/commerce/assets/:path*",
-        destination: "http://localhost:3006/commerce/assets/:path*",
-      },
+      { source: "/commerce/", destination: "http://localhost:3006/commerce/" },
+      { source: "/commerce/:path*", destination: "http://localhost:3006/commerce/:path*" },
+
+      // ── Finance ───────────────────────────────────────────────────────
+      { source: "/finance/", destination: "http://localhost:3005/finance/" },
+      { source: "/finance/:path*", destination: "http://localhost:3005/finance/:path*" },
+
+      // ── News ──────────────────────────────────────────────────────────
+      { source: "/news/", destination: "http://localhost:3001/news/" },
+      { source: "/news/:path*", destination: "http://localhost:3001/news/:path*" },
     ];
   },
 };

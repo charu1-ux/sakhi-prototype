@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
-    "postbuild": "node -e \"require('fs').cpSync('../health/out','out/health',{recursive:true,force:true});require('fs').cpSync('../astro/out','out/astro',{recursive:true,force:true});require('fs').cpSync('../commerce/out','out/commerce',{recursive:true,force:true});require('fs').cpSync('../jobs/out','out/jobs',{recursive:true,force:true})\"",
+    "postbuild": "node -e \"const fs=require('fs');['health','astro','commerce','jobs','finance','news'].forEach(app=>{try{fs.cpSync('../'+app+'/out','out/'+app,{recursive:true,force:true})}catch(e){}})\"",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit"
