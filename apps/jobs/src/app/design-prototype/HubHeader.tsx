@@ -31,7 +31,7 @@ export function HubHeader({
       : "linear-gradient(180deg, #F5F5F5 0%, #F5F5F5 73.27%, rgba(245,245,245,0.60) 86.13%, rgba(245,245,245,0.00) 100%)";
   return (
     <header
-      className="pointer-events-none sticky top-0 z-10 w-full"
+      className="pointer-events-none fixed inset-x-0 top-0 z-10"
       style={{ height: "calc(env(safe-area-inset-top, 0px) + 60px)" }}
     >
       <div
@@ -51,12 +51,7 @@ export function HubHeader({
         <button
           type="button"
           onClick={() => {
-            if (backHref === "/") {
-              // Post message to shell to navigate to homepage (cross-origin safe)
-              window.parent.postMessage({ type: "jobs:navigate", href: "/" }, "*");
-            } else {
-              window.location.href = backHref;
-            }
+            window.location.href = backHref;
           }}
           className={`flex size-10 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full outline-none ring-0 focus-visible:ring-2 focus-visible:ring-dock-accent ${btnBg}`}
           aria-label="Back"
