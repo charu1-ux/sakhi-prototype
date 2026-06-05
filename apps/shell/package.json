@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
-    "postbuild": "node -e \"const fs=require('fs');try{fs.cpSync('../jobs/out','out/jobs',{recursive:true,force:true})}catch(e){}\"",
+    "postbuild": "echo build complete",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit"
