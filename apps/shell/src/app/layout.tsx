@@ -1,6 +1,19 @@
 import type { Metadata, Viewport } from "next";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
+import localFont from "next/font/local";
+
+const jioType = localFont({
+  src: [
+    {
+      path: "../../public/fonts/JioTypeVarW05-Regular.woff2",
+      weight: "100 900",
+      style: "normal",
+    },
+  ],
+  variable: "--font-jio-type",
+  display: "swap",
+});
 
 import { ThemeProvider } from "@intelligence/ui";
 
@@ -54,7 +67,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${GeistSans.variable} ${GeistMono.variable} h-full antialiased`}
+      className={`${GeistSans.variable} ${GeistMono.variable} ${jioType.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="text-fg flex h-full flex-col md:bg-white">
