@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "@heroui/styles";
 @import "../styles/tokens.css";
 
 /* next-themes sets data-theme on <html>; wire the Tailwind `dark:` variant to it. */
@@ -32,6 +31,10 @@
   --color-stack-coral: rgb(var(--color-stack-coral) / <alpha-value>);
   --color-stack-ocean: rgb(var(--color-stack-ocean) / <alpha-value>);
   --color-stack-orchid: rgb(var(--color-stack-orchid) / <alpha-value>);
+  --color-chip-surface: rgb(var(--color-chip-surface) / <alpha-value>);
+  --color-chip-fg: rgb(var(--color-chip-fg) / <alpha-value>);
+  --color-step-track: rgb(var(--color-step-track) / <alpha-value>);
+  --color-course-done: rgb(var(--color-course-done) / <alpha-value>);
   --color-activity-resume-fg: rgb(var(--color-activity-resume-fg) / <alpha-value>);
   --color-activity-resume-progress: rgb(var(--color-activity-resume-progress) / <alpha-value>);
   --color-activity-card-surface-front: rgb(
@@ -93,6 +96,39 @@
   --color-activity-card-surface-mid: 238 223 255;
   --color-activity-card-surface-back: 241 234 250;
   --color-activity-percent: 20 20 20;
+  /* Pin light values so dark-mode theme override on <html> doesn't bleed in */
+  --color-surface: 255 255 255;
+  --color-surface-elevated: 255 255 255;
+  --color-chip-surface: 237 232 255;
+  --color-chip-fg: 62 0 132;
+  --color-step-track: 228 220 255;
+  --color-course-done: 22 163 74;
+  --color-success: 22 163 74;
+  --color-primary: 62 0 132;
+}
+
+/*
+ * Direct overrides — Tailwind v4 @theme inline emits rgb(var(...) / <alpha-value>)
+ * literally, which browsers reject as an invalid color. These rules bypass that
+ * by setting concrete values with higher specificity.
+ */
+[data-design-prototype] .bg-canvas-grey {
+  background-color: rgb(245 245 245);
+}
+[data-design-prototype] .bg-chip-surface {
+  background-color: rgb(237 232 255);
+}
+[data-design-prototype] .bg-step-track {
+  background-color: rgb(228 220 255);
+}
+[data-design-prototype] .bg-course-done {
+  background-color: rgb(22 163 74);
+}
+[data-design-prototype] .border-step-track {
+  border-color: rgb(228 220 255);
+}
+[data-design-prototype] .text-chip-fg {
+  color: rgb(62 0 132);
 }
 
 /* Safe-area utilities — keep content out of the iOS notch and bottom handle. */

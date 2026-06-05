@@ -28,14 +28,12 @@ const MAX_TA_H = LINE_H * MAX_LINES;
 // power3.inOut equivalent in cubic-bezier
 const EASE = [0.7, 0, 0.3, 1] as const;
 const DUR = 0.28;
-// Duration for speak exit + pill expansion — they run simultaneously
-const SPEAK_DUR = DUR * 0.75;
 
 const btnMotion = {
   initial: { opacity: 0, x: 16 },
   animate: { opacity: 1, x: 0 },
   exit: { opacity: 0, x: 16 },
-  transition: { duration: SPEAK_DUR, ease: EASE },
+  transition: { duration: DUR * 0.75, ease: EASE },
 };
 
 export function HubChatInput({
@@ -122,15 +120,11 @@ export function HubChatInput({
           />
         </button>
 
-        {/* Input pill — expands as speak exits, border-radius morphs on multi-line */}
+        {/* Input pill — border-radius morphs when going multi-line */}
         <motion.div
-          layout
           className="flex min-w-0 flex-1 overflow-hidden"
           animate={{ borderRadius: isMultiLine ? 18 : 40 }}
-          transition={{
-            layout: { duration: SPEAK_DUR, ease: EASE },
-            default: { duration: DUR, ease: EASE },
-          }}
+          transition={{ duration: DUR, ease: EASE }}
           style={{
             backgroundColor: "#f5f5f5",
             borderRadius: 40,
@@ -167,7 +161,7 @@ export function HubChatInput({
             }}
           />
 
-          {/* Send (arrow-up) — slides in after pill finishes expanding */}
+          {/* Send (arrow-up) — slides in inside the pill when typing */}
           <AnimatePresence>
             {isTyping && (
               <motion.button
@@ -182,13 +176,7 @@ export function HubChatInput({
                   backgroundColor: "#3e0084",
                   flexShrink: 0,
                 }}
-                initial={{ opacity: 0, x: 16 }}
-                animate={{
-                  opacity: 1,
-                  x: 0,
-                  transition: { duration: SPEAK_DUR, ease: EASE, delay: SPEAK_DUR },
-                }}
-                exit={{ opacity: 0, x: 16, transition: { duration: SPEAK_DUR * 0.6, ease: EASE } }}
+                {...btnMotion}
               >
                 <Image
                   src={`${HOME_ASSETS}/arrow-up.svg`}
@@ -203,8 +191,8 @@ export function HubChatInput({
           </AnimatePresence>
         </motion.div>
 
-        {/* Speak — slides out + pill expands simultaneously when typing begins */}
-        <AnimatePresence mode="popLayout">
+        {/* Speak — slides out when typing begins */}
+        <AnimatePresence>
           {!isTyping && (
             <motion.button
               key="speak"

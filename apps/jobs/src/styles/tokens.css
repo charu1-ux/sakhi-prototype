@@ -7,7 +7,7 @@
 
 :root {
   /* Color — surfaces & content */
-  --color-bg: 255 255 255;
+  --color-bg: #f5f5f5;
   --color-surface: 250 250 250;
   --color-surface-elevated: 255 255 255;
   /* Neutral canvas (#F5F5F5) */
@@ -104,6 +104,12 @@
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-emphasized: cubic-bezier(0.3, 0, 0, 1);
   --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Jobs design-prototype chip + step tokens */
+  --color-chip-surface: 237 232 255;
+  --color-chip-fg: 62 0 132;
+  --color-step-track: 228 220 255;
+  --color-course-done: 22 163 74;
 
   /* Jobs design-prototype composer shell (Figma 64:226 / 64:227) */
   --height-chat-home-strip: 2.125rem;

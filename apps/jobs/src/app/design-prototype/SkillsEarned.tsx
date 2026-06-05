@@ -14,10 +14,15 @@ export function SkillsEarned() {
       >
         Skills you&apos;ve earned
       </h2>
-      <div className="rounded-xl border border-[#f0f0f0] bg-white p-3 flex flex-col gap-3">
+      <div
+        className="rounded-xl bg-white p-3 flex flex-col gap-3"
+        style={{ border: "1px solid #F0F0F0" }}
+      >
         {SKILLS_EARNED.map((skill, idx) => (
           <Fragment key={idx}>
-            {idx > 0 && <hr className="m-0 border-none h-px bg-[#f0f0f0]" />}
+            {idx > 0 && (
+              <hr className="m-0 h-px border-none" style={{ backgroundColor: "#F5F5F5" }} />
+            )}
             <div
               className="flex items-center justify-between gap-3"
               style={{ cursor: skill.href ? "pointer" : "default" }}
@@ -25,8 +30,8 @@ export function SkillsEarned() {
                 if (skill.href) window.location.href = skill.href;
               }}
             >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="flex shrink-0 items-center justify-center rounded-md bg-[#f0e8fa] p-2">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex shrink-0 items-center justify-center rounded-md bg-chip-surface p-2">
                   <Image
                     src={skill.iconSrc}
                     alt=""
@@ -36,14 +41,19 @@ export function SkillsEarned() {
                     unoptimized
                   />
                 </div>
-                <div className="flex flex-col gap-1 min-w-0">
-                  <span className="block text-sm leading-normal text-[#1b0633] tracking-[-0.28px] truncate">
+                <div className="flex min-w-0 flex-col gap-1">
+                  <span
+                    className="block truncate text-sm leading-normal tracking-[-0.28px]"
+                    style={{ color: "#404040" }}
+                  >
                     {skill.name}
                   </span>
-                  <span className="block text-xs leading-normal text-[#b5b5b5]">{skill.date}</span>
+                  <span className="block text-xs leading-normal" style={{ color: "#A3A3A3" }}>
+                    {skill.date}
+                  </span>
                 </div>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
+              <div className="flex shrink-0 items-center gap-3">
                 <Image
                   src={`${HOME_ASSETS}/share.svg`}
                   alt="Share"

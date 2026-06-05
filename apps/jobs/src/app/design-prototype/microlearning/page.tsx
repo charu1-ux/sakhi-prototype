@@ -14,6 +14,7 @@ import { HOME_ASSETS, JOBS_APP_BASE_PATH, MICROLEARN_ASSETS } from "../hub-data"
 type TopicCard = {
   title: string;
   subtitle: string;
+  /** Tailwind bg utility for the icon slot */
   iconBg: string;
   iconSrc: string;
   href?: string;
@@ -23,26 +24,26 @@ const TOPIC_CARDS: TopicCard[] = [
   {
     title: "Creator",
     subtitle: "Hooks · Titles · Thumbnails · Edits",
-    iconBg: "#edf7ff",
+    iconBg: "bg-blue-50",
     iconSrc: `${MICROLEARN_ASSETS}/creator.svg`,
     href: `${JOBS_APP_BASE_PATH}/design-prototype/microlearning/creator/`,
   },
   {
     title: "Shopkeeper",
     subtitle: "WhatsApp · Inventory · POS",
-    iconBg: "#f1edff",
+    iconBg: "bg-violet-50",
     iconSrc: `${MICROLEARN_ASSETS}/shopkeeper.svg`,
   },
   {
     title: "Office",
     subtitle: "Excel · Email · Slides",
-    iconBg: "#edfffc",
+    iconBg: "bg-teal-50",
     iconSrc: `${MICROLEARN_ASSETS}/office.svg`,
   },
   {
     title: "AI fluency",
     subtitle: "ChatGPT · Image gen · Voice",
-    iconBg: "#edf9ff",
+    iconBg: "bg-sky-50",
     iconSrc: `${MICROLEARN_ASSETS}/ai.svg`,
   },
 ];
@@ -63,14 +64,14 @@ export default function MicrolearningPage() {
   }, []);
 
   return (
-    <div className="relative flex h-full flex-col bg-[#f5f5f5] text-fg">
+    <div className="relative flex h-full flex-col bg-canvas-grey text-fg">
       <main
         className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 68px)" }}
         onScroll={handleScroll}
       >
         <div className="flex w-full flex-col gap-6">
-          {/* Continue where you left off — same stacked card stack as jobs home */}
+          {/* Continue where you left off */}
           <div className="px-4">
             <ActivityCardStack onExpand={() => setCardsExpanded(true)} />
           </div>
@@ -81,8 +82,7 @@ export default function MicrolearningPage() {
               const inner = (
                 <div className="flex items-center gap-3 rounded-2xl bg-white p-3 active:opacity-70 transition-opacity">
                   <div
-                    className="flex size-12 shrink-0 items-center justify-center rounded-md p-3"
-                    style={{ backgroundColor: card.iconBg }}
+                    className={`flex size-12 shrink-0 items-center justify-center rounded-md p-3 ${card.iconBg}`}
                   >
                     <Image
                       src={card.iconSrc}
@@ -94,10 +94,10 @@ export default function MicrolearningPage() {
                     />
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                    <span className="block text-base text-[#141414] tracking-[-0.32px]">
+                    <span className="block text-base tracking-[-0.32px] text-activity-percent">
                       {card.title}
                     </span>
-                    <span className="block text-sm text-[rgba(0,0,0,0.65)]">{card.subtitle}</span>
+                    <span className="block text-sm text-black/65">{card.subtitle}</span>
                   </div>
                   <Image
                     src={`${HOME_ASSETS}/chevron-right.svg`}

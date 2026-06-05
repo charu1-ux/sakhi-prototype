@@ -23,7 +23,7 @@ export default function DesignPrototypePage() {
   }, []);
 
   return (
-    <div className="relative flex h-full flex-col bg-[#f5f5f5] text-fg">
+    <div className="relative flex h-full flex-col bg-canvas-grey text-fg">
       {/*
        * Scrollable content fills the whole column.
        * The header overlay sits absolutely on top, so content scrolls under it.

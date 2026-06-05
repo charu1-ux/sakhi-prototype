@@ -21,6 +21,8 @@ const nextConfig: NextConfig = {
   // route is served correctly. Static export ignores these.
   async redirects() {
     return [
+      // Cursor IDE browser preview requests this; redirect to home.
+      { source: "/viewer.html", destination: "/", permanent: false },
       {
         source: "/jobs/old/index.html",
         destination: "/jobs/old/",
