@@ -65,9 +65,13 @@ export default function MicrolearningPage() {
 
   return (
     <div className="relative flex h-full flex-col bg-canvas-grey text-fg">
+      <HubHeader
+        title="Microlearning"
+        backHref={`${JOBS_APP_BASE_PATH}/design-prototype/`}
+        scrolled={scrolled}
+      />
       <main
-        className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 68px)" }}
+        className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-4 pt-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         onScroll={handleScroll}
       >
         <div className="flex w-full flex-col gap-6">
@@ -136,11 +140,6 @@ export default function MicrolearningPage() {
 
       {cardsExpanded && <ExpandedOverlay onClose={() => setCardsExpanded(false)} />}
 
-      <HubHeader
-        title="Microlearning"
-        backHref={`${JOBS_APP_BASE_PATH}/design-prototype/`}
-        scrolled={scrolled}
-      />
       <HubChatInput />
     </div>
   );

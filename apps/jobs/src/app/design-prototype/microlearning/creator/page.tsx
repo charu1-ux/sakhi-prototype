@@ -482,10 +482,16 @@ export default function CreatorChatPage() {
 
   return (
     <div className="relative flex flex-col bg-white text-fg min-h-dvh">
+      <HubHeader
+        title="Microlearning"
+        backHref={`${JOBS_APP_BASE_PATH}/design-prototype/microlearning/`}
+        rightIconSrc={`${MICROLEARN_ASSETS}/magic-edit.svg`}
+        rightIconLabel="Magic edit"
+        pageBg="white"
+      />
       <main
         ref={mainRef}
-        className="min-h-0 flex-1 overflow-y-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 72px)" }}
+        className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         <div className="flex w-full flex-col gap-4" style={{ paddingBottom: "10vh" }}>
           {/* Message bubbles */}
@@ -560,14 +566,6 @@ export default function CreatorChatPage() {
           {showStepper && <StepperCourse containerRef={mainRef} initialComplete={isResume} />}
         </div>
       </main>
-
-      <HubHeader
-        title="Microlearning"
-        backHref={`${JOBS_APP_BASE_PATH}/design-prototype/microlearning/`}
-        rightIconSrc={`${MICROLEARN_ASSETS}/magic-edit.svg`}
-        rightIconLabel="Magic edit"
-        pageBg="white"
-      />
 
       <HubChatInput
         placeholder="Ask me anything"

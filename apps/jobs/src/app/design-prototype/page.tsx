@@ -24,13 +24,9 @@ export default function DesignPrototypePage() {
 
   return (
     <div className="relative flex h-full flex-col bg-canvas-grey text-fg">
-      {/*
-       * Scrollable content fills the whole column.
-       * The header overlay sits absolutely on top, so content scrolls under it.
-       */}
+      <HubHeader title="Hi, Samyak" scrolled={scrolled} />
       <main
-        className="overflow-x-hidden overflow-y-auto px-4 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex-1 min-h-0"
-        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 68px)" }}
+        className="overflow-x-hidden overflow-y-auto px-4 pb-4 pt-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex-1 min-h-0"
         onScroll={handleScroll}
       >
         <div className="mx-auto flex w-full max-w-md flex-col gap-6">
@@ -89,8 +85,6 @@ export default function DesignPrototypePage() {
           <SkillsEarned />
         </div>
       </main>
-
-      <HubHeader title="Hi, Samyak" scrolled={scrolled} />
 
       {cardsExpanded && <ExpandedOverlay onClose={() => setCardsExpanded(false)} />}
 
