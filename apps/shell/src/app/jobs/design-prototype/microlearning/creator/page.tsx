@@ -244,41 +244,30 @@ function StepperCourse({
   const newCardRef = useRef<HTMLDivElement>(null);
   const whatsNextRef = useRef<HTMLDivElement>(null);
 
-  function scrollToTop(el: HTMLDivElement | null) {
+  function snap() {
     const container = containerRef.current;
-    if (!el || !container) return;
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const elTop = el.getBoundingClientRect().top;
-        const containerTop = container.getBoundingClientRect().top;
-        container.scrollTo({
-          top: container.scrollTop + (elTop - containerTop),
-          behavior: "smooth",
-        });
-      });
-    });
-  }
-
-  function scrollNewCardToTop() {
-    scrollToTop(newCardRef.current);
+    if (!container) return;
+    setTimeout(() => {
+      container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+    }, 80);
   }
 
   useEffect(() => {
     if (initialComplete) return;
-    scrollNewCardToTop();
+    snap();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleContinue() {
     if (visibleCount >= COURSE_STEPS.length) {
       setFinished(true);
-      setTimeout(scrollNewCardToTop, 80);
+      snap();
       setTimeout(() => {
         setShowWhatsNext(true);
-        setTimeout(() => scrollToTop(whatsNextRef.current), 80);
+        snap();
       }, 1200);
     } else {
       setVisibleCount((n) => n + 1);
-      setTimeout(scrollNewCardToTop, 80);
+      snap();
     }
   }
 
@@ -286,7 +275,7 @@ function StepperCourse({
     setVisibleCount(1);
     setFinished(false);
     setShowWhatsNext(false);
-    setTimeout(scrollNewCardToTop, 80);
+    snap();
   }
 
   return (
@@ -345,6 +334,26 @@ function AiReply({ onStart, started }: { onStart: () => void; started: boolean }
           {THUMBNAIL_ANSWER.planTitle}
         </p>
 
+        {/* Steps card */}
+        <div
+          className="flex w-full flex-col gap-4 rounded-xl p-3"
+          style={{ border: "1px solid #E5E5E5" }}
+        >
+          {THUMBNAIL_ANSWER.steps.map((step, i) => (
+            <div key={i}>
+              <div className="flex items-center gap-[13px]">
+                <div className="bg-step-track text-activity-percent flex size-5 shrink-0 items-center justify-center rounded-full text-xs">
+                  {i + 1}
+                </div>
+                <span className="flex-1 text-sm leading-snug text-black">{step}</span>
+              </div>
+              {i < THUMBNAIL_ANSWER.steps.length - 1 && (
+                <div className="mt-4 h-px" style={{ backgroundColor: "#F0F0F0" }} />
+              )}
+            </div>
+          ))}
+        </div>
+
         {/* Start course button */}
         {!started && (
           <button
@@ -391,7 +400,6 @@ export default function CreatorChatPage() {
 
   const mainRef = useRef<HTMLElement>(null);
   const lastMsgRef = useRef<HTMLDivElement>(null);
-  const aiReplyRef = useRef<HTMLDivElement>(null);
   const scrollPending = useRef(false);
 
   useEffect(() => {
@@ -414,52 +422,32 @@ export default function CreatorChatPage() {
     };
   }, [mounted, isResume]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (!scrollPending.current) return;
-    if (stage !== "user-spinner") return;
-    scrollPending.current = false;
-    const el = lastMsgRef.current;
-    const container = mainRef.current;
-    if (!el || !container) return;
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const elTop = el.getBoundingClientRect().top;
-        const containerTop = container.getBoundingClientRect().top;
-        container.scrollTo({
-          top: container.scrollTop + (elTop - containerTop),
-          behavior: "smooth",
-        });
-      });
-    });
-  });
-
-  function scrollToBottom(smooth = true) {
+  function snapMain() {
     const el = mainRef.current;
     if (!el) return;
-    requestAnimationFrame(() => {
-      el.scrollTo({ top: el.scrollHeight, behavior: smooth ? "smooth" : "instant" });
-    });
+    setTimeout(() => {
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    }, 80);
   }
 
+  // User sends message → snap bottom
+  useEffect(() => {
+    if (!scrollPending.current || stage !== "user-spinner") return;
+    scrollPending.current = false;
+    snapMain();
+  });
+
+  // AI reply renders → snap bottom (shows plan title + Start course btn)
   useEffect(() => {
     if (stage !== "ai-reply") return;
-    const t = setTimeout(() => scrollToBottom(true), 80);
-    return () => clearTimeout(t);
+    snapMain();
   }, [stage]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Step 1 card renders → snap bottom (shows Continue btn above input)
   useEffect(() => {
     if (!showStepper || isResume) return;
-    // Scroll so AI reply text is at top — step card appears just below
-    const t = setTimeout(() => {
-      const el = aiReplyRef.current;
-      const container = mainRef.current;
-      if (!el || !container) return;
-      const elTop = el.getBoundingClientRect().top;
-      const containerTop = container.getBoundingClientRect().top;
-      container.scrollTo({ top: container.scrollTop + (elTop - containerTop), behavior: "smooth" });
-    }, 50);
-    return () => clearTimeout(t);
-  }, [showStepper, isResume]);
+    snapMain();
+  }, [showStepper]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function sendMessage(text: string) {
     const trimmed = text.trim();
@@ -544,7 +532,7 @@ export default function CreatorChatPage() {
 
           {/* AI reply */}
           {stage === "ai-reply" && (
-            <div ref={aiReplyRef} className="w-full">
+            <div className="w-full">
               <AiReply onStart={() => setShowStepper(true)} started={showStepper} />
             </div>
           )}
