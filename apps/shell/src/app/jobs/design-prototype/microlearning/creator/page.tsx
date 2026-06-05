@@ -263,22 +263,6 @@ function StepperCourse({
     scrollToTop(newCardRef.current);
   }
 
-  function scrollWhatsNextToBottom() {
-    const el = whatsNextRef.current;
-    const container = containerRef.current;
-    if (!el || !container) return;
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const elBottom = el.getBoundingClientRect().bottom;
-        const containerBottom = container.getBoundingClientRect().bottom;
-        container.scrollTo({
-          top: container.scrollTop + (elBottom - containerBottom),
-          behavior: "smooth",
-        });
-      });
-    });
-  }
-
   useEffect(() => {
     if (initialComplete) return;
     scrollNewCardToTop();
@@ -468,6 +452,20 @@ export default function CreatorChatPage() {
     });
   });
 
+  function scrollToBottom(smooth = true) {
+    const el = mainRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => {
+      el.scrollTo({ top: el.scrollHeight, behavior: smooth ? "smooth" : "instant" });
+    });
+  }
+
+  useEffect(() => {
+    if (stage !== "ai-reply") return;
+    const t = setTimeout(() => scrollToBottom(true), 80);
+    return () => clearTimeout(t);
+  }, [stage]); // eslint-disable-line react-hooks/exhaustive-deps
+
   function sendMessage(text: string) {
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -487,7 +485,7 @@ export default function CreatorChatPage() {
         className="min-h-0 flex-1 overflow-y-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 72px)" }}
       >
-        <div className="flex w-full flex-col gap-4" style={{ paddingBottom: "10vh" }}>
+        <div className="flex min-h-full w-full flex-col justify-end gap-4 pb-6">
           {/* Message bubbles */}
           {(isResume ? messages.filter((m) => m.role === "user") : messages).map((msg, idx) => {
             const isUser = msg.role === "user";
