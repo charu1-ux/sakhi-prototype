@@ -485,7 +485,7 @@ export default function CreatorChatPage() {
         className="min-h-0 flex-1 overflow-y-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 72px)" }}
       >
-        <div className="flex min-h-full w-full flex-col justify-end gap-4 pb-6">
+        <div className="flex w-full flex-col gap-4 pb-6">
           {/* Message bubbles */}
           {(isResume ? messages.filter((m) => m.role === "user") : messages).map((msg, idx) => {
             const isUser = msg.role === "user";
