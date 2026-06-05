@@ -5,7 +5,7 @@
       "dependsOn": ["^build"],
       "outputs": [".next/**", "!.next/cache/**", "out/**"]
     },
-    "dev": { "cache": false, "persistent": true, "filter": ["@intelligence/shell"] },
+    "dev": { "cache": false, "persistent": true },
     "lint": {},
     "typecheck": { "dependsOn": ["^build"] }
   }

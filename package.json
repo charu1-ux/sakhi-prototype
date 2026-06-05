@@ -6,7 +6,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "turbo run dev",
+    "dev": "turbo run dev --filter=@intelligence/shell",
     "dev:shell": "turbo run dev --filter=@intelligence/shell",
     "dev:news": "turbo run dev --filter=@intelligence/news",
     "dev:astro": "turbo run dev --filter=@intelligence/astro",
