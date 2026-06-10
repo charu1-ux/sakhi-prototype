@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
 
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
@@ -128,14 +129,9 @@ export default function NewsPage() {
               return (
                 <li key={card.title}>
                   {card.href ? (
-                    <div
-                      className="cursor-pointer"
-                      onClick={() => {
-                        window.location.href = card.href!;
-                      }}
-                    >
+                    <Link href={card.href} className="block">
                       {inner}
-                    </div>
+                    </Link>
                   ) : (
                     <div className="opacity-50">{inner}</div>
                   )}

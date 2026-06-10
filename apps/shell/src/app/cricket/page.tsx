@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
 
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
@@ -212,14 +213,9 @@ function MatchCard({ match }: { match: Match }) {
   );
 
   return match.href ? (
-    <div
-      className="cursor-pointer"
-      onClick={() => {
-        window.location.href = match.href!;
-      }}
-    >
+    <Link href={match.href} className="block">
       {inner}
-    </div>
+    </Link>
   ) : (
     inner
   );
