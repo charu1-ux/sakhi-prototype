@@ -1,9 +1,24 @@
+import type { Metadata } from "next";
+
+import { JIOMART_THREAD_HTML } from "./jiomart/thread-source";
+
+export const metadata: Metadata = {
+  title: "Commerce",
+  description: "JBIQ Commerce — JioMart purchase conversation prototype.",
+};
+
+/*
+ * The Commerce section opens straight into the JioMart purchase flow, so anyone
+ * with the app prototype link can tap "Commerce" and walk the entire thread.
+ * Rendered in an isolated iframe; all styles are sandboxed and cannot affect the
+ * shell or other verticals. Markup source of truth: ./jiomart/thread-source.ts
+ */
 export default function CommercePage() {
   return (
-    <main className="pt-safe pb-safe flex min-h-dvh flex-col items-center justify-center px-m">
-      {/* JDS classes (text-headline-m, font-jio, text-primary-50) — render only
-          because the A2UI vocabulary is now wired up + scoped to commerce. */}
-      <h1 className="text-headline-m font-jio text-primary-50">Commerce</h1>
-    </main>
+    <iframe
+      title="JioMart purchase flow"
+      srcDoc={JIOMART_THREAD_HTML}
+      style={{ border: 0, width: "100%", height: "100dvh", display: "block" }}
+    />
   );
 }
