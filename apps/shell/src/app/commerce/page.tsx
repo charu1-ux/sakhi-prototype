@@ -1,8 +1,9 @@
 export default function CommercePage() {
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-3">
-      <span className="text-4xl">🛍️</span>
-      <p className="text-fg-muted text-sm">Commerce — design prototype coming soon</p>
+    <main className="pt-safe pb-safe flex min-h-dvh flex-col items-center justify-center px-m">
+      {/* JDS classes (text-headline-m, font-jio, text-primary-50) — render only
+          because the A2UI vocabulary is now wired up + scoped to commerce. */}
+      <h1 className="text-headline-m font-jio text-primary-50">Commerce</h1>
     </main>
   );
 }
