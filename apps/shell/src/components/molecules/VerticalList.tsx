@@ -87,6 +87,13 @@ const verticalJokes: Vertical = {
   gradientFrom: "from-vertical-jokes",
 };
 
+const verticalMusic: Vertical = {
+  name: "Music",
+  slug: "music",
+  icon: "/assets/shell/ico-music.svg",
+  gradientFrom: "from-vertical-music",
+};
+
 const verticalsFeatured: Vertical[] = [
   verticalJobs,
   verticalHealth,
@@ -96,6 +103,7 @@ const verticalsFeatured: Vertical[] = [
   verticalNews,
   verticalCricket,
   verticalJokes,
+  verticalMusic,
 ];
 
 const verticalsComingSoon: Vertical[] = [
