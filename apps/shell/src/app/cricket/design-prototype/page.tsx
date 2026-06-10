@@ -12,7 +12,7 @@ type MatchState = "live" | "completed";
 type Tab = "live" | "scorecard";
 type Innings = 1 | 2;
 
-// ── Mock data ─────────────────────────────────────────────────────────────────
+// ── Live match mock data ───────────────────────────────────────────────────────
 
 const BATTER_ROWS = {
   live: [
@@ -49,7 +49,6 @@ const BOWLER_ROWS = {
   ],
 };
 
-// Last 6 balls: type + value
 type Ball = { type: "dot" | "run" | "four" | "six" | "wicket" | "wide" | "nb"; val: string };
 const LAST_6: Ball[] = [
   { type: "run", val: "1" },
@@ -76,7 +75,6 @@ const FOW = [
   { wkt: 4, score: "133/4", over: "16.2", batter: "Current" },
 ];
 
-// ODI-only: partnerships
 const PARTNERSHIPS = [
   { batters: "Rohit & Gill", runs: 16, balls: 14 },
   { batters: "Gill & Kohli", runs: 16, balls: 13 },
@@ -85,7 +83,6 @@ const PARTNERSHIPS = [
   { batters: "Kohli & Pandya", runs: 23, balls: 15 },
 ];
 
-// Test-only: 2nd innings (AUS 1st innings)
 const AUS_BATTING = [
   {
     name: "D Warner",
@@ -122,6 +119,118 @@ const AUS_BATTING = [
   },
 ];
 
+// ── Completed match data ───────────────────────────────────────────────────────
+
+const COMPLETED_HERO: Record<
+  Format,
+  {
+    team1: string;
+    team1Flag: string;
+    team1Score: string;
+    team1Overs?: string;
+    team2: string;
+    team2Flag: string;
+    team2Score: string;
+    team2Overs?: string;
+    result: string;
+  }
+> = {
+  T20: {
+    team1: "IND",
+    team1Flag: "🇮🇳",
+    team1Score: "189/4",
+    team1Overs: "20.0",
+    team2: "AUS",
+    team2Flag: "🇦🇺",
+    team2Score: "183/7",
+    team2Overs: "20.0",
+    result: "India won by 6 runs",
+  },
+  ODI: {
+    team1: "IND",
+    team1Flag: "🇮🇳",
+    team1Score: "232/3",
+    team1Overs: "44.2",
+    team2: "SL",
+    team2Flag: "🇱🇰",
+    team2Score: "231/8",
+    team2Overs: "50.0",
+    result: "India won by 7 wickets",
+  },
+  Test: {
+    team1: "IND",
+    team1Flag: "🇮🇳",
+    team1Score: "482/8d",
+    team2: "ENG",
+    team2Flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+    team2Score: "289 & 156 all out",
+    result: "India won by an innings and 37 runs",
+  },
+};
+
+type Moment = { over: string; text: string };
+type SummaryRecord = {
+  potm: string;
+  potmStat: string;
+  potmFlag: string;
+  topBatter: string;
+  topBatterStat: string;
+  topBowler: string;
+  topBowlerStat: string;
+  moments: Moment[];
+};
+
+const SUMMARY_DATA: Record<Format, SummaryRecord> = {
+  T20: {
+    potm: "V Kohli",
+    potmStat: "89*(54) · 3×4 · 4×6",
+    potmFlag: "🇮🇳",
+    topBatter: "V Kohli",
+    topBatterStat: "89*(54) · SR 164.8",
+    topBowler: "J Bumrah",
+    topBowlerStat: "4-0-22-3 · Eco 5.5",
+    moments: [
+      { over: "17.4", text: "Kohli six — IND overtake AUS total for first time" },
+      { over: "19.1", text: "Bumrah removes Maxwell — AUS last hope gone" },
+      { over: "20.0", text: "Pandya hits winning boundary, India seal by 6 runs" },
+    ],
+  },
+  ODI: {
+    potm: "R Sharma",
+    potmStat: "112*(98) · 11×4 · 2×6",
+    potmFlag: "🇮🇳",
+    topBatter: "R Sharma",
+    topBatterStat: "112*(98) · SR 114.3",
+    topBowler: "R Ashwin",
+    topBowlerStat: "10-1-38-4 · Eco 3.8",
+    moments: [
+      {
+        over: "13.2",
+        text: "Rohit reaches century off 88 balls — fastest by an Indian in this series",
+      },
+      { over: "22.0", text: "Ashwin takes back-to-back wickets to trigger Sri Lanka collapse" },
+      { over: "44.2", text: "Pandya drives Hasaranga — India win with 34 balls to spare" },
+    ],
+  },
+  Test: {
+    potm: "R Ashwin",
+    potmStat: "9 wickets · 72 runs",
+    potmFlag: "🇮🇳",
+    topBatter: "C Pujara",
+    topBatterStat: "133 (289b) · 18×4",
+    topBowler: "R Ashwin",
+    topBowlerStat: "9/127 across 2 innings",
+    moments: [
+      { over: "Day 2", text: "Ashwin takes 5/58 — England bowled out for 289 in 1st innings" },
+      { over: "Day 3", text: "India post 482/8d — lead of 193 runs before declaring" },
+      {
+        over: "Day 4",
+        text: "Bumrah's 4-fer wraps up England 2nd innings for 156 — win by innings",
+      },
+    ],
+  },
+};
+
 // ── Ball indicator ────────────────────────────────────────────────────────────
 
 const BALL_STYLES: Record<Ball["type"], string> = {
@@ -153,7 +262,6 @@ function phaseLabel(format: Format, overs: number): string {
     if (overs <= 15) return "Middle overs";
     return "Death overs";
   }
-  // ODI
   if (overs <= 10) return "Powerplay";
   if (overs <= 40) return "Middle overs";
   return "Death overs";
@@ -162,30 +270,68 @@ function phaseLabel(format: Format, overs: number): string {
 // ── Score hero ────────────────────────────────────────────────────────────────
 
 function ScoreHero({ format, matchState }: { format: Format; matchState: MatchState }) {
+  // ── COMPLETED ───────────────────────────────────────────────────────────────
+  if (matchState === "completed") {
+    const d = COMPLETED_HERO[format];
+    const isTest = format === "Test";
+    return (
+      <div className="flex flex-col gap-3 rounded-2xl bg-[#0c0d10] px-4 py-4">
+        {/* Batting team (winner on top) — or for Test, both teams */}
+        <div className="flex flex-col gap-3">
+          {/* Bowling/fielding side */}
+          <div className="flex items-center gap-2">
+            <span className="text-base">{d.team2Flag}</span>
+            <span className="text-[13px] font-bold text-white/50">{d.team2}</span>
+            <span className="ml-auto text-[13px] font-medium text-white/50">{d.team2Score}</span>
+            {!isTest && d.team2Overs && (
+              <span className="text-[11px] text-white/30">({d.team2Overs})</span>
+            )}
+          </div>
+          {/* Winning side */}
+          <div className="flex items-center gap-2">
+            <span className="text-base">{d.team1Flag}</span>
+            <span className="text-[15px] font-bold text-white">{d.team1}</span>
+            {isTest ? (
+              <span className="ml-auto text-[15px] font-bold text-white">{d.team1Score}</span>
+            ) : (
+              <>
+                <span className="ml-auto text-[22px] leading-none font-bold text-white">
+                  {d.team1Score}
+                </span>
+                {d.team1Overs && (
+                  <span className="text-[13px] font-medium text-white/50">({d.team1Overs})</span>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+        {/* Result banner */}
+        <div className="flex items-center justify-center rounded-xl bg-[#25ab21]/[0.18] px-3 py-2.5">
+          <span className="text-[13px] font-bold text-[#25ab21]">{d.result}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // ── LIVE — Test ─────────────────────────────────────────────────────────────
   if (format === "Test") {
     return (
       <div className="flex flex-col gap-3 rounded-2xl bg-[#0c0d10] px-4 py-4">
-        {/* Day / session */}
         <div className="flex items-center gap-2">
           <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold tracking-widest text-white/60 uppercase">
             Day 2 · Session 2
           </span>
-          {matchState === "live" && (
-            <div className="ml-auto flex items-center gap-1">
-              <span className="relative flex size-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#fa2f40] opacity-75" />
-                <span className="relative inline-flex size-2 rounded-full bg-[#fa2f40]" />
-              </span>
-              <span className="text-[10px] font-bold tracking-wide text-[#fa2f40] uppercase">
-                Live
-              </span>
-            </div>
-          )}
+          <div className="ml-auto flex items-center gap-1">
+            <span className="relative flex size-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#fa2f40] opacity-75" />
+              <span className="relative inline-flex size-2 rounded-full bg-[#fa2f40]" />
+            </span>
+            <span className="text-[10px] font-bold tracking-wide text-[#fa2f40] uppercase">
+              Live
+            </span>
+          </div>
         </div>
-
-        {/* Innings scores */}
         <div className="flex flex-col gap-2">
-          {/* AUS 1st innings */}
           <div className="flex items-center gap-2">
             <span className="text-base">🏴󠁧󠁢󠁥󠁮󠁧󠁿</span>
             <span className="text-[13px] font-bold text-white/50">ENG</span>
@@ -195,7 +341,6 @@ function ScoreHero({ format, matchState }: { format: Format; matchState: MatchSt
               1st Innings
             </span>
           </div>
-          {/* IND 2nd innings — batting */}
           <div className="flex items-center gap-2">
             <span className="text-base">🇮🇳</span>
             <span className="text-[15px] font-bold text-white">IND</span>
@@ -206,8 +351,6 @@ function ScoreHero({ format, matchState }: { format: Format; matchState: MatchSt
             </span>
           </div>
         </div>
-
-        {/* Lead */}
         <div className="flex items-center gap-3 rounded-xl bg-white/[0.06] px-3 py-2">
           <span className="text-[12px] font-bold text-white">IND lead by 53 runs</span>
           <span className="ml-auto text-[11px] text-white/40">Today: 89 runs, 3 wkts</span>
@@ -216,10 +359,10 @@ function ScoreHero({ format, matchState }: { format: Format; matchState: MatchSt
     );
   }
 
-  // T20 / ODI
+  // ── LIVE — T20 / ODI ────────────────────────────────────────────────────────
+  const isODI = format === "ODI";
   return (
     <div className="flex flex-col gap-3 rounded-2xl bg-[#0c0d10] px-4 py-4">
-      {/* Batting team score */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           <span className="text-xl">🇮🇳</span>
@@ -227,54 +370,119 @@ function ScoreHero({ format, matchState }: { format: Format; matchState: MatchSt
         </div>
         <div className="flex items-baseline gap-2">
           <span className="text-[32px] leading-none font-bold tracking-tight text-white">
-            156/4
+            {isODI ? "156/2" : "156/4"}
           </span>
-          <span className="text-[14px] font-medium text-white/50">(17.3)</span>
+          <span className="text-[14px] font-medium text-white/50">
+            {isODI ? "(28.4)" : "(17.3)"}
+          </span>
         </div>
-        {matchState === "live" && (
-          <div className="ml-auto flex items-center gap-1">
-            <span className="relative flex size-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#fa2f40] opacity-75" />
-              <span className="relative inline-flex size-2 rounded-full bg-[#fa2f40]" />
-            </span>
-            <span className="text-[10px] font-bold tracking-wide text-[#fa2f40] uppercase">
-              Live
-            </span>
-          </div>
-        )}
+        <div className="ml-auto flex items-center gap-1">
+          <span className="relative flex size-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#fa2f40] opacity-75" />
+            <span className="relative inline-flex size-2 rounded-full bg-[#fa2f40]" />
+          </span>
+          <span className="text-[10px] font-bold tracking-wide text-[#fa2f40] uppercase">Live</span>
+        </div>
       </div>
-
-      {/* Target info */}
       <div className="h-px bg-white/[0.08]" />
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-0.5">
           <span className="text-[10px] font-bold tracking-widest text-white/35 uppercase">
             Target
           </span>
-          <span className="text-[15px] font-bold text-white">178</span>
+          <span className="text-[15px] font-bold text-white">{isODI ? "232" : "178"}</span>
         </div>
         <div className="flex flex-col items-center gap-0.5">
           <span className="text-[10px] font-bold tracking-widest text-white/35 uppercase">
             Need
           </span>
-          <span className="text-[15px] font-bold text-white">22 off 15</span>
+          <span className="text-[15px] font-bold text-white">
+            {isODI ? "76 off 129" : "22 off 15"}
+          </span>
         </div>
         <div className="flex flex-col items-end gap-0.5">
           <span className="text-[10px] font-bold tracking-widest text-white/35 uppercase">RRR</span>
-          <span className="text-[15px] font-bold text-[#fa2f40]">8.8</span>
+          <span className="text-[15px] font-bold text-[#f06d0f]">{isODI ? "3.5" : "8.8"}</span>
         </div>
         <div className="flex flex-col items-end gap-0.5">
           <span className="text-[10px] font-bold tracking-widest text-white/35 uppercase">CRR</span>
-          <span className="text-[15px] font-bold text-[#25ab21]">8.9</span>
+          <span className="text-[15px] font-bold text-[#25ab21]">{isODI ? "5.4" : "8.9"}</span>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold text-white/60">
+          {phaseLabel(format, isODI ? 28 : 17)}
+        </span>
+        <span className="ml-auto text-[11px] font-medium text-white/35">
+          {isODI ? "🇱🇰 SL set 231/8" : "🇦🇺 AUS set 177/6"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ── Summary view (completed match) ────────────────────────────────────────────
+
+function SummaryView({ format }: { format: Format }) {
+  const d = SUMMARY_DATA[format];
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Player of the Match */}
+      <div className="rounded-2xl bg-white p-4">
+        <span className="mb-3 block text-[10px] font-bold tracking-widest text-black/40 uppercase">
+          Player of the Match
+        </span>
+        <div className="flex items-center gap-3">
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#f6f3ff] text-2xl">
+            {d.potmFlag}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[15px] font-bold text-[#0c0d10]">{d.potm}</div>
+            <div className="text-[12px] font-medium text-black/45">{d.potmStat}</div>
+          </div>
+          <span className="text-2xl">🏆</span>
         </div>
       </div>
 
-      {/* Phase + opposition */}
-      <div className="flex items-center gap-2">
-        <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold text-white/60">
-          {phaseLabel(format, 17)}
+      {/* Top performers */}
+      <div className="rounded-2xl bg-white p-4">
+        <span className="mb-3 block text-[10px] font-bold tracking-widest text-black/40 uppercase">
+          Top Performers
         </span>
-        <span className="ml-auto text-[11px] font-medium text-white/35">🇦🇺 AUS set 177/6</span>
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <span className="shrink-0 rounded-full bg-[#ecf7ff] px-2 py-0.5 text-[10px] font-bold text-[#0078ad]">
+              BAT
+            </span>
+            <span className="text-[13px] font-bold text-[#0c0d10]">{d.topBatter}</span>
+            <span className="ml-auto text-[12px] font-medium text-black/45">{d.topBatterStat}</span>
+          </div>
+          <div className="h-px bg-black/[0.05]" />
+          <div className="flex items-center gap-2">
+            <span className="shrink-0 rounded-full bg-[#ddfef2] px-2 py-0.5 text-[10px] font-bold text-[#00ad8b]">
+              BOWL
+            </span>
+            <span className="text-[13px] font-bold text-[#0c0d10]">{d.topBowler}</span>
+            <span className="ml-auto text-[12px] font-medium text-black/45">{d.topBowlerStat}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Key moments */}
+      <div className="rounded-2xl bg-white p-4">
+        <span className="mb-3 block text-[10px] font-bold tracking-widest text-black/40 uppercase">
+          Key Moments
+        </span>
+        <div className="flex flex-col gap-3">
+          {d.moments.map((m, i) => (
+            <div key={i} className="flex items-start gap-3">
+              <span className="mt-0.5 shrink-0 rounded-full bg-[#f6f3ff] px-2 py-0.5 text-[10px] font-bold text-[#6d17ce]">
+                {m.over}
+              </span>
+              <span className="text-[12px] leading-snug font-medium text-black/55">{m.text}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -328,12 +536,12 @@ function LiveView({ format }: { format: Format }) {
             </tr>
           </thead>
           <tbody>
-            {BATTER_ROWS.live.map((b) => (
+            {BATTER_ROWS.live.map((b, i) => (
               <tr key={b.name} className="border-b border-black/[0.04] last:border-0">
                 <td className="px-4 py-2.5">
                   <div className="flex items-center gap-1.5">
                     <span className="text-[13px] font-bold text-[#0c0d10]">{b.name}</span>
-                    <span className="text-[10px] text-[#6d17ce]">*</span>
+                    {i === 0 && <span className="text-[10px] text-[#6d17ce]">*</span>}
                   </div>
                 </td>
                 <td className="px-2 py-2.5 text-right text-[14px] font-bold text-[#0c0d10]">
@@ -413,7 +621,7 @@ function LiveView({ format }: { format: Format }) {
         </table>
       </div>
 
-      {/* Recent overs bar chart */}
+      {/* Recent overs */}
       <div className="flex flex-col gap-3 rounded-2xl bg-white p-4">
         <span className="text-[10px] font-bold tracking-widest text-black/40 uppercase">
           Recent overs
@@ -559,7 +767,6 @@ function ScorecardView({
             })}
           </tbody>
         </table>
-        {/* Extras + Total */}
         <div className="flex items-center justify-between border-t border-black/[0.06] px-4 py-2.5">
           <span className="text-[12px] font-medium text-black/40">Extras</span>
           <span className="text-[12px] font-medium text-black/40">
@@ -708,7 +915,7 @@ export default function CricketScorecardPage() {
   const [scrolled, setScrolled] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("live");
   const [format, setFormat] = useState<Format>("T20");
-  const [matchState] = useState<MatchState>("live");
+  const [matchState, setMatchState] = useState<MatchState>("live");
   const [innings, setInnings] = useState<Innings>(1);
   const scrollRef = useRef(false);
 
@@ -719,6 +926,18 @@ export default function CricketScorecardPage() {
       setScrolled(past);
     }
   }, []);
+
+  const handleMatchStateChange = (s: MatchState) => {
+    setMatchState(s);
+    // Completed defaults to scorecard; live defaults to live tab
+    setActiveTab(s === "completed" ? "scorecard" : "live");
+  };
+
+  // Tab labels flip when completed: "🔴 Live" → "Summary"
+  const tabs = [
+    { id: "live" as Tab, label: matchState === "completed" ? "Summary" : "🔴 Live" },
+    { id: "scorecard" as Tab, label: "Scorecard" },
+  ];
 
   return (
     <div className="bg-canvas-grey text-fg relative flex h-full flex-col">
@@ -731,11 +950,15 @@ export default function CricketScorecardPage() {
           {/* Match meta */}
           <div className="flex items-center gap-2 pt-1">
             <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-black/40">
-              3rd T20I · India tour of Australia · Hyderabad
+              {format === "Test"
+                ? "2nd Test · India vs England · Edgbaston"
+                : format === "ODI"
+                  ? "3rd ODI · Sri Lanka tour of India · Mumbai"
+                  : "3rd T20I · India tour of Australia · Hyderabad"}
             </span>
           </div>
 
-          {/* Format switcher — demo only */}
+          {/* Format toggle */}
           <div className="flex gap-1.5">
             {(["T20", "ODI", "Test"] as Format[]).map((f) => (
               <button
@@ -750,39 +973,70 @@ export default function CricketScorecardPage() {
               </button>
             ))}
             <span className="ml-auto self-center text-[10px] font-medium text-black/25">
-              Format preview
+              Format
             </span>
+          </div>
+
+          {/* State toggle */}
+          <div className="flex gap-1.5">
+            {(["live", "completed"] as MatchState[]).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => handleMatchStateChange(s)}
+                className={`rounded-full px-3 py-1.5 text-[12px] font-bold transition-colors ${
+                  matchState === s ? "bg-[#0c0d10] text-white" : "bg-white text-black/40"
+                }`}
+              >
+                {s === "live" ? "🔴 Live" : "Completed"}
+              </button>
+            ))}
+            <span className="ml-auto self-center text-[10px] font-medium text-black/25">State</span>
           </div>
 
           {/* Score hero */}
           <ScoreHero format={format} matchState={matchState} />
 
-          {/* Live / Scorecard tabs */}
+          {/* Tab toggle */}
           <div className="flex gap-1 rounded-2xl bg-white p-1">
-            {(["live", "scorecard"] as Tab[]).map((t) => (
+            {tabs.map((t) => (
               <button
-                key={t}
+                key={t.id}
                 type="button"
-                onClick={() => setActiveTab(t)}
-                className={`flex-1 rounded-xl py-2 text-[13px] font-bold capitalize transition-colors ${
-                  activeTab === t ? "bg-[#0c0d10] text-white" : "text-black/40"
+                onClick={() => setActiveTab(t.id)}
+                className={`flex-1 rounded-xl py-2 text-[13px] font-bold transition-colors ${
+                  activeTab === t.id ? "bg-[#0c0d10] text-white" : "text-black/40"
                 }`}
               >
-                {t === "live" ? "🔴 Live" : "Scorecard"}
+                {t.label}
               </button>
             ))}
           </div>
 
           {/* Tab content */}
           {activeTab === "live" ? (
-            <LiveView format={format} />
+            matchState === "completed" ? (
+              <SummaryView format={format} />
+            ) : (
+              <LiveView format={format} />
+            )
           ) : (
             <ScorecardView format={format} innings={innings} onInningsChange={setInnings} />
           )}
         </div>
       </main>
 
-      <HubHeader title="IND vs AUS · T20I" backHref="/cricket" scrolled={scrolled} />
+      <HubHeader
+        title={
+          format === "Test"
+            ? "IND vs ENG · Test"
+            : format === "ODI"
+              ? "IND vs SL · ODI"
+              : "IND vs AUS · T20I"
+        }
+        backHref="/cricket"
+        scrolled={scrolled}
+      />
       <HubChatInput placeholder="Ask about this match…" />
     </div>
   );
