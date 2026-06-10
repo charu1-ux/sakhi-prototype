@@ -73,6 +73,13 @@ const verticalNews: Vertical = {
   gradientFrom: "from-vertical-news",
 };
 
+const verticalPersonalCompanion: Vertical = {
+  name: "Personal Companion",
+  slug: "personal-companion",
+  icon: "/assets/shell/ico-personal-companion.svg",
+  gradientFrom: "from-vertical-personal-companion",
+};
+
 const verticalsFeatured: Vertical[] = [
   verticalJobs,
   verticalHealth,
@@ -80,6 +87,7 @@ const verticalsFeatured: Vertical[] = [
   verticalCommerce,
   verticalFinance,
   verticalNews,
+  verticalPersonalCompanion,
 ];
 
 const verticalsComingSoon: Vertical[] = [
