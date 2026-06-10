@@ -968,7 +968,7 @@ function SummaryView({ format }: { format: Format }) {
   const d = SUMMARY[format];
   return (
     <div className="flex flex-col gap-3">
-      <div className="bg-surface rounded-2xl p-4">
+      <div className="rounded-2xl bg-white p-4">
         <span className="text-overline font-jio mb-3 block text-[rgba(12,13,16,0.38)]">
           Player of the Match
         </span>
@@ -984,7 +984,7 @@ function SummaryView({ format }: { format: Format }) {
         </div>
       </div>
 
-      <div className="bg-surface rounded-2xl p-4">
+      <div className="rounded-2xl bg-white p-4">
         <span className="text-overline font-jio mb-3 block text-[rgba(12,13,16,0.38)]">
           Top Performers
         </span>
@@ -1011,7 +1011,7 @@ function SummaryView({ format }: { format: Format }) {
         </div>
       </div>
 
-      <div className="bg-surface rounded-2xl p-4">
+      <div className="rounded-2xl bg-white p-4">
         <span className="text-overline font-jio mb-3 block text-[rgba(12,13,16,0.38)]">
           Key Moments
         </span>
@@ -1043,7 +1043,7 @@ const LIVE_BATTERS = [
 function LiveView() {
   return (
     <div className="flex flex-col gap-3">
-      <div className="bg-surface flex flex-col gap-3 rounded-2xl p-4">
+      <div className="flex flex-col gap-3 rounded-2xl bg-white p-4">
         <span className="text-overline font-jio text-[rgba(12,13,16,0.38)]">
           {LIVE_CURRENT_BOWLER.name} — Over {Math.floor(17.3) + 1}
         </span>
@@ -1054,7 +1054,7 @@ function LiveView() {
         </div>
       </div>
 
-      <div className="bg-surface overflow-hidden rounded-2xl">
+      <div className="overflow-hidden rounded-2xl bg-white">
         <div className="px-4 pt-3 pb-2">
           <span className="text-overline font-jio text-[rgba(12,13,16,0.38)]">Batting</span>
         </div>
@@ -1111,7 +1111,7 @@ function LiveView() {
         </table>
       </div>
 
-      <div className="bg-surface overflow-hidden rounded-2xl">
+      <div className="overflow-hidden rounded-2xl bg-white">
         <div className="px-4 pt-3 pb-2">
           <span className="text-overline font-jio text-[rgba(12,13,16,0.38)]">Bowling</span>
         </div>
@@ -1164,7 +1164,7 @@ function LiveView() {
         </table>
       </div>
 
-      <div className="bg-surface flex flex-col gap-3 rounded-2xl p-4">
+      <div className="flex flex-col gap-3 rounded-2xl bg-white p-4">
         <span className="text-overline font-jio text-[rgba(12,13,16,0.38)]">Recent overs</span>
         <div className="flex h-12 items-end gap-2">
           {RECENT_OVERS.map((o) => (
@@ -1195,7 +1195,7 @@ function InningsCard({ inn, isTest }: { inn: InningsData; isTest: boolean }) {
   return (
     <div className="flex flex-col gap-3">
       {/* Batting table */}
-      <div className="bg-surface overflow-hidden rounded-2xl">
+      <div className="overflow-hidden rounded-2xl bg-white">
         <div className="bg-surface-minimal flex items-center justify-between px-4 py-2.5">
           <span className="text-title-2xs font-jio text-[#0c0d10]">{inn.battingTitle}</span>
           <span className="text-label-s font-jio text-[rgba(12,13,16,0.55)]">{inn.total}</span>
@@ -1284,7 +1284,7 @@ function InningsCard({ inn, isTest }: { inn: InningsData; isTest: boolean }) {
       </div>
 
       {/* Bowling table */}
-      <div className="bg-surface overflow-hidden rounded-2xl">
+      <div className="overflow-hidden rounded-2xl bg-white">
         <div className="bg-surface-minimal px-4 py-2.5">
           <span className="text-title-2xs font-jio text-[#0c0d10]">{inn.bowlingTitle}</span>
         </div>
@@ -1362,7 +1362,7 @@ function InningsCard({ inn, isTest }: { inn: InningsData; isTest: boolean }) {
 
       {/* Fall of wickets */}
       {inn.fow.length > 0 && (
-        <div className="bg-surface rounded-2xl p-4">
+        <div className="rounded-2xl bg-white p-4">
           <span className="text-overline font-jio mb-2.5 block text-[rgba(12,13,16,0.38)]">
             Fall of Wickets
           </span>
@@ -1409,7 +1409,9 @@ function ScorecardView({
             type="button"
             onClick={() => onInningsChange(i)}
             className={`text-label-s font-jio focus-visible:ring-primary-60 shrink-0 rounded-full px-3 py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97] ${
-              innings === i ? "bg-primary-50 text-white" : "bg-surface text-[rgba(12,13,16,0.55)]"
+              innings === i
+                ? "bg-primary-50 text-white"
+                : "bg-surface-ghost text-[rgba(12,13,16,0.55)]"
             }`}
           >
             {inn.tabLabel}
@@ -1524,7 +1526,7 @@ export default function CricketScorecardPage() {
           <ScoreHero format={format} matchState={matchState} />
 
           {/* Tab toggle */}
-          <div className="bg-surface flex gap-1 rounded-2xl p-1">
+          <div className="bg-surface-ghost flex gap-1 rounded-2xl p-1">
             {tabs.map((t) => (
               <button
                 key={t.id}
