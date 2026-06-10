@@ -93,24 +93,27 @@ function BriefingCustomiser({
   config: BriefingConfig;
   onChange: (next: BriefingConfig) => void;
 }) {
+  const [open, setOpen] = useState(false);
+
   const isDirty =
     config.style !== DEFAULT_CONFIG.style ||
     config.length !== DEFAULT_CONFIG.length ||
     config.language !== DEFAULT_CONFIG.language ||
     !(config.topics.length === 1 && config.topics[0] === "All");
 
+  const summary = [config.style, config.topics.join(", "), config.length, config.language].join(
+    " · ",
+  );
+
   function setStyle(val: string) {
     onChange({ ...config, style: val });
   }
-
   function setLength(val: string) {
     onChange({ ...config, length: val });
   }
-
   function setLanguage(val: string) {
     onChange({ ...config, language: val });
   }
-
   function toggleTopic(val: string) {
     if (val === "All") {
       onChange({ ...config, topics: ["All"] });
@@ -122,60 +125,120 @@ function BriefingCustomiser({
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl bg-white p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <span className="text-[13px] font-bold text-[#0c0d10]">Customise briefing</span>
-        {isDirty && (
-          <button
-            type="button"
-            onClick={() => onChange({ ...DEFAULT_CONFIG })}
-            className="text-[11px] font-bold text-[rgba(12,13,16,0.4)] active:scale-95"
-          >
-            Reset
-          </button>
-        )}
-      </div>
-
-      {/* Pill rows */}
-      <PillRow label="Style" options={STYLE_OPTIONS} selected={config.style} onSelect={setStyle} />
-      <PillRow
-        label="Topics"
-        options={TOPIC_OPTIONS}
-        selected={config.topics}
-        multi
-        onSelect={toggleTopic}
-      />
-      <PillRow
-        label="Length"
-        options={LENGTH_OPTIONS}
-        selected={config.length}
-        onSelect={setLength}
-      />
-      <PillRow
-        label="Language"
-        options={LANGUAGE_OPTIONS}
-        selected={config.language}
-        onSelect={setLanguage}
-      />
-
-      {/* CTA — slides in when dirty */}
-      {isDirty && (
-        <button
-          type="button"
-          className="flex w-full items-center justify-center gap-2 rounded-full bg-[#6d17ce] py-3 text-[14px] font-bold text-white transition-all duration-200 active:scale-[0.97]"
-        >
-          Regenerate briefing
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <div className="flex flex-col overflow-hidden rounded-2xl bg-white">
+      {/* Always-visible header row — tap to expand/collapse */}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center gap-3 px-4 py-3.5 transition-opacity select-none active:opacity-70"
+      >
+        {/* Sliders icon */}
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#f6f3ff]">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path
-              d="M5 12H19M13 6L19 12L13 18"
-              stroke="white"
+              d="M4 6H20M4 12H14M4 18H9"
+              stroke="#6d17ce"
               strokeWidth="2.5"
               strokeLinecap="round"
-              strokeLinejoin="round"
             />
+            <circle cx="17" cy="12" r="2.5" fill="#6d17ce" />
+            <circle cx="12" cy="6" r="2.5" fill="#6d17ce" />
+            <circle cx="7" cy="18" r="2.5" fill="#6d17ce" />
           </svg>
-        </button>
+        </div>
+
+        <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
+          <span className="text-[13px] font-bold text-[#0c0d10]">Customise briefing</span>
+          <span className="truncate text-[11px] font-medium text-black/40">{summary}</span>
+        </div>
+
+        {/* Dirty dot */}
+        {isDirty && <div className="size-2 shrink-0 rounded-full bg-[#6d17ce]" />}
+
+        {/* Chevron */}
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 20 20"
+          fill="none"
+          aria-hidden="true"
+          className={`shrink-0 text-black/30 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        >
+          <path
+            d="M5 7.5L10 12.5L15 7.5"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+
+      {/* Expandable body */}
+      {open && (
+        <>
+          <div className="mx-4 h-px bg-black/[0.06]" />
+          <div className="flex flex-col gap-4 px-4 pt-4 pb-4">
+            <PillRow
+              label="Style"
+              options={STYLE_OPTIONS}
+              selected={config.style}
+              onSelect={setStyle}
+            />
+            <PillRow
+              label="Topics"
+              options={TOPIC_OPTIONS}
+              selected={config.topics}
+              multi
+              onSelect={toggleTopic}
+            />
+            <PillRow
+              label="Length"
+              options={LENGTH_OPTIONS}
+              selected={config.length}
+              onSelect={setLength}
+            />
+            <PillRow
+              label="Language"
+              options={LANGUAGE_OPTIONS}
+              selected={config.language}
+              onSelect={setLanguage}
+            />
+
+            {/* Actions row */}
+            <div className="flex items-center gap-2">
+              {isDirty && (
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...DEFAULT_CONFIG })}
+                  className="rounded-full border border-black/10 px-4 py-2.5 text-[13px] font-bold text-black/40 active:scale-95"
+                >
+                  Reset
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className={`flex flex-1 items-center justify-center gap-2 rounded-full py-2.5 text-[14px] font-bold transition-all duration-150 active:scale-[0.97] ${
+                  isDirty ? "bg-[#6d17ce] text-white" : "bg-[#eeeeef] text-[rgba(12,13,16,0.65)]"
+                }`}
+              >
+                {isDirty ? "Regenerate briefing" : "Done"}
+                {isDirty && (
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                      d="M5 12H19M13 6L19 12L13 18"
+                      stroke="white"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
