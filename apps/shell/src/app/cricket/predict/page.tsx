@@ -312,6 +312,208 @@ function PredictionCard({
   );
 }
 
+// ── Create prediction sheet ───────────────────────────────────────────────────
+
+// Simulated probability pool — AI "assigns" one of these on submit
+const PROB_POOL = [4, 6, 9, 12, 15, 18, 22, 28, 35, 42, 50, 58];
+
+const WILD_SUGGESTIONS = [
+  "Hardik hits a six in the next 3 balls",
+  "Rain delay before over 19",
+  "Next DRS overturned",
+  "Kohli scores 10+ off next over",
+  "Cummins concedes 15+ this over",
+  "India win by 5+ wickets",
+  "Maxwell drops another catch",
+  "Free hit this over",
+];
+
+type CreateSheetState = "input" | "analysing" | "ready";
+
+function CreatePredictionSheet({
+  onLock,
+  onClose,
+}: {
+  onLock: (prediction: Prediction) => void;
+  onClose: () => void;
+}) {
+  const [sheetState, setSheetState] = useState<CreateSheetState>("input");
+  const [text, setText] = useState("");
+  const [assigned, setAssigned] = useState<{ prob: number; mult: number } | null>(null);
+  const counterRef = useRef(Date.now());
+
+  const handleAnalyse = useCallback(() => {
+    if (text.trim().length < 5) return;
+    setSheetState("analysing");
+
+    setTimeout(() => {
+      const prob = PROB_POOL[Math.floor(Math.random() * PROB_POOL.length)];
+      const mult = Math.round((100 / prob) * 10) / 10;
+      setAssigned({ prob, mult });
+      setSheetState("ready");
+    }, 1600);
+  }, [text]);
+
+  const handleLock = useCallback(() => {
+    if (!assigned) return;
+    const id = `custom-${counterRef.current++}`;
+    onLock({
+      id,
+      category: "wild",
+      label: text.trim(),
+      description: "Your custom prediction",
+      probability: assigned.prob,
+      pointsMultiplier: assigned.mult,
+      status: "open",
+    });
+    onClose();
+  }, [assigned, text, onLock, onClose]);
+
+  const boldness = assigned ? getBoldness(assigned.prob) : null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative flex w-full max-w-md flex-col gap-4 rounded-t-3xl bg-white px-5 pt-5 pb-10">
+        <div className="mx-auto h-1 w-10 rounded-full bg-black/10" />
+        <div className="flex flex-col gap-0.5">
+          <p className="text-[16px] font-black text-[#0c0d10]">Create a prediction</p>
+          <p className="text-[13px] font-medium text-black/45">
+            Type anything — JBIQ will estimate the probability and set your multiplier.
+          </p>
+        </div>
+
+        {/* Input */}
+        {sheetState === "input" && (
+          <>
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="e.g. Hardik hits a six in the next 3 balls…"
+              className="bg-surface-ghost w-full resize-none rounded-2xl px-4 py-3 text-[14px] font-medium text-[#0c0d10] placeholder:text-black/30 focus:ring-2 focus:ring-[#6d17ce] focus:outline-none"
+              rows={3}
+              autoFocus
+            />
+
+            {/* Suggestion chips */}
+            <div className="flex flex-col gap-2">
+              <span className="text-[11px] font-bold tracking-wide text-black/35 uppercase">
+                Try one of these
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {WILD_SUGGESTIONS.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setText(s)}
+                    className="bg-surface-ghost rounded-full px-3 py-1.5 text-[11px] font-medium text-[#0c0d10] transition-colors active:bg-[#f6f3ff] active:text-[#6d17ce]"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              disabled={text.trim().length < 5}
+              onClick={handleAnalyse}
+              className="mt-1 w-full rounded-full bg-[#6d17ce] py-4 text-[15px] font-bold text-white transition-opacity active:opacity-80 disabled:opacity-30"
+            >
+              Estimate probability →
+            </button>
+          </>
+        )}
+
+        {/* Analysing */}
+        {sheetState === "analysing" && (
+          <div className="flex flex-col items-center gap-4 py-6">
+            <div className="flex size-14 items-center justify-center rounded-full bg-[#f6f3ff]">
+              <div className="flex items-center gap-1">
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="size-2 rounded-full bg-[#6d17ce]"
+                    style={{ animation: `dot-bounce 0.8s ease-in-out ${i * 160}ms infinite` }}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <p className="text-[14px] font-bold text-[#0c0d10]">JBIQ is analysing…</p>
+              <p className="max-w-[240px] text-center text-[12px] font-medium text-black/40">
+                Cross-checking with match conditions, player form, and historical data
+              </p>
+            </div>
+            <p className="bg-surface-ghost max-w-[280px] rounded-2xl px-4 py-2.5 text-center text-[13px] font-medium text-black/55 italic">
+              &ldquo;{text}&rdquo;
+            </p>
+          </div>
+        )}
+
+        {/* Ready — show result */}
+        {sheetState === "ready" && assigned && boldness && (
+          <>
+            {/* Prediction echo */}
+            <div className="bg-surface-ghost rounded-2xl px-4 py-3">
+              <p className="text-[13px] leading-snug font-medium text-black/60 italic">
+                &ldquo;{text}&rdquo;
+              </p>
+            </div>
+
+            {/* Probability gauge */}
+            <div className="flex flex-col gap-2 rounded-2xl bg-[#f5f5f5] p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[12px] font-medium text-black/50">AI estimate</span>
+                <span className={`text-[13px] font-bold ${boldness.color}`}>{boldness.label}</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-black/10">
+                <div
+                  className={`h-full rounded-full transition-all ${getProbabilityBarColor(assigned.prob)}`}
+                  style={{ width: `${assigned.prob}%` }}
+                />
+              </div>
+              <p className="text-[13px] font-medium text-black/55">
+                {assigned.prob}% chance based on current match conditions
+              </p>
+            </div>
+
+            {/* Points preview */}
+            <div className="flex items-center justify-between rounded-2xl bg-[#f6f3ff] px-4 py-3">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[11px] font-bold tracking-wide text-[#6d17ce] uppercase">
+                  Points if correct
+                </span>
+                <span className="text-[28px] leading-none font-black text-[#6d17ce]">
+                  +{Math.round(100 * assigned.mult)}
+                </span>
+              </div>
+              <div className="flex flex-col items-end gap-0.5">
+                <span className="text-[11px] font-medium text-black/40">Multiplier</span>
+                <span className="text-[22px] font-black text-[#0c0d10]">{assigned.mult}×</span>
+              </div>
+            </div>
+
+            <button
+              onClick={handleLock}
+              className="w-full rounded-full bg-[#6d17ce] py-4 text-[15px] font-bold text-white transition-opacity active:opacity-80"
+            >
+              Lock it in →
+            </button>
+            <button
+              onClick={() => {
+                setSheetState("input");
+                setAssigned(null);
+              }}
+              className="w-full text-center text-[13px] font-medium text-black/40 active:text-black/60"
+            >
+              Edit prediction
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Active bet card ───────────────────────────────────────────────────────────
 
 function ActiveBetCard({ bet }: { bet: ActiveBet }) {
@@ -336,6 +538,8 @@ function ActiveBetCard({ bet }: { bet: ActiveBet }) {
 export default function PredictPage() {
   const [activeCategory, setActiveCategory] = useState<PredictCategory>("this-ball");
   const [confirming, setConfirming] = useState<Prediction | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [customPredictions, setCustomPredictions] = useState<Prediction[]>([]);
   const [activeBets, setActiveBets] = useState<ActiveBet[]>([]);
   const [lockedIds, setLockedIds] = useState<Set<string>>(new Set());
   const [totalPoints, setTotalPoints] = useState(340);
@@ -369,7 +573,27 @@ export default function PredictPage() {
     setConfirming(null);
   }, [confirming]);
 
-  const filtered = PREDICTIONS.filter((p) => p.category === activeCategory);
+  // When user locks directly from the Create sheet
+  const handleCreateLock = useCallback((prediction: Prediction) => {
+    const now = new Date();
+    const timeStr = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
+    setCustomPredictions((prev) => [prediction, ...prev]);
+    setActiveBets((prev) => [
+      {
+        predictionId: prediction.id,
+        label: prediction.label,
+        probability: prediction.probability,
+        pointsMultiplier: prediction.pointsMultiplier,
+        lockedAt: timeStr,
+      },
+      ...prev,
+    ]);
+    setLockedIds((prev) => new Set([...prev, prediction.id]));
+  }, []);
+
+  const basePredictions = PREDICTIONS.filter((p) => p.category === activeCategory);
+  const userWild = activeCategory === "wild" ? customPredictions : [];
+  const filtered = [...userWild, ...basePredictions];
 
   return (
     <div className="bg-canvas-grey text-fg relative flex h-full flex-col">
@@ -437,6 +661,32 @@ export default function PredictPage() {
             <span className="text-[10px] font-bold tracking-widest text-black/40 uppercase">
               Pick your prediction
             </span>
+
+            {/* Wild card — create your own */}
+            {activeCategory === "wild" && (
+              <button
+                onClick={() => setCreateOpen(true)}
+                className="flex items-center gap-3 rounded-2xl border-2 border-dashed border-[#6d17ce]/30 px-4 py-3.5 text-left transition-all active:border-[#6d17ce] active:bg-[#f6f3ff]"
+              >
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#f6f3ff]">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M12 5v14M5 12h14"
+                      stroke="#6d17ce"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <p className="text-[14px] font-bold text-[#6d17ce]">Create your own</p>
+                  <p className="text-[11px] font-medium text-black/40">
+                    Predict anything — JBIQ sets the probability
+                  </p>
+                </div>
+              </button>
+            )}
+
             {filtered.map((p) => (
               <PredictionCard
                 key={p.id}
@@ -480,6 +730,11 @@ export default function PredictPage() {
           onConfirm={handleConfirm}
           onCancel={() => setConfirming(null)}
         />
+      )}
+
+      {/* Create prediction sheet */}
+      {createOpen && (
+        <CreatePredictionSheet onLock={handleCreateLock} onClose={() => setCreateOpen(false)} />
       )}
 
       <HubHeader title="Predict Anything" backHref="/cricket" scrolled={scrolled} />
