@@ -35,6 +35,18 @@ const EXPERIENCE_CARDS: ExperienceCard[] = [
     iconBg: "bg-[#f6f3ff]",
     icon: "🇮🇳",
   },
+  {
+    title: "Fact Check",
+    subtitle: "Verify claims · Separate fact from fiction",
+    iconBg: "bg-[#e6f7e6]",
+    icon: "🔍",
+  },
+  {
+    title: "Market Pulse",
+    subtitle: "Markets · Stocks · Economy at a glance",
+    iconBg: "bg-[#ddfef2]",
+    icon: "📈",
+  },
 ];
 
 export default function NewsPage() {
