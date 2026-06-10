@@ -410,6 +410,35 @@ export default function CricketPage() {
                   </svg>
                 </div>
               </Link>
+
+              <Link href="/jokes/cricket-banter" className="block">
+                <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3.5 transition-opacity active:opacity-70">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#fff7ed]">
+                    <span className="text-lg leading-none">🎙️</span>
+                  </div>
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <p className="text-[14px] font-bold text-[#0c0d10]">Cricket Banter</p>
+                    <p className="text-[11px] font-medium text-black/40">
+                      Wicket falls → 20s → shareable audio banter clip.
+                    </p>
+                  </div>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className="shrink-0 text-black/20"
+                  >
+                    <path
+                      d="M9 18l6-6-6-6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+              </Link>
             </div>
           </section>
         </div>

@@ -73,6 +73,20 @@ const verticalNews: Vertical = {
   gradientFrom: "from-vertical-news",
 };
 
+const verticalCricket: Vertical = {
+  name: "Cricket",
+  slug: "cricket",
+  icon: "/assets/shell/ico-cricket.svg",
+  gradientFrom: "from-vertical-cricket",
+};
+
+const verticalJokes: Vertical = {
+  name: "Jokes",
+  slug: "jokes",
+  icon: "/assets/shell/ico-jokes.svg",
+  gradientFrom: "from-vertical-jokes",
+};
+
 const verticalsFeatured: Vertical[] = [
   verticalJobs,
   verticalHealth,
@@ -80,15 +94,11 @@ const verticalsFeatured: Vertical[] = [
   verticalCommerce,
   verticalFinance,
   verticalNews,
+  verticalCricket,
+  verticalJokes,
 ];
 
 const verticalsComingSoon: Vertical[] = [
-  {
-    name: "Cricket",
-    slug: "cricket",
-    icon: "/assets/shell/ico-cricket.svg",
-    gradientFrom: "from-vertical-cricket",
-  },
   {
     name: "Devotion",
     slug: "devotion",
