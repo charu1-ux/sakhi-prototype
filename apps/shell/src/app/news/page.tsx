@@ -25,6 +25,7 @@ const EXPERIENCE_CARDS: ExperienceCard[] = [
   {
     title: "Breaking News",
     subtitle: "Live updates · As it happens",
+    href: "/news/breaking",
     iconBg: "bg-[#fde8ea]",
     icon: "⚡",
     badge: "Live",
@@ -32,18 +33,21 @@ const EXPERIENCE_CARDS: ExperienceCard[] = [
   {
     title: "Pulse of Nation",
     subtitle: "What India is talking about right now",
+    href: "/news/pulse",
     iconBg: "bg-[#f6f3ff]",
     icon: "🇮🇳",
   },
   {
     title: "Fact Check",
     subtitle: "Verify claims · Separate fact from fiction",
+    href: "/news/fact-check",
     iconBg: "bg-[#e6f7e6]",
     icon: "🔍",
   },
   {
     title: "Market Pulse",
     subtitle: "Markets · Stocks · Economy at a glance",
+    href: "/news/market-pulse",
     iconBg: "bg-[#ddfef2]",
     icon: "📈",
   },
