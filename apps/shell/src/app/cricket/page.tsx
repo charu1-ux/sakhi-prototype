@@ -46,7 +46,7 @@ const MATCHES: Match[] = [
     team2Overs: "20.0",
     statusText: "IND need 22 off 15 balls",
     venue: "Rajiv Gandhi Int'l Stadium, Hyderabad",
-    href: "/cricket/design-prototype",
+    href: "/cricket/scorecard",
   },
   {
     id: "2",
@@ -63,7 +63,7 @@ const MATCHES: Match[] = [
     team2Overs: "Innings 1",
     statusText: "IND lead by 53 runs · Day 2, Session 2",
     venue: "Edgbaston, Birmingham",
-    href: "/cricket/design-prototype",
+    href: "/cricket/scorecard",
   },
   {
     id: "3",
@@ -104,7 +104,7 @@ const MATCHES: Match[] = [
     team2Overs: "20.0",
     statusText: "India won by 6 runs",
     venue: "SCG, Sydney",
-    href: "/cricket/design-prototype",
+    href: "/cricket/scorecard",
   },
   {
     id: "6",
@@ -121,7 +121,7 @@ const MATCHES: Match[] = [
     team2Overs: "44.2",
     statusText: "India won by 7 wickets",
     venue: "Wankhede Stadium, Mumbai",
-    href: "/cricket/design-prototype",
+    href: "/cricket/scorecard",
   },
 ];
 

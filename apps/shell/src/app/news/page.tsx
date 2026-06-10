@@ -18,7 +18,7 @@ const EXPERIENCE_CARDS: ExperienceCard[] = [
   {
     title: "Daily Briefing",
     subtitle: "Your morning digest · Top stories curated for you",
-    href: "/news/design-prototype",
+    href: "/news/briefing",
     iconBg: "bg-[#ecf7ff]",
     icon: "📰",
   },
