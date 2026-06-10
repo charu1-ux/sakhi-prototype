@@ -334,8 +334,7 @@ function ListenButton({ isPlaying, onToggle }: { isPlaying: boolean; onToggle: (
               height: `${Math.round(h * 20)}px`,
               opacity: isPlaying ? 1 : 0.45,
               transition: "height 0.3s ease",
-              animation: isPlaying ? `wave-bar 0.8s ease-in-out infinite` : "none",
-              animationDelay: `${i * 80}ms`,
+              animation: isPlaying ? `wave-bar 0.8s ease-in-out ${i * 80}ms infinite` : "none",
             }}
           />
         ))}
