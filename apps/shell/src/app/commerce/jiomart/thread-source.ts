@@ -31,7 +31,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 /* edge-to-edge */
 .phone{width:100%;height:100dvh;background:var(--surface);overflow:hidden;position:relative;display:flex;flex-direction:column}
 
-/* header — Jobs standard: circular icon buttons + 18px bold title */
+/* header — Jobs standard */
 .hdr{display:flex;align-items:center;gap:12px;padding:14px 16px 12px;background:var(--surface);
   border-bottom:1px solid var(--stroke-minimal);flex-shrink:0;z-index:5}
 .hdr__icon{width:40px;height:40px;border-radius:9999px;display:flex;align-items:center;justify-content:center;
@@ -56,16 +56,11 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .feedback button{display:flex;transition:color .15s,transform .15s}
 .feedback button:hover{color:var(--primary-50);transform:scale(1.1)}
 
-/* ── section: a free-standing header (no border box) + the card below it ── */
-.sec{align-self:stretch;display:flex;flex-direction:column;gap:10px}
-.sec-head{display:flex;align-items:center;gap:8px;padding:0 2px}
-.sec-head-ic{color:var(--text-high);display:flex}            /* icon = adjacent text colour */
-.sec-head-title{font-size:18px;font-weight:700;flex:1}
+/* widget = white bordered card, NO shadow; title sits inside with a separator below */
+.widget{align-self:stretch;background:var(--surface);border:1px solid var(--stroke-minimal);border-radius:16px;overflow:hidden}
+.widget__title{display:flex;align-items:center;gap:8px;padding:14px 16px;font-size:16px;font-weight:700;
+  border-bottom:1px solid var(--stroke-minimal)}
 .count-badge{background:var(--primary-50);color:#fff;font-size:13px;font-weight:700;border-radius:9999px;padding:5px 13px;line-height:1}
-
-/* widget = the white bordered card holding only content */
-.widget{align-self:stretch;background:var(--surface);border:1px solid var(--stroke-minimal);
-  border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.04)}
 
 /* ── search: plain left-aligned categories (no card, no icon) ── */
 .search-cat{align-self:stretch;display:flex;flex-direction:column;gap:2px}
@@ -94,12 +89,12 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   font-size:13px;font-weight:700;display:inline-flex;align-items:center;transition:transform .2s cubic-bezier(.2,0,0,1)}
 .chip:hover{transform:scale(1.02)}.chip:active{transform:scale(.97)}
 
-/* stepper (control) */
+/* stepper (control) — no shadow */
 .stepper{display:inline-flex;align-items:center;background:var(--surface-minimal);border-radius:9999px;padding:4px}
 .stepper__btn{width:30px;height:30px;border-radius:9999px;display:flex;align-items:center;justify-content:center;
   transition:transform .2s cubic-bezier(.2,0,0,1),opacity .15s;flex-shrink:0}
 .stepper__btn:hover{transform:scale(1.06)}.stepper__btn:active{transform:scale(.92)}
-.stepper__btn.minus{background:var(--surface);color:var(--text-high);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.stepper__btn.minus{background:var(--surface);color:var(--text-high)}
 .stepper__btn.plus{background:var(--primary-50);color:#fff}
 .stepper__btn:disabled{opacity:.4;pointer-events:none}
 .stepper__count{min-width:30px;text-align:center;font-size:14px;font-weight:700}
@@ -129,14 +124,14 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .grand{display:flex;align-items:center;justify-content:space-between}
 .grand__label{font-size:16px;font-weight:700}
 .grand__sub{font-size:12px;font-weight:500;color:var(--text-low);margin-top:2px}
-.grand__val{font-size:18px;font-weight:700;color:var(--primary-50)}   /* toned down: was 24px/900 */
+.grand__val{font-size:18px;font-weight:700;color:var(--primary-50)}
 .savings{display:flex;align-items:center;gap:8px;background:var(--success-bg);border-radius:9999px;padding:10px 14px;margin-top:14px}
 .savings__ic{color:var(--success);display:flex;flex-shrink:0}
 .savings__txt{font-size:13px;font-weight:700;color:var(--success)}
 
 /* COD */
 .cod{display:flex;align-items:center;gap:10px;padding:14px 16px;border-top:1px solid var(--stroke-minimal);font-size:15px;font-weight:700}
-.cod svg{color:var(--text-high)}                              /* icon = text colour */
+.cod svg{color:var(--text-high)}
 
 /* actions */
 .actions{padding:16px}
@@ -146,9 +141,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .btn--primary{background:var(--primary-50);color:#fff}
 .btn--outline{background:var(--surface);color:var(--primary-50);border:1px solid var(--primary-50)}
 
-/* delivering-to (checkout) */
-.deliver{display:flex;gap:10px;padding:14px 16px;border-bottom:1px solid var(--stroke-minimal)}
-.deliver__home{color:var(--text-high);display:flex;align-items:center;flex-shrink:0;padding-top:2px}
+/* delivering-to (no leading icon; text left-aligned) */
+.deliver{padding:14px 16px;border-bottom:1px solid var(--stroke-minimal)}
 .deliver__cap{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text-low)}
 .deliver__name{font-size:15px;font-weight:700;margin-top:3px;display:flex;align-items:center;gap:8px}
 .deliver__addr{font-size:13px;font-weight:500;color:var(--text-low);line-height:1.4;margin-top:3px}
@@ -163,13 +157,12 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .addr-row__name{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .addr-row__addr{font-size:12px;font-weight:500;color:var(--text-low);line-height:1.4;margin-top:3px}
 .addr-row__chev{color:var(--text-disabled);flex-shrink:0}
-/* add-new-address: small grey rounded pill, left-aligned */
 .addr-add{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;margin:12px 16px 16px;padding:9px 16px;
   border-radius:9999px;background:var(--surface-ghost);color:var(--text-high);font-size:13px;font-weight:700;
   transition:transform .2s cubic-bezier(.2,0,0,1)}
 .addr-add:hover{transform:scale(1.02)}.addr-add:active{transform:scale(.97)}
 
-/* add-new-address forms (inputs keep their subtle fill — the documented exception) */
+/* add-new-address forms */
 .form{padding:16px;display:flex;flex-direction:column;gap:14px}
 .loc-btn{height:48px;border-radius:9999px;border:1px solid var(--primary-50);color:var(--primary-50);background:var(--surface);
   display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:700;transition:transform .2s cubic-bezier(.2,0,0,1)}
@@ -221,7 +214,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 <body>
 <div class="phone">
 
-  <!-- HEADER (Jobs standard; back navigates the app home) -->
+  <!-- HEADER -->
   <header class="hdr">
     <button class="hdr__icon" aria-label="Back" onclick="(window.top||window).location.href='/'"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
     <h1 class="hdr__title">Purchasing groceries</h1>
@@ -327,55 +320,49 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     <div class="asst">Added both to your JioMart cart. Here it is.</div>
 
     <!-- CART -->
-    <div class="sec">
-      <div class="sec-head">
-        <span class="sec-head-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>
-        <span class="sec-head-title">Your Cart</span>
-        <span class="count-badge" id="countBadge">2 items</span>
-      </div>
-      <div class="widget">
-        <div class="items">
-          <div class="item" data-item="apple">
-            <div class="item__img"><svg width="40" height="40" viewBox="0 0 48 48"><circle cx="18" cy="29" r="11" fill="#e0432c"/><circle cx="30" cy="29" r="11" fill="#e85a35"/><rect x="23" y="11" width="3" height="9" rx="1.5" fill="#7a4a1a"/><path d="M26 15 q6 -4 10 0 q-5 3 -10 0Z" fill="#2e9e4f"/></svg></div>
-            <div class="item__body">
-              <div class="item__top">
-                <div><div class="item__name">Apple Royal Gala 4 pcs</div><div class="item__sub">500&ndash;700 g &middot; <span id="appleQtyLabel">Qty 1</span></div></div>
-                <div class="item__price" id="applePrice">&#8377;220</div>
-              </div>
-              <div class="item__controls">
-                <div class="stepper">
-                  <button class="stepper__btn minus" id="appleMinus" aria-label="Decrease"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
-                  <span class="stepper__count" id="appleCount">1</span>
-                  <button class="stepper__btn plus" id="applePlus" aria-label="Increase"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
-                </div>
-                <button class="item__remove" id="appleRemove" aria-label="Remove"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-              </div>
+    <div class="widget">
+      <div class="widget__title">Your Cart<span class="count-badge" id="countBadge" style="margin-left:auto">2 items</span></div>
+      <div class="items">
+        <div class="item" data-item="apple">
+          <div class="item__img"><svg width="40" height="40" viewBox="0 0 48 48"><circle cx="18" cy="29" r="11" fill="#e0432c"/><circle cx="30" cy="29" r="11" fill="#e85a35"/><rect x="23" y="11" width="3" height="9" rx="1.5" fill="#7a4a1a"/><path d="M26 15 q6 -4 10 0 q-5 3 -10 0Z" fill="#2e9e4f"/></svg></div>
+          <div class="item__body">
+            <div class="item__top">
+              <div><div class="item__name">Apple Royal Gala 4 pcs</div><div class="item__sub">500&ndash;700 g &middot; <span id="appleQtyLabel">Qty 1</span></div></div>
+              <div class="item__price" id="applePrice">&#8377;220</div>
             </div>
-          </div>
-          <div class="item">
-            <div class="item__img"><svg width="38" height="46" viewBox="0 0 40 50"><rect x="7" y="6" width="26" height="40" rx="3" fill="#e9d8a6"/><rect x="7" y="20" width="26" height="14" fill="#fff"/><text x="20" y="30" font-size="6" font-weight="700" fill="#8a6d1a" text-anchor="middle">GHEE</text></svg></div>
-            <div class="item__body">
-              <div class="item__top"><div><div class="item__name">Milkfood Rich Desi Ghee 900 ml</div><div class="item__sub">900 ml &middot; Qty 1</div></div><div class="item__price">&#8377;559</div></div>
-              <div class="item__controls">
-                <div class="stepper">
-                  <button class="stepper__btn minus" aria-label="Decrease"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
-                  <span class="stepper__count">1</span>
-                  <button class="stepper__btn plus" aria-label="Increase"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
-                </div>
-                <button class="item__remove" aria-label="Remove"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            <div class="item__controls">
+              <div class="stepper">
+                <button class="stepper__btn minus" id="appleMinus" aria-label="Decrease"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                <span class="stepper__count" id="appleCount">1</span>
+                <button class="stepper__btn plus" id="applePlus" aria-label="Increase"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
               </div>
+              <button class="item__remove" id="appleRemove" aria-label="Remove"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
             </div>
           </div>
         </div>
-        <div class="totals">
-          <div class="totals__row"><span class="totals__label">Bag total <span id="bagCount">(2 items)</span></span><span class="totals__val" id="bagTotal">&#8377;779</span></div>
-          <div class="totals__row"><span class="totals__label">Delivery</span><span class="totals__val free">FREE</span></div>
-          <div class="totals__divider"></div>
-          <div class="grand"><div><div class="grand__label">Total</div><div class="grand__sub" id="grandCount">2 items</div></div><div class="grand__val" id="grandTotal">&#8377;779</div></div>
-          <div class="savings"><span class="savings__ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="savings__txt" id="savingsTxt">You saved &#8377;111 on this order (MRP &#8377;890)</span></div>
+        <div class="item">
+          <div class="item__img"><svg width="38" height="46" viewBox="0 0 40 50"><rect x="7" y="6" width="26" height="40" rx="3" fill="#e9d8a6"/><rect x="7" y="20" width="26" height="14" fill="#fff"/><text x="20" y="30" font-size="6" font-weight="700" fill="#8a6d1a" text-anchor="middle">GHEE</text></svg></div>
+          <div class="item__body">
+            <div class="item__top"><div><div class="item__name">Milkfood Rich Desi Ghee 900 ml</div><div class="item__sub">900 ml &middot; Qty 1</div></div><div class="item__price">&#8377;559</div></div>
+            <div class="item__controls">
+              <div class="stepper">
+                <button class="stepper__btn minus" aria-label="Decrease"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                <span class="stepper__count">1</span>
+                <button class="stepper__btn plus" aria-label="Increase"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+              </div>
+              <button class="item__remove" aria-label="Remove"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </div>
+          </div>
         </div>
-        <div class="actions"><button class="btn btn--primary">Checkout</button></div>
       </div>
+      <div class="totals">
+        <div class="totals__row"><span class="totals__label">Bag total <span id="bagCount">(2 items)</span></span><span class="totals__val" id="bagTotal">&#8377;779</span></div>
+        <div class="totals__row"><span class="totals__label">Delivery</span><span class="totals__val free">FREE</span></div>
+        <div class="totals__divider"></div>
+        <div class="grand"><div><div class="grand__label">Total</div><div class="grand__sub" id="grandCount">2 items</div></div><div class="grand__val" id="grandTotal">&#8377;779</div></div>
+        <div class="savings"><span class="savings__ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="savings__txt" id="savingsTxt">You saved &#8377;111 on this order (MRP &#8377;890)</span></div>
+      </div>
+      <div class="actions"><button class="btn btn--primary">Checkout</button></div>
     </div>
 
     <!-- 6 -->
@@ -397,28 +384,21 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     <div class="asst">Here are your saved JioMart addresses. Tap one to make it the delivery address.</div>
 
     <!-- SAVED ADDRESSES -->
-    <div class="sec">
-      <div class="sec-head">
-        <span class="sec-head-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
-        <span class="sec-head-title">Saved addresses</span>
+    <div class="widget">
+      <div class="widget__title">Saved addresses</div>
+      <div class="addr-row">
+        <div class="addr-row__body"><div class="addr-row__name">GOKUL KUMAR <span class="tag">HOME</span></div><div class="addr-row__addr">37, Cunningham Rd, near Fortis Hospital, Vasanth Nagar, Bengaluru, Karnataka &middot; 560001</div></div>
+        <span class="addr-row__chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
       </div>
-      <div class="widget">
-        <div>
-          <div class="addr-row">
-            <div class="addr-row__body"><div class="addr-row__name">GOKUL KUMAR <span class="tag">HOME</span></div><div class="addr-row__addr">37, Cunningham Rd, near Fortis Hospital, Vasanth Nagar, Bengaluru, Karnataka &middot; 560001</div></div>
-            <span class="addr-row__chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-          </div>
-          <div class="addr-row">
-            <div class="addr-row__body"><div class="addr-row__name">GOKUL KUMAR <span class="tag">HOME</span> <span class="tag tag--default">DEFAULT</span></div><div class="addr-row__addr">188, 2nd floor, Sector 27, Gurugram, Haryana &middot; 122009</div></div>
-            <span class="addr-row__chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-          </div>
-          <div class="addr-row">
-            <div class="addr-row__body"><div class="addr-row__name">GOKUL KUMAR <span class="tag tag--test">TEST</span></div><div class="addr-row__addr">F932J78, Harris Ganj, Mirpur, Kanpur, Uttar Pradesh &middot; 208004</div></div>
-            <span class="addr-row__chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-          </div>
-          <button class="addr-add"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add new address</button>
-        </div>
+      <div class="addr-row">
+        <div class="addr-row__body"><div class="addr-row__name">GOKUL KUMAR <span class="tag">HOME</span> <span class="tag tag--default">DEFAULT</span></div><div class="addr-row__addr">188, 2nd floor, Sector 27, Gurugram, Haryana &middot; 122009</div></div>
+        <span class="addr-row__chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
       </div>
+      <div class="addr-row">
+        <div class="addr-row__body"><div class="addr-row__name">GOKUL KUMAR <span class="tag tag--test">TEST</span></div><div class="addr-row__addr">F932J78, Harris Ganj, Mirpur, Kanpur, Uttar Pradesh &middot; 208004</div></div>
+        <span class="addr-row__chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </div>
+      <button class="addr-add"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add new address</button>
     </div>
 
     <!-- 10 -->
@@ -443,16 +423,11 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     <div class="asst">Sure &mdash; share your location and I&rsquo;ll capture the delivery address.</div>
 
     <!-- NEW DELIVERY ADDRESS — location only -->
-    <div class="sec">
-      <div class="sec-head">
-        <span class="sec-head-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
-        <span class="sec-head-title">New delivery address</span>
-      </div>
-      <div class="widget">
-        <div class="form">
-          <button class="loc-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Use my current location</button>
-          <p class="loc-help">We use your location to give you accurate delivery ETAs and stock.</p>
-        </div>
+    <div class="widget">
+      <div class="widget__title">New delivery address</div>
+      <div class="form">
+        <button class="loc-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Use my current location</button>
+        <p class="loc-help">We use your location to give you accurate delivery ETAs and stock.</p>
       </div>
     </div>
 
@@ -462,27 +437,22 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     <div class="asst">Got your location. Add a few details and I&rsquo;ll save it.</div>
 
     <!-- CAPTURED-LOCATION FORM -->
-    <div class="sec">
-      <div class="sec-head">
-        <span class="sec-head-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
-        <span class="sec-head-title">New delivery address</span>
-      </div>
-      <div class="widget">
-        <div class="form">
-          <button class="loc-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Update location</button>
-          <div class="loc-captured"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Location captured (&plusmn;19 m)</div>
-          <div class="field"><label>Name</label><input placeholder="Recipient name" /></div>
-          <div class="field"><label>Phone</label><input placeholder="10-digit mobile" inputmode="numeric" /></div>
-          <div class="field"><label>House / Flat / Building</label><input placeholder="e.g. 801, Sai Ganga" /></div>
-          <div class="field"><label>Area</label><input placeholder="e.g. Sector 5" /></div>
-          <div class="field"><label>Landmark</label><input placeholder="Nearby landmark" /></div>
-          <div class="field-row">
-            <div class="field"><label>Pincode</label><input placeholder="6 digits" inputmode="numeric" /></div>
-            <div class="field"><label>City</label><input placeholder="City" /></div>
-          </div>
-          <div class="field"><label>State</label><input placeholder="State" /></div>
-          <button class="btn btn--primary" style="margin-top:4px">Save &amp; use this address</button>
+    <div class="widget">
+      <div class="widget__title">New delivery address</div>
+      <div class="form">
+        <button class="loc-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Update location</button>
+        <div class="loc-captured"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Location captured (&plusmn;19 m)</div>
+        <div class="field"><label>Name</label><input placeholder="Recipient name" /></div>
+        <div class="field"><label>Phone</label><input placeholder="10-digit mobile" inputmode="numeric" /></div>
+        <div class="field"><label>House / Flat / Building</label><input placeholder="e.g. 801, Sai Ganga" /></div>
+        <div class="field"><label>Area</label><input placeholder="e.g. Sector 5" /></div>
+        <div class="field"><label>Landmark</label><input placeholder="Nearby landmark" /></div>
+        <div class="field-row">
+          <div class="field"><label>Pincode</label><input placeholder="6 digits" inputmode="numeric" /></div>
+          <div class="field"><label>City</label><input placeholder="City" /></div>
         </div>
+        <div class="field"><label>State</label><input placeholder="State" /></div>
+        <button class="btn btn--primary" style="margin-top:4px">Save &amp; use this address</button>
       </div>
     </div>
 
@@ -492,40 +462,32 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     <div class="asst">Saved and set as your delivery address. Opening your JioMart checkout.</div>
 
     <!-- CONFIRM YOUR ORDER -->
-    <div class="sec">
-      <div class="sec-head">
-        <span class="sec-head-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
-        <span class="sec-head-title">Confirm your order</span>
+    <div class="widget">
+      <div class="widget__title">Confirm your order</div>
+      <div class="deliver">
+        <div class="deliver__cap">Delivering to</div>
+        <div class="deliver__name">GOKUL KUMAR <span class="tag">HOME</span></div>
+        <div class="deliver__addr">801, Sai Ganga, Sector 5, Indiranagar, Bengaluru, Karnataka 560038</div>
       </div>
-      <div class="widget">
-        <div class="deliver">
-          <span class="deliver__home"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
-          <div>
-            <div class="deliver__cap">Delivering to</div>
-            <div class="deliver__name">GOKUL KUMAR <span class="tag">HOME</span></div>
-            <div class="deliver__addr">801, Sai Ganga, Sector 5, Indiranagar, Bengaluru, Karnataka 560038</div>
-          </div>
+      <div class="items">
+        <div class="item" style="border-bottom:1px solid var(--stroke-minimal)">
+          <div class="item__img"><svg width="40" height="40" viewBox="0 0 48 48"><circle cx="18" cy="29" r="11" fill="#e0432c"/><circle cx="30" cy="29" r="11" fill="#e85a35"/><rect x="23" y="11" width="3" height="9" rx="1.5" fill="#7a4a1a"/><path d="M26 15 q6 -4 10 0 q-5 3 -10 0Z" fill="#2e9e4f"/></svg></div>
+          <div class="item__body"><div class="item__top"><div><div class="item__name">Apple Royal Gala 4 pcs</div><div class="item__sub">500&ndash;700 g &middot; Qty 1</div></div><div class="item__price">&#8377;220</div></div></div>
         </div>
-        <div class="items">
-          <div class="item" style="border-bottom:1px solid var(--stroke-minimal)">
-            <div class="item__img"><svg width="40" height="40" viewBox="0 0 48 48"><circle cx="18" cy="29" r="11" fill="#e0432c"/><circle cx="30" cy="29" r="11" fill="#e85a35"/><rect x="23" y="11" width="3" height="9" rx="1.5" fill="#7a4a1a"/><path d="M26 15 q6 -4 10 0 q-5 3 -10 0Z" fill="#2e9e4f"/></svg></div>
-            <div class="item__body"><div class="item__top"><div><div class="item__name">Apple Royal Gala 4 pcs</div><div class="item__sub">500&ndash;700 g &middot; Qty 1</div></div><div class="item__price">&#8377;220</div></div></div>
-          </div>
-          <div class="item">
-            <div class="item__img"><svg width="38" height="46" viewBox="0 0 40 50"><rect x="7" y="6" width="26" height="40" rx="3" fill="#e9d8a6"/><rect x="7" y="20" width="26" height="14" fill="#fff"/><text x="20" y="30" font-size="6" font-weight="700" fill="#8a6d1a" text-anchor="middle">GHEE</text></svg></div>
-            <div class="item__body"><div class="item__top"><div><div class="item__name">Milkfood Rich Desi Ghee 900 ml</div><div class="item__sub">900 ml &middot; Qty 1</div></div><div class="item__price">&#8377;559</div></div></div>
-          </div>
+        <div class="item">
+          <div class="item__img"><svg width="38" height="46" viewBox="0 0 40 50"><rect x="7" y="6" width="26" height="40" rx="3" fill="#e9d8a6"/><rect x="7" y="20" width="26" height="14" fill="#fff"/><text x="20" y="30" font-size="6" font-weight="700" fill="#8a6d1a" text-anchor="middle">GHEE</text></svg></div>
+          <div class="item__body"><div class="item__top"><div><div class="item__name">Milkfood Rich Desi Ghee 900 ml</div><div class="item__sub">900 ml &middot; Qty 1</div></div><div class="item__price">&#8377;559</div></div></div>
         </div>
-        <div class="totals">
-          <div class="totals__row"><span class="totals__label">Bag total (2 items)</span><span class="totals__val">&#8377;779</span></div>
-          <div class="totals__row"><span class="totals__label">Delivery</span><span class="totals__val free">FREE</span></div>
-          <div class="totals__divider"></div>
-          <div class="grand"><div><div class="grand__label">Total</div><div class="grand__sub">2 items</div></div><div class="grand__val">&#8377;779</div></div>
-          <div class="savings"><span class="savings__ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="savings__txt">You saved &#8377;111 on this order (MRP &#8377;890)</span></div>
-        </div>
-        <div class="cod"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>Cash on Delivery</div>
-        <div class="actions"><button class="btn btn--primary">Place Order</button></div>
       </div>
+      <div class="totals">
+        <div class="totals__row"><span class="totals__label">Bag total (2 items)</span><span class="totals__val">&#8377;779</span></div>
+        <div class="totals__row"><span class="totals__label">Delivery</span><span class="totals__val free">FREE</span></div>
+        <div class="totals__divider"></div>
+        <div class="grand"><div><div class="grand__label">Total</div><div class="grand__sub">2 items</div></div><div class="grand__val">&#8377;779</div></div>
+        <div class="savings"><span class="savings__ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="savings__txt">You saved &#8377;111 on this order (MRP &#8377;890)</span></div>
+      </div>
+      <div class="cod"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>Cash on Delivery</div>
+      <div class="actions"><button class="btn btn--primary">Place Order</button></div>
     </div>
 
     <!-- 18 -->
@@ -533,7 +495,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     <!-- 19 -->
     <div class="asst">Placing your JioMart order now&hellip;</div>
 
-    <!-- ORDER PLACED (no section header — the card carries its own "Order placed!" title) -->
+    <!-- ORDER PLACED (no section header) -->
     <div class="widget">
       <div class="success">
         <div class="success__ring"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
