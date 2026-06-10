@@ -300,6 +300,118 @@ export default function CricketPage() {
               </ul>
             </section>
           )}
+
+          {/* AI experiences */}
+          <section className="flex flex-col gap-3">
+            <span className="text-[10px] font-bold tracking-widest text-black/40 uppercase">
+              AI experiences
+            </span>
+            <div className="flex flex-col gap-2.5">
+              <Link href="/cricket/voice-qa" className="block">
+                <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3.5 transition-opacity active:opacity-70">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#f6f3ff]">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                      <rect x="9" y="2" width="6" height="12" rx="3" fill="#6d17ce" />
+                      <path
+                        d="M5 11a7 7 0 0 0 14 0"
+                        stroke="#6d17ce"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                      <line
+                        x1="12"
+                        y1="18"
+                        x2="12"
+                        y2="22"
+                        stroke="#6d17ce"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </div>
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <p className="text-[14px] font-bold text-[#0c0d10]">Voice Q&amp;A</p>
+                    <p className="text-[11px] font-medium text-black/40">
+                      Ask anything mid-match. TV keeps playing.
+                    </p>
+                  </div>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className="shrink-0 text-black/20"
+                  >
+                    <path
+                      d="M9 18l6-6-6-6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+              </Link>
+
+              <Link href="/cricket/predict" className="block">
+                <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3.5 transition-opacity active:opacity-70">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#fff7ed]">
+                    <span className="text-lg leading-none">🔮</span>
+                  </div>
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <p className="text-[14px] font-bold text-[#0c0d10]">Predict Anything</p>
+                    <p className="text-[11px] font-medium text-black/40">
+                      Lock in bold calls. Points inversely proportional to probability.
+                    </p>
+                  </div>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className="shrink-0 text-black/20"
+                  >
+                    <path
+                      d="M9 18l6-6-6-6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+              </Link>
+
+              <Link href="/cricket/reminders" className="block">
+                <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3.5 transition-opacity active:opacity-70">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#ddfef2]">
+                    <span className="text-lg leading-none">🔔</span>
+                  </div>
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <p className="text-[14px] font-bold text-[#0c0d10]">Event Reminders</p>
+                    <p className="text-[11px] font-medium text-black/40">
+                      Alert when Kohli bats, powerplay ends, match resumes.
+                    </p>
+                  </div>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className="shrink-0 text-black/20"
+                  >
+                    <path
+                      d="M9 18l6-6-6-6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+              </Link>
+            </div>
+          </section>
         </div>
       </main>
 
