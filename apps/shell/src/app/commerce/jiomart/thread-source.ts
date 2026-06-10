@@ -24,22 +24,21 @@ export const JIOMART_THREAD_HTML = `
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{font-family:var(--font);color:var(--text-high);background:#e9eaef;
-  display:flex;align-items:center;justify-content:center;padding:24px;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font);color:var(--text-high);background:var(--surface);-webkit-font-smoothing:antialiased}
 svg{display:block}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 
-.phone{width:390px;height:844px;background:var(--surface);border-radius:40px;overflow:hidden;
-  position:relative;display:flex;flex-direction:column;box-shadow:0 24px 70px rgba(12,13,16,.22)}
+/* edge-to-edge: fills the whole mobile screen, no phone-frame overlay */
+.phone{width:100%;height:100dvh;background:var(--surface);overflow:hidden;position:relative;display:flex;flex-direction:column}
 
-/* header */
+/* header — Jobs standard: circular icon buttons + 18px bold title */
 .hdr{display:flex;align-items:center;gap:12px;padding:14px 16px 12px;background:var(--surface);
   border-bottom:1px solid var(--stroke-minimal);flex-shrink:0;z-index:5}
 .hdr__icon{width:40px;height:40px;border-radius:9999px;display:flex;align-items:center;justify-content:center;
-  color:var(--text-high);transition:transform .2s cubic-bezier(.2,0,0,1);flex-shrink:0}
+  background:var(--surface-minimal);color:var(--text-high);transition:transform .2s cubic-bezier(.2,0,0,1);flex-shrink:0}
 .hdr__icon:hover{transform:scale(1.05)}.hdr__icon:active{transform:scale(.95)}
-.hdr__title{flex:1;font-size:20px;font-weight:700;letter-spacing:-.01em}
-.hdr__right{display:flex;align-items:center;gap:4px}
+.hdr__title{flex:1;font-size:18px;font-weight:700}
+.hdr__right{display:flex;align-items:center;gap:8px}
 
 /* scroll */
 .scroll{flex:1;overflow-y:auto;padding:18px 16px 20px;background:var(--surface);scrollbar-width:none;
@@ -48,7 +47,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .scroll>*{flex-shrink:0}  /* keep widgets at full size; never collapse */
 
 /* message primitives */
-.user{align-self:flex-end;max-width:80%;background:var(--surface-minimal);border-radius:18px 18px 6px 18px;
+.user{align-self:flex-end;max-width:80%;background:var(--primary-20);border-radius:18px 18px 6px 18px;
   padding:10px 14px;font-size:15px;font-weight:500;line-height:1.45}
 .user.mono{font-family:ui-monospace,Menlo,monospace;font-size:13px;word-break:break-all}
 .asst{align-self:flex-start;max-width:92%;font-size:15px;font-weight:500;line-height:1.55;color:var(--text-high)}
@@ -57,21 +56,23 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .feedback button{display:flex;transition:color .15s,transform .15s}
 .feedback button:hover{color:var(--primary-50);transform:scale(1.1)}
 
-/* widget shell — STATIC. No collapse, no chevron. Always full size. */
+/* widget shell — STATIC, white. No collapse, no grey panels. */
 .widget{align-self:stretch;background:var(--surface);border:1px solid var(--stroke-minimal);
   border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.04)}
-.widget__head{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--surface-minimal);
+.widget__head{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--surface);
   border-bottom:1px solid var(--stroke-minimal)}
 .widget__head-ic{color:var(--primary-50);display:flex}
 .widget__head-title{font-size:16px;font-weight:700;flex:1}
 .count-badge{background:var(--primary-50);color:#fff;font-size:13px;font-weight:700;border-radius:9999px;padding:5px 13px;line-height:1}
 
-/* product cards */
-.pcards{display:flex;gap:12px;overflow-x:auto;padding:14px 16px 4px;scrollbar-width:none}
+/* ── search: plain left-aligned categories (no card, no icon) ── */
+.search-cat{align-self:stretch;display:flex;flex-direction:column;gap:2px}
+.cat-label{font-size:18px;font-weight:700;padding-top:2px}
+.pcards{display:flex;gap:12px;overflow-x:auto;padding:12px 0 4px;scrollbar-width:none}
 .pcards::-webkit-scrollbar{display:none}
-.pcard{min-width:152px;max-width:152px;background:var(--surface);border:1px solid var(--stroke-subtle);
+.pcard{min-width:150px;max-width:150px;background:var(--surface);border:1px solid var(--stroke-subtle);
   border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
-.pcard__imgwrap{position:relative;height:108px;background:var(--surface-minimal);display:flex;align-items:center;justify-content:center}
+.pcard__imgwrap{position:relative;height:108px;background:var(--surface);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--stroke-minimal)}
 .pcard__off{position:absolute;top:8px;left:8px;background:var(--success);color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px}
 .pcard__body{padding:10px;display:flex;flex-direction:column;gap:6px;flex:1}
 .pcard__name{font-size:13px;font-weight:500;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:35px}
@@ -86,12 +87,12 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .pcard__oos{font-size:11px;font-weight:700;color:var(--error);text-align:center;margin-top:2px}
 .pcard .stepper{margin-top:auto;align-self:stretch;justify-content:space-between}
 
-.search-chips{display:flex;gap:10px;padding:14px 16px 16px}
+.search-chips{display:flex;gap:10px;padding:10px 0 2px}
 .chip{height:36px;padding:0 16px;border-radius:9999px;background:var(--surface-ghost);color:var(--text-high);
   font-size:13px;font-weight:700;display:inline-flex;align-items:center;transition:transform .2s cubic-bezier(.2,0,0,1)}
 .chip:hover{transform:scale(1.02)}.chip:active{transform:scale(.97)}
 
-/* stepper */
+/* stepper (control) */
 .stepper{display:inline-flex;align-items:center;background:var(--surface-minimal);border-radius:9999px;padding:4px}
 .stepper__btn{width:30px;height:30px;border-radius:9999px;display:flex;align-items:center;justify-content:center;
   transition:transform .2s cubic-bezier(.2,0,0,1),opacity .15s;flex-shrink:0}
@@ -105,7 +106,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .items{padding:4px 16px}
 .item{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--stroke-minimal)}
 .item:last-child{border-bottom:none}
-.item__img{width:56px;height:56px;border-radius:12px;overflow:hidden;flex-shrink:0;background:var(--surface-minimal);display:flex;align-items:center;justify-content:center}
+.item__img{width:56px;height:56px;border-radius:12px;overflow:hidden;flex-shrink:0;background:var(--surface);border:1px solid var(--stroke-minimal);display:flex;align-items:center;justify-content:center}
 .item__body{flex:1;min-width:0}
 .item__top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
 .item__name{font-size:14px;font-weight:700;line-height:1.35}
@@ -117,7 +118,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .item__remove:hover{transform:scale(1.06);color:var(--error);background:#fde8ea}
 
 /* totals */
-.totals{background:var(--surface-minimal);padding:16px;border-top:1px solid var(--stroke-minimal)}
+.totals{background:var(--surface);padding:16px;border-top:1px solid var(--stroke-minimal)}
 .totals__row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
 .totals__label{font-size:14px;font-weight:500;color:var(--text-low)}
 .totals__val{font-size:14px;font-weight:700}
@@ -155,8 +156,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 
 .addr-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--stroke-minimal)}
 .addr-row:last-child{border-bottom:none}
-.addr-row__home{width:40px;height:40px;border-radius:10px;background:var(--surface-ghost);color:var(--primary-50);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.addr-row__home.sel{background:var(--surface-ghost-icon)}
+.addr-row__home{width:40px;height:40px;border-radius:10px;background:var(--surface-ghost-icon);color:var(--primary-50);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .addr-row__body{flex:1;min-width:0}
 .addr-row__name{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .addr-row__addr{font-size:12px;font-weight:500;color:var(--text-low);line-height:1.4;margin-top:3px}
@@ -166,7 +166,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   background:var(--surface);transition:transform .2s cubic-bezier(.2,0,0,1)}
 .addr-add:hover{transform:scale(1.01)}.addr-add:active{transform:scale(.99)}
 
-/* add-new-address forms */
+/* add-new-address forms (inputs keep their subtle fill — the documented exception) */
 .form{padding:16px;display:flex;flex-direction:column;gap:14px}
 .loc-btn{height:48px;border-radius:12px;border:1px solid var(--primary-50);color:var(--primary-50);background:var(--surface);
   display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:700;transition:transform .2s cubic-bezier(.2,0,0,1)}
@@ -191,7 +191,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .success__ring{width:64px;height:64px;border-radius:9999px;background:var(--success-bg);color:var(--success);display:flex;align-items:center;justify-content:center;margin-bottom:6px}
 .success__title{font-size:20px;font-weight:900;letter-spacing:-.02em}
 .success__sub{font-size:14px;font-weight:500;color:var(--text-low);line-height:1.5}
-.success__meta{align-self:stretch;background:var(--surface-minimal);border-radius:12px;padding:14px 16px;margin-top:14px;display:flex;flex-direction:column;gap:10px}
+.success__meta{align-self:stretch;background:var(--surface);border:1px solid var(--stroke-minimal);border-radius:12px;padding:14px 16px;margin-top:14px;display:flex;flex-direction:column;gap:10px}
 .success__metarow{display:flex;align-items:center;justify-content:space-between;font-size:13px}
 .success__metarow span:first-child{color:var(--text-low);font-weight:500}
 .success__metarow span:last-child{font-weight:700}
@@ -218,13 +218,13 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 <body>
 <div class="phone">
 
-  <!-- HEADER -->
+  <!-- HEADER (Jobs standard; back navigates the app home) -->
   <header class="hdr">
-    <button class="hdr__icon" aria-label="Back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <button class="hdr__icon" aria-label="Back" onclick="(window.top||window).location.href='/'"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
     <h1 class="hdr__title">Purchasing groceries</h1>
     <div class="hdr__right">
-      <button class="hdr__icon" aria-label="Chats"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
-      <button class="hdr__icon" aria-label="New chat"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+      <button class="hdr__icon" aria-label="Chats"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+      <button class="hdr__icon" aria-label="New chat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
     </div>
   </header>
 
@@ -236,12 +236,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     <!-- 2 -->
     <div class="asst">Searching for apples and ghee on JioMart.</div>
 
-    <!-- SEARCH WIDGET 1 — APPLES (one widget per unique item) -->
-    <div class="widget">
-      <div class="widget__head">
-        <span class="widget__head-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
-        <span class="widget__head-title">Apples</span>
-      </div>
+    <!-- SEARCH — APPLES (plain left-aligned category, no card/icon) -->
+    <div class="search-cat">
+      <div class="cat-label">Apples</div>
       <div class="pcards">
         <div class="pcard">
           <div class="pcard__imgwrap" style="opacity:.55"><svg width="50" height="50" viewBox="0 0 48 48"><circle cx="24" cy="28" r="14" fill="#b1232f"/><rect x="22" y="9" width="3" height="9" rx="1.5" fill="#7a4a1a"/><path d="M25 13 q6 -4 10 0 q-5 3 -10 0Z" fill="#2e9e4f"/></svg></div>
@@ -279,12 +276,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
       </div>
     </div>
 
-    <!-- SEARCH WIDGET 2 — GHEE -->
-    <div class="widget">
-      <div class="widget__head">
-        <span class="widget__head-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
-        <span class="widget__head-title">Ghee</span>
-      </div>
+    <!-- SEARCH — GHEE -->
+    <div class="search-cat">
+      <div class="cat-label">Ghee</div>
       <div class="pcards">
         <div class="pcard">
           <div class="pcard__imgwrap" style="opacity:.55"><span class="pcard__off">5% OFF</span><svg width="40" height="50" viewBox="0 0 40 50"><rect x="7" y="6" width="26" height="40" rx="3" fill="#f0c419"/><rect x="7" y="20" width="26" height="14" fill="#fff"/><text x="20" y="30" font-size="7" font-weight="700" fill="#b8860b" text-anchor="middle">AMUL</text></svg></div>
@@ -337,7 +331,6 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
         <span class="count-badge" id="countBadge">2 items</span>
       </div>
       <div class="items">
-        <!-- working tile: apple -->
         <div class="item" data-item="apple">
           <div class="item__img"><svg width="40" height="40" viewBox="0 0 48 48"><circle cx="18" cy="29" r="11" fill="#e0432c"/><circle cx="30" cy="29" r="11" fill="#e85a35"/><rect x="23" y="11" width="3" height="9" rx="1.5" fill="#7a4a1a"/><path d="M26 15 q6 -4 10 0 q-5 3 -10 0Z" fill="#2e9e4f"/></svg></div>
           <div class="item__body">
@@ -355,7 +348,6 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
             </div>
           </div>
         </div>
-        <!-- static tile: ghee -->
         <div class="item">
           <div class="item__img"><svg width="38" height="46" viewBox="0 0 40 50"><rect x="7" y="6" width="26" height="40" rx="3" fill="#e9d8a6"/><rect x="7" y="20" width="26" height="14" fill="#fff"/><text x="20" y="30" font-size="6" font-weight="700" fill="#8a6d1a" text-anchor="middle">GHEE</text></svg></div>
           <div class="item__body">
@@ -437,7 +429,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
         <span class="confirm-banner__txt">Delivery address updated</span>
       </div>
       <div class="addr-row">
-        <span class="addr-row__home sel"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
+        <span class="addr-row__home"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
         <div class="addr-row__body"><div class="addr-row__name">GOKUL KUMAR <span class="tag tag--test">TEST</span></div><div class="addr-row__addr">F932J78, Harris Ganj, Mirpur, Kanpur, Uttar Pradesh &middot; 208004</div></div>
       </div>
     </div>
