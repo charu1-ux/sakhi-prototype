@@ -1,5 +1,10 @@
 // Source of truth for the JioMart Commerce thread prototype (mirrors Commerce V1/mockups/jiomart-full-thread-mockup.html).
 // Rendered inside an isolated iframe so its styles cannot leak into the shell or other verticals.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+import spinLoaderData from "../../jobs/design-prototype/microlearning/creator/spin-loader.json";
+
+const _spinJson = JSON.stringify(spinLoaderData);
+
 export const JIOMART_THREAD_HTML = `
 <!DOCTYPE html>
 <html lang="en">
@@ -7,8 +12,9 @@ export const JIOMART_THREAD_HTML = `
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>JBIQ Commerce — JioMart full thread (JDS mockup)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
 <style>
-/* ── JDS / A2UI tokens (mirror the design-system skill; JioType falls back to system) ── */
+/* ── JDS / A2UI tokens ── */
 :root{
   --primary-20:#f6f3ff; --primary-30:#ede7ff; --primary-40:#e4dbff;
   --primary-50:#6d17ce; --primary-60:#310064; --primary-70:#13002d;
@@ -24,31 +30,32 @@ export const JIOMART_THREAD_HTML = `
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{font-family:var(--font);color:var(--text-high);background:var(--surface);-webkit-font-smoothing:antialiased}
+body{font-family:var(--font);color:var(--text-high);background:var(--surface-minimal);-webkit-font-smoothing:antialiased}
 svg{display:block}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 
-/* edge-to-edge */
 .phone{width:100%;height:100dvh;background:var(--surface);overflow:hidden;position:relative;display:flex;flex-direction:column}
 
-/* header — Jobs standard */
-.hdr{display:flex;align-items:center;gap:12px;padding:14px 16px 12px;background:var(--surface);
-  border-bottom:1px solid var(--stroke-minimal);flex-shrink:0;z-index:5}
+/* header — absolute overlay with gradient fade, Jobs chat style */
+.hdr{position:absolute;top:0;left:0;right:0;z-index:10;pointer-events:none;height:68px}
+.hdr__bg{position:absolute;inset:0;
+  background:linear-gradient(180deg,#fff 0%,#fff 73%,rgba(255,255,255,.6) 86%,rgba(255,255,255,0) 100%)}
+.hdr__row{position:relative;pointer-events:auto;display:flex;align-items:center;gap:12px;padding:14px 16px 0}
 .hdr__icon{width:40px;height:40px;border-radius:9999px;display:flex;align-items:center;justify-content:center;
   background:var(--surface-minimal);color:var(--text-high);transition:transform .2s cubic-bezier(.2,0,0,1);flex-shrink:0}
 .hdr__icon:hover{transform:scale(1.05)}.hdr__icon:active{transform:scale(.95)}
 .hdr__title{flex:1;font-size:18px;font-weight:700}
 .hdr__right{display:flex;align-items:center;gap:8px}
 
-/* scroll */
-.scroll{flex:1;overflow-y:auto;padding:18px 16px 20px;background:var(--surface);scrollbar-width:none;
-  display:flex;flex-direction:column;gap:16px}
+/* scroll — 24px between chat elements */
+.scroll{flex:1;overflow-y:auto;padding:68px 16px 20px;background:var(--surface);scrollbar-width:none;
+  display:flex;flex-direction:column;gap:24px}
 .scroll::-webkit-scrollbar{display:none}
 .scroll>*{flex-shrink:0}
 
-/* message primitives */
-.user{align-self:flex-end;max-width:80%;background:var(--primary-20);border-radius:18px 18px 6px 18px;
-  padding:10px 14px;font-size:15px;font-weight:500;line-height:1.45}
+/* message primitives — Jobs style */
+.user{align-self:flex-end;max-width:80%;background:#f5f5f5;color:#404040;
+  border-radius:18px 18px 4px 18px;padding:10px 14px;font-size:15px;font-weight:500;line-height:1.45}
 .user.mono{font-family:ui-monospace,Menlo,monospace;font-size:13px;word-break:break-all}
 .asst{align-self:flex-start;max-width:92%;font-size:15px;font-weight:500;line-height:1.55;color:var(--text-high)}
 .asst .em{color:var(--text-low)}
@@ -56,15 +63,25 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .feedback button{display:flex;transition:color .15s,transform .15s}
 .feedback button:hover{color:var(--primary-50);transform:scale(1.1)}
 
-/* widget = white bordered card, NO shadow; title sits inside with a separator below */
+/* lottie loaders */
+.lottie-loader{width:48px;height:48px}
+.search-loader-row{display:flex;align-items:center;gap:10px}
+.search-loader-row .lottie-loader{width:36px;height:36px;flex-shrink:0}
+.search-loader-text{font-size:15px;font-weight:500;color:var(--text-high)}
+
+/* widget */
 .widget{align-self:stretch;background:var(--surface);border:1px solid var(--stroke-minimal);border-radius:16px;overflow:hidden}
 .widget__title{display:flex;align-items:center;gap:8px;padding:14px 16px;font-size:16px;font-weight:700;
   border-bottom:1px solid var(--stroke-minimal)}
-.count-badge{background:var(--primary-50);color:#fff;font-size:13px;font-weight:700;border-radius:9999px;padding:5px 13px;line-height:1}
 
-/* ── search: plain left-aligned categories (no card, no icon) ── */
+/* count badge — secondary (light purple bg) */
+.count-badge{background:var(--primary-30);color:var(--primary-50);font-size:13px;font-weight:700;
+  border-radius:9999px;padding:5px 13px;line-height:1}
+
+/* search swim lane */
 .search-cat{align-self:stretch;display:flex;flex-direction:column;gap:2px}
-.cat-label{font-size:18px;font-weight:700;padding-top:2px}
+/* product heading same size as chat input (16px) */
+.cat-label{font-size:16px;font-weight:700;padding-top:2px}
 .pcards{display:flex;gap:12px;overflow-x:auto;padding:12px 0 4px;scrollbar-width:none}
 .pcards::-webkit-scrollbar{display:none}
 .pcard{min-width:150px;max-width:150px;background:var(--surface);border:1px solid var(--stroke-subtle);
@@ -76,30 +93,33 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .pcard__price{display:flex;align-items:baseline;gap:6px}
 .pcard__price b{font-size:15px;font-weight:700}
 .pcard__price s{font-size:12px;color:var(--text-low)}
-.pcard__add{margin-top:auto;height:36px;border-radius:9999px;border:1px solid var(--primary-50);color:var(--primary-50);
-  background:var(--surface);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:4px;
+/* ADD button — secondary style (light purple bg, dark purple text) */
+.pcard__add{margin-top:auto;height:36px;border-radius:9999px;background:var(--primary-30);color:var(--primary-60);
+  font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:4px;
   transition:transform .2s cubic-bezier(.2,0,0,1)}
 .pcard__add:hover{transform:scale(1.02)}.pcard__add:active{transform:scale(.97)}
 .pcard__add:disabled{opacity:.45;pointer-events:none}
 .pcard__oos{font-size:11px;font-weight:700;color:var(--error);text-align:center;margin-top:2px}
 .pcard .stepper{margin-top:auto;align-self:stretch;justify-content:space-between}
 
-.search-chips{display:flex;gap:10px;padding:10px 0 2px}
-.chip{height:36px;padding:0 16px;border-radius:9999px;background:var(--surface-ghost);color:var(--text-high);
+/* chips — shown once after both swim lanes */
+.search-chips{display:flex;gap:10px;padding:2px 0}
+.chip{height:36px;padding:0 16px;border-radius:9999px;background:var(--primary-30);color:var(--primary-60);
   font-size:13px;font-weight:700;display:inline-flex;align-items:center;transition:transform .2s cubic-bezier(.2,0,0,1)}
 .chip:hover{transform:scale(1.02)}.chip:active{transform:scale(.97)}
 
-/* stepper (control) — no shadow */
+/* stepper — gray container bg restored, only + button changed to white */
 .stepper{display:inline-flex;align-items:center;background:var(--surface-minimal);border-radius:9999px;padding:4px}
 .stepper__btn{width:30px;height:30px;border-radius:9999px;display:flex;align-items:center;justify-content:center;
   transition:transform .2s cubic-bezier(.2,0,0,1),opacity .15s;flex-shrink:0}
 .stepper__btn:hover{transform:scale(1.06)}.stepper__btn:active{transform:scale(.92)}
 .stepper__btn.minus{background:var(--surface);color:var(--text-high)}
-.stepper__btn.plus{background:var(--primary-50);color:#fff}
+/* + button: white bg, purple icon only */
+.stepper__btn.plus{background:var(--surface);color:var(--primary-50)}
 .stepper__btn:disabled{opacity:.4;pointer-events:none}
 .stepper__count{min-width:30px;text-align:center;font-size:14px;font-weight:700}
 
-/* cart items */
+/* cart items — delete LEFT, stepper RIGHT */
 .items{padding:4px 16px}
 .item{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--stroke-minimal)}
 .item:last-child{border-bottom:none}
@@ -109,7 +129,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .item__name{font-size:14px;font-weight:700;line-height:1.35}
 .item__sub{font-size:12px;font-weight:500;color:var(--text-low);margin-top:2px}
 .item__price{font-size:15px;font-weight:700;white-space:nowrap;flex-shrink:0}
-.item__controls{display:flex;align-items:center;gap:14px;margin-top:10px}
+/* controls: delete immediately left of stepper, both grouped right */
+.item__controls{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:10px}
 .item__remove{width:30px;height:30px;border-radius:9999px;display:flex;align-items:center;justify-content:center;
   color:var(--text-disabled);transition:transform .2s cubic-bezier(.2,0,0,1),color .15s,background .15s}
 .item__remove:hover{transform:scale(1.06);color:var(--error);background:#fde8ea}
@@ -131,7 +152,6 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 
 /* COD */
 .cod{display:flex;align-items:center;gap:10px;padding:14px 16px;border-top:1px solid var(--stroke-minimal);font-size:15px;font-weight:700}
-.cod svg{color:var(--text-high)}
 
 /* actions */
 .actions{padding:16px}
@@ -139,9 +159,11 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   transition:transform .2s cubic-bezier(.2,0,0,1);gap:8px}
 .btn:hover{transform:scale(1.02)}.btn:active{transform:scale(.97)}
 .btn--primary{background:var(--primary-50);color:#fff}
+/* secondary — light purple bg, dark purple text */
+.btn--secondary{background:var(--primary-30);color:var(--primary-60)}
 .btn--outline{background:var(--surface);color:var(--primary-50);border:1px solid var(--primary-50)}
 
-/* delivering-to (no leading icon; text left-aligned) */
+/* delivering-to */
 .deliver{padding:14px 16px;border-bottom:1px solid var(--stroke-minimal)}
 .deliver__cap{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text-low)}
 .deliver__name{font-size:15px;font-weight:700;margin-top:3px;display:flex;align-items:center;gap:8px}
@@ -150,7 +172,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .tag--default{background:var(--success-bg);color:var(--success)}
 .tag--test{background:var(--sparkle-20);color:var(--sparkle-50)}
 
-/* address rows (no leading icon; text left-aligned) */
+/* address rows */
 .addr-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--stroke-minimal)}
 .addr-row:last-child{border-bottom:none}
 .addr-row__body{flex:1;min-width:0}
@@ -162,7 +184,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   transition:transform .2s cubic-bezier(.2,0,0,1)}
 .addr-add:hover{transform:scale(1.02)}.addr-add:active{transform:scale(.97)}
 
-/* add-new-address forms */
+/* forms */
 .form{padding:16px;display:flex;flex-direction:column;gap:14px}
 .loc-btn{height:48px;border-radius:9999px;border:1px solid var(--primary-50);color:var(--primary-50);background:var(--surface);
   display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:700;transition:transform .2s cubic-bezier(.2,0,0,1)}
@@ -182,7 +204,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .confirm-banner__ic{color:var(--success);display:flex}
 .confirm-banner__txt{font-size:14px;font-weight:700;color:var(--success)}
 
-/* order placed success */
+/* order success */
 .success{padding:24px 16px 16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px}
 .success__ring{width:64px;height:64px;border-radius:9999px;background:var(--success-bg);color:var(--success);display:flex;align-items:center;justify-content:center;margin-bottom:6px}
 .success__title{font-size:20px;font-weight:900;letter-spacing:-.02em}
@@ -214,25 +236,35 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 <body>
 <div class="phone">
 
-  <!-- HEADER -->
+  <!-- HEADER — gradient overlay, Jobs chat style -->
   <header class="hdr">
-    <button class="hdr__icon" aria-label="Back" onclick="(window.top||window).location.href='/'"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
-    <h1 class="hdr__title">Purchasing groceries</h1>
-    <div class="hdr__right">
-      <button class="hdr__icon" aria-label="Chats"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
-      <button class="hdr__icon" aria-label="New chat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+    <div class="hdr__bg"></div>
+    <div class="hdr__row">
+      <button class="hdr__icon" aria-label="Back" onclick="(window.top||window).location.href='/'"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <h1 class="hdr__title">Purchasing groceries</h1>
+      <div class="hdr__right">
+        <button class="hdr__icon" aria-label="Chats"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+        <button class="hdr__icon" aria-label="New chat"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+      </div>
     </div>
   </header>
 
   <!-- CHAT THREAD -->
   <main class="scroll" id="scroll">
 
-    <!-- 1 -->
+    <!-- 1: user prompt -->
     <div class="user">Buy apples and ghee</div>
-    <!-- 2 -->
-    <div class="asst">Searching for apples and ghee on JioMart.</div>
 
-    <!-- SEARCH — APPLES -->
+    <!-- searching: lottie left + text right, hidden after swim lanes reveal -->
+    <div id="searchLoader" class="search-loader-row">
+      <div id="searchLottie" class="lottie-loader"></div>
+      <span class="search-loader-text">Searching for apples and ghee on JioMart.</span>
+    </div>
+
+    <!-- swim lanes + chips: hidden until loader completes -->
+    <div id="swimLanes" style="display:none;flex-direction:column;gap:12px">
+
+    <!-- SEARCH — APPLES swim lane -->
     <div class="search-cat">
       <div class="cat-label">Apples</div>
       <div class="pcards">
@@ -266,13 +298,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
           </div>
         </div>
       </div>
-      <div class="search-chips">
-        <button class="chip">View cart</button>
-        <button class="chip">Search more</button>
-      </div>
     </div>
 
-    <!-- SEARCH — GHEE -->
+    <!-- SEARCH — GHEE swim lane -->
     <div class="search-cat">
       <div class="cat-label">Ghee</div>
       <div class="pcards">
@@ -306,11 +334,15 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
           </div>
         </div>
       </div>
-      <div class="search-chips">
-        <button class="chip">View cart</button>
-        <button class="chip">Search more</button>
-      </div>
     </div>
+
+    <!-- chips appear ONCE after both swim lanes -->
+    <div class="search-chips">
+      <button class="chip">View cart</button>
+      <button class="chip">Search more</button>
+    </div>
+
+    </div><!-- end #swimLanes -->
 
     <!-- 3 -->
     <div class="asst">Want me to add any of these to your cart?</div>
@@ -319,7 +351,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     <!-- 5 -->
     <div class="asst">Added both to your JioMart cart. Here it is.</div>
 
-    <!-- CART -->
+    <!-- CART — count badge secondary, delete LEFT, stepper RIGHT -->
     <div class="widget">
       <div class="widget__title">Your Cart<span class="count-badge" id="countBadge" style="margin-left:auto">2 items</span></div>
       <div class="items">
@@ -330,13 +362,14 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
               <div><div class="item__name">Apple Royal Gala 4 pcs</div><div class="item__sub">500&ndash;700 g &middot; <span id="appleQtyLabel">Qty 1</span></div></div>
               <div class="item__price" id="applePrice">&#8377;220</div>
             </div>
+            <!-- delete LEFT, stepper RIGHT -->
             <div class="item__controls">
+              <button class="item__remove" id="appleRemove" aria-label="Remove"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
               <div class="stepper">
                 <button class="stepper__btn minus" id="appleMinus" aria-label="Decrease"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
                 <span class="stepper__count" id="appleCount">1</span>
                 <button class="stepper__btn plus" id="applePlus" aria-label="Increase"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
               </div>
-              <button class="item__remove" id="appleRemove" aria-label="Remove"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
             </div>
           </div>
         </div>
@@ -344,13 +377,14 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
           <div class="item__img"><svg width="38" height="46" viewBox="0 0 40 50"><rect x="7" y="6" width="26" height="40" rx="3" fill="#e9d8a6"/><rect x="7" y="20" width="26" height="14" fill="#fff"/><text x="20" y="30" font-size="6" font-weight="700" fill="#8a6d1a" text-anchor="middle">GHEE</text></svg></div>
           <div class="item__body">
             <div class="item__top"><div><div class="item__name">Milkfood Rich Desi Ghee 900 ml</div><div class="item__sub">900 ml &middot; Qty 1</div></div><div class="item__price">&#8377;559</div></div>
+            <!-- delete LEFT, stepper RIGHT -->
             <div class="item__controls">
+              <button class="item__remove" aria-label="Remove"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
               <div class="stepper">
                 <button class="stepper__btn minus" aria-label="Decrease"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
                 <span class="stepper__count">1</span>
                 <button class="stepper__btn plus" aria-label="Increase"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
               </div>
-              <button class="item__remove" aria-label="Remove"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
             </div>
           </div>
         </div>
@@ -367,7 +401,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 
     <!-- 6 -->
     <div class="user">Which address is this being shipped to?</div>
-    <!-- 7 · reasoning + feedback -->
+    <!-- 7 -->
     <div class="asst">
       It&rsquo;s going to the address currently set as your JioMart delivery location <span class="em">(37 Cunningham Rd, Bengaluru &mdash; Home)</span>. Want me to keep it, or switch to a different saved address?
       <div class="feedback">
@@ -403,10 +437,10 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 
     <!-- 10 -->
     <div class="user">Use my Kanpur address</div>
-    <!-- 11 · explicit switch + confirm -->
+    <!-- 11 -->
     <div class="asst">Done &mdash; I&rsquo;ve switched your delivery address to Kanpur.</div>
 
-    <!-- DELIVERY UPDATED CONFIRMATION -->
+    <!-- DELIVERY UPDATED -->
     <div class="widget">
       <div class="confirm-banner">
         <span class="confirm-banner__ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
@@ -422,7 +456,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     <!-- 13 -->
     <div class="asst">Sure &mdash; share your location and I&rsquo;ll capture the delivery address.</div>
 
-    <!-- NEW DELIVERY ADDRESS — location only -->
+    <!-- NEW ADDRESS -->
     <div class="widget">
       <div class="widget__title">New delivery address</div>
       <div class="form">
@@ -461,7 +495,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     <!-- 17 -->
     <div class="asst">Saved and set as your delivery address. Opening your JioMart checkout.</div>
 
-    <!-- CONFIRM YOUR ORDER -->
+    <!-- CONFIRM ORDER -->
     <div class="widget">
       <div class="widget__title">Confirm your order</div>
       <div class="deliver">
@@ -492,10 +526,10 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 
     <!-- 18 -->
     <div class="user mono">Place my JioMart order. checkout_snapshot=c54adb81368442ad7b73779b</div>
-    <!-- 19 -->
-    <div class="asst">Placing your JioMart order now&hellip;</div>
+    <!-- placing order loader (lottie) -->
+    <div id="placeLoader" class="lottie-loader"></div>
 
-    <!-- ORDER PLACED (no section header) -->
+    <!-- ORDER PLACED -->
     <div class="widget">
       <div class="success">
         <div class="success__ring"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
@@ -507,12 +541,12 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
           <div class="success__metarow"><span>Paying</span><span>&#8377;779 &middot; Cash on Delivery</span></div>
         </div>
       </div>
-      <div class="actions"><button class="btn btn--outline">Track order</button></div>
+      <!-- Track order — secondary button -->
+      <div class="actions"><button class="btn btn--secondary">Track order</button></div>
     </div>
 
   </main>
 
-  <!-- toast -->
   <div class="toast" id="toast"><span id="toastMsg">Removed Apple Royal Gala</span><button id="toastUndo">Undo</button></div>
 
   <!-- DOCK -->
@@ -525,7 +559,20 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 </div>
 
 <script>
-/* Widgets are static (no collapse). JS only powers the live cart tile (apple). */
+const SPIN_DATA = ${_spinJson};
+
+/* Init Lottie loaders */
+lottie.loadAnimation({ container: document.getElementById('searchLottie'), animationData: SPIN_DATA, renderer: 'svg', loop: true, autoplay: true });
+lottie.loadAnimation({ container: document.getElementById('placeLoader'),  animationData: SPIN_DATA, renderer: 'svg', loop: true, autoplay: true });
+
+/* After 1.6s hide searching loader and reveal swim lanes */
+setTimeout(() => {
+  const loader = document.getElementById('searchLoader');
+  const lanes  = document.getElementById('swimLanes');
+  if(loader) loader.style.display = 'none';
+  if(lanes)  lanes.style.display  = 'flex';
+}, 1600);
+
 const $ = (id) => document.getElementById(id);
 const UNIT = 220, MRP_UNIT = 220, OTHERS = 559, OTHERS_MRP = 670, OTHER_LINES = 1;
 let qty = 1, removed = false;
@@ -541,7 +588,7 @@ function render(){
   $("appleMinus").disabled = qty <= 1;
   $("bagTotal").textContent = fmt(total);
   $("grandTotal").textContent = fmt(total);
-  const c = (removed ? 0 : 1) + OTHER_LINES; // distinct lines; real logic owned by Gokul
+  const c = (removed ? 0 : 1) + OTHER_LINES;
   $("countBadge").textContent = c + (c === 1 ? " item" : " items");
   $("bagCount").textContent = "(" + c + (c === 1 ? " item)" : " items)");
   $("grandCount").textContent = c + (c === 1 ? " item" : " items");

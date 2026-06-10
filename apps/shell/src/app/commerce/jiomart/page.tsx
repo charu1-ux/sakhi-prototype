@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { JIOMART_THREAD_HTML } from "./thread-source";
+import { JioMartStory } from "./JioMartStory";
 
 export const metadata: Metadata = {
   title: "JioMart flow — Commerce",
@@ -8,17 +8,11 @@ export const metadata: Metadata = {
 };
 
 /*
- * Renders the approved JioMart conversation prototype inside an isolated iframe.
- * `srcDoc` sandboxes all of the prototype's CSS/JS, so nothing here can affect
- * the shell or any other vertical. Lives entirely inside apps/shell/src/app/commerce/.
- * Source of truth for the markup: ./thread-source.ts
+ * Interactive JioMart purchase story — a React client component that auto-plays
+ * the conversation (search → cart → address → checkout → order placed) with
+ * Framer Motion reveals and Lottie loaders. Source of truth: ./JioMartStory.tsx
+ * (data in ./story-data.ts, widgets in ./story-widgets.tsx).
  */
 export default function JioMartFlowPage() {
-  return (
-    <iframe
-      title="JioMart purchase flow"
-      srcDoc={JIOMART_THREAD_HTML}
-      style={{ border: 0, width: "100%", height: "100dvh", display: "block" }}
-    />
-  );
+  return <JioMartStory />;
 }
