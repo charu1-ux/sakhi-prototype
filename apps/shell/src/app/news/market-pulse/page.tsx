@@ -89,6 +89,119 @@ const ASSETS: Asset[] = [
   { name: "Crude Oil", value: "$82.14", change: "+$0.94", changePct: 1.16, unit: "/bbl" },
 ];
 
+// ── Discovery data ────────────────────────────────────────────────────────────
+
+const TRENDING_SEARCHES: string[] = [
+  "RBI rate cut impact on stocks",
+  "Best SIP to start in June 2025",
+  "Why is Sensex falling?",
+  "Nifty 50 target end of 2025",
+  "Gold vs Nifty which is better",
+  "FII vs DII who is buying",
+  "ELSS tax saving funds",
+  "Should I buy Adani stocks",
+  "Smallcap vs midcap 2025",
+  "How to invest in US stocks from India",
+];
+
+type FinanceNewsItem = {
+  id: string;
+  category: string;
+  headline: string;
+  summary: string;
+  time: string;
+  source: string;
+  positive: boolean; // market sentiment of the news
+};
+
+const FINANCE_NEWS: FinanceNewsItem[] = [
+  {
+    id: "fn1",
+    category: "Policy",
+    headline: "RBI's 50 bps cut could unlock ₹12,000 Cr in loan savings for retail borrowers",
+    summary:
+      "Analysts estimate the surprise rate cut will reduce EMIs for 4 crore home loan customers. Banks are expected to pass on the cut within 30–60 days as MCLR adjusts.",
+    time: "32 min ago",
+    source: "Economic Times",
+    positive: true,
+  },
+  {
+    id: "fn2",
+    category: "FII Activity",
+    headline: "Foreign investors pump ₹8,200 Cr into Indian equities in a single session",
+    summary:
+      "FIIs turned net buyers after three weeks of outflows, with IT and BFSI sectors attracting the most inflows. Analysts attribute the reversal to dovish Fed signals and the RBI rate cut.",
+    time: "1 hr ago",
+    source: "Mint",
+    positive: true,
+  },
+  {
+    id: "fn3",
+    category: "Global Markets",
+    headline: "US Fed signals two more cuts in 2025; Asia markets rally on cue",
+    summary:
+      "Fed Chair's comments at the FOMC presser were interpreted as dovish, with futures markets pricing in 50 bps of cuts before year-end. Nikkei and Hang Seng both rose over 1.5%.",
+    time: "2 hr ago",
+    source: "Bloomberg",
+    positive: true,
+  },
+  {
+    id: "fn4",
+    category: "Commodities",
+    headline: "Crude oil edges lower as OPEC+ hints at further production increase",
+    summary:
+      "Brent crude slipped 0.8% to $81.50 as Saudi Arabia signalled readiness to raise output if prices stay above $80. Lower crude is net positive for India's CAD and inflation outlook.",
+    time: "3 hr ago",
+    source: "Reuters",
+    positive: false,
+  },
+];
+
+type FAQItem = {
+  id: string;
+  question: string;
+  answer: string;
+  tag: string;
+};
+
+const PEOPLE_ARE_ASKING: FAQItem[] = [
+  {
+    id: "q1",
+    question: "Why did the market surge today?",
+    answer:
+      "Today's rally was driven by the RBI's surprise 50 bps rate cut, which boosted banking and rate-sensitive stocks. FII buying of ₹8,200 Cr added fuel. Globally, dovish Fed signals and falling crude oil prices provided a tailwind.",
+    tag: "Markets",
+  },
+  {
+    id: "q2",
+    question: "Will the RBI rate cut help home loan EMIs?",
+    answer:
+      "Yes — for floating rate home loans linked to MCLR or repo rate. Banks typically pass on cuts within 30–60 days. On a ₹50L, 20-year loan, a 50 bps cut reduces the EMI by roughly ₹1,500–1,800/month.",
+    tag: "Loans",
+  },
+  {
+    id: "q3",
+    question: "Is this a good time to invest in Nifty 50?",
+    answer:
+      "Nifty is trading at ~21x forward P/E — slightly above its long-term average of 18x but below the peak of 24x. Rate cuts historically support equity multiples. Most analysts maintain a 12-month Nifty target of 24,000–25,000. Systematic investing (SIP) remains the safest approach.",
+    tag: "Investing",
+  },
+  {
+    id: "q4",
+    question: "Why is the Rupee weakening against the Dollar?",
+    answer:
+      "The Rupee dipped slightly as the rate cut narrowed the interest rate differential with the US. However, strong FII inflows and RBI's forex buffer (~$650B) are limiting the downside. Most analysts see the Rupee stabilising in the 83.80–84.50 range.",
+    tag: "Forex",
+  },
+  {
+    id: "q5",
+    question: "Should I move money from FD to equity now?",
+    answer:
+      "With rate cuts reducing FD returns over time, equities look more attractive on a risk-adjusted basis. Financial planners suggest keeping 6–12 months of expenses in liquid/FD, and gradually shifting surplus into diversified equity funds via SIP rather than lump sum.",
+    tag: "Personal Finance",
+  },
+];
+
 // ── Sparkline ─────────────────────────────────────────────────────────────────
 
 function Sparkline({ points, positive }: { points: number[]; positive: boolean }) {
@@ -162,6 +275,80 @@ function StockRow({ stock }: { stock: Stock }) {
           {stock.changePct.toFixed(2)}%
         </span>
       </div>
+    </div>
+  );
+}
+
+// ── Finance news card ─────────────────────────────────────────────────────────
+
+function FinanceNewsCard({ item }: { item: FinanceNewsItem }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div
+      className="flex flex-col gap-2 rounded-2xl bg-white p-4 transition-opacity select-none active:opacity-70"
+      onClick={() => setExpanded((v) => !v)}
+    >
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-bold tracking-wide text-black/40 uppercase">
+          {item.category}
+        </span>
+        <span className="ml-auto text-[10px] font-medium text-black/30">{item.time}</span>
+      </div>
+      <p className="text-[13px] leading-snug font-bold text-[#0c0d10]">{item.headline}</p>
+      {expanded && <p className="text-[12px] leading-relaxed text-black/55">{item.summary}</p>}
+      <div className="flex items-center gap-2 border-t border-black/[0.06] pt-2">
+        <span
+          className={`text-[11px] font-bold ${item.positive ? "text-[#25ab21]" : "text-[#fa2f40]"}`}
+        >
+          {item.positive ? "▲ Positive" : "▼ Negative"}
+        </span>
+        <span className="text-black/20">·</span>
+        <span className="text-[11px] font-medium text-black/35">{item.source}</span>
+        <span className="ml-auto text-[11px] font-semibold text-[#6d17ce]">
+          {expanded ? "Less" : "Read more"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ── FAQ card ──────────────────────────────────────────────────────────────────
+
+function FAQCard({ item }: { item: FAQItem }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div
+      className="flex flex-col gap-0 overflow-hidden rounded-2xl bg-white transition-opacity select-none active:opacity-70"
+      onClick={() => setExpanded((v) => !v)}
+    >
+      <div className="flex items-start gap-3 p-4">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <span className="self-start rounded-full bg-[#f6f3ff] px-2 py-0.5 text-[9px] font-bold tracking-wide text-[#6d17ce] uppercase">
+            {item.tag}
+          </span>
+          <p className="text-[13px] leading-snug font-semibold text-[#0c0d10]">{item.question}</p>
+        </div>
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 20 20"
+          fill="none"
+          className={`mt-0.5 shrink-0 text-[#6d17ce] transition-transform ${expanded ? "rotate-180" : ""}`}
+        >
+          <path
+            d="M5 7.5l5 5 5-5"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+      {expanded && (
+        <div className="border-t border-black/[0.06] bg-[#fafafa] px-4 py-3">
+          <p className="text-[12px] leading-relaxed text-black/65">{item.answer}</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -269,6 +456,59 @@ export default function MarketPulsePage() {
                 );
               })}
             </div>
+          </section>
+
+          {/* ── Discovery sections ── */}
+
+          {/* Trending searches */}
+          <section className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold tracking-widest text-black/40 uppercase">
+                Trending searches
+              </span>
+              <span className="text-base leading-none">🔥</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {TRENDING_SEARCHES.map((q) => (
+                <button
+                  key={q}
+                  className="rounded-full border border-black/10 bg-white px-3 py-1.5 text-left text-[12px] font-medium text-[#0c0d10] transition-colors active:border-[#6d17ce] active:bg-[#f6f3ff] active:text-[#6d17ce]"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* Finance news */}
+          <section className="flex flex-col gap-3">
+            <span className="text-[10px] font-bold tracking-widest text-black/40 uppercase">
+              Finance in the news
+            </span>
+            <ul className="flex list-none flex-col gap-3 p-0">
+              {FINANCE_NEWS.map((item) => (
+                <li key={item.id}>
+                  <FinanceNewsCard item={item} />
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {/* People are asking */}
+          <section className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold tracking-widest text-black/40 uppercase">
+                People are asking
+              </span>
+              <span className="text-base leading-none">💬</span>
+            </div>
+            <ul className="flex list-none flex-col gap-2 p-0">
+              {PEOPLE_ARE_ASKING.map((item) => (
+                <li key={item.id}>
+                  <FAQCard item={item} />
+                </li>
+              ))}
+            </ul>
           </section>
         </div>
       </main>
