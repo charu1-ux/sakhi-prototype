@@ -19,6 +19,168 @@ type Story = {
   isTop?: boolean;
 };
 
+// ── Briefing customiser ───────────────────────────────────────────────────────
+
+type BriefingConfig = {
+  style: string;
+  topics: string[];
+  length: string;
+  language: string;
+};
+
+const DEFAULT_CONFIG: BriefingConfig = {
+  style: "Calm",
+  topics: ["All"],
+  length: "5 min",
+  language: "English",
+};
+
+const STYLE_OPTIONS = ["Calm", "Punchy", "Anchor", "Podcast"];
+const TOPIC_OPTIONS = [
+  "All",
+  "India",
+  "International",
+  "Business",
+  "Sports",
+  "Entertainment",
+  "Tech",
+  "World",
+];
+const LENGTH_OPTIONS = ["2 min", "5 min", "10 min"];
+const LANGUAGE_OPTIONS = ["English", "Hinglish", "Hindi", "Marathi", "Gujarati"];
+
+function PillRow({
+  label,
+  options,
+  selected,
+  multi,
+  onSelect,
+}: {
+  label: string;
+  options: string[];
+  selected: string | string[];
+  multi?: boolean;
+  onSelect: (val: string) => void;
+}) {
+  const isActive = (opt: string) =>
+    multi ? (selected as string[]).includes(opt) : selected === opt;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="text-[10px] font-bold tracking-widest text-black/40 uppercase">{label}</span>
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {options.map((opt) => (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => onSelect(opt)}
+            className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-bold transition-all duration-150 active:scale-95 ${
+              isActive(opt) ? "bg-[#6d17ce] text-white" : "bg-[#eeeeef] text-[rgba(12,13,16,0.65)]"
+            }`}
+          >
+            {opt}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BriefingCustomiser({
+  config,
+  onChange,
+}: {
+  config: BriefingConfig;
+  onChange: (next: BriefingConfig) => void;
+}) {
+  const isDirty =
+    config.style !== DEFAULT_CONFIG.style ||
+    config.length !== DEFAULT_CONFIG.length ||
+    config.language !== DEFAULT_CONFIG.language ||
+    !(config.topics.length === 1 && config.topics[0] === "All");
+
+  function setStyle(val: string) {
+    onChange({ ...config, style: val });
+  }
+
+  function setLength(val: string) {
+    onChange({ ...config, length: val });
+  }
+
+  function setLanguage(val: string) {
+    onChange({ ...config, language: val });
+  }
+
+  function toggleTopic(val: string) {
+    if (val === "All") {
+      onChange({ ...config, topics: ["All"] });
+      return;
+    }
+    const without = config.topics.filter((t) => t !== "All");
+    const next = without.includes(val) ? without.filter((t) => t !== val) : [...without, val];
+    onChange({ ...config, topics: next.length === 0 ? ["All"] : next });
+  }
+
+  return (
+    <div className="flex flex-col gap-4 rounded-2xl bg-white p-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <span className="text-[13px] font-bold text-[#0c0d10]">Customise briefing</span>
+        {isDirty && (
+          <button
+            type="button"
+            onClick={() => onChange({ ...DEFAULT_CONFIG })}
+            className="text-[11px] font-bold text-[rgba(12,13,16,0.4)] active:scale-95"
+          >
+            Reset
+          </button>
+        )}
+      </div>
+
+      {/* Pill rows */}
+      <PillRow label="Style" options={STYLE_OPTIONS} selected={config.style} onSelect={setStyle} />
+      <PillRow
+        label="Topics"
+        options={TOPIC_OPTIONS}
+        selected={config.topics}
+        multi
+        onSelect={toggleTopic}
+      />
+      <PillRow
+        label="Length"
+        options={LENGTH_OPTIONS}
+        selected={config.length}
+        onSelect={setLength}
+      />
+      <PillRow
+        label="Language"
+        options={LANGUAGE_OPTIONS}
+        selected={config.language}
+        onSelect={setLanguage}
+      />
+
+      {/* CTA — slides in when dirty */}
+      {isDirty && (
+        <button
+          type="button"
+          className="flex w-full items-center justify-center gap-2 rounded-full bg-[#6d17ce] py-3 text-[14px] font-bold text-white transition-all duration-200 active:scale-[0.97]"
+        >
+          Regenerate briefing
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M5 12H19M13 6L19 12L13 18"
+              stroke="white"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ── Sample data ───────────────────────────────────────────────────────────────
 
 const STORIES: Story[] = [
@@ -250,6 +412,7 @@ export default function NewsBriefingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
+  const [briefingConfig, setBriefingConfig] = useState<BriefingConfig>({ ...DEFAULT_CONFIG });
   const scrollRef = useRef(false);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
@@ -297,6 +460,9 @@ export default function NewsBriefingPage() {
 
           {/* Listen button */}
           <ListenButton isPlaying={isPlaying} onToggle={() => setIsPlaying((p) => !p)} />
+
+          {/* Briefing customiser */}
+          <BriefingCustomiser config={briefingConfig} onChange={setBriefingConfig} />
 
           {/* Category pills */}
           <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
