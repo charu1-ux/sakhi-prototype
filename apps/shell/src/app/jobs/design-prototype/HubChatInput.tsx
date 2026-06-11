@@ -6,6 +6,10 @@ import { AnimatePresence, motion } from "framer-motion";
 
 import { HOME_ASSETS } from "./hub-data";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export type TagChipItem = { id: string; label: string };
+
 type Props = {
   placeholder?: string;
   value?: string;
@@ -15,9 +19,20 @@ type Props = {
   onSpeak?: () => void;
   /** "sleek" — icon-only Speak button (48×48 circle), fixed 48px input height, no multiline */
   variant?: "default" | "sleek";
+  /** Quick-reply tag chips shown above input; hidden while typing */
+  chips?: TagChipItem[];
+  onChipSelect?: (chip: TagChipItem) => void;
+  /** Show a calendar date-picker trigger inside the input pill */
+  showDatePicker?: boolean;
+  onDateSelect?: (date: Date) => void;
+  /** Optional hub context bar above the input (e.g. "Astrology ‹") */
+  hubTitle?: string;
+  hubBackHref?: string;
+  onHubBack?: () => void;
 };
 
-// Figma measurements
+// ─── Constants ────────────────────────────────────────────────────────────────
+
 const BTN_SIZE = 48;
 const SEND_SIZE = 36;
 const LINE_H = 21;
@@ -27,7 +42,7 @@ const PILL_PX_R = 6;
 const MAX_LINES = 3;
 const MAX_TA_H = LINE_H * MAX_LINES;
 
-// power3.inOut equivalent in cubic-bezier
+// power3.inOut equivalent
 const EASE = [0.7, 0, 0.3, 1] as const;
 const DUR = 0.28;
 
@@ -38,6 +53,205 @@ const btnMotion = {
   transition: { duration: DUR * 0.75, ease: EASE },
 };
 
+const slideUp = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: 4 },
+  transition: { duration: 0.22, ease: [0.2, 0, 0, 1] as const },
+};
+
+// ─── CalendarModal ────────────────────────────────────────────────────────────
+
+const MONTH_NAMES = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+const DAY_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
+function CalendarModal({
+  onSelect,
+  onClose,
+}: {
+  onSelect: (d: Date) => void;
+  onClose: () => void;
+}) {
+  const today = new Date();
+  const [year, setYear] = useState(today.getFullYear());
+  const [month, setMonth] = useState(today.getMonth());
+  const [picked, setPicked] = useState<Date | null>(null);
+
+  function prevMonth() {
+    if (month === 0) {
+      setMonth(11);
+      setYear((y) => y - 1);
+    } else setMonth((m) => m - 1);
+  }
+  function nextMonth() {
+    if (month === 11) {
+      setMonth(0);
+      setYear((y) => y + 1);
+    } else setMonth((m) => m + 1);
+  }
+
+  const totalDays = new Date(year, month + 1, 0).getDate();
+  const startDay = new Date(year, month, 1).getDay();
+  const cells: (number | null)[] = [
+    ...Array(startDay).fill(null),
+    ...Array.from({ length: totalDays }, (_, i) => i + 1),
+  ];
+
+  const isToday = (d: number) =>
+    d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+  const isPicked = (d: number) =>
+    picked?.getDate() === d && picked?.getMonth() === month && picked?.getFullYear() === year;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 12 }}
+      transition={{ duration: 0.26, ease: [0.05, 0.7, 0.1, 1] }}
+      className="absolute right-4 bottom-full left-4 mb-2 overflow-hidden rounded-[20px] bg-white"
+      style={{
+        border: "1px solid rgba(12,13,16,0.08)",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+        zIndex: 50,
+      }}
+    >
+      {/* Month nav */}
+      <div className="flex items-center justify-between px-5 pt-4 pb-3">
+        <button
+          onClick={prevMonth}
+          aria-label="Previous month"
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-[#eeeeef] text-[18px] font-medium text-[#0c0d10] transition-transform duration-[150ms] hover:scale-[1.06] focus:outline-none active:scale-[0.94]"
+        >
+          ‹
+        </button>
+        <span className="font-[JioType,sans-serif] text-[15px] font-medium text-[#0c0d10]">
+          {MONTH_NAMES[month]} {year}
+        </span>
+        <button
+          onClick={nextMonth}
+          aria-label="Next month"
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-[#eeeeef] text-[18px] font-medium text-[#0c0d10] transition-transform duration-[150ms] hover:scale-[1.06] focus:outline-none active:scale-[0.94]"
+        >
+          ›
+        </button>
+      </div>
+
+      {/* Weekday headers */}
+      <div className="grid grid-cols-7 px-4 pb-1">
+        {DAY_LABELS.map((d) => (
+          <div
+            key={d}
+            className="text-center font-[JioType,sans-serif] text-[11px] font-medium text-[rgba(12,13,16,0.38)]"
+          >
+            {d}
+          </div>
+        ))}
+      </div>
+
+      {/* Day grid */}
+      <div className="grid grid-cols-7 gap-y-1 px-4 pb-4">
+        {cells.map((day, i) => {
+          if (!day) return <div key={`e-${i}`} />;
+          const sel = isPicked(day);
+          const tod = isToday(day);
+          return (
+            <button
+              key={day}
+              onClick={() => setPicked(new Date(year, month, day))}
+              className={[
+                "mx-auto flex h-9 w-9 items-center justify-center rounded-full font-[JioType,sans-serif] text-[13px] font-medium transition-transform duration-[150ms] hover:scale-[1.08] focus:outline-none active:scale-[0.93]",
+                sel
+                  ? "bg-[#6d17ce] text-white"
+                  : tod
+                    ? "border border-[#6d17ce] text-[#6d17ce]"
+                    : "text-[#0c0d10] hover:bg-[#f5f5f5]",
+              ].join(" ")}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Actions — JDS button pattern */}
+      <div className="flex gap-2 px-4 pb-4">
+        <button
+          onClick={onClose}
+          className="h-11 flex-1 rounded-full bg-[#eeeeef] font-[JioType,sans-serif] text-[14px] font-medium text-[rgba(12,13,16,0.65)] transition-transform duration-[200ms] hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#310064] focus-visible:ring-offset-2 active:scale-[0.97]"
+        >
+          Cancel
+        </button>
+        <button
+          disabled={!picked}
+          onClick={() => {
+            if (picked) {
+              onSelect(picked);
+              onClose();
+            }
+          }}
+          className="h-11 flex-1 rounded-full bg-[#6d17ce] font-[JioType,sans-serif] text-[14px] font-medium text-white transition-transform duration-[200ms] hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#310064] focus-visible:ring-offset-2 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
+        >
+          Confirm
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── HubContextBar ────────────────────────────────────────────────────────────
+// Compact hub identity strip — shows current hub title with optional back nav.
+
+function HubContextBar({
+  title,
+  backHref,
+  onBack,
+}: {
+  title: string;
+  backHref?: string;
+  onBack?: () => void;
+}) {
+  return (
+    <div
+      className="flex items-center gap-2 px-4 py-2"
+      style={{ borderBottom: "1px solid rgba(12,13,16,0.06)" }}
+    >
+      {(onBack || backHref) && (
+        <a
+          href={backHref ?? "#"}
+          onClick={(e) => {
+            if (onBack) {
+              e.preventDefault();
+              onBack();
+            }
+          }}
+          aria-label="Back"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#eeeeef] text-[16px] font-medium text-[#0c0d10] transition-transform duration-[150ms] hover:scale-[1.06] focus:outline-none active:scale-[0.94]"
+        >
+          ‹
+        </a>
+      )}
+      <span className="flex-1 truncate font-[JioType,sans-serif] text-[13px] font-medium text-[rgba(12,13,16,0.65)]">
+        {title}
+      </span>
+    </div>
+  );
+}
+
+// ─── HubChatInput ─────────────────────────────────────────────────────────────
+
 export function HubChatInput({
   placeholder = "Ask me anything",
   value,
@@ -46,12 +260,23 @@ export function HubChatInput({
   onAdd,
   onSpeak,
   variant = "default",
+  chips,
+  onChipSelect,
+  showDatePicker = false,
+  onDateSelect,
+  hubTitle,
+  hubBackHref,
+  onHubBack,
 }: Props) {
   const isSleek = variant === "sleek";
   const isControlled = onChange !== undefined;
+
   const [localVal, setLocalVal] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [isMultiLine, setIsMultiLine] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [activeChip, setActiveChip] = useState<string | null>(null);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const text = isControlled ? (value ?? "") : localVal;
 
@@ -59,7 +284,6 @@ export function HubChatInput({
   const addRef = useRef<HTMLButtonElement>(null);
 
   // Resize textarea and sync multi-line state
-  // Both variants expand up to 3 lines then scroll — sleek only differs in Speak button shape
   useEffect(() => {
     const ta = textareaRef.current;
     const add = addRef.current;
@@ -67,14 +291,11 @@ export function HubChatInput({
 
     ta.style.height = "auto";
     const scrollH = ta.scrollHeight;
-
     const lines = scrollH <= LINE_H ? 1 : scrollH <= LINE_H * 2 ? 2 : 3;
-    const taTarget = LINE_H * lines;
-    const nowMulti = lines > 1;
-
-    ta.style.height = `${taTarget}px`;
+    ta.style.height = `${LINE_H * lines}px`;
     ta.style.overflowY = lines >= MAX_LINES ? "auto" : "hidden";
 
+    const nowMulti = lines > 1;
     setIsMultiLine(nowMulti);
     add.style.alignSelf = nowMulti ? "flex-end" : "center";
   }, [text]);
@@ -98,15 +319,87 @@ export function HubChatInput({
     onSubmit?.(text.trim());
     if (!isControlled) setLocalVal("");
     setIsTyping(false);
+    setActiveChip(null);
   }
+
+  function handleChipClick(chip: TagChipItem) {
+    const next = activeChip === chip.id ? null : chip.id;
+    setActiveChip(next);
+    onChipSelect?.(chip);
+    textareaRef.current?.focus();
+  }
+
+  function handleDateSelect(date: Date) {
+    const fmt = date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+    const newVal = text ? `${text} ${fmt}` : fmt;
+    if (isControlled) onChange?.(newVal);
+    else setLocalVal(newVal);
+    setIsTyping(true);
+    onDateSelect?.(date);
+  }
+
+  const hasChips = !!chips?.length;
+
+  // JDS field focus: bg flips surface-ghost → surface; border darkens
+  const pillBg = isFocused ? "#ffffff" : "#f5f5f5";
+  const pillBorder = isFocused ? "rgba(12,13,16,0.24)" : "rgba(12,13,16,0.10)";
 
   return (
     <footer
       className="sticky bottom-0 w-full bg-white"
-      style={{ borderTop: "1px solid #EAEAEA", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      style={{
+        borderTop: "1px solid rgba(12,13,16,0.08)",
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        position: "relative",
+      }}
     >
+      {/* CalendarModal — floats above footer */}
+      <AnimatePresence>
+        {showCalendar && (
+          <CalendarModal onSelect={handleDateSelect} onClose={() => setShowCalendar(false)} />
+        )}
+      </AnimatePresence>
+
+      {/* Hub context bar */}
+      {hubTitle && <HubContextBar title={hubTitle} backHref={hubBackHref} onBack={onHubBack} />}
+
+      {/* Tag chips row — slides in/out; hidden while typing */}
+      <AnimatePresence>
+        {hasChips && !isTyping && (
+          <motion.div
+            key="chips"
+            {...slideUp}
+            className="flex gap-[8px] overflow-x-auto px-4 pt-3 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {chips!.map((chip) => {
+              const active = activeChip === chip.id;
+              return (
+                <button
+                  key={chip.id}
+                  type="button"
+                  onClick={() => handleChipClick(chip)}
+                  className={[
+                    "shrink-0 rounded-full px-[14px] py-[7px] font-[JioType,sans-serif] text-[12px] font-medium whitespace-nowrap transition-all duration-[200ms] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#310064] focus-visible:ring-offset-2 active:scale-[0.96]",
+                    active
+                      ? "bg-[#6d17ce] text-white"
+                      : "bg-[#eeeeef] text-[#0c0d10] hover:bg-[#ede7ff] hover:text-[#6d17ce]",
+                  ].join(" ")}
+                >
+                  {chip.label}
+                </button>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main input row */}
       <div className="flex items-center gap-[6px] px-4 py-3">
-        {/* Add button — shrinks from 48→36 when typing to give more room to the input */}
+        {/* Add button — shrinks when typing */}
         <motion.button
           ref={addRef}
           type="button"
@@ -130,13 +423,14 @@ export function HubChatInput({
           />
         </motion.button>
 
-        {/* Input pill — border-radius morphs when going multi-line */}
+        {/* Input pill — borderRadius morphs on multi-line; border + bg change on focus (JDS field-focus pattern) */}
         <motion.div
           className="flex min-w-0 flex-1 overflow-hidden"
           animate={{ borderRadius: isMultiLine ? 18 : 40 }}
           transition={{ duration: DUR, ease: EASE }}
           style={{
-            backgroundColor: "#f5f5f5",
+            backgroundColor: pillBg,
+            border: `1px solid ${pillBorder}`,
             borderRadius: 40,
             paddingLeft: PILL_PX_L,
             paddingRight: PILL_PX_R,
@@ -146,8 +440,73 @@ export function HubChatInput({
             alignItems: isMultiLine ? "flex-end" : "center",
             display: "flex",
             minHeight: BTN_SIZE,
+            transition: "background-color 0.2s ease, border-color 0.2s ease",
           }}
         >
+          {/* Date picker trigger — calendar icon, slides in when showDatePicker=true and not typing */}
+          <AnimatePresence>
+            {showDatePicker && !isTyping && (
+              <motion.button
+                key="calendar"
+                type="button"
+                aria-label="Pick date"
+                onClick={() => setShowCalendar((v) => !v)}
+                {...slideUp}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-transform duration-[150ms] hover:scale-[1.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#310064] focus-visible:ring-offset-1 active:scale-[0.93]"
+                style={{
+                  backgroundColor: showCalendar ? "#6d17ce" : "#ede7ff",
+                  color: showCalendar ? "#ffffff" : "#6d17ce",
+                }}
+              >
+                {/* Calendar SVG icon */}
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect
+                    x="0.65"
+                    y="2.15"
+                    width="12.7"
+                    height="10.7"
+                    rx="1.85"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                  />
+                  <line
+                    x1="0.65"
+                    y1="5.35"
+                    x2="13.35"
+                    y2="5.35"
+                    stroke="currentColor"
+                    strokeWidth="1.2"
+                  />
+                  <line
+                    x1="4.5"
+                    y1="0.7"
+                    x2="4.5"
+                    y2="3.5"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                  />
+                  <line
+                    x1="9.5"
+                    y1="0.7"
+                    x2="9.5"
+                    y2="3.5"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </motion.button>
+            )}
+          </AnimatePresence>
+
+          {/* Textarea */}
           <textarea
             ref={textareaRef}
             rows={1}
@@ -157,21 +516,24 @@ export function HubChatInput({
             value={text}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             className="min-w-0 flex-1 resize-none border-none bg-transparent ring-0 outline-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&::placeholder]:truncate [&::placeholder]:overflow-hidden"
             style={{
               fontSize: "16px",
               lineHeight: `${LINE_H}px`,
-              color: text ? "#141414" : "rgba(0,0,0,0.65)",
+              color: text ? "#0c0d10" : "rgba(12,13,16,0.38)",
               height: LINE_H,
               maxHeight: MAX_TA_H,
               overflowY: "hidden",
               padding: 0,
               margin: 0,
               display: "block",
+              fontFamily: "JioType, -apple-system, sans-serif",
             }}
           />
 
-          {/* Send (arrow-up) — slides in inside the pill when typing */}
+          {/* Send button — slides in inside pill when typing */}
           <AnimatePresence>
             {isTyping && (
               <motion.button
@@ -179,7 +541,7 @@ export function HubChatInput({
                 type="button"
                 aria-label="Send"
                 onClick={handleSubmit}
-                className="flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center justify-center overflow-hidden rounded-full outline-none"
+                className="flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center justify-center overflow-hidden rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#310064] focus-visible:ring-offset-2"
                 style={{
                   width: SEND_SIZE,
                   height: SEND_SIZE,
@@ -201,11 +563,10 @@ export function HubChatInput({
           </AnimatePresence>
         </motion.div>
 
-        {/* Speak — slides out when typing begins */}
+        {/* Speak button — slides out when typing begins */}
         <AnimatePresence>
           {!isTyping &&
             (isSleek ? (
-              /* sleek: icon-only circle, same 48×48 as Add button */
               <motion.button
                 key="speak"
                 type="button"
@@ -230,7 +591,6 @@ export function HubChatInput({
                 />
               </motion.button>
             ) : (
-              /* default: icon + "Speak" label, pill shape */
               <motion.button
                 key="speak"
                 type="button"
@@ -248,7 +608,9 @@ export function HubChatInput({
                   className="pointer-events-none size-5"
                   unoptimized
                 />
-                <span className="text-base leading-normal whitespace-nowrap text-white">Speak</span>
+                <span className="font-[JioType,sans-serif] text-base leading-normal whitespace-nowrap text-white">
+                  Speak
+                </span>
               </motion.button>
             ))}
         </AnimatePresence>
