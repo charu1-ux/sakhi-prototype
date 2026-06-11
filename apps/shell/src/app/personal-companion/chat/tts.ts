@@ -43,7 +43,7 @@ export async function speak(
   id: string,
   text: string,
   lang: "hi" | "en",
-  opts?: { onEnd?: () => void },
+  opts?: { onEnd?: () => void; volume?: number },
 ): Promise<void> {
   spokenIds.add(id);
   if (typeof window === "undefined" || !("speechSynthesis" in window)) {
@@ -63,6 +63,7 @@ export async function speak(
   u.lang = voice?.lang ?? (lang === "hi" ? "hi-IN" : "en-IN");
   u.rate = 0.97;
   u.pitch = 1.02;
+  if (typeof opts?.volume === "number") u.volume = Math.max(0, Math.min(1, opts.volume));
   u.onend = () => opts?.onEnd?.();
   u.onerror = () => opts?.onEnd?.();
   window.speechSynthesis.speak(u);

@@ -49,15 +49,17 @@ The companion now opens on an **animated arrival** screen, then transitions into
 
 Avatar liveliness is "living portrait" motion only — a still photo can't truly blink/wave; real facial animation would need a rigged Lottie/short video swapped into `CompanionAvatar`.
 
-### Immersive Voice Chat (Grok-style, JBIQ language)
+### Call vs Voice note (post user-testing v2)
 
-The mic/"voice chat" affordance now opens an immersive hands-free voice companion instead of the WhatsApp-style voice-note panel:
+User testing said the immersive avatar surface read as a "call", and the mic should behave like a real voice note. Reworked into two clearly different modalities:
 
-- `chat/_components/VoiceChatScreen.tsx` — full-screen, white-dominant with a soft purple glow (NOT the dark Call screen). Large living-portrait avatar with aura rings that **react to the user's voice** (mic RMS) while listening and pulse while the companion speaks. Continuous loop: listen (VAD) → stub STT → reply via `generateReply` → **TTS auto-plays** with a live caption (user line italic, companion line solid). Controls: a mic button (tap to pause/resume) + a "Text" pill to switch back to chat. Module-level `voiceChatActive` StrictMode guard.
-- Each exchange is appended to the chat thread as voice bubbles via `useCompanion.appendVoiceExchange(...)` (companion bubble reuses the spoken id so chat doesn't re-autoplay it). Switching to "Text" lands in the chat with the transcript.
-- `VoiceNoteMode.tsx` is now unused (kept in repo); the composer mic routes to `VoiceChatScreen` via `CompanionExperience` (`voiceChatOpen` overlay).
+- **Call** (`chat/_components/CallScreen.tsx`) — the immersive, avatar-forward, captioned, hands-free experience (white-dominant + soft purple glow, JBIQ — replaced the old dark zinc screen). Companion greets first; continuous listen→reply loop with TTS + live captions; **call timer**; in-call controls: **Mute/unmute, Speaker/Earpiece (TTS volume), Cut call**. On end, only a `[Call ended · M:SS]` log lands in chat (no per-turn dump). Module-level `callActive` StrictMode guard.
+- **Voice note** (`chat/_components/VoiceNoteRecorder.tsx`) — mic opens an inline recorder with a live waveform and **live STT transcription (Web Speech API) streaming into the chat as a pending bubble** (`MessageList` `pendingUserText`). Send → posts the user voice note + companion voice reply (voice-first); Cancel backs out. Falls back to a canned transcript if SpeechRecognition is unavailable.
+- Removed: `VoiceChatScreen.tsx`, `VoiceNoteMode.tsx`, and `useCompanion.appendVoiceExchange` (superseded).
 
-Distinct from **Call** (`CallScreen`, dark zinc, phone metaphor): Voice Chat is the bright, avatar-forward, captioned conversation.
+### 'Just here to talk' pill + TALK storyline
+
+Quick chips now lead with a non-emotional **"Just here to talk" / "Bas baat karni hai"** pill (not all "I feel X"). Added a `TALK` emotion bucket + classifier and a warm, open companion storyline (casual, interest-led — chai/day/what's-on-your-mind) in all three languages.
 
 ### Verified
 

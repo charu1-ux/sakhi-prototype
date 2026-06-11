@@ -3,24 +3,33 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { CompanionAvatar } from "./CompanionAvatar";
-import { MuteIcon, MuteOffIcon, PhoneEndIcon } from "../icons";
+import {
+  ChevronDownIcon,
+  EarpieceIcon,
+  MicIcon,
+  MuteOffIcon,
+  PhoneEndIcon,
+  SpeakerIcon,
+} from "../icons";
 import {
   CALL_GREETING,
   COMPANION,
   STUB_TRANSCRIPTIONS,
   UI,
-  generateCallReply,
+  generateReply,
+  ttsLangFor,
   type UiLanguage,
 } from "../companion-data";
+import { speak, stopSpeaking } from "../tts";
 
 type Props = {
   uiLanguage: UiLanguage;
   onEnd: (durationLabel: string) => void;
 };
 
-type Phase = "connecting" | "speaking" | "listening";
+type Phase = "connecting" | "listening" | "thinking" | "speaking";
 
-// Module-level guard — prevents a second concurrent loop under React StrictMode.
+// Module-level guard against a double loop under React StrictMode.
 let callActive = false;
 
 function fmt(totalSec: number) {
@@ -29,27 +38,34 @@ function fmt(totalSec: number) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+// Immersive companion call — avatar-forward (JBIQ light), captioned, hands-free.
+// In-call controls: Mute/unmute, Speaker/Earpiece, Cut call.
 export function CallScreen({ uiLanguage, onEnd }: Props) {
   const t = UI[uiLanguage];
   const [phase, setPhase] = useState<Phase>("connecting");
   const [seconds, setSeconds] = useState(0);
   const [muted, setMuted] = useState(false);
-  const [caption, setCaption] = useState<{ who: "companion" | "user"; text: string } | null>(null);
-  const [amp, setAmp] = useState(0); // 0..1 drives the rings
+  const [speaker, setSpeaker] = useState(true);
+  const [amp, setAmp] = useState(0);
+  const [caption, setCaption] = useState<{ who: "user" | "companion"; text: string } | null>(null);
 
   const endedRef = useRef(false);
   const mutedRef = useRef(false);
+  const speakerRef = useRef(true);
+  const secondsRef = useRef(0);
   const streamRef = useRef<MediaStream | null>(null);
   const ctxRef = useRef<AudioContext | null>(null);
   const rafRef = useRef<number | null>(null);
   const secTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const secondsRef = useRef(0);
 
   useEffect(() => {
     mutedRef.current = muted;
   }, [muted]);
+  useEffect(() => {
+    speakerRef.current = speaker;
+  }, [speaker]);
 
-  const sleep = (ms: number) => new Promise<void>((res) => setTimeout(res, ms));
+  const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
   const stopAudio = useCallback(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -63,34 +79,14 @@ export function CallScreen({ uiLanguage, onEnd }: Props) {
     if (endedRef.current) return;
     endedRef.current = true;
     callActive = false;
+    stopSpeaking();
     stopAudio();
     if (secTimerRef.current) clearInterval(secTimerRef.current);
-    const label = `${t.callEnded} · ${fmt(secondsRef.current)}`;
-    onEnd(label);
+    onEnd(`${t.callEnded} · ${fmt(secondsRef.current)}`);
   }, [onEnd, stopAudio, t.callEnded]);
 
-  // Synthetic "speaking" amplitude animation.
-  const animateSpeaking = useCallback((durationMs: number) => {
-    return new Promise<void>((resolve) => {
-      const start = performance.now();
-      const loop = (now: number) => {
-        if (endedRef.current) return resolve();
-        const elapsed = now - start;
-        if (elapsed >= durationMs) {
-          setAmp(0);
-          return resolve();
-        }
-        // layered sines → lively but smooth
-        const a = 0.45 + 0.35 * Math.abs(Math.sin(elapsed / 140)) + 0.18 * Math.sin(elapsed / 47);
-        setAmp(Math.min(1, Math.max(0, a)));
-        rafRef.current = requestAnimationFrame(loop);
-      };
-      rafRef.current = requestAnimationFrame(loop);
-    });
-  }, []);
-
-  // Listen via mic RMS (drives rings + VAD). Resolves after ~0.9s silence post-speech,
-  // or a hard timeout. Degrades to a timed wait if the mic is unavailable.
+  // Listen via mic RMS (drives aura + VAD). Idles while muted; degrades to a
+  // timed wait when the mic is unavailable.
   const listenTurn = useCallback(() => {
     return new Promise<void>((resolve) => {
       let analyser: AnalyserNode | null = null;
@@ -107,7 +103,7 @@ export function CallScreen({ uiLanguage, onEnd }: Props) {
       };
 
       const loop = (now: number) => {
-        if (endedRef.current) return resolve();
+        if (endedRef.current) return finish();
         const dt = now - last;
         last = now;
         if (analyser && data && !mutedRef.current) {
@@ -148,7 +144,6 @@ export function CallScreen({ uiLanguage, onEnd }: Props) {
           src.connect(analyser);
           data = new Uint8Array(new ArrayBuffer(analyser.frequencyBinCount));
         } catch {
-          // No mic: fall back to a scripted pause.
           setTimeout(resolve, 3200);
           return;
         }
@@ -157,16 +152,40 @@ export function CallScreen({ uiLanguage, onEnd }: Props) {
     });
   }, []);
 
+  // Speak a line with a synthetic aura pulse; honours the speaker/earpiece volume.
+  const speakTurn = useCallback((id: string, text: string, lang: "hi" | "en") => {
+    return new Promise<void>((resolve) => {
+      const start = performance.now();
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        setAmp(0);
+        resolve();
+      };
+      const tick = (now: number) => {
+        if (endedRef.current) return finish();
+        const e = now - start;
+        const a = 0.45 + 0.35 * Math.abs(Math.sin(e / 150)) + 0.18 * Math.sin(e / 49);
+        setAmp(Math.min(1, Math.max(0, a)));
+        rafRef.current = requestAnimationFrame(tick);
+      };
+      rafRef.current = requestAnimationFrame(tick);
+      void speak(id, text, lang, { onEnd: finish, volume: speakerRef.current ? 1 : 0.4 });
+      setTimeout(finish, Math.min(9000, 1800 + text.length * 55));
+    });
+  }, []);
+
   useEffect(() => {
-    if (callActive) return; // StrictMode / double-mount guard
+    if (callActive) return;
     callActive = true;
     endedRef.current = false;
 
     (async () => {
-      await sleep(1200); // connecting (<2s)
+      await sleep(1100); // connecting (<2s)
       if (endedRef.current) return;
 
-      // Timer starts once connected.
       secTimerRef.current = setInterval(() => {
         secondsRef.current += 1;
         setSeconds(secondsRef.current);
@@ -175,28 +194,30 @@ export function CallScreen({ uiLanguage, onEnd }: Props) {
       // Companion greets first.
       setPhase("speaking");
       setCaption({ who: "companion", text: CALL_GREETING[uiLanguage] });
-      await animateSpeaking(2000);
+      await speakTurn(`call_hi_${Date.now()}`, CALL_GREETING[uiLanguage], ttsLangFor(uiLanguage));
 
       let turn = 0;
       while (!endedRef.current) {
-        // Listen
         setPhase("listening");
-        setCaption({ who: "user", text: "…" });
         await listenTurn();
         if (endedRef.current) break;
+        if (mutedRef.current) {
+          await sleep(250);
+          continue;
+        }
 
-        // "STT" → stub transcription as the user caption
+        setPhase("thinking");
         const pool = STUB_TRANSCRIPTIONS[uiLanguage];
         const userText = pool[turn % pool.length];
-        setCaption({ who: "user", text: `"${userText}"` });
-        await sleep(500);
+        setCaption({ who: "user", text: userText });
+        await sleep(550);
         if (endedRef.current) break;
 
-        // Companion reply (short call-turn) → "TTS" caption + speaking rings
-        const reply = generateCallReply(userText, uiLanguage);
+        const { bubbles, replyLanguage } = generateReply(userText, uiLanguage);
+        const reply = bubbles.map((b) => b.text).join(" ");
         setPhase("speaking");
         setCaption({ who: "companion", text: reply });
-        await animateSpeaking(Math.min(4200, 1400 + reply.length * 45));
+        await speakTurn(`call_${Date.now()}_${turn}`, reply, ttsLangFor(replyLanguage));
         turn++;
       }
     })();
@@ -204,94 +225,182 @@ export function CallScreen({ uiLanguage, onEnd }: Props) {
     return () => {
       callActive = false;
       endedRef.current = true;
+      stopSpeaking();
       stopAudio();
       if (secTimerRef.current) clearInterval(secTimerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const ringScale = 1 + amp * 0.55;
-  const ringScale2 = 1 + amp * 0.9;
+  const ring1 = 1 + amp * 0.5;
+  const ring2 = 1 + amp * 0.85;
   const statusText =
     phase === "connecting"
       ? t.connecting
-      : phase === "speaking"
-        ? `${COMPANION.name} ${t.speaking}`
-        : t.listening;
+      : muted
+        ? t.muted
+        : phase === "listening"
+          ? `${t.listening.split("…")[0]}…`
+          : phase === "thinking"
+            ? "…"
+            : `${COMPANION.name} ${t.speaking}`;
 
   return (
-    <div className="absolute inset-0 z-50 flex flex-col items-center justify-between bg-zinc-950 px-6 pt-[max(env(safe-area-inset-top),40px)] pb-[max(env(safe-area-inset-bottom),32px)] text-white">
-      {/* Top: name + timer */}
-      <div className="flex flex-col items-center gap-1 pt-6">
-        <span className="text-[20px] font-bold">{COMPANION.name}</span>
-        <span className="text-[14px] text-white/55 tabular-nums">
-          {phase === "connecting" ? t.connecting : fmt(seconds)}
-        </span>
-      </div>
+    <div className="absolute inset-0 z-50 flex flex-col overflow-hidden">
+      {/* warm JBIQ ambient backdrop (white-dominant, soft purple glow) */}
+      <div
+        aria-hidden
+        className="absolute inset-0"
+        style={{
+          background: "radial-gradient(110% 70% at 50% 12%, #efe7ff 0%, #f6f3ff 38%, #ffffff 78%)",
+        }}
+      />
 
-      {/* Centre: avatar with two concentric amplitude rings */}
-      <div className="relative flex items-center justify-center">
-        <span
-          className="absolute rounded-full border border-[#8B2FE8]/30"
-          style={{
-            width: 200,
-            height: 200,
-            transform: `scale(${ringScale2})`,
-            transition: "transform 90ms linear",
-            opacity: 0.5 - amp * 0.2,
-          }}
-        />
-        <span
-          className="absolute rounded-full"
-          style={{
-            width: 160,
-            height: 160,
-            transform: `scale(${ringScale})`,
-            transition: "transform 90ms linear",
-            background: "radial-gradient(circle, rgba(109,23,206,0.45) 0%, rgba(109,23,206,0) 70%)",
-          }}
-        />
-        <span
-          className={phase === "connecting" ? "animate-pulse" : ""}
-          style={{ filter: "drop-shadow(0 0 24px rgba(109,23,206,0.5))" }}
+      {/* top bar */}
+      <div
+        className="relative z-10 flex shrink-0 items-center justify-between px-3"
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 10px)" }}
+      >
+        <button
+          type="button"
+          onClick={endCall}
+          aria-label="Minimise"
+          className="flex size-9 cursor-pointer items-center justify-center rounded-full bg-white/70 text-[#0c0d10] backdrop-blur transition-transform duration-200 ease-[cubic-bezier(0.2,0,0,1)] outline-none focus-visible:ring-2 focus-visible:ring-[#8B2FE8] active:scale-[0.92]"
         >
-          <CompanionAvatar size={120} />
-        </span>
+          <ChevronDownIcon className="size-5" />
+        </button>
+        <span className="text-[14px] font-bold text-[#0c0d10]">{COMPANION.name}</span>
+        <span className="size-9" />
       </div>
 
-      {/* Live caption */}
-      <div className="flex min-h-[88px] w-full flex-col items-center justify-end gap-1">
-        <span className="text-[13px] font-medium tracking-wide text-white/45">{statusText}</span>
-        {caption && caption.text !== "…" && (
+      {/* avatar + status + timer */}
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center gap-6 px-6">
+        <div
+          className="relative flex items-center justify-center"
+          style={{ width: 280, height: 280 }}
+        >
+          <span
+            aria-hidden
+            className="absolute rounded-full"
+            style={{
+              width: 260,
+              height: 260,
+              transform: `scale(${ring2})`,
+              transition: "transform 90ms linear",
+              background:
+                "radial-gradient(circle, rgba(109,23,206,0.16) 0%, rgba(109,23,206,0) 70%)",
+            }}
+          />
+          <span
+            aria-hidden
+            className="absolute rounded-full border border-[#8B2FE8]/25"
+            style={{
+              width: 210,
+              height: 210,
+              transform: `scale(${ring1})`,
+              transition: "transform 90ms linear",
+            }}
+          />
+          <span
+            className="relative"
+            style={{
+              animation: "dkb-call-float 6s ease-in-out infinite",
+              filter: "drop-shadow(0 14px 32px rgba(109,23,206,0.25))",
+            }}
+          >
+            <CompanionAvatar size={176} showActiveDot />
+          </span>
+        </div>
+
+        <div className="flex flex-col items-center gap-1">
+          <span className="text-[14px] font-medium tracking-wide text-[rgba(12,13,16,0.55)]">
+            {statusText}
+          </span>
+          <span className="text-[13px] text-[rgba(12,13,16,0.4)] tabular-nums">
+            {phase === "connecting" ? "" : fmt(seconds)}
+          </span>
+        </div>
+      </div>
+
+      {/* live caption */}
+      <div className="relative z-10 flex min-h-[84px] shrink-0 items-start justify-center px-8">
+        {caption && (
           <p
-            className={`max-w-[300px] text-center text-[16px] leading-snug ${
-              caption.who === "user" ? "text-white/70 italic" : "text-white"
+            className={`max-w-[330px] text-center text-[18px] leading-snug ${
+              caption.who === "user"
+                ? "text-[rgba(12,13,16,0.5)] italic"
+                : "font-medium text-[#0c0d10]"
             }`}
           >
-            {caption.text}
+            {caption.who === "user" ? `“${caption.text}”` : caption.text}
           </p>
         )}
       </div>
 
-      {/* Controls */}
-      <div className="flex items-center gap-10 pt-2">
-        <button
-          type="button"
+      {/* controls: mute · speaker · cut */}
+      <div
+        className="relative z-10 flex shrink-0 items-center justify-center gap-8 px-6 pt-2"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)" }}
+      >
+        <ControlButton
+          label={muted ? t.unmute : t.mute}
+          active={muted}
           onClick={() => setMuted((m) => !m)}
-          aria-label={muted ? "Unmute" : "Mute"}
-          className="flex size-14 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white transition-transform duration-200 ease-[cubic-bezier(0.2,0,0,1)] outline-none focus-visible:ring-2 focus-visible:ring-white/60 active:scale-[0.95]"
         >
-          {muted ? <MuteOffIcon className="size-6" /> : <MuteIcon className="size-6" />}
-        </button>
+          {muted ? <MuteOffIcon className="size-6" /> : <MicIcon className="size-6" />}
+        </ControlButton>
+
         <button
           type="button"
           onClick={endCall}
-          aria-label="End call"
-          className="flex size-16 cursor-pointer items-center justify-center rounded-full bg-[#fa2f40] text-white transition-transform duration-200 ease-[cubic-bezier(0.2,0,0,1)] outline-none focus-visible:ring-2 focus-visible:ring-white/60 active:scale-[0.95]"
+          aria-label={t.endCall}
+          className="flex size-[68px] cursor-pointer items-center justify-center rounded-full bg-[#fa2f40] text-white shadow-[0_8px_24px_rgba(250,47,64,0.35)] transition-transform duration-200 ease-[cubic-bezier(0.2,0,0,1)] outline-none focus-visible:ring-2 focus-visible:ring-[#fa2f40] focus-visible:ring-offset-2 active:scale-[0.95]"
         >
           <PhoneEndIcon className="size-7" />
         </button>
+
+        <ControlButton
+          label={speaker ? t.speaker : t.earpiece}
+          active={speaker}
+          onClick={() => setSpeaker((s) => !s)}
+        >
+          {speaker ? <SpeakerIcon className="size-6" /> : <EarpieceIcon className="size-6" />}
+        </ControlButton>
       </div>
+
+      <style>{`
+        @keyframes dkb-call-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+      `}</style>
+    </div>
+  );
+}
+
+function ControlButton({
+  label,
+  active,
+  onClick,
+  children,
+}: {
+  label: string;
+  active?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={label}
+        className={`flex size-14 cursor-pointer items-center justify-center rounded-full transition-transform duration-200 ease-[cubic-bezier(0.2,0,0,1)] outline-none focus-visible:ring-2 focus-visible:ring-[#8B2FE8] focus-visible:ring-offset-2 active:scale-[0.94] ${
+          active
+            ? "bg-[#6d17ce] text-white"
+            : "bg-white text-[#0c0d10] shadow-[0_1px_3px_rgba(12,13,16,0.1)]"
+        }`}
+      >
+        {children}
+      </button>
+      <span className="text-[11px] font-medium text-[rgba(12,13,16,0.55)]">{label}</span>
     </div>
   );
 }

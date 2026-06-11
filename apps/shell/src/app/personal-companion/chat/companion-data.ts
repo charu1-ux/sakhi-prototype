@@ -19,6 +19,7 @@ export type EmotionBucket =
   | "CONFLICT"
   | "CONFUSED"
   | "POSITIVE"
+  | "TALK"
   | "NEUTRAL"
   | "CRISIS";
 
@@ -88,6 +89,17 @@ type UiStrings = {
   callEnded: string;
   speaking: string;
   yourFriend: string;
+  // call controls
+  mute: string;
+  unmute: string;
+  speaker: string;
+  earpiece: string;
+  endCall: string;
+  muted: string;
+  // voice note
+  recordingHint: string;
+  send: string;
+  cancel: string;
 };
 
 export const UI: Record<UiLanguage, UiStrings> = {
@@ -111,6 +123,15 @@ export const UI: Record<UiLanguage, UiStrings> = {
     callEnded: "Call ended",
     speaking: "speaking…",
     yourFriend: "Your friend",
+    mute: "Mute",
+    unmute: "Unmute",
+    speaker: "Speaker",
+    earpiece: "Earpiece",
+    endCall: "End",
+    muted: "Muted",
+    recordingHint: "Sun raha hoon… ho jaye toh bhej do",
+    send: "Send",
+    cancel: "Cancel",
   },
   hi: {
     statusFriend: "आपका दोस्त",
@@ -132,6 +153,15 @@ export const UI: Record<UiLanguage, UiStrings> = {
     callEnded: "कॉल समाप्त",
     speaking: "बोल रहा है…",
     yourFriend: "आपका दोस्त",
+    mute: "म्यूट",
+    unmute: "अनम्यूट",
+    speaker: "स्पीकर",
+    earpiece: "ईयरपीस",
+    endCall: "समाप्त",
+    muted: "म्यूट है",
+    recordingHint: "सुन रहा हूँ… हो जाए तो भेज दो",
+    send: "भेजें",
+    cancel: "रद्द करें",
   },
   en: {
     statusFriend: "Your friend",
@@ -153,6 +183,15 @@ export const UI: Record<UiLanguage, UiStrings> = {
     callEnded: "Call ended",
     speaking: "speaking…",
     yourFriend: "Your friend",
+    mute: "Mute",
+    unmute: "Unmute",
+    speaker: "Speaker",
+    earpiece: "Earpiece",
+    endCall: "End",
+    muted: "Muted",
+    recordingHint: "Listening… tap send when done",
+    send: "Send",
+    cancel: "Cancel",
   },
 };
 
@@ -189,24 +228,24 @@ export type QuickChip = { id: string; label: string; isCall?: boolean };
 
 export const QUICK_CHIPS: Record<UiLanguage, QuickChip[]> = {
   hinglish: [
+    { id: "talk", label: "Bas baat karni hai" },
     { id: "sad", label: "Udaas hoon" },
-    { id: "anxious", label: "Ghabrahat ho rahi hai" },
     { id: "lonely", label: "Akela feel ho raha hai" },
-    { id: "confused", label: "Samajh nahi aa raha" },
+    { id: "anxious", label: "Ghabrahat ho rahi hai" },
     { id: "call", label: "Call me", isCall: true },
   ],
   hi: [
+    { id: "talk", label: "बस बात करनी है" },
     { id: "sad", label: "उदास हूँ" },
-    { id: "anxious", label: "घबराहट हो रही है" },
     { id: "lonely", label: "अकेला लग रहा है" },
-    { id: "confused", label: "समझ नहीं आ रहा" },
+    { id: "anxious", label: "घबराहट हो रही है" },
     { id: "call", label: "कॉल करें", isCall: true },
   ],
   en: [
+    { id: "talk", label: "Just here to talk" },
     { id: "sad", label: "I'm feeling sad" },
-    { id: "anxious", label: "I'm anxious" },
     { id: "lonely", label: "I'm lonely" },
-    { id: "confused", label: "I'm confused" },
+    { id: "anxious", label: "I'm anxious" },
     { id: "call", label: "Call me", isCall: true },
   ],
 };
@@ -236,6 +275,12 @@ const CRISIS_TERMS =
 export function classifyEmotion(text: string): EmotionBucket {
   const t = text.toLowerCase();
   if (CRISIS_TERMS.test(text)) return "CRISIS";
+  if (
+    /(just here to talk|here to talk|just want to talk|wanna talk|just talk|bas baat|baat karni|baat karne|baatein|timepass|bas aise|yunhi|bas chill|bas connect|बात करनी|बस बात|यूँ ही|बातें)/i.test(
+      t,
+    )
+  )
+    return "TALK";
   if (/(sad|udaas|dukhi|low|rona|cry|उदास|दुखी|रो)/i.test(t)) return "SAD";
   if (/(anxious|anxiety|ghabra|tension|tense|nervous|dar|chinta|घबरा|चिंता|डर|तनाव)/i.test(t))
     return "ANXIOUS";
@@ -360,6 +405,23 @@ const POOL: ReplyPool = {
     [
       ["Oh that's lovely to hear!", "Tell me more, what happened?"],
       ["That's wonderful!", "I'd love to hear more about it."],
+    ],
+  ),
+  TALK: fill(
+    [
+      ["Arre, mujhe toh bas yahi chahiye tha!", "Chal, kaisa guzra aaj ka din?"],
+      ["Perfect — bina kisi wajah ke baat karte hain.", "Sabse pehle… chai hui ki nahi aaj?"],
+      ["Achha laga ki tu yunhi aa gaya.", "Bata, abhi dimaag mein sabse upar kya chal raha hai?"],
+    ],
+    [
+      ["अरे, मुझे तो बस यही चाहिए था!", "चलो, कैसा गुज़रा आज का दिन?"],
+      ["बढ़िया — बिना किसी वजह के बातें करते हैं।", "सबसे पहले… आज चाय हुई कि नहीं?"],
+      ["अच्छा लगा कि तुम यूँ ही आ गए।", "बताओ, अभी दिमाग़ में सबसे ऊपर क्या चल रहा है?"],
+    ],
+    [
+      ["Honestly, that's my favourite kind of visit.", "So… how's your day been?"],
+      ["Perfect — let's just talk, no agenda.", "First things first: had your chai yet today?"],
+      ["I'm really glad you just dropped by.", "What's been on your mind lately?"],
     ],
   ),
   NEUTRAL: fill(

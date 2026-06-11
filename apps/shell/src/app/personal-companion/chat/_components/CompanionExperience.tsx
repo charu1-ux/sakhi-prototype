@@ -5,7 +5,6 @@ import { useState } from "react";
 import { CallScreen } from "./CallScreen";
 import { ChatView } from "./ChatView";
 import { ProfileSheet } from "./ProfileSheet";
-import { VoiceChatScreen } from "./VoiceChatScreen";
 import { WelcomeArrival } from "./WelcomeArrival";
 import { stopSpeaking } from "../tts";
 import { useCompanion } from "../useCompanion";
@@ -22,14 +21,14 @@ export function CompanionExperience({ initialPhase = "welcome" }: { initialPhase
     messages,
     isTyping,
     sendUserMessage,
-    appendVoiceExchange,
     appendCallRecord,
     clearChat,
   } = useCompanion();
 
   const [phase, setPhase] = useState<Phase>(initialPhase);
   const [input, setInput] = useState("");
-  const [voiceChatOpen, setVoiceChatOpen] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [liveTranscript, setLiveTranscript] = useState("");
   const [callOpen, setCallOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -58,13 +57,28 @@ export function CompanionExperience({ initialPhase = "welcome" }: { initialPhase
     enterChat();
   };
 
+  // Mic → voice note recorder (live transcription streams into the chat).
   const handleStartVoice = () => {
     stopSpeaking();
-    setVoiceChatOpen(true);
+    setLiveTranscript("");
+    setRecording(true);
+    enterChat();
+  };
+
+  const handleVoiceSend = (finalText: string) => {
+    setRecording(false);
+    setLiveTranscript("");
+    void sendUserMessage(finalText, { voice: true });
+  };
+
+  const handleVoiceCancel = () => {
+    setRecording(false);
+    setLiveTranscript("");
   };
 
   const handleCall = () => {
     stopSpeaking();
+    setRecording(false);
     enterChat();
     setCallOpen(true);
   };
@@ -103,6 +117,11 @@ export function CompanionExperience({ initialPhase = "welcome" }: { initialPhase
             onInputChange={setInput}
             onSend={handleSend}
             onStartVoice={handleStartVoice}
+            recording={recording}
+            liveTranscript={liveTranscript}
+            onVoiceTranscript={setLiveTranscript}
+            onVoiceSend={handleVoiceSend}
+            onVoiceCancel={handleVoiceCancel}
             showChips={showChips}
             onChip={handleChip}
             onBack={goHome}
@@ -111,20 +130,6 @@ export function CompanionExperience({ initialPhase = "welcome" }: { initialPhase
           />
         )}
       </div>
-
-      {voiceChatOpen && (
-        <VoiceChatScreen
-          uiLanguage={uiLanguage}
-          onExchange={(userText, companionText, voiceLang, companionId) => {
-            appendVoiceExchange(userText, companionText, voiceLang, companionId);
-            enterChat();
-          }}
-          onClose={() => {
-            setVoiceChatOpen(false);
-            if (messages.some((m) => m.sender === "user")) enterChat();
-          }}
-        />
-      )}
 
       {callOpen && (
         <CallScreen

@@ -135,35 +135,6 @@ export function useCompanion() {
     [streamCompanion],
   );
 
-  // Append a hands-free voice-chat turn (user + companion) to the thread as
-  // voice bubbles. The companion bubble reuses the id the Voice Chat screen
-  // already spoke, so the chat won't auto-replay it on mount.
-  const appendVoiceExchange = useCallback(
-    (userText: string, companionText: string, voiceLang: "hi" | "en", companionId: string) => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: newId(),
-          sender: "user",
-          text: userText,
-          kind: "text",
-          voice: true,
-          durationSec: estimateVoiceDuration(userText),
-        },
-        {
-          id: companionId,
-          sender: "companion",
-          text: companionText,
-          kind: "text",
-          voice: true,
-          durationSec: estimateVoiceDuration(companionText),
-          voiceLang,
-        },
-      ]);
-    },
-    [],
-  );
-
   const appendCallRecord = useCallback((durationLabel: string) => {
     setMessages((prev) => [
       ...prev,
@@ -198,7 +169,6 @@ export function useCompanion() {
     sessionCount,
     crisisActive,
     sendUserMessage,
-    appendVoiceExchange,
     appendCallRecord,
     clearChat,
   };
