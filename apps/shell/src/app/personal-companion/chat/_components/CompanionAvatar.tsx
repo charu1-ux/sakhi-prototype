@@ -1,12 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // Dil Ki Baat avatar. Shows the persona photo if present at AVATAR_SRC;
 // otherwise falls back to a warm purple gradient orb with a heart glyph.
-// To set the persona image, drop a square image at:
+//
+// To set the persona image, save a square image (PNG) at:
 //   apps/shell/public/assets/personal-companion/avatar.png
+// The image is preloaded first, so a missing file shows the heart cleanly
+// (never a broken-image icon).
 const AVATAR_SRC = "/assets/personal-companion/avatar.png";
+
+// Module-level cache so we only probe the image once per session.
+let avatarStatus: "unknown" | "ok" | "missing" = "unknown";
 
 type Props = {
   size?: number;
@@ -15,8 +21,23 @@ type Props = {
 };
 
 export function CompanionAvatar({ size = 40, className, showActiveDot = false }: Props) {
-  const [imgOk, setImgOk] = useState(true);
+  const [status, setStatus] = useState<"unknown" | "ok" | "missing">(avatarStatus);
   const dot = Math.max(8, Math.round(size * 0.26));
+
+  useEffect(() => {
+    // Initial state already reflects the cache; only probe if still unknown.
+    if (avatarStatus !== "unknown") return;
+    const probe = new window.Image();
+    probe.onload = () => {
+      avatarStatus = "ok";
+      setStatus("ok");
+    };
+    probe.onerror = () => {
+      avatarStatus = "missing";
+      setStatus("missing");
+    };
+    probe.src = AVATAR_SRC;
+  }, []);
 
   return (
     <span
@@ -27,16 +48,15 @@ export function CompanionAvatar({ size = 40, className, showActiveDot = false }:
         className="flex size-full items-center justify-center overflow-hidden rounded-full"
         style={{ background: "linear-gradient(140deg, #8B2FE8 0%, #6d17ce 60%, #4a0e93 100%)" }}
       >
-        {imgOk ? (
+        {status === "ok" ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={AVATAR_SRC}
-            alt="Dil Ki Baat"
+            alt=""
             width={size}
             height={size}
             className="size-full object-cover"
             style={{ objectPosition: "50% 22%" }}
-            onError={() => setImgOk(false)}
           />
         ) : (
           <svg
