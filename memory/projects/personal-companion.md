@@ -38,6 +38,17 @@ A non-destructive scripted demo lives alongside the free-form chat, reachable at
 
 The free-form chat stays the product surface; this is purely a reliable stakeholder-demo rail. To remove: delete `story-data.ts` + `HappyFlowStory.tsx` and drop the `?demo` branch in `page.tsx`.
 
+### Animated welcome arrival (default entry)
+
+The companion now opens on an **animated arrival** screen, then transitions into the chat on the first reply — so the user never lands on a near-empty thread.
+
+- `chat/_components/WelcomeArrival.tsx` — living-portrait avatar (breathing/float, pulsing aura rings, shimmer sweep), greeting spoken aloud via TTS (aura reacts), greeting text rises in, plus reply affordances right there: quick chips + composer (text + mic) + a Call pill.
+- `chat/_components/ChatView.tsx` — the chat surface extracted as presentational (props-driven).
+- `chat/_components/CompanionExperience.tsx` — orchestrator: holds ONE `useCompanion` instance + shared interaction state, renders `WelcomeArrival` or `ChatView` over the same conversation, and the greeting seen on arrival becomes the first chat message. Owns the Call/Profile overlays.
+- `chat/page.tsx` modes (via `useSyncExternalStore`): default = arrival→chat; **`?intro=0`** = straight to chat (skip arrival); **`?demo=happy`** = scripted story.
+
+Avatar liveliness is "living portrait" motion only — a still photo can't truly blink/wave; real facial animation would need a rigged Lottie/short video swapped into `CompanionAvatar`.
+
 ### Verified
 
 `tsc`, `eslint`, and `next build` all pass; `/personal-companion` + `/personal-companion/chat` in route manifest.
