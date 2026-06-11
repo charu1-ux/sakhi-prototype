@@ -414,7 +414,7 @@ function CalendarModal({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 12 }}
         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        className="shadow-elev-2 w-full max-w-sm overflow-hidden rounded-[20px] bg-white"
+        className="shadow-elev-2 w-full max-w-sm overflow-hidden rounded-xl bg-white"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header — hidden in year sub-view (replaced by back + Select Year) */}
@@ -627,7 +627,7 @@ function TimeSheet({
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-        className="rounded-t-[24px] bg-white px-5 pt-3 pb-8"
+        className="rounded-t-xl bg-white px-5 pt-3 pb-8"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Drag handle */}
@@ -837,7 +837,7 @@ function PlaceSheet({
           animate={{ y: 0 }}
           exit={{ y: "100%" }}
           transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-col overflow-hidden rounded-t-[24px] bg-white"
+          className="flex flex-col overflow-hidden rounded-t-xl bg-white"
           style={{ height: "85%" }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -1036,7 +1036,7 @@ function PlaceSheet({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 12 }}
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="shadow-elev-2 w-full max-w-sm rounded-[20px] bg-white px-5 pt-5 pb-5"
+              className="shadow-elev-2 w-full max-w-sm rounded-xl bg-white px-5 pt-5 pb-5"
               onClick={(e) => e.stopPropagation()}
             >
               <p className="font-jio mb-5 text-[18px] font-semibold text-[#0c0d10]">
