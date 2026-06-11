@@ -31,7 +31,24 @@ export type ChatMessage = {
   /** "call" records render as a system pill rather than a bubble. */
   kind?: "text" | "call-record";
   crisis?: boolean;
+  /** Voice message — renders as a waveform + transcript; companion ones speak (TTS). */
+  voice?: boolean;
+  /** Spoken length in seconds (for the waveform duration label). */
+  durationSec?: number;
+  /** TTS voice family for companion voice messages. */
+  voiceLang?: "hi" | "en";
 };
+
+/** Rough spoken duration from text length — for the voice-note duration label. */
+export function estimateVoiceDuration(text: string): number {
+  const words = text.trim().split(/\s+/).length;
+  return Math.max(2, Math.round(words / 2.4));
+}
+
+/** Map a reply language to a TTS voice family (Devanagari → Hindi voice). */
+export function ttsLangFor(lang: ReplyLanguage): "hi" | "en" {
+  return lang === "hi" || lang === "kn" || lang === "mr" ? "hi" : "en";
+}
 
 export type Bubble = { text: string; delayMs: number };
 

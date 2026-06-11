@@ -10,6 +10,7 @@ import { MessageList } from "./_components/MessageList";
 import { ProfileSheet } from "./_components/ProfileSheet";
 import { QuickChips } from "./_components/QuickChips";
 import { VoiceNoteMode } from "./_components/VoiceNoteMode";
+import { stopSpeaking } from "./tts";
 import { useCompanion } from "./useCompanion";
 
 // Route entry: ?demo=happy plays the scripted Happy-Flow story; otherwise the
@@ -30,7 +31,6 @@ function FreeFormChat() {
     setUiLanguage,
     messages,
     isTyping,
-    sessionCount,
     sendUserMessage,
     appendCallRecord,
     clearChat,
@@ -59,16 +59,20 @@ function FreeFormChat() {
     void sendUserMessage(label);
   };
 
-  // Quick chips show while the input is empty, voice is closed, and the user
-  // hasn't yet established their own pattern (hidden after session 3 — per PRD).
-  const showChips = input.trim() === "" && !voiceOpen && sessionCount < 3;
+  // Quick chips greet the user on landing so the screen is never blank. They
+  // stay until the user sends their first message, then make way for the chat.
+  const userHasSent = messages.some((m) => m.sender === "user");
+  const showChips = input.trim() === "" && !voiceOpen && !userHasSent;
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden bg-[#f5f5f5]">
       <CompanionHeader
         uiLanguage={uiLanguage}
         onBack={goHome}
-        onCall={() => setCallOpen(true)}
+        onCall={() => {
+          stopSpeaking();
+          setCallOpen(true);
+        }}
         onMenu={() => setProfileOpen(true)}
       />
 
@@ -83,7 +87,7 @@ function FreeFormChat() {
           uiLanguage={uiLanguage}
           onTranscribed={(text) => {
             setVoiceOpen(false);
-            void sendUserMessage(text);
+            void sendUserMessage(text, { voice: true });
           }}
           onCancel={() => setVoiceOpen(false)}
         />

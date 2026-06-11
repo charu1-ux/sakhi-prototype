@@ -135,6 +135,23 @@ export function CheckIcon({ className }: IconProps) {
   );
 }
 
+export function PlayIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M6 4.5l9 5.5-9 5.5v-11Z" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function PauseIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <rect x="5.5" y="4" width="3.2" height="12" rx="1.2" fill="currentColor" />
+      <rect x="11.3" y="4" width="3.2" height="12" rx="1.2" fill="currentColor" />
+    </svg>
+  );
+}
+
 export function RefreshIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">

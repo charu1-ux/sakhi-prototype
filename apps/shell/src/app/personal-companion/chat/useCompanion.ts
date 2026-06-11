@@ -5,10 +5,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   type ChatMessage,
   type UiLanguage,
+  estimateVoiceDuration,
   FIRST_TIME_GREETING,
+  generateReply,
   RETURNING_GREETING,
   RETURNING_MEMORY_GREETING,
-  generateReply,
+  ttsLangFor,
 } from "./companion-data";
 
 const LANG_KEY = "dkb_ui_language";
@@ -87,14 +89,48 @@ export function useCompanion() {
   }, []);
 
   const sendUserMessage = useCallback(
-    async (text: string) => {
+    async (text: string, opts?: { voice?: boolean }) => {
       const clean = text.trim();
       if (!clean) return;
-      setMessages((prev) => [...prev, { id: newId(), sender: "user", text: clean, kind: "text" }]);
+      const voice = !!opts?.voice;
 
-      const { bubbles, crisis } = generateReply(clean, langRef.current);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: newId(),
+          sender: "user",
+          text: clean,
+          kind: "text",
+          voice,
+          durationSec: voice ? estimateVoiceDuration(clean) : undefined,
+        },
+      ]);
+
+      const { bubbles, crisis, replyLanguage } = generateReply(clean, langRef.current);
       if (crisis) setCrisisActive(true);
-      await streamCompanion(bubbles, crisis);
+
+      if (voice) {
+        // Voice-first: reply comes back as a single spoken voice note + transcript.
+        const joined = bubbles.map((b) => b.text).join(" ");
+        setIsTyping(true);
+        await sleep(700);
+        setIsTyping(false);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: newId(),
+            sender: "companion",
+            text: joined,
+            kind: "text",
+            crisis,
+            voice: true,
+            durationSec: estimateVoiceDuration(joined),
+            voiceLang: ttsLangFor(replyLanguage),
+          },
+        ]);
+      } else {
+        await streamCompanion(bubbles, crisis);
+      }
     },
     [streamCompanion],
   );
