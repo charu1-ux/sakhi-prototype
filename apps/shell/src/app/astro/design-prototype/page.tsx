@@ -1,9 +1,11 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
+import { HOME_ASSETS } from "@/app/jobs/design-prototype/hub-data";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -1844,38 +1846,31 @@ function FormScreen({
 
       {/* ── Sticky bottom CTA ── */}
       <div className="bg-surface flex shrink-0 items-center gap-3 border-t border-[rgba(12,13,16,0.07)] px-5 pt-4 pb-6">
-        {/* Primary: Calculate Kundali */}
+        {/* Primary: Calculate Kundali — always enabled; only proceeds once all three fields are filled */}
         <button
           type="button"
-          onClick={onCalculate}
-          disabled={!canCalc}
-          className="bg-primary-50 text-btn font-jio focus-visible:ring-primary-60 inline-flex h-14 flex-1 items-center justify-center gap-2 rounded-full text-white transition-transform duration-150 ease-out hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+          onClick={() => {
+            if (canCalc) onCalculate();
+          }}
+          className="bg-primary-50 text-btn font-jio focus-visible:ring-primary-60 inline-flex h-14 flex-1 items-center justify-center gap-2 rounded-full text-white transition-transform duration-150 ease-out hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]"
         >
           Calculate Kundali
         </button>
 
-        {/* Secondary: Mic button */}
+        {/* Secondary: Speak button — primary bg */}
         <button
           type="button"
-          className="bg-surface-ghost-icon focus-visible:ring-primary-60 inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]"
+          aria-label="Speak"
+          className="bg-primary-50 focus-visible:ring-primary-60 inline-flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]"
         >
-          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" className="text-primary-50">
-            <rect
-              x="7"
-              y="2"
-              width="8"
-              height="12"
-              rx="4"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            />
-            <path
-              d="M4 11a7 7 0 0 0 14 0M11 18v3"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-          </svg>
+          <Image
+            src={`${HOME_ASSETS}/speak.svg`}
+            alt=""
+            width={22}
+            height={22}
+            className="pointer-events-none size-[22px]"
+            unoptimized
+          />
         </button>
       </div>
 
