@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "a2ui-design-system": {
+      "type": "http",
+      "url": "https://a2ui-jbiq-library.vercel.app/api/mcp"
+    }
+  }
+}
