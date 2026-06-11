@@ -1,17 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import { CallScreen } from "./_components/CallScreen";
 import { CompanionHeader } from "./_components/CompanionHeader";
 import { Composer } from "./_components/Composer";
+import { HappyFlowStory } from "./_components/HappyFlowStory";
 import { MessageList } from "./_components/MessageList";
 import { ProfileSheet } from "./_components/ProfileSheet";
 import { QuickChips } from "./_components/QuickChips";
 import { VoiceNoteMode } from "./_components/VoiceNoteMode";
 import { useCompanion } from "./useCompanion";
 
+// Route entry: ?demo=happy plays the scripted Happy-Flow story; otherwise the
+// free-form interactive chat. Read via useSyncExternalStore (the blessed pattern
+// for browser state) so it works with static export without a hydration mismatch.
+const subscribe = () => () => {};
+const getDemoSnapshot = () => new URLSearchParams(window.location.search).get("demo") === "happy";
+const getServerSnapshot = () => false;
+
 export default function PersonalCompanionChat() {
+  const isDemo = useSyncExternalStore(subscribe, getDemoSnapshot, getServerSnapshot);
+  return isDemo ? <HappyFlowStory /> : <FreeFormChat />;
+}
+
+function FreeFormChat() {
   const {
     uiLanguage,
     setUiLanguage,

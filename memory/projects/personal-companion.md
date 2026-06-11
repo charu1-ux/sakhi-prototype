@@ -28,6 +28,16 @@ Route `apps/shell/src/app/personal-companion/`:
 - STT (Sarvam/ElevenLabs) and call TTS are **stubbed** — voice note returns a canned transcription; call turns show captions but play no audio.
 - Memory layer is simulated (returning-greeting references a mood ~50% of the time); no persistence across sessions beyond `sessionStorage`.
 
+### Scripted Happy-Flow demo (chat-story playbook)
+
+A non-destructive scripted demo lives alongside the free-form chat, reachable at **`/personal-companion/chat?demo=happy`**. Follows the Chat Story Playbook (auto-playing turns, gated CTA):
+
+- `chat/story-data.ts` — PRD §8 Happy Flow turns (returning → remembered → live call → resolved), 3 languages.
+- `chat/_components/HappyFlowStory.tsx` — orchestrator: auto-plays turns, typing loader, one gated **Call** CTA that opens the real `CallScreen`, then a **Replay** CTA. Reuses CompanionHeader / MessageList / CallScreen.
+- `chat/page.tsx` — branches on `?demo=happy` via `useSyncExternalStore`; default export renders `FreeFormChat` otherwise.
+
+The free-form chat stays the product surface; this is purely a reliable stakeholder-demo rail. To remove: delete `story-data.ts` + `HappyFlowStory.tsx` and drop the `?demo` branch in `page.tsx`.
+
 ### Verified
 
 `tsc`, `eslint`, and `next build` all pass; `/personal-companion` + `/personal-companion/chat` in route manifest.
