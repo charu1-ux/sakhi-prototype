@@ -100,6 +100,7 @@ type UiStrings = {
   recordingHint: string;
   send: string;
   cancel: string;
+  speak: string;
 };
 
 export const UI: Record<UiLanguage, UiStrings> = {
@@ -132,6 +133,7 @@ export const UI: Record<UiLanguage, UiStrings> = {
     recordingHint: "Sun raha hoon… ho jaye toh bhej do",
     send: "Send",
     cancel: "Cancel",
+    speak: "Bolo",
   },
   hi: {
     statusFriend: "आपका दोस्त",
@@ -162,6 +164,7 @@ export const UI: Record<UiLanguage, UiStrings> = {
     recordingHint: "सुन रहा हूँ… हो जाए तो भेज दो",
     send: "भेजें",
     cancel: "रद्द करें",
+    speak: "बोलें",
   },
   en: {
     statusFriend: "Your friend",
@@ -192,6 +195,7 @@ export const UI: Record<UiLanguage, UiStrings> = {
     recordingHint: "Listening… tap send when done",
     send: "Send",
     cancel: "Cancel",
+    speak: "Speak",
   },
 };
 
@@ -224,28 +228,31 @@ export const RETURNING_MEMORY_GREETING: Record<UiLanguage, string[]> = {
 
 // ── Quick chips (shown above composer when empty, early sessions) ──────────────
 
-export type QuickChip = { id: string; label: string; isCall?: boolean };
+export type QuickChip = { id: string; label: string; emoji?: string; isCall?: boolean };
 
 export const QUICK_CHIPS: Record<UiLanguage, QuickChip[]> = {
   hinglish: [
-    { id: "talk", label: "Bas baat karni hai" },
-    { id: "sad", label: "Udaas hoon" },
-    { id: "lonely", label: "Akela feel ho raha hai" },
-    { id: "anxious", label: "Ghabrahat ho rahi hai" },
+    { id: "talk", label: "Bas baat karni hai", emoji: "🙂" },
+    { id: "sad", label: "Udaas hoon", emoji: "😔" },
+    { id: "lonely", label: "Akela feel ho raha hai", emoji: "🥺" },
+    { id: "anxious", label: "Ghabrahat ho rahi hai", emoji: "😟" },
+    { id: "confused", label: "Samajh nahi aa raha", emoji: "😕" },
     { id: "call", label: "Call me", isCall: true },
   ],
   hi: [
-    { id: "talk", label: "बस बात करनी है" },
-    { id: "sad", label: "उदास हूँ" },
-    { id: "lonely", label: "अकेला लग रहा है" },
-    { id: "anxious", label: "घबराहट हो रही है" },
+    { id: "talk", label: "बस बात करनी है", emoji: "🙂" },
+    { id: "sad", label: "उदास हूँ", emoji: "😔" },
+    { id: "lonely", label: "अकेला लग रहा है", emoji: "🥺" },
+    { id: "anxious", label: "घबराहट हो रही है", emoji: "😟" },
+    { id: "confused", label: "समझ नहीं आ रहा", emoji: "😕" },
     { id: "call", label: "कॉल करें", isCall: true },
   ],
   en: [
-    { id: "talk", label: "Just here to talk" },
-    { id: "sad", label: "I'm feeling sad" },
-    { id: "lonely", label: "I'm lonely" },
-    { id: "anxious", label: "I'm anxious" },
+    { id: "talk", label: "Just here to talk", emoji: "🙂" },
+    { id: "sad", label: "Feeling sad", emoji: "😔" },
+    { id: "lonely", label: "Feeling lonely", emoji: "🥺" },
+    { id: "anxious", label: "Feeling anxious", emoji: "😟" },
+    { id: "confused", label: "Feeling confused", emoji: "😕" },
     { id: "call", label: "Call me", isCall: true },
   ],
 };

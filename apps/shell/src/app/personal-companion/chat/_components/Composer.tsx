@@ -2,7 +2,7 @@
 
 import { type FormEvent } from "react";
 
-import { MicIcon, SendIcon } from "../icons";
+import { SendIcon, VoiceWaveIcon } from "../icons";
 import { UI, type UiLanguage } from "../companion-data";
 
 type Props = {
@@ -52,10 +52,11 @@ export function Composer({ uiLanguage, value, onChange, onSend, onStartVoice }: 
         <button
           type="button"
           onClick={onStartVoice}
-          aria-label={t.tapToTalk}
-          className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#6d17ce] text-white transition-transform duration-200 ease-[cubic-bezier(0.2,0,0,1)] outline-none focus-visible:ring-2 focus-visible:ring-[#8B2FE8] focus-visible:ring-offset-2 active:scale-[0.97]"
+          aria-label={t.speak}
+          className="flex h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-[#6d17ce] pr-4 pl-3.5 text-white transition-transform duration-200 ease-[cubic-bezier(0.2,0,0,1)] outline-none focus-visible:ring-2 focus-visible:ring-[#8B2FE8] focus-visible:ring-offset-2 active:scale-[0.97]"
         >
-          <MicIcon className="size-5" />
+          <VoiceWaveIcon className="size-[18px]" />
+          <span className="text-[14px] font-bold">{t.speak}</span>
         </button>
       )}
     </form>

@@ -207,6 +207,42 @@ export function PauseIcon({ className }: IconProps) {
   );
 }
 
+// Subtle animated equaliser bars for the "Speak" button. Pure CSS keyframes
+// (no JS per frame), so it loads safely and respects prefers-reduced-motion.
+export function VoiceWaveIcon({ className }: IconProps) {
+  const bars = [
+    { x: 2.5, d: "0s", h: 7 },
+    { x: 6.5, d: "0.15s", h: 12 },
+    { x: 10.5, d: "0.3s", h: 16 },
+    { x: 14.5, d: "0.45s", h: 10 },
+  ];
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      {bars.map((b) => (
+        <rect
+          key={b.x}
+          x={b.x}
+          width="2"
+          rx="1"
+          fill="currentColor"
+          y={(20 - b.h) / 2}
+          height={b.h}
+          style={{
+            transformOrigin: "center",
+            animation: `dkb-eq 1s ${b.d} ease-in-out infinite`,
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes dkb-eq { 0%,100% { transform: scaleY(0.5); } 50% { transform: scaleY(1); } }
+        @media (prefers-reduced-motion: reduce) {
+          rect { animation: none !important; }
+        }
+      `}</style>
+    </svg>
+  );
+}
+
 export function RefreshIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
