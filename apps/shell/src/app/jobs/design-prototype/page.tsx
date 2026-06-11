@@ -94,7 +94,7 @@ export default function DesignPrototypePage() {
 
       {cardsExpanded && <ExpandedOverlay onClose={() => setCardsExpanded(false)} />}
 
-      <HubChatInput />
+      <HubChatInput variant="sleek" />
     </div>
   );
 }

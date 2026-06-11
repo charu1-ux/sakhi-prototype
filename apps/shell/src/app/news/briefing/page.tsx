@@ -564,7 +564,7 @@ export default function NewsBriefingPage() {
       </main>
 
       <HubHeader title="Daily Briefing" backHref="/news" scrolled={scrolled} />
-      <HubChatInput placeholder="Ask about any story…" />
+      <HubChatInput variant="sleek" placeholder="Ask about any story…" />
     </div>
   );
 }

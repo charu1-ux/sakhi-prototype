@@ -13,6 +13,8 @@ type Props = {
   onSubmit?: (v: string) => void;
   onAdd?: () => void;
   onSpeak?: () => void;
+  /** "sleek" — icon-only Speak button (48×48 circle), fixed 48px input height, no multiline */
+  variant?: "default" | "sleek";
 };
 
 // Figma measurements
@@ -43,7 +45,9 @@ export function HubChatInput({
   onSubmit,
   onAdd,
   onSpeak,
+  variant = "default",
 }: Props) {
+  const isSleek = variant === "sleek";
   const isControlled = onChange !== undefined;
   const [localVal, setLocalVal] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -55,6 +59,7 @@ export function HubChatInput({
   const addRef = useRef<HTMLButtonElement>(null);
 
   // Resize textarea and sync multi-line state
+  // Both variants expand up to 3 lines then scroll — sleek only differs in Speak button shape
   useEffect(() => {
     const ta = textareaRef.current;
     const add = addRef.current;
@@ -101,14 +106,19 @@ export function HubChatInput({
       style={{ borderTop: "1px solid #EAEAEA", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       <div className="flex items-center gap-[6px] px-4 py-3">
-        {/* Add button — anchors to bottom in multiline via alignSelf ref update */}
-        <button
+        {/* Add button — shrinks from 48→36 when typing to give more room to the input */}
+        <motion.button
           ref={addRef}
           type="button"
           aria-label="Add"
           onClick={onAdd}
           className="flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center justify-center overflow-hidden rounded-full outline-none"
-          style={{ width: BTN_SIZE, height: BTN_SIZE, backgroundColor: "#f0e8fa", flexShrink: 0 }}
+          animate={{
+            width: isTyping ? SEND_SIZE : BTN_SIZE,
+            height: isTyping ? SEND_SIZE : BTN_SIZE,
+          }}
+          transition={{ duration: DUR, ease: EASE }}
+          style={{ backgroundColor: "#f0e8fa", flexShrink: 0 }}
         >
           <Image
             src={`${HOME_ASSETS}/add.svg`}
@@ -118,7 +128,7 @@ export function HubChatInput({
             className="pointer-events-none size-5"
             unoptimized
           />
-        </button>
+        </motion.button>
 
         {/* Input pill — border-radius morphs when going multi-line */}
         <motion.div
@@ -147,7 +157,7 @@ export function HubChatInput({
             value={text}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            className="min-w-0 flex-1 resize-none border-none bg-transparent ring-0 outline-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="min-w-0 flex-1 resize-none border-none bg-transparent ring-0 outline-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&::placeholder]:truncate [&::placeholder]:overflow-hidden"
             style={{
               fontSize: "16px",
               lineHeight: `${LINE_H}px`,
@@ -193,27 +203,54 @@ export function HubChatInput({
 
         {/* Speak — slides out when typing begins */}
         <AnimatePresence>
-          {!isTyping && (
-            <motion.button
-              key="speak"
-              type="button"
-              aria-label="Speak"
-              onClick={onSpeak}
-              className="flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center gap-[5px] overflow-hidden rounded-full px-3 outline-none"
-              style={{ height: BTN_SIZE, backgroundColor: "#3e0084", flexShrink: 0 }}
-              {...btnMotion}
-            >
-              <Image
-                src={`${HOME_ASSETS}/speak.svg`}
-                alt=""
-                width={20}
-                height={20}
-                className="pointer-events-none size-5"
-                unoptimized
-              />
-              <span className="text-base leading-normal whitespace-nowrap text-white">Speak</span>
-            </motion.button>
-          )}
+          {!isTyping &&
+            (isSleek ? (
+              /* sleek: icon-only circle, same 48×48 as Add button */
+              <motion.button
+                key="speak"
+                type="button"
+                aria-label="Speak"
+                onClick={onSpeak}
+                className="flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center justify-center overflow-hidden rounded-full outline-none"
+                style={{
+                  width: BTN_SIZE,
+                  height: BTN_SIZE,
+                  backgroundColor: "#3e0084",
+                  flexShrink: 0,
+                }}
+                {...btnMotion}
+              >
+                <Image
+                  src={`${HOME_ASSETS}/speak.svg`}
+                  alt=""
+                  width={20}
+                  height={20}
+                  className="pointer-events-none size-5"
+                  unoptimized
+                />
+              </motion.button>
+            ) : (
+              /* default: icon + "Speak" label, pill shape */
+              <motion.button
+                key="speak"
+                type="button"
+                aria-label="Speak"
+                onClick={onSpeak}
+                className="flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center gap-[5px] overflow-hidden rounded-full px-3 outline-none"
+                style={{ height: BTN_SIZE, backgroundColor: "#3e0084", flexShrink: 0 }}
+                {...btnMotion}
+              >
+                <Image
+                  src={`${HOME_ASSETS}/speak.svg`}
+                  alt=""
+                  width={20}
+                  height={20}
+                  className="pointer-events-none size-5"
+                  unoptimized
+                />
+                <span className="text-base leading-normal whitespace-nowrap text-white">Speak</span>
+              </motion.button>
+            ))}
         </AnimatePresence>
       </div>
     </footer>

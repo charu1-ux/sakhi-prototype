@@ -514,7 +514,7 @@ export default function MarketPulsePage() {
       </main>
 
       <HubHeader title="Market Pulse" backHref="/news" scrolled={scrolled} />
-      <HubChatInput placeholder="Ask about any stock or market…" />
+      <HubChatInput variant="sleek" placeholder="Ask about any stock or market…" />
     </div>
   );
 }

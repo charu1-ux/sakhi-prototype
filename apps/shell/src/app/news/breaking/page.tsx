@@ -268,7 +268,7 @@ export default function BreakingNewsPage() {
       </main>
 
       <HubHeader title="Breaking News" backHref="/news" scrolled={scrolled} />
-      <HubChatInput placeholder="Ask about any breaking story…" />
+      <HubChatInput variant="sleek" placeholder="Ask about any breaking story…" />
     </div>
   );
 }

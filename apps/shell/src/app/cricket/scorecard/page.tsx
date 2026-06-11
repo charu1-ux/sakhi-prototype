@@ -1560,7 +1560,7 @@ export default function CricketScorecardPage() {
       </main>
 
       <HubHeader title={headerTitle} backHref="/cricket" scrolled={scrolled} />
-      <HubChatInput placeholder="Ask about this match…" />
+      <HubChatInput variant="sleek" placeholder="Ask about this match…" />
     </div>
   );
 }

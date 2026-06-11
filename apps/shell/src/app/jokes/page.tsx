@@ -124,7 +124,7 @@ export default function JokesPage() {
       </main>
 
       <HubHeader title="Jokes" backHref="/" scrolled={scrolled} />
-      <HubChatInput placeholder="Ask for a joke, meme, or banter clip…" />
+      <HubChatInput variant="sleek" placeholder="Ask for a joke, meme, or banter clip…" />
     </div>
   );
 }

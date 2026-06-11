@@ -143,7 +143,7 @@ export default function NewsPage() {
       </main>
 
       <HubHeader title="News" backHref="/" scrolled={scrolled} />
-      <HubChatInput placeholder="Ask about any news topic…" />
+      <HubChatInput variant="sleek" placeholder="Ask about any news topic…" />
     </div>
   );
 }

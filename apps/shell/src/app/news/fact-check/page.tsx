@@ -637,7 +637,7 @@ export default function FactCheckPage() {
       </main>
 
       <HubHeader title="Fact Check" backHref="/news" scrolled={scrolled} />
-      <HubChatInput placeholder="Paste a claim to fact-check…" />
+      <HubChatInput variant="sleek" placeholder="Paste a claim to fact-check…" />
     </div>
   );
 }

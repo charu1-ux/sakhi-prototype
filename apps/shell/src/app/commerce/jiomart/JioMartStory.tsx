@@ -16,6 +16,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 
 import { cn } from "@intelligence/ui";
 
+import { HubChatInput } from "../../jobs/design-prototype/HubChatInput";
 import spinLoaderData from "../../jobs/design-prototype/microlearning/creator/spin-loader.json";
 import { type StoryAction, TIMING } from "./story-data";
 import {
@@ -371,32 +372,8 @@ export function JioMartStory() {
         })}
       </main>
 
-      {/* Dock */}
-      <footer className="bg-surface flex shrink-0 items-center gap-1.5 border-t border-black/5 px-4 pt-2.5 pb-3.5">
-        <button
-          type="button"
-          aria-label="Add"
-          className="bg-primary-30 text-primary-50 flex size-12 shrink-0 items-center justify-center rounded-full transition-transform duration-200 hover:scale-105 active:scale-95"
-        >
-          <Plus size={20} strokeWidth={2.4} />
-        </button>
-        <div className="bg-surface-minimal text-fg-muted flex min-h-12 flex-1 items-center rounded-full px-[18px] text-base">
-          Ask me anything
-        </div>
-        <button
-          type="button"
-          aria-label="Speak"
-          className="bg-primary-50 inline-flex h-12 shrink-0 items-center gap-2 rounded-full px-[18px] text-base font-semibold text-white transition-transform duration-200 hover:scale-[1.03] active:scale-95"
-        >
-          <span className="flex items-center gap-[2px]">
-            <span className="h-[7px] w-[3px] rounded-sm bg-white" />
-            <span className="h-[13px] w-[3px] rounded-sm bg-white" />
-            <span className="h-4 w-[3px] rounded-sm bg-white" />
-            <span className="h-[9px] w-[3px] rounded-sm bg-white" />
-          </span>
-          Speak
-        </button>
-      </footer>
+      {/* Dock — sleek variant: icon-only Speak button, fixed 48px height */}
+      <HubChatInput variant="sleek" />
     </div>
   );
 }

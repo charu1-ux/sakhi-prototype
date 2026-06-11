@@ -445,7 +445,7 @@ export default function CricketPage() {
       </main>
 
       <HubHeader title="Cricket" backHref="/" scrolled={scrolled} />
-      <HubChatInput placeholder="Ask about any match or player…" />
+      <HubChatInput variant="sleek" placeholder="Ask about any match or player…" />
     </div>
   );
 }

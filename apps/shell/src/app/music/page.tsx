@@ -103,7 +103,7 @@ export default function MusicPage() {
       </main>
 
       <HubHeader title="Music" backHref="/" scrolled={scrolled} />
-      <HubChatInput placeholder="Ask RJ anything · Find a song you're humming…" />
+      <HubChatInput variant="sleek" placeholder="Ask RJ anything · Find a song you're humming…" />
     </div>
   );
 }

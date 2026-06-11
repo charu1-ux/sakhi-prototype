@@ -467,7 +467,7 @@ export default function PulseOfNationPage() {
       </main>
 
       <HubHeader title="Pulse of Nation" backHref="/news" scrolled={scrolled} />
-      <HubChatInput placeholder="Ask what India thinks about…" />
+      <HubChatInput variant="sleek" placeholder="Ask what India thinks about…" />
     </div>
   );
 }
