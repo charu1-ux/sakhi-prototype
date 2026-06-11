@@ -1,12 +1,12 @@
+"use client";
+
+import { useEffect } from "react";
+
+// Per PRD (PC-01): the home entry point routes directly to the chat window.
+// There is no landing page for Personal Companion — open Dil Ki Baat straight away.
 export default function PersonalCompanionPage() {
-  return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-3">
-      <div className="from-vertical-personal-companion to-vertical-glow flex size-14 items-center justify-center rounded-full bg-gradient-to-r">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/assets/shell/ico-personal-companion.svg" alt="" width={24} height={24} />
-      </div>
-      <p className="text-fg font-medium">Personal Companion</p>
-      <p className="text-fg-muted text-sm">Design prototype coming soon</p>
-    </main>
-  );
+  useEffect(() => {
+    window.location.replace("/personal-companion/chat/");
+  }, []);
+  return null;
 }
