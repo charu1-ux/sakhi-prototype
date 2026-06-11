@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import { CompanionAvatar } from "./CompanionAvatar";
 import { Composer } from "./Composer";
 import { QuickChips } from "./QuickChips";
-import { VoiceNoteMode } from "./VoiceNoteMode";
 import { ChevronLeftIcon, DotsIcon, PhoneIcon } from "../icons";
 import { COMPANION, UI, ttsLangFor, type UiLanguage } from "../companion-data";
 import { speak } from "../tts";
@@ -18,9 +17,6 @@ type Props = {
   onInputChange: (v: string) => void;
   onSend: () => void;
   onStartVoice: () => void;
-  voiceOpen: boolean;
-  onVoiceTranscribed: (text: string) => void;
-  onVoiceCancel: () => void;
   onChip: (label: string) => void;
   onCall: () => void;
   onBack: () => void;
@@ -37,9 +33,6 @@ export function WelcomeArrival({
   onInputChange,
   onSend,
   onStartVoice,
-  voiceOpen,
-  onVoiceTranscribed,
-  onVoiceCancel,
   onChip,
   onCall,
   onBack,
@@ -193,32 +186,24 @@ export function WelcomeArrival({
 
       {/* bottom: reply affordances (chips + composer + call) */}
       <div className="relative z-10 shrink-0">
-        {voiceOpen ? (
-          <VoiceNoteMode
+        <div className="flex flex-col gap-2 pt-1">
+          <QuickChips uiLanguage={uiLanguage} onPick={onChip} onCall={onCall} />
+          <Composer
             uiLanguage={uiLanguage}
-            onTranscribed={onVoiceTranscribed}
-            onCancel={onVoiceCancel}
+            value={input}
+            onChange={onInputChange}
+            onSend={onSend}
+            onStartVoice={onStartVoice}
           />
-        ) : (
-          <div className="flex flex-col gap-2 pt-1">
-            <QuickChips uiLanguage={uiLanguage} onPick={onChip} onCall={onCall} />
-            <Composer
-              uiLanguage={uiLanguage}
-              value={input}
-              onChange={onInputChange}
-              onSend={onSend}
-              onStartVoice={onStartVoice}
-            />
-            <button
-              type="button"
-              onClick={onCall}
-              className="mx-3 mb-[max(env(safe-area-inset-bottom),10px)] flex cursor-pointer items-center justify-center gap-2 rounded-full bg-[#ede7ff] py-3 text-[14px] font-bold text-[#6d17ce] transition-transform duration-200 ease-[cubic-bezier(0.2,0,0,1)] outline-none focus-visible:ring-2 focus-visible:ring-[#8B2FE8] active:scale-[0.98]"
-            >
-              <PhoneIcon className="size-[18px]" />
-              {t.call} {COMPANION.name}
-            </button>
-          </div>
-        )}
+          <button
+            type="button"
+            onClick={onCall}
+            className="mx-3 mb-[max(env(safe-area-inset-bottom),10px)] flex cursor-pointer items-center justify-center gap-2 rounded-full bg-[#ede7ff] py-3 text-[14px] font-bold text-[#6d17ce] transition-transform duration-200 ease-[cubic-bezier(0.2,0,0,1)] outline-none focus-visible:ring-2 focus-visible:ring-[#8B2FE8] active:scale-[0.98]"
+          >
+            <PhoneIcon className="size-[18px]" />
+            {t.call} {COMPANION.name}
+          </button>
+        </div>
       </div>
 
       <style>{`

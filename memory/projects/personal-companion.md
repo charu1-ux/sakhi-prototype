@@ -49,6 +49,16 @@ The companion now opens on an **animated arrival** screen, then transitions into
 
 Avatar liveliness is "living portrait" motion only — a still photo can't truly blink/wave; real facial animation would need a rigged Lottie/short video swapped into `CompanionAvatar`.
 
+### Immersive Voice Chat (Grok-style, JBIQ language)
+
+The mic/"voice chat" affordance now opens an immersive hands-free voice companion instead of the WhatsApp-style voice-note panel:
+
+- `chat/_components/VoiceChatScreen.tsx` — full-screen, white-dominant with a soft purple glow (NOT the dark Call screen). Large living-portrait avatar with aura rings that **react to the user's voice** (mic RMS) while listening and pulse while the companion speaks. Continuous loop: listen (VAD) → stub STT → reply via `generateReply` → **TTS auto-plays** with a live caption (user line italic, companion line solid). Controls: a mic button (tap to pause/resume) + a "Text" pill to switch back to chat. Module-level `voiceChatActive` StrictMode guard.
+- Each exchange is appended to the chat thread as voice bubbles via `useCompanion.appendVoiceExchange(...)` (companion bubble reuses the spoken id so chat doesn't re-autoplay it). Switching to "Text" lands in the chat with the transcript.
+- `VoiceNoteMode.tsx` is now unused (kept in repo); the composer mic routes to `VoiceChatScreen` via `CompanionExperience` (`voiceChatOpen` overlay).
+
+Distinct from **Call** (`CallScreen`, dark zinc, phone metaphor): Voice Chat is the bright, avatar-forward, captioned conversation.
+
 ### Verified
 
 `tsc`, `eslint`, and `next build` all pass; `/personal-companion` + `/personal-companion/chat` in route manifest.
