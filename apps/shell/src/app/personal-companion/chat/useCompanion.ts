@@ -36,6 +36,9 @@ export function useCompanion() {
 
   const greetedRef = useRef(false); // guard against React StrictMode double-mount
   const langRef = useRef<UiLanguage>("hinglish");
+  // Bumped to cancel any in-flight companion stream (e.g. greeting) when the
+  // thread is reset — entering/exiting private mode or clearing the chat.
+  const streamGenRef = useRef(0);
 
   const setUiLanguage = useCallback((lang: UiLanguage) => {
     langRef.current = lang;
@@ -46,9 +49,15 @@ export function useCompanion() {
   // Stream a set of companion bubbles with human-like typing pauses.
   const streamCompanion = useCallback(
     async (bubbles: { text: string; delayMs: number }[], crisis = false) => {
+      const myGen = streamGenRef.current;
       for (const b of bubbles) {
+        if (streamGenRef.current !== myGen) return; // cancelled (reset/private toggle)
         setIsTyping(true);
         await sleep(b.delayMs);
+        if (streamGenRef.current !== myGen) {
+          setIsTyping(false);
+          return;
+        }
         setIsTyping(false);
         setMessages((prev) => [
           ...prev,
@@ -135,6 +144,31 @@ export function useCompanion() {
     [streamCompanion],
   );
 
+  // Private mode: clear the visible thread and stop greeting/memory. (Nothing is
+  // persisted beyond React state + sessionStorage anyway, so "private" here means
+  // no greeting, no recall, and a clean slate in + out.)
+  const enterPrivateMode = useCallback(() => {
+    streamGenRef.current++; // cancel any in-flight greeting so the slate is clean
+    setIsTyping(false);
+    setMessages([]);
+    setCrisisActive(false);
+  }, []);
+
+  const exitPrivateMode = useCallback(() => {
+    streamGenRef.current++;
+    setIsTyping(false);
+    setMessages([]);
+    setCrisisActive(false);
+    setTimeout(() => {
+      void streamCompanion(
+        FIRST_TIME_GREETING[langRef.current].map((text, i) => ({
+          text,
+          delayMs: i === 0 ? 500 : 400,
+        })),
+      );
+    }, 200);
+  }, [streamCompanion]);
+
   const appendCallRecord = useCallback((durationLabel: string) => {
     setMessages((prev) => [
       ...prev,
@@ -143,6 +177,8 @@ export function useCompanion() {
   }, []);
 
   const clearChat = useCallback(() => {
+    streamGenRef.current++;
+    setIsTyping(false);
     setMessages([]);
     setCrisisActive(false);
     greetedRef.current = false;
@@ -170,6 +206,8 @@ export function useCompanion() {
     crisisActive,
     sendUserMessage,
     appendCallRecord,
+    enterPrivateMode,
+    exitPrivateMode,
     clearChat,
   };
 }

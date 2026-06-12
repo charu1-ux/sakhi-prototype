@@ -114,7 +114,10 @@ export function HappyFlowStory({ uiLanguage: initialLang }: { uiLanguage?: UiLan
           if (gated?.step.type === "call") handleCta();
           else setCallOpen(true);
         }}
-        onMenu={goHome}
+        onTitleClick={goHome}
+        privateMode={false}
+        onTogglePrivate={() => {}}
+        canEnterPrivate={false}
       />
 
       <MessageList messages={messages} isTyping={isTyping} />

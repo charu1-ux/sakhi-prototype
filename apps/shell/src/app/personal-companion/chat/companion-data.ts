@@ -101,6 +101,10 @@ type UiStrings = {
   send: string;
   cancel: string;
   speak: string;
+  // private mode
+  privateChat: string;
+  privateNotice: string;
+  notSaved: string;
 };
 
 export const UI: Record<UiLanguage, UiStrings> = {
@@ -134,6 +138,10 @@ export const UI: Record<UiLanguage, UiStrings> = {
     send: "Send",
     cancel: "Cancel",
     speak: "Bolo",
+    privateChat: "Private chat",
+    privateNotice:
+      "Private chats history mein nahi jaati aur memory mein save nahi hoti. Yahan dil khol ke baat karo!",
+    notSaved: "Not saved",
   },
   hi: {
     statusFriend: "आपका दोस्त",
@@ -165,6 +173,10 @@ export const UI: Record<UiLanguage, UiStrings> = {
     send: "भेजें",
     cancel: "रद्द करें",
     speak: "बोलें",
+    privateChat: "प्राइवेट चैट",
+    privateNotice:
+      "प्राइवेट चैट हिस्ट्री में नहीं जातीं और मेमोरी में सेव नहीं होतीं। यहाँ दिल खोलकर बात करो!",
+    notSaved: "सेव नहीं होती",
   },
   en: {
     statusFriend: "Your friend",
@@ -196,6 +208,10 @@ export const UI: Record<UiLanguage, UiStrings> = {
     send: "Send",
     cancel: "Cancel",
     speak: "Speak",
+    privateChat: "Private chat",
+    privateNotice:
+      "Private chats aren't added to history and aren't saved in memory. Feel free to speak your heart out here!",
+    notSaved: "Not saved",
   },
 };
 

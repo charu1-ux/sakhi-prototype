@@ -177,6 +177,44 @@ export function ChevronDownIcon({ className }: IconProps) {
   );
 }
 
+// "Private mode" — a chat bubble with a padlock (chat + lock = private chat).
+// Outline = off (tap to enable), solid = on (private active). JBIQ-styled,
+// original geometry with a bold, legible lock.
+const BUBBLE_BODY =
+  "M10 1.8c-4.7 0-8.5 3.1-8.5 7 0 2.05 1.06 3.94 2.77 5.27l-.56 2.92a.62.62 0 0 0 .9.66l3.25-1.76c.66.14 1.4.21 2.14.21 4.7 0 8.5-3.1 8.5-7S14.7 1.8 10 1.8Z";
+const LOCK_SHACKLE = "M8 8V6.85a2 2 0 0 1 4 0V8";
+
+export function PrivacyIcon({ className, filled }: IconProps & { filled?: boolean }) {
+  if (filled) {
+    return (
+      <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d={BUBBLE_BODY} fill="currentColor" />
+        <path d={LOCK_SHACKLE} stroke="#fff" strokeWidth="1.3" strokeLinecap="round" />
+        <rect x="7.1" y="8" width="5.8" height="4.4" rx="1.2" fill="#fff" />
+        <circle cx="10" cy="9.8" r="0.7" fill="currentColor" />
+        <path d="M10 10.5v1.1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d={BUBBLE_BODY} stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+      <path d={LOCK_SHACKLE} stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+      <rect
+        x="7.1"
+        y="8"
+        width="5.8"
+        height="4.4"
+        rx="1.2"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      />
+      <circle cx="10" cy="9.8" r="0.7" fill="currentColor" />
+      <path d="M10 10.5v1.1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function ChatIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">

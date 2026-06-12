@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { Composer } from "./Composer";
 import { QuickChips } from "./QuickChips";
-import { ChevronLeftIcon, DotsIcon, PhoneIcon } from "../icons";
+import { ChevronLeftIcon, PhoneIcon, PrivacyIcon } from "../icons";
 import { COMPANION, UI, ttsLangFor, type UiLanguage } from "../companion-data";
 import { speak } from "../tts";
 
@@ -19,7 +19,8 @@ type Props = {
   onChip: (label: string) => void;
   onCall: () => void;
   onBack: () => void;
-  onMenu: () => void;
+  onPrivate: () => void;
+  canPrivate: boolean;
 };
 
 // The "arrival" moment: a living-portrait avatar greets the user (spoken aloud),
@@ -35,7 +36,8 @@ export function WelcomeArrival({
   onChip,
   onCall,
   onBack,
-  onMenu,
+  onPrivate,
+  canPrivate,
 }: Props) {
   const t = UI[uiLanguage];
   const [speaking, setSpeaking] = useState(false);
@@ -82,14 +84,18 @@ export function WelcomeArrival({
         >
           <ChevronLeftIcon className="size-5" />
         </button>
-        <button
-          type="button"
-          onClick={onMenu}
-          aria-label="Menu"
-          className="flex size-9 cursor-pointer items-center justify-center rounded-full bg-white/70 text-[#0c0d10] backdrop-blur transition-transform duration-200 ease-[cubic-bezier(0.2,0,0,1)] outline-none focus-visible:ring-2 focus-visible:ring-[#8B2FE8] active:scale-[0.92]"
-        >
-          <DotsIcon className="size-5" />
-        </button>
+        {canPrivate ? (
+          <button
+            type="button"
+            onClick={onPrivate}
+            aria-label={t.privateChat}
+            className="flex size-9 cursor-pointer items-center justify-center rounded-full bg-white/70 text-[#0c0d10] backdrop-blur transition-transform duration-200 ease-[cubic-bezier(0.2,0,0,1)] outline-none focus-visible:ring-2 focus-visible:ring-[#8B2FE8] active:scale-[0.92]"
+          >
+            <PrivacyIcon className="size-[22px]" />
+          </button>
+        ) : (
+          <span className="size-9" />
+        )}
       </div>
 
       {/* centre: living-portrait avatar + greeting */}

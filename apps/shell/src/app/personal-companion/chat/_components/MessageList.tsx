@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 
 import { MessageBubble } from "./MessageBubble";
 import { TypingIndicator } from "./TypingIndicator";
@@ -12,9 +12,17 @@ type Props = {
   /** Live voice-note transcription, shown as a pending user bubble while recording. */
   pendingUserText?: string | null;
   pendingHint?: string;
+  /** Centred content shown when the thread is empty (e.g. the private-mode notice). */
+  emptyState?: ReactNode;
 };
 
-export function MessageList({ messages, isTyping, pendingUserText, pendingHint }: Props) {
+export function MessageList({
+  messages,
+  isTyping,
+  pendingUserText,
+  pendingHint,
+  emptyState,
+}: Props) {
   const endRef = useRef<HTMLDivElement>(null);
   const pendingActive = pendingUserText !== null && pendingUserText !== undefined;
 
@@ -23,8 +31,13 @@ export function MessageList({ messages, isTyping, pendingUserText, pendingHint }
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, isTyping, pendingUserText]);
 
+  const isEmpty = messages.length === 0 && !isTyping && !pendingActive;
+
   return (
     <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto px-4 py-4">
+      {isEmpty && emptyState && (
+        <div className="flex flex-1 items-center justify-center">{emptyState}</div>
+      )}
       {messages.map((m, i) => {
         const prev = messages[i - 1];
         // Show avatar on the first companion bubble of a grouped run.

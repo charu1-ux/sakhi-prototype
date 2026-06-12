@@ -22,6 +22,8 @@ export function CompanionExperience({ initialPhase = "welcome" }: { initialPhase
     isTyping,
     sendUserMessage,
     appendCallRecord,
+    enterPrivateMode,
+    exitPrivateMode,
     clearChat,
   } = useCompanion();
 
@@ -31,6 +33,7 @@ export function CompanionExperience({ initialPhase = "welcome" }: { initialPhase
   const [liveTranscript, setLiveTranscript] = useState("");
   const [callOpen, setCallOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [privateMode, setPrivateMode] = useState(false);
 
   const goHome = () => {
     if (window.parent !== window) {
@@ -83,13 +86,32 @@ export function CompanionExperience({ initialPhase = "welcome" }: { initialPhase
     setCallOpen(true);
   };
 
+  // Private mode toggle — enter from welcome/chat, exit back to normal chat.
+  const handleTogglePrivate = () => {
+    stopSpeaking();
+    setRecording(false);
+    setInput("");
+    if (privateMode) {
+      setPrivateMode(false);
+      exitPrivateMode();
+    } else {
+      setPrivateMode(true);
+      enterPrivateMode();
+      enterChat();
+    }
+  };
+
   // Greeting the companion has already said (drives the arrival headline).
   const greetingLines = messages
     .filter((m) => m.sender === "companion" && m.kind !== "call-record")
     .map((m) => m.text);
 
-  const userHasSent = messages.some((m) => m.sender === "user");
-  const showChips = input.trim() === "" && !userHasSent;
+  // "Chat started" = the USER has sent at least one message (text / chip / voice).
+  // The companion's greeting does NOT count — so private mode stays available
+  // right up until the user's own first message.
+  const userStartedChat = messages.some((m) => m.sender === "user");
+  const canEnterPrivate = !userStartedChat;
+  const showChips = input.trim() === "" && !userStartedChat;
 
   return (
     <div className="relative h-full overflow-hidden">
@@ -106,7 +128,8 @@ export function CompanionExperience({ initialPhase = "welcome" }: { initialPhase
             onChip={handleChip}
             onCall={handleCall}
             onBack={goHome}
-            onMenu={() => setProfileOpen(true)}
+            onPrivate={handleTogglePrivate}
+            canPrivate={canEnterPrivate}
           />
         ) : (
           <ChatView
@@ -126,7 +149,10 @@ export function CompanionExperience({ initialPhase = "welcome" }: { initialPhase
             onChip={handleChip}
             onBack={goHome}
             onCall={handleCall}
-            onMenu={() => setProfileOpen(true)}
+            onTitleClick={() => setProfileOpen(true)}
+            privateMode={privateMode}
+            onTogglePrivate={handleTogglePrivate}
+            canEnterPrivate={canEnterPrivate}
           />
         )}
       </div>
@@ -148,6 +174,7 @@ export function CompanionExperience({ initialPhase = "welcome" }: { initialPhase
           onSelectLanguage={(lang) => setUiLanguage(lang)}
           onClearChat={() => {
             setProfileOpen(false);
+            setPrivateMode(false);
             clearChat();
             setPhase("welcome");
           }}

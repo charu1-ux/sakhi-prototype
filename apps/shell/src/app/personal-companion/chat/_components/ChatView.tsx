@@ -5,6 +5,7 @@ import { Composer } from "./Composer";
 import { MessageList } from "./MessageList";
 import { QuickChips } from "./QuickChips";
 import { VoiceNoteRecorder } from "./VoiceNoteRecorder";
+import { PrivacyIcon } from "../icons";
 import { UI, type ChatMessage, type UiLanguage } from "../companion-data";
 
 type Props = {
@@ -24,7 +25,10 @@ type Props = {
   onChip: (label: string) => void;
   onBack: () => void;
   onCall: () => void;
-  onMenu: () => void;
+  onTitleClick: () => void;
+  privateMode: boolean;
+  onTogglePrivate: () => void;
+  canEnterPrivate: boolean;
 };
 
 // Presentational chat surface. State lives in CompanionExperience so the arrival
@@ -47,20 +51,44 @@ export function ChatView({
   onChip,
   onBack,
   onCall,
-  onMenu,
+  onTitleClick,
+  privateMode,
+  onTogglePrivate,
+  canEnterPrivate,
 }: Props) {
+  const t = UI[uiLanguage];
+
+  const privateEmptyState = (
+    <div className="mx-auto flex max-w-[320px] flex-col items-center gap-3 rounded-3xl border border-[#e4dbff] bg-white px-6 py-7 text-center shadow-[0_2px_12px_rgba(109,23,206,0.06)]">
+      <span className="flex size-14 items-center justify-center rounded-full bg-[#ede7ff] text-[#6d17ce]">
+        <PrivacyIcon className="size-8" filled />
+      </span>
+      <p className="text-[16px] font-bold text-[#0c0d10]">{t.privateChat}</p>
+      <p className="text-[14px] leading-relaxed text-[rgba(12,13,16,0.6)]">{t.privateNotice}</p>
+    </div>
+  );
+
   return (
     <div className="flex h-full flex-col overflow-hidden bg-[#f5f5f5]">
-      <CompanionHeader uiLanguage={uiLanguage} onBack={onBack} onCall={onCall} onMenu={onMenu} />
+      <CompanionHeader
+        uiLanguage={uiLanguage}
+        onBack={onBack}
+        onCall={onCall}
+        onTitleClick={onTitleClick}
+        privateMode={privateMode}
+        onTogglePrivate={onTogglePrivate}
+        canEnterPrivate={canEnterPrivate}
+      />
 
       <MessageList
         messages={messages}
         isTyping={isTyping}
         pendingUserText={recording ? liveTranscript : null}
-        pendingHint={UI[uiLanguage].recordingHint}
+        pendingHint={t.recordingHint}
+        emptyState={privateMode ? privateEmptyState : undefined}
       />
 
-      {showChips && !recording && (
+      {showChips && !recording && !privateMode && (
         <QuickChips uiLanguage={uiLanguage} onPick={onChip} onCall={onCall} />
       )}
 
