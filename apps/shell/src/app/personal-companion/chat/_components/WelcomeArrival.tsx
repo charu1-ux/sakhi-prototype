@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { CompanionAvatar } from "./CompanionAvatar";
 import { Composer } from "./Composer";
 import { QuickChips } from "./QuickChips";
 import { ChevronLeftIcon, DotsIcon, PhoneIcon } from "../icons";
@@ -129,7 +128,25 @@ export function WelcomeArrival({
                 filter: "drop-shadow(0 12px 28px rgba(109,23,206,0.28))",
               }}
             >
-              <CompanionAvatar size={136} showActiveDot />
+              {/* Animated avatar — a subtle looping greeting (waving). Poster +
+                  silent autoplay so it loads safely; falls back to the still. */}
+              <span className="relative inline-flex" style={{ width: 136, height: 136 }}>
+                <video
+                  src="/assets/personal-companion/avatar-welcome.mp4"
+                  poster="/assets/personal-companion/avatar.png"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="auto"
+                  className="size-full rounded-full object-cover"
+                  aria-label="Dil Ki Baat"
+                />
+                <span
+                  aria-hidden
+                  className="absolute right-1.5 bottom-1.5 size-5 rounded-full border-2 border-white bg-[#25ab21]"
+                />
+              </span>
               <span
                 aria-hidden
                 className="pointer-events-none absolute inset-0 overflow-hidden rounded-full"

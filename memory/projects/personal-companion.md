@@ -49,6 +49,12 @@ The companion now opens on an **animated arrival** screen, then transitions into
 
 Avatar liveliness is "living portrait" motion only — a still photo can't truly blink/wave; real facial animation would need a rigged Lottie/short video swapped into `CompanionAvatar`.
 
+**Avatar assets — where to update:**
+
+- Static avatar (header, chat bubbles, profile, call): `apps/shell/public/assets/personal-companion/avatar.png` — square PNG, cropped to a circle. Used by `CompanionAvatar`.
+- Welcome/arrival animated greeting: `apps/shell/public/assets/personal-companion/avatar-welcome.mp4` — a face-cropped, **muted**, square H.264 loop (waving). Rendered by `WelcomeArrival` as an autoplaying `<video loop muted playsInline>` with `avatar.png` as the poster/fallback. To refresh: drop a new square muted MP4 at that path (or re-crop from a source clip with ffmpeg `crop=...,scale=320:320`, `-an`).
+- Current avatar is the cartoon "Dil Ki Baat" character; `avatar.png` was cut from a frame of the greeting clip so the still and the animation match.
+
 ### Call vs Voice note (post user-testing v2)
 
 User testing said the immersive avatar surface read as a "call", and the mic should behave like a real voice note. Reworked into two clearly different modalities:
