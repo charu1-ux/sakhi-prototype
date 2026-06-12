@@ -865,9 +865,9 @@ function PlaceSheet({
             </button>
           </div>
 
-          {/* Search — focus → white bg, neutral border (no purple) */}
+          {/* Search — web field focus: white bg + surface-moderate border (§12.1) */}
           <div className="mb-2 shrink-0 px-5">
-            <div className="bg-surface-ghost focus-within:bg-surface focus-within:border-surface-moderate flex items-center gap-2 rounded-2xl border border-[rgba(12,13,16,0.12)] px-4 py-3 transition-colors">
+            <div className="focus-within:border-surface-moderate flex items-center gap-2 rounded-2xl border border-[rgba(12,13,16,0.12)] bg-white px-4 py-3 transition-colors">
               <svg
                 width="16"
                 height="16"
@@ -1045,7 +1045,7 @@ function PlaceSheet({
                 Enter City Name
               </p>
 
-              <div className="bg-surface-ghost focus-within:bg-surface focus-within:border-surface-moderate mb-6 flex items-center gap-3 rounded-2xl border border-[rgba(12,13,16,0.12)] px-4 py-4 transition-colors">
+              <div className="focus-within:border-surface-moderate mb-6 flex items-center gap-3 rounded-2xl border border-[rgba(12,13,16,0.12)] bg-white px-4 py-4 transition-colors">
                 <svg
                   width="16"
                   height="16"
@@ -1674,12 +1674,14 @@ function FormScreen({
     label,
     value,
     isApprox,
+    active,
     onTap,
   }: {
     icon: React.ReactNode;
     label: string;
     value: string | null;
     isApprox?: boolean;
+    active?: boolean;
     onTap: () => void;
   }) => (
     <div className="flex flex-col gap-2">
@@ -1687,7 +1689,9 @@ function FormScreen({
       <button
         type="button"
         onClick={onTap}
-        className="bg-surface-ghost focus-visible:ring-primary-60 inline-flex h-14 w-full items-center gap-3 rounded-2xl border border-[rgba(12,13,16,0.12)] px-4 transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]"
+        className={`focus-visible:ring-primary-60 inline-flex h-14 w-full items-center gap-3 rounded-2xl border px-4 transition-[background-color,border-color,transform] duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97] ${
+          active ? "border-surface-moderate bg-white" : "border-[rgba(12,13,16,0.12)] bg-white"
+        }`}
       >
         <span className="shrink-0 text-[#0c0d10]">{icon}</span>
         <span
@@ -1783,6 +1787,7 @@ function FormScreen({
             <FieldRow
               label="DATE OF BIRTH"
               value={dateLabel}
+              active={sheet === "date"}
               onTap={() => setSheet("date")}
               icon={
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -1810,6 +1815,7 @@ function FormScreen({
               label="TIME OF BIRTH"
               value={timeLabel}
               isApprox={data.timeUnknown}
+              active={sheet === "time"}
               onTap={() => setSheet("time")}
               icon={
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -1828,6 +1834,7 @@ function FormScreen({
             <FieldRow
               label="PLACE OF BIRTH"
               value={cityLabel}
+              active={sheet === "city"}
               onTap={() => setSheet("city")}
               icon={
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
