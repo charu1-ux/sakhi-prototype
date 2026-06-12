@@ -10,16 +10,11 @@ import { cn } from "@intelligence/ui";
 import { HubChatInput } from "../../jobs/design-prototype/HubChatInput";
 import spinLoaderData from "../../jobs/design-prototype/microlearning/creator/spin-loader.json";
 import { type StoryAction, TIMING } from "./story-data";
-import {
-  ClarifyChips,
-  FeedbackWidget,
-  MealPlanCardWidget,
-  MealTrackerWidget,
-} from "./story-widgets";
+import { ClarifyChips, FinishWidget, ReminderSetupWidget } from "./story-widgets";
 
 // ── Transcript model (mirrors ../nuskha) ──────────────────────────────────────────
 
-type WidgetVariant = "clarifyGoal" | "clarifyDiet" | "plan" | "tracker" | "feedback";
+type WidgetVariant = "clarifyWater" | "clarifyMeals" | "setup" | "finish";
 
 type Block =
   | { kind: "user"; id: string; text: string }
@@ -29,7 +24,7 @@ type Block =
 
 // ── Story orchestrator ─────────────────────────────────────────────────────────────
 
-export function KhanaStory() {
+export function RemindersStory() {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [phase, setPhase] = useState(0);
   const scrollRef = useRef<HTMLElement | null>(null);
@@ -47,9 +42,9 @@ export function KhanaStory() {
   }, []);
 
   const onAction = useCallback((a: StoryAction) => {
-    if (a === "clarify-goal") setPhase(2);
-    else if (a === "clarify-diet") setPhase(4);
-    else if (a === "start-tracker") setPhase(6);
+    if (a === "clarify-water") setPhase(2);
+    else if (a === "clarify-meals") setPhase(4);
+    else if (a === "confirm") setPhase(6);
     else if (a === "finish") setPhase(8);
   }, []);
 
@@ -80,70 +75,67 @@ export function KhanaStory() {
           append({
             kind: "user",
             id: "u-symptom",
-            text: "मुझे शुगर है, खाने में क्या ध्यान रखूँ?",
+            text: "खाना-पानी पीना याद नहीं रहता, रिमाइंडर लगा दो",
           });
           setPhase(1);
         });
         break;
 
       case 1:
-        now(() => append({ kind: "loader", id: "l-q1", text: "आपकी ज़रूरत समझ रही हूँ…" }));
+        now(() => append({ kind: "loader", id: "l-q1", text: "ठीक है, सेट कर रही हूँ…" }));
         at(searchHold, () => {
           replace("l-q1", {
             kind: "asst",
             id: "l-q1",
-            text: "शुगर में तो खाना ही सबसे बड़ी दवा है 🙂 बताओ, प्लान किसके हिसाब से बनाऊँ?",
+            text: "बहुत अच्छा सोचा! अब मैं ख्याल रखूँगी 🙂 पहले बताओ — पानी कितनी-कितनी देर में याद दिलाऊँ?",
           });
-          append({ kind: "widget", id: "w-goal", variant: "clarifyGoal" });
+          append({ kind: "widget", id: "w-water", variant: "clarifyWater" });
         });
-        // gated: ClarifyChips → "clarify-goal" → phase 2
+        // gated: ClarifyChips → "clarify-water" → phase 2
         break;
 
       case 2:
-        now(() => append({ kind: "user", id: "u-goal", text: "शुगर" }));
+        now(() => append({ kind: "user", id: "u-water", text: "हर 2 घंटे" }));
         at(clarifyBeat, () => setPhase(3));
         break;
 
       case 3:
         now(() => {
-          append({ kind: "asst", id: "a-diet", text: "अच्छा। और खाने में क्या लेते हैं?" });
-          append({ kind: "widget", id: "w-diet", variant: "clarifyDiet" });
+          append({ kind: "asst", id: "a-meals", text: "और खाने पे? किन वक़्त याद दिलाऊँ?" });
+          append({ kind: "widget", id: "w-meals", variant: "clarifyMeals" });
         });
-        // gated: ClarifyChips → "clarify-diet" → phase 4
+        // gated: ClarifyChips → "clarify-meals" → phase 4
         break;
 
       case 4:
-        now(() => append({ kind: "user", id: "u-diet", text: "शुद्ध शाकाहारी" }));
+        now(() => append({ kind: "user", id: "u-meals", text: "तीनों वक़्त" }));
         at(clarifyBeat, () => setPhase(5));
         break;
 
       case 5:
-        now(() => append({ kind: "loader", id: "l-find", text: "आपके लिए प्लान बना रही हूँ…" }));
+        now(() =>
+          append({ kind: "loader", id: "l-find", text: "आपके रिमाइंडर तैयार कर रही हूँ…" }),
+        );
         at(loaderHold, () => {
           replace("l-find", {
             kind: "asst",
             id: "l-find",
-            text: "लीजिए — आज का शुगर-फ्रेंडली प्लान, बिल्कुल घर के देसी खाने से। महँगी चीज़ों की ज़रूरत नहीं।",
+            text: "लीजिए — ये रहे आपके रिमाइंडर। कोई नहीं चाहिए तो बस बंद कर दीजिए, फिर 'सेट करें' दबा दीजिए।",
           });
-          append({ kind: "widget", id: "w-plan", variant: "plan" });
+          append({ kind: "widget", id: "w-setup", variant: "setup" });
         });
-        // gated: MealPlanCard → "start-tracker" → phase 6
+        // gated: ReminderSetup → "confirm" → phase 6
         break;
 
       case 6:
-        now(() => append({ kind: "user", id: "u-start", text: "अच्छा, आज से शुरू करती हूँ" }));
+        now(() => append({ kind: "user", id: "u-confirm", text: "हाँ, सेट कर दो" }));
         at(beat, () => setPhase(7));
         break;
 
       case 7:
-        now(() => append({ kind: "widget", id: "w-tracker", variant: "tracker" }));
-        // gated: MealTracker → "finish" → phase 8
-        break;
-
-      case 8:
         now(() => {
-          append({ kind: "asst", id: "a-done", text: "शाबाश! रोज़ ऐसे ही चलाइए 🌱" });
-          append({ kind: "widget", id: "w-feedback", variant: "feedback" });
+          append({ kind: "asst", id: "a-done", text: "हो गया! अब याद दिलाती रहूँगी 🔔" });
+          append({ kind: "widget", id: "w-finish", variant: "finish" });
         });
         break;
     }
@@ -166,7 +158,7 @@ export function KhanaStory() {
           >
             <ChevronLeft size={22} strokeWidth={2.4} />
           </button>
-          <h1 className="flex-1 text-lg font-bold">खाने का ध्यान</h1>
+          <h1 className="flex-1 text-lg font-bold">खाना-पानी रिमाइंडर</h1>
           <button
             type="button"
             aria-label="Chats"
@@ -257,15 +249,13 @@ function WidgetView({
   onAction: (a: StoryAction) => void;
 }) {
   switch (variant) {
-    case "clarifyGoal":
-      return <ClarifyChips which="goal" onAction={onAction} />;
-    case "clarifyDiet":
-      return <ClarifyChips which="diet" onAction={onAction} />;
-    case "plan":
-      return <MealPlanCardWidget onAction={onAction} />;
-    case "tracker":
-      return <MealTrackerWidget onAction={onAction} />;
-    case "feedback":
-      return <FeedbackWidget />;
+    case "clarifyWater":
+      return <ClarifyChips which="water" onAction={onAction} />;
+    case "clarifyMeals":
+      return <ClarifyChips which="meals" onAction={onAction} />;
+    case "setup":
+      return <ReminderSetupWidget onAction={onAction} />;
+    case "finish":
+      return <FinishWidget />;
   }
 }
