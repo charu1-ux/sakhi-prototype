@@ -5,6 +5,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   type ChatMessage,
   type UiLanguage,
+  chipIdForText,
+  CHIP_SCRIPTS,
+  classifyEmotion,
   estimateVoiceDuration,
   FIRST_TIME_GREETING,
   generateReply,
@@ -39,6 +42,8 @@ export function useCompanion() {
   // Bumped to cancel any in-flight companion stream (e.g. greeting) when the
   // thread is reset — entering/exiting private mode or clearing the chat.
   const streamGenRef = useRef(0);
+  // Active quick-chip script (relevant multi-turn flow): { id, turn } or null.
+  const topicRef = useRef<{ id: string; turn: number } | null>(null);
 
   const setUiLanguage = useCallback((lang: UiLanguage) => {
     langRef.current = lang;
@@ -115,11 +120,11 @@ export function useCompanion() {
         },
       ]);
 
-      const { bubbles, crisis, replyLanguage } = generateReply(clean, langRef.current);
-      if (crisis) setCrisisActive(true);
-
+      // Voice notes always use the generic engine (and don't drive chip scripts).
       if (voice) {
-        // Voice-first: reply comes back as a single spoken voice note + transcript.
+        topicRef.current = null;
+        const { bubbles, crisis, replyLanguage } = generateReply(clean, langRef.current);
+        if (crisis) setCrisisActive(true);
         const joined = bubbles.map((b) => b.text).join(" ");
         setIsTyping(true);
         await sleep(700);
@@ -137,9 +142,41 @@ export function useCompanion() {
             voiceLang: ttsLangFor(replyLanguage),
           },
         ]);
-      } else {
-        await streamCompanion(bubbles, crisis);
+        return;
       }
+
+      // Text path. Quick-chip scripts give a relevant 3-turn flow: a chip tap
+      // starts the script; each following message advances it; then it falls
+      // back to the generic engine. Crisis always overrides the script.
+      const isCrisis = classifyEmotion(clean) === "CRISIS";
+      let scripted: string[] | null = null;
+      if (isCrisis) {
+        topicRef.current = null;
+      } else {
+        const startId = chipIdForText(clean);
+        if (startId && CHIP_SCRIPTS[startId]) {
+          topicRef.current = { id: startId, turn: 0 };
+          scripted = CHIP_SCRIPTS[startId][langRef.current][0];
+        } else if (topicRef.current) {
+          const script = CHIP_SCRIPTS[topicRef.current.id]?.[langRef.current];
+          const next = topicRef.current.turn + 1;
+          if (script && next < script.length) {
+            topicRef.current.turn = next;
+            scripted = script[next];
+          } else {
+            topicRef.current = null; // script exhausted → generic engine
+          }
+        }
+      }
+
+      if (scripted) {
+        await streamCompanion(scripted.map((text, i) => ({ text, delayMs: i === 0 ? 600 : 450 })));
+        return;
+      }
+
+      const { bubbles, crisis } = generateReply(clean, langRef.current);
+      if (crisis) setCrisisActive(true);
+      await streamCompanion(bubbles, crisis);
     },
     [streamCompanion],
   );
@@ -149,6 +186,7 @@ export function useCompanion() {
   // no greeting, no recall, and a clean slate in + out.)
   const enterPrivateMode = useCallback(() => {
     streamGenRef.current++; // cancel any in-flight greeting so the slate is clean
+    topicRef.current = null;
     setIsTyping(false);
     setMessages([]);
     setCrisisActive(false);
@@ -156,6 +194,7 @@ export function useCompanion() {
 
   const exitPrivateMode = useCallback(() => {
     streamGenRef.current++;
+    topicRef.current = null;
     setIsTyping(false);
     setMessages([]);
     setCrisisActive(false);
@@ -178,6 +217,7 @@ export function useCompanion() {
 
   const clearChat = useCallback(() => {
     streamGenRef.current++;
+    topicRef.current = null;
     setIsTyping(false);
     setMessages([]);
     setCrisisActive(false);

@@ -246,31 +246,150 @@ export const RETURNING_MEMORY_GREETING: Record<UiLanguage, string[]> = {
 
 export type QuickChip = { id: string; label: string; emoji?: string; isCall?: boolean };
 
+const DEFAULT_CHIPS: QuickChip[] = [
+  { id: "talk", label: "Just here to talk", emoji: "😊" },
+  { id: "mind", label: "Got a lot on my mind", emoji: "💬" },
+  { id: "good", label: "Something good happened", emoji: "✨" },
+  { id: "overwhelmed", label: "Feeling overwhelmed", emoji: "😮‍💨" },
+  { id: "noreason", label: "No reason, just felt like it", emoji: "😶" },
+  { id: "vent", label: "Need to vent", emoji: "😤" },
+];
+
 export const QUICK_CHIPS: Record<UiLanguage, QuickChip[]> = {
-  hinglish: [
-    { id: "talk", label: "Bas baat karni hai", emoji: "🙂" },
-    { id: "sad", label: "Udaas hoon", emoji: "😔" },
-    { id: "lonely", label: "Akela feel ho raha hai", emoji: "🥺" },
-    { id: "anxious", label: "Ghabrahat ho rahi hai", emoji: "😟" },
-    { id: "confused", label: "Samajh nahi aa raha", emoji: "😕" },
-    { id: "call", label: "Call me", isCall: true },
-  ],
-  hi: [
-    { id: "talk", label: "बस बात करनी है", emoji: "🙂" },
-    { id: "sad", label: "उदास हूँ", emoji: "😔" },
-    { id: "lonely", label: "अकेला लग रहा है", emoji: "🥺" },
-    { id: "anxious", label: "घबराहट हो रही है", emoji: "😟" },
-    { id: "confused", label: "समझ नहीं आ रहा", emoji: "😕" },
-    { id: "call", label: "कॉल करें", isCall: true },
-  ],
-  en: [
-    { id: "talk", label: "Just here to talk", emoji: "🙂" },
-    { id: "sad", label: "Feeling sad", emoji: "😔" },
-    { id: "lonely", label: "Feeling lonely", emoji: "🥺" },
-    { id: "anxious", label: "Feeling anxious", emoji: "😟" },
-    { id: "confused", label: "Feeling confused", emoji: "😕" },
-    { id: "call", label: "Call me", isCall: true },
-  ],
+  hinglish: DEFAULT_CHIPS,
+  hi: DEFAULT_CHIPS,
+  en: DEFAULT_CHIPS,
+};
+
+// ── Quick-chip scripts — a short, relevant 3-turn conversation per chip ───────
+// When a chip is tapped, the companion plays turn 0; each of the user's next
+// messages advances to the next turn (then it falls back to the generic engine).
+// Each turn is an array of bubbles. Keyed by chip id → language → turns.
+export type ChipScript = string[][];
+
+const CHIP_LABEL_TO_ID: Record<string, string> = Object.fromEntries(
+  DEFAULT_CHIPS.map((c) => [c.label, c.id]),
+);
+
+export function chipIdForText(text: string): string | undefined {
+  return CHIP_LABEL_TO_ID[text.trim()];
+}
+
+export const CHIP_SCRIPTS: Record<string, Record<UiLanguage, ChipScript>> = {
+  talk: {
+    en: [
+      ["Honestly, that's my favourite kind of visit.", "So how's your day treating you?"],
+      ["Mmm, I'm with you.", "What's been the best little moment of it?"],
+      ["I love that.", "We can stay right here as long as you like."],
+    ],
+    hi: [
+      ["सच कहूँ तो मुझे यही सबसे अच्छा लगता है।", "बताओ, आज दिन कैसा जा रहा है?"],
+      ["हम्म, मैं सुन रहा हूँ।", "आज का सबसे अच्छा पल कौन सा रहा?"],
+      ["बहुत बढ़िया।", "जब तक मन करे, यहीं बैठते हैं।"],
+    ],
+    hinglish: [
+      ["Sach mein, mujhe yahi sabse accha lagta hai.", "Bata, aaj din kaisa ja raha hai?"],
+      ["Hmm, sun raha hoon.", "Aaj ka sabse accha pal kaunsa raha?"],
+      ["Bahut badhiya.", "Jab tak mann kare, yahin baithte hain."],
+    ],
+  },
+  mind: {
+    en: [
+      ["Okay — let's lay it out, no rush.", "What's sitting right at the top?"],
+      ["That makes sense it feels loud.", "Is it one big thing, or lots of small ones piling up?"],
+      [
+        "Thanks for trusting me with it.",
+        "We don't have to solve it all — what would feel lightest to set down first?",
+      ],
+    ],
+    hi: [
+      ["ठीक है — आराम से, सब रख दो।", "अभी सबसे ऊपर क्या चल रहा है?"],
+      ["समझ सकता हूँ कि शोर ज़्यादा है।", "एक बड़ी बात है या बहुत सारी छोटी-छोटी जमा हो गई हैं?"],
+      ["बताने के लिए शुक्रिया।", "सब एक साथ सुलझाना ज़रूरी नहीं — पहले किसे हल्का करना चाहोगे?"],
+    ],
+    hinglish: [
+      ["Theek hai — aaram se, sab rakh de.", "Abhi sabse upar kya chal raha hai?"],
+      ["Samajh sakta hoon ki shor zyada hai.", "Ek badi baat hai ya bahut saari choti-choti?"],
+      [
+        "Batane ke liye shukriya.",
+        "Sab ek saath solve karna zaroori nahi — pehle kya halka karna chahoge?",
+      ],
+    ],
+  },
+  good: {
+    en: [
+      ["Oh I love hearing that!", "Tell me everything — what happened?"],
+      ["That's genuinely wonderful.", "How did it feel in the moment?"],
+      ["You deserve to sit in that for a bit.", "What part are you most proud of?"],
+    ],
+    hi: [
+      ["अरे वाह, सुनकर बहुत अच्छा लगा!", "बताओ ना, क्या हुआ?"],
+      ["यह तो सच में शानदार है।", "उस पल में कैसा महसूस हुआ?"],
+      ["इसका थोड़ा मज़ा लो।", "सबसे ज़्यादा किस बात पर गर्व है?"],
+    ],
+    hinglish: [
+      ["Arre wah, sun ke bahut accha laga!", "Bata na, kya hua?"],
+      ["Yeh toh sach mein zabardast hai.", "Us pal mein kaisa feel hua?"],
+      ["Iska thoda maza lo.", "Sabse zyada kis baat pe proud ho?"],
+    ],
+  },
+  overwhelmed: {
+    en: [
+      ["That sounds like a lot to carry right now.", "Let's slow it down together — one breath."],
+      ["I'm right here, no rush.", "What's the heaviest thing on you this moment?"],
+      [
+        "You're not handling all of it alone now.",
+        "If we set just one thing aside for tonight, what would it be?",
+      ],
+    ],
+    hi: [
+      ["लगता है अभी बहुत कुछ एक साथ है।", "चलो साथ में थोड़ा धीमे चलते हैं — एक साँस।"],
+      ["मैं यहीं हूँ, कोई जल्दी नहीं।", "इस वक़्त सबसे भारी क्या लग रहा है?"],
+      ["अब तुम अकेले नहीं संभाल रहे।", "अगर आज रात एक चीज़ साइड रख दें, तो वो क्या होगी?"],
+    ],
+    hinglish: [
+      ["Lagta hai abhi bahut kuch ek saath hai.", "Chal saath mein thoda dheere — ek saans."],
+      ["Main yahin hoon, koi jaldi nahi.", "Iss waqt sabse bhaari kya lag raha hai?"],
+      [
+        "Ab tu akela nahi sambhaal raha.",
+        "Agar aaj raat ek cheez side rakh dein, toh woh kya hogi?",
+      ],
+    ],
+  },
+  noreason: {
+    en: [
+      ["And that's reason enough — I'm really glad you did.", "How are you, honestly?"],
+      ["Mmm, I hear you.", "Anything quietly on your mind, or just here to be?"],
+      ["Either is perfectly fine.", "Let's just be here a while."],
+    ],
+    hi: [
+      ["और यही काफ़ी है — अच्छा लगा कि तुम आए।", "सच में, कैसे हो?"],
+      ["हम्म, समझ रहा हूँ।", "कुछ मन में चल रहा है, या बस यूँ ही?"],
+      ["दोनों बिल्कुल ठीक हैं।", "चलो थोड़ी देर बस यहीं रहते हैं।"],
+    ],
+    hinglish: [
+      ["Aur yahi kaafi hai — accha laga ki tu aaya.", "Sach mein, kaisa hai?"],
+      ["Hmm, samajh raha hoon.", "Kuch mann mein chal raha hai, ya bas yunhi?"],
+      ["Dono bilkul theek hain.", "Chal thodi der bas yahin rehte hain."],
+    ],
+  },
+  vent: {
+    en: [
+      ["Go for it — I'm all yours, no judgment.", "What's got you worked up?"],
+      ["Yeah, that would frustrate me too.", "Let it out — what else?"],
+      ["Thanks for letting that out with me.", "How's it sitting now that you've said it?"],
+    ],
+    hi: [
+      ["बोलो — मैं पूरी तरह तुम्हारे साथ हूँ, कोई जजमेंट नहीं।", "किस बात ने परेशान किया?"],
+      ["हाँ, मुझे भी गुस्सा आता।", "निकालो — और क्या?"],
+      ["यह सब कहने के लिए शुक्रिया।", "अब कहने के बाद कैसा लग रहा है?"],
+    ],
+    hinglish: [
+      ["Bol — main poori tarah tere saath hoon, koi judgment nahi.", "Kis baat ne pareshan kiya?"],
+      ["Haan, mujhe bhi gussa aata.", "Nikaal — aur kya?"],
+      ["Yeh sab kehne ke liye shukriya.", "Ab kehne ke baad kaisa lag raha hai?"],
+    ],
+  },
 };
 
 // ── Language detection (script-level, message-level mirroring) ─────────────────
