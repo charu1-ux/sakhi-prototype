@@ -1,71 +1,233 @@
-// Data + timing for the Sehat Saathi "Home Remedy" chat story (auto-playing
-// conversation prototype). Pure data — no JSX — shared by the orchestrator and
-// the presentational widgets. Mirrors the JioMart reference (../commerce/jiomart).
+// Data + timing for the Sehat Saathi "Ghar ke Nushke" chat story.
+// Reframed as a WELLNESS-EXPLORE experience (browse by bucket → pick a remedy →
+// guided walkthrough), distinct from symptom triage (../takleef). Pure data — no
+// JSX — shared by the orchestrator and the widgets. Mirrors ../../commerce/jiomart.
 
-export type ClarifyOption = { id: string; label: string };
-
-export type StepIcon = "leaf" | "flame" | "cup";
+export type StepIcon = "leaf" | "flame" | "cup" | "moon" | "droplet" | "sparkles";
+export type BucketIcon = "soup" | "shield" | "thermometer" | "sparkles";
 
 export type WalkthroughStep = {
-  n: number;
   title: string;
   instruction: string;
-  /** Spoken line (TTS source) — voice is a visual stub in this dressing build. */
-  say: string;
   icon: StepIcon;
 };
 
-// ── Clarifying questions (scripted) ──────────────────────────────────────────────
-
-export const CLARIFY_WHERE: ClarifyOption[] = [
-  { id: "front", label: "माथे के आगे" },
-  { id: "back", label: "पीछे (गर्दन)" },
-  { id: "side", label: "साइड में" },
-  { id: "all", label: "पूरा सिर" },
-];
-
-export const CLARIFY_SINCE: ClarifyOption[] = [
-  { id: "now", label: "अभी-अभी" },
-  { id: "morning", label: "आज सुबह से" },
-  { id: "night", label: "कल रात से" },
-];
-
-// ── The recommended remedy + its walkthrough ─────────────────────────────────────
-
-export const REMEDY = {
-  title: "तुलसी काढ़ा",
-  meta: "3 कदम · 8 मिनट",
-  social: "1,321 लोगों को फ़ायदा हुआ",
+export type Remedy = {
+  id: string;
+  title: string;
+  meta: string;
+  social: string;
+  icon: StepIcon;
+  steps: WalkthroughStep[];
 };
 
-export const STEPS: WalkthroughStep[] = [
+export type Bucket = {
+  id: string;
+  title: string;
+  hint: string;
+  icon: BucketIcon;
+  bg: string;
+  fg: string;
+  remedies: Remedy[];
+};
+
+// ── Wellness buckets (what the user wants to explore) ─────────────────────────────
+
+export const BUCKETS: Bucket[] = [
   {
-    n: 1,
-    title: "तुलसी पत्ते कूटो",
-    instruction: "8–10 ताज़े तुलसी पत्ते तोड़कर हल्का कूट लें, ताकि रस निकले।",
-    say: "आठ से दस ताज़े तुलसी पत्ते तोड़कर हल्का कूट लें, ताकि रस निकले।",
-    icon: "leaf",
+    id: "pachan",
+    title: "पाचन",
+    hint: "गैस · एसिडिटी · अपच",
+    icon: "soup",
+    bg: "#E6F1FB",
+    fg: "#185FA5",
+    remedies: [
+      {
+        id: "jeera",
+        title: "जीरा पानी",
+        meta: "3 कदम · 5 मिनट",
+        social: "712 लोगों को फ़ायदा हुआ",
+        icon: "cup",
+        steps: [
+          { title: "जीरा भूनो", instruction: "एक चम्मच जीरा हल्का भून लें।", icon: "flame" },
+          {
+            title: "पानी में उबालो",
+            instruction: "एक कप पानी में जीरा डालकर 3 मिनट उबालें।",
+            icon: "flame",
+          },
+          { title: "गुनगुना पियो", instruction: "छानकर खाने के बाद गुनगुना पिएँ।", icon: "cup" },
+        ],
+      },
+      {
+        id: "ajwain",
+        title: "अजवाइन-नमक",
+        meta: "2 कदम · 3 मिनट",
+        social: "540 लोगों को फ़ायदा हुआ",
+        icon: "leaf",
+        steps: [
+          {
+            title: "अजवाइन लो",
+            instruction: "आधा चम्मच अजवाइन और चुटकी काला नमक लें।",
+            icon: "leaf",
+          },
+          {
+            title: "गुनगुने पानी से लो",
+            instruction: "गुनगुने पानी के साथ निगल लें।",
+            icon: "cup",
+          },
+        ],
+      },
+    ],
   },
   {
-    n: 2,
-    title: "पानी में उबालो",
-    instruction: "एक कप पानी में तुलसी, 2 काली मिर्च और थोड़ी अदरक डालकर 5 मिनट उबालें।",
-    say: "एक कप पानी में तुलसी, दो काली मिर्च और थोड़ी अदरक डालकर पाँच मिनट उबालें।",
-    icon: "flame",
+    id: "immunity",
+    title: "इम्युनिटी",
+    hint: "रोज़ की सेहत · थकान",
+    icon: "shield",
+    bg: "#E3F3E9",
+    fg: "#1E7A46",
+    remedies: [
+      {
+        id: "tulsi",
+        title: "तुलसी काढ़ा",
+        meta: "3 कदम · 8 मिनट",
+        social: "1,321 लोगों को फ़ायदा हुआ",
+        icon: "leaf",
+        steps: [
+          {
+            title: "तुलसी पत्ते कूटो",
+            instruction: "8–10 ताज़े तुलसी पत्ते हल्का कूट लें।",
+            icon: "leaf",
+          },
+          {
+            title: "पानी में उबालो",
+            instruction: "एक कप पानी में तुलसी, 2 काली मिर्च और अदरक डालकर 5 मिनट उबालें।",
+            icon: "flame",
+          },
+          {
+            title: "गरम-गरम पियो",
+            instruction: "छानकर थोड़ा शहद मिलाकर गरम-गरम पिएँ।",
+            icon: "cup",
+          },
+        ],
+      },
+      {
+        id: "haldi",
+        title: "हल्दी दूध",
+        meta: "3 कदम · 5 मिनट",
+        social: "540 लोगों को फ़ायदा हुआ",
+        icon: "cup",
+        steps: [
+          { title: "दूध गरम करो", instruction: "एक कप दूध हल्का गरम करें।", icon: "cup" },
+          {
+            title: "हल्दी मिलाओ",
+            instruction: "आधा चम्मच हल्दी और चुटकी काली मिर्च मिलाएँ।",
+            icon: "leaf",
+          },
+          {
+            title: "सोने से पहले पियो",
+            instruction: "रात सोने से 30 मिनट पहले गरम-गरम पिएँ।",
+            icon: "moon",
+          },
+        ],
+      },
+    ],
   },
   {
-    n: 3,
-    title: "गरम-गरम पियो",
-    instruction: "छानकर थोड़ा शहद मिला लें और गरम-गरम पिएँ। गले और सर्दी दोनों को आराम।",
-    say: "छानकर थोड़ा शहद मिला लें और गरम-गरम पिएँ। गले और सर्दी दोनों को आराम मिलेगा।",
-    icon: "cup",
+    id: "sardi",
+    title: "सर्दी-खाँसी",
+    hint: "गला · मौसमी",
+    icon: "thermometer",
+    bg: "#FBEAE7",
+    fg: "#C0492F",
+    remedies: [
+      {
+        id: "adrak",
+        title: "अदरक की चाय",
+        meta: "3 कदम · 6 मिनट",
+        social: "980 लोगों को फ़ायदा हुआ",
+        icon: "cup",
+        steps: [
+          { title: "अदरक कूटो", instruction: "एक इंच अदरक छीलकर कूट लें।", icon: "leaf" },
+          {
+            title: "उबालो",
+            instruction: "डेढ़ कप पानी में अदरक डालकर 5 मिनट उबालें।",
+            icon: "flame",
+          },
+          {
+            title: "शहद के साथ पियो",
+            instruction: "छानकर थोड़ा शहद मिलाएँ और गरम पिएँ।",
+            icon: "cup",
+          },
+        ],
+      },
+      {
+        id: "shahad",
+        title: "शहद-अदरक",
+        meta: "2 कदम · 2 मिनट",
+        social: "430 लोगों को फ़ायदा हुआ",
+        icon: "leaf",
+        steps: [
+          {
+            title: "रस निकालो",
+            instruction: "थोड़ा अदरक कूटकर आधा चम्मच रस निकालें।",
+            icon: "leaf",
+          },
+          {
+            title: "शहद मिलाकर लो",
+            instruction: "बराबर शहद मिलाकर दिन में दो बार चाटें।",
+            icon: "cup",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "twacha",
+    title: "त्वचा और बाल",
+    hint: "रूखापन · चमक",
+    icon: "sparkles",
+    bg: "#EFE8FB",
+    fg: "#6D17CE",
+    remedies: [
+      {
+        id: "naariyal",
+        title: "नारियल तेल मालिश",
+        meta: "2 कदम · 5 मिनट",
+        social: "360 लोगों को फ़ायदा हुआ",
+        icon: "droplet",
+        steps: [
+          {
+            title: "तेल गुनगुना करो",
+            instruction: "थोड़ा नारियल तेल हल्का गुनगुना करें।",
+            icon: "droplet",
+          },
+          {
+            title: "मालिश करो",
+            instruction: "बालों की जड़ों में 5 मिनट हल्की मालिश करें।",
+            icon: "sparkles",
+          },
+        ],
+      },
+      {
+        id: "besan",
+        title: "बेसन-हल्दी उबटन",
+        meta: "3 कदम · 8 मिनट",
+        social: "290 लोगों को फ़ायदा हुआ",
+        icon: "leaf",
+        steps: [
+          {
+            title: "पेस्ट बनाओ",
+            instruction: "2 चम्मच बेसन, चुटकी हल्दी और थोड़ा दूध मिलाएँ।",
+            icon: "leaf",
+          },
+          { title: "लगाओ", instruction: "चेहरे पर लगाकर 10 मिनट सूखने दें।", icon: "sparkles" },
+          { title: "धो लो", instruction: "गुनगुने पानी से हल्के हाथ से धो लें।", icon: "droplet" },
+        ],
+      },
+    ],
   },
 ];
-
-export const FINISH = {
-  headline: "बहुत बढ़िया, सुनीता!",
-  body: "आपने तुलसी काढ़ा पूरा किया। थोड़ा आराम करें — जल्दी फ़ायदा दिखेगा।",
-};
 
 export const FEELINGS: { id: string; label: string; icon: "smile" | "meh" | "frown" }[] = [
   { id: "good", label: "आराम है", icon: "smile" },
@@ -77,11 +239,5 @@ export const FEELINGS: { id: string; label: string; icon: "smile" | "meh" | "fro
 
 export const TIMING = {
   initial: 500,
-  beat: 2000,
-  clarifyBeat: 1500,
-  searchHold: 2000,
-  loaderHold: 2000,
+  searchHold: 1800,
 };
-
-// Actions emitted by gated buttons inside widgets.
-export type StoryAction = "clarify-where" | "clarify-since" | "start-walkthrough" | "finish";

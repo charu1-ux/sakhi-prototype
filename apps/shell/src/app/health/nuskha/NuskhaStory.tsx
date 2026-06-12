@@ -9,20 +9,21 @@ import { cn } from "@intelligence/ui";
 
 import { HubChatInput } from "../../jobs/design-prototype/HubChatInput";
 import spinLoaderData from "../../jobs/design-prototype/microlearning/creator/spin-loader.json";
-import { type StoryAction, TIMING } from "./story-data";
-import { ClarifyChips, FeedbackWidget, RemedyCardWidget, WalkthroughWidget } from "./story-widgets";
+import { TIMING } from "./story-data";
+import { ExploreWidget } from "./story-widgets";
 
-// ── Transcript model (mirrors ../commerce/jiomart) ───────────────────────────────
-
-type WidgetVariant = "clarifyWhere" | "clarifySince" | "remedy" | "walkthrough" | "feedback";
+// ── Transcript model (mirrors ../../commerce/jiomart) ─────────────────────────────
+//
+// "Ghar ke Nushke" is a wellness-EXPLORE experience (browse remedy buckets), not a
+// symptom flow — that distinction lives in ../takleef. So the chat opening is just
+// a warm intro, and the whole browse → remedy → walkthrough → feedback journey is
+// handled by the self-contained <ExploreWidget/>.
 
 type Block =
   | { kind: "user"; id: string; text: string }
   | { kind: "asst"; id: string; text?: string; node?: ReactNode }
   | { kind: "loader"; id: string; text: string }
-  | { kind: "widget"; id: string; variant: WidgetVariant };
-
-// ── Story orchestrator ───────────────────────────────────────────────────────────
+  | { kind: "widget"; id: string; variant: "explore" };
 
 export function NuskhaStory() {
   const [blocks, setBlocks] = useState<Block[]>([]);
@@ -36,16 +37,6 @@ export function NuskhaStory() {
   }, []);
   const replace = useCallback((id: string, b: Block) => {
     setBlocks((prev) => prev.map((x) => (x.id === id ? b : x)));
-  }, []);
-  const remove = useCallback((id: string) => {
-    setBlocks((prev) => prev.filter((x) => x.id !== id));
-  }, []);
-
-  const onAction = useCallback((a: StoryAction) => {
-    if (a === "clarify-where") setPhase(2);
-    else if (a === "clarify-since") setPhase(4);
-    else if (a === "start-walkthrough") setPhase(6);
-    else if (a === "finish") setPhase(8);
   }, []);
 
   useEffect(() => {
@@ -61,88 +52,35 @@ export function NuskhaStory() {
     return () => cancelAnimationFrame(id);
   }, [blocks, reduceMotion]);
 
-  // Timeline state machine. Each phase appends block(s) (idempotent by id) and
-  // either schedules the next phase or waits for a gated button (via onAction).
   useEffect(() => {
     const timers: number[] = [];
     const at = (ms: number, fn: () => void) => timers.push(window.setTimeout(fn, ms));
     const now = (fn: () => void) => at(0, fn);
-    const { initial, beat, clarifyBeat, searchHold, loaderHold } = TIMING;
+    const { initial, searchHold } = TIMING;
 
     switch (phase) {
       case 0:
         at(initial, () => {
-          append({ kind: "user", id: "u-symptom", text: "मुझे सिर दर्द हो रहा है" });
+          append({ kind: "user", id: "u-open", text: "मुझे कुछ घरेलू नुस्खे देखने हैं" });
           setPhase(1);
         });
         break;
 
       case 1:
-        now(() => append({ kind: "loader", id: "l-q1", text: "आपकी तकलीफ़ समझ रही हूँ…" }));
+        now(() => append({ kind: "loader", id: "l-q1", text: "नुस्खे तैयार कर रही हूँ…" }));
         at(searchHold, () => {
           replace("l-q1", {
             kind: "asst",
             id: "l-q1",
-            text: "ओह, सिर दर्द बहुत थका देता है। बताओ — दर्द कहाँ महसूस हो रहा है?",
+            text: "बढ़िया! घर के नुस्खे हर रोज़ की सेहत का देसी इलाज हैं 🌿 बताइए — किस चीज़ के लिए देखना चाहती हैं?",
           });
-          append({ kind: "widget", id: "w-where", variant: "clarifyWhere" });
-        });
-        // gated: ClarifyChips → "clarify-where" → phase 2
-        break;
-
-      case 2:
-        now(() => append({ kind: "user", id: "u-where", text: "माथे के आगे" }));
-        at(clarifyBeat, () => setPhase(3));
-        break;
-
-      case 3:
-        now(() => {
-          append({ kind: "asst", id: "a-since", text: "अच्छा। और यह कब से हो रहा है?" });
-          append({ kind: "widget", id: "w-since", variant: "clarifySince" });
-        });
-        // gated: ClarifyChips → "clarify-since" → phase 4
-        break;
-
-      case 4:
-        now(() => append({ kind: "user", id: "u-since", text: "आज सुबह से" }));
-        at(clarifyBeat, () => setPhase(5));
-        break;
-
-      case 5:
-        now(() =>
-          append({ kind: "loader", id: "l-find", text: "आपके लिए सही नुस्खा ढूँढ रही हूँ…" }),
-        );
-        at(loaderHold, () => {
-          replace("l-find", {
-            kind: "asst",
-            id: "l-find",
-            text: "समझ गई — सुबह से माथे में दर्द। अक्सर यह तनाव या पानी की कमी से होता है — घबराइए मत, घर पे ही आराम मिलेगा।",
-          });
-          append({ kind: "widget", id: "w-remedy", variant: "remedy" });
-        });
-        // gated: Remedy card → "start-walkthrough" → phase 6
-        break;
-
-      case 6:
-        now(() => append({ kind: "user", id: "u-yes", text: "हाँ, बताओ कैसे करना है" }));
-        at(beat, () => setPhase(7));
-        break;
-
-      case 7:
-        now(() => append({ kind: "widget", id: "w-walk", variant: "walkthrough" }));
-        // gated: Walkthrough finishes → "finish" → phase 8
-        break;
-
-      case 8:
-        now(() => {
-          append({ kind: "asst", id: "a-done", text: "बस, हो गया! 🌿" });
-          append({ kind: "widget", id: "w-feedback", variant: "feedback" });
+          append({ kind: "widget", id: "w-explore", variant: "explore" });
         });
         break;
     }
 
     return () => timers.forEach((t) => window.clearTimeout(t));
-  }, [phase, append, remove, replace]);
+  }, [phase, append, replace]);
 
   return (
     <div className="bg-surface relative flex h-dvh flex-col overflow-hidden">
@@ -203,7 +141,7 @@ export function NuskhaStory() {
                 b.kind === "user" ? "items-end" : "items-stretch",
               )}
             >
-              <BlockView block={b} onAction={onAction} />
+              <BlockView block={b} />
             </motion.div>
           );
         })}
@@ -214,9 +152,7 @@ export function NuskhaStory() {
   );
 }
 
-// ── Block renderer ───────────────────────────────────────────────────────────────
-
-function BlockView({ block, onAction }: { block: Block; onAction: (a: StoryAction) => void }) {
+function BlockView({ block }: { block: Block }) {
   switch (block.kind) {
     case "user":
       return (
@@ -238,27 +174,6 @@ function BlockView({ block, onAction }: { block: Block; onAction: (a: StoryActio
         </div>
       );
     case "widget":
-      return <WidgetView variant={block.variant} onAction={onAction} />;
-  }
-}
-
-function WidgetView({
-  variant,
-  onAction,
-}: {
-  variant: WidgetVariant;
-  onAction: (a: StoryAction) => void;
-}) {
-  switch (variant) {
-    case "clarifyWhere":
-      return <ClarifyChips which="where" onAction={onAction} />;
-    case "clarifySince":
-      return <ClarifyChips which="since" onAction={onAction} />;
-    case "remedy":
-      return <RemedyCardWidget onAction={onAction} />;
-    case "walkthrough":
-      return <WalkthroughWidget onAction={onAction} />;
-    case "feedback":
-      return <FeedbackWidget />;
+      return <ExploreWidget />;
   }
 }
