@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { HOME_ASSETS } from "./hub-data";
@@ -19,6 +19,10 @@ type Props = {
   onSpeak?: () => void;
   /** "sleek" — icon-only Speak button (48×48 circle), fixed 48px input height, no multiline */
   variant?: "default" | "sleek";
+  /** Voice/listening mode — replaces the input + Speak with a live waveform and an arrow-up Send. */
+  voiceMode?: boolean;
+  onVoiceSend?: () => void;
+  onVoiceCancel?: () => void;
   /** Quick-reply tag chips shown above input; hidden while typing */
   chips?: TagChipItem[];
   onChipSelect?: (chip: TagChipItem) => void;
@@ -250,6 +254,96 @@ function HubContextBar({
   );
 }
 
+// ─── CloseIcon ────────────────────────────────────────────────────────────────
+
+function CloseIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path
+        d="M5 5l10 10M15 5L5 15"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+// ─── Waveform ─────────────────────────────────────────────────────────────────
+// A row of neutral-grey dots spanning the box end-to-end. At rest a bright pulse
+// travels right→left; while "speaking" the dots stretch into amplitude lines.
+// Speech is simulated in natural bursts so both states read in the prototype.
+
+const WAVE_DOTS = Array.from({ length: 26 }, (_, i) => i);
+const WAVE_DOT = "rgba(12,13,16,0.5)";
+
+function Waveform() {
+  const [speaking, setSpeaking] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    let on = true;
+    function loop() {
+      if (!alive) return;
+      setSpeaking(on);
+      const next = on ? 1300 + Math.random() * 900 : 650 + Math.random() * 600;
+      on = !on;
+      window.setTimeout(loop, next);
+    }
+    loop();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  return (
+    <div
+      className="flex h-7 w-full items-center justify-between"
+      aria-label={speaking ? "Listening — speaking" : "Listening"}
+    >
+      {WAVE_DOTS.map((i) => {
+        const dur = speaking ? 0.7 : 1.5;
+        // Negative, increasing-with-index delay → the crest sweeps right→left.
+        const delay = -(i / WAVE_DOTS.length) * dur;
+        // Per-bar peak so the speaking oscillation reads as an organic waveform.
+        const peak = 3 + (((i * 37) % 11) / 10) * 2.6;
+        return (
+          <span
+            key={i}
+            className="rounded-full"
+            style={
+              {
+                width: 3.5,
+                height: 3.5,
+                backgroundColor: WAVE_DOT,
+                transformOrigin: "center",
+                animationName: speaking ? "wf-osc" : "wf-travel",
+                animationDuration: `${dur}s`,
+                animationTimingFunction: "ease-in-out",
+                animationIterationCount: "infinite",
+                animationDelay: `${delay}s`,
+                "--wf-peak": peak,
+              } as CSSProperties
+            }
+          />
+        );
+      })}
+      <style>{`
+        @keyframes wf-osc {
+          0%, 100% { transform: scaleY(1); opacity: 0.55; }
+          50% { transform: scaleY(var(--wf-peak, 3)); opacity: 1; }
+        }
+        @keyframes wf-travel {
+          0%, 100% { opacity: 0.25; }
+          50% { opacity: 1; }
+        }
+        @media (prefers-reduced-motion: reduce) { span { animation: none !important; } }
+      `}</style>
+    </div>
+  );
+}
+
 // ─── HubChatInput ─────────────────────────────────────────────────────────────
 
 export function HubChatInput({
@@ -260,6 +354,9 @@ export function HubChatInput({
   onAdd,
   onSpeak,
   variant = "default",
+  voiceMode = false,
+  onVoiceSend,
+  onVoiceCancel,
   chips,
   onChipSelect,
   showDatePicker = false,
@@ -369,7 +466,7 @@ export function HubChatInput({
 
       {/* Tag chips row — slides in/out; hidden while typing */}
       <AnimatePresence>
-        {hasChips && !isTyping && (
+        {hasChips && !isTyping && !voiceMode && (
           <motion.div
             key="chips"
             {...slideUp}
@@ -397,224 +494,273 @@ export function HubChatInput({
         )}
       </AnimatePresence>
 
-      {/* Main input row */}
-      <div className="flex items-center gap-[6px] px-4 py-3">
-        {/* Add button — shrinks when typing */}
-        <motion.button
-          ref={addRef}
-          type="button"
-          aria-label="Add"
-          onClick={onAdd}
-          className="flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center justify-center overflow-hidden rounded-full outline-none"
-          animate={{
-            width: isTyping ? SEND_SIZE : BTN_SIZE,
-            height: isTyping ? SEND_SIZE : BTN_SIZE,
-          }}
-          transition={{ duration: DUR, ease: EASE }}
-          style={{ backgroundColor: "#f0e8fa", flexShrink: 0 }}
-        >
-          <Image
-            src={`${HOME_ASSETS}/add.svg`}
-            alt=""
-            width={20}
-            height={20}
-            className="pointer-events-none size-5"
-            unoptimized
-          />
-        </motion.button>
-
-        {/* Input pill — borderRadius morphs on multi-line; border + bg change on focus (JDS field-focus pattern) */}
-        <motion.div
-          className="flex min-w-0 flex-1 overflow-hidden"
-          animate={{ borderRadius: isMultiLine ? 18 : 40 }}
-          transition={{ duration: DUR, ease: EASE }}
-          style={{
-            backgroundColor: pillBg,
-            border: `1px solid ${pillBorder}`,
-            borderRadius: 40,
-            paddingLeft: PILL_PX_L,
-            paddingRight: PILL_PX_R,
-            paddingTop: PILL_PY,
-            paddingBottom: PILL_PY,
-            gap: "8px",
-            alignItems: isMultiLine ? "flex-end" : "center",
-            display: "flex",
-            minHeight: BTN_SIZE,
-            transition: "background-color 0.2s ease, border-color 0.2s ease",
-          }}
-        >
-          {/* Date picker trigger — calendar icon, slides in when showDatePicker=true and not typing */}
-          <AnimatePresence>
-            {showDatePicker && !isTyping && (
-              <motion.button
-                key="calendar"
-                type="button"
-                aria-label="Pick date"
-                onClick={() => setShowCalendar((v) => !v)}
-                {...slideUp}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-transform duration-[150ms] hover:scale-[1.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#310064] focus-visible:ring-offset-1 active:scale-[0.93]"
-                style={{
-                  backgroundColor: showCalendar ? "#6d17ce" : "#ede7ff",
-                  color: showCalendar ? "#ffffff" : "#6d17ce",
-                }}
-              >
-                {/* Calendar SVG icon */}
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 14 14"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <rect
-                    x="0.65"
-                    y="2.15"
-                    width="12.7"
-                    height="10.7"
-                    rx="1.85"
-                    stroke="currentColor"
-                    strokeWidth="1.3"
-                  />
-                  <line
-                    x1="0.65"
-                    y1="5.35"
-                    x2="13.35"
-                    y2="5.35"
-                    stroke="currentColor"
-                    strokeWidth="1.2"
-                  />
-                  <line
-                    x1="4.5"
-                    y1="0.7"
-                    x2="4.5"
-                    y2="3.5"
-                    stroke="currentColor"
-                    strokeWidth="1.4"
-                    strokeLinecap="round"
-                  />
-                  <line
-                    x1="9.5"
-                    y1="0.7"
-                    x2="9.5"
-                    y2="3.5"
-                    stroke="currentColor"
-                    strokeWidth="1.4"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </motion.button>
-            )}
-          </AnimatePresence>
-
-          {/* Textarea */}
-          <textarea
-            ref={textareaRef}
-            rows={1}
-            placeholder={placeholder}
-            aria-label={placeholder}
-            autoComplete="off"
-            value={text}
-            onChange={handleChange}
-            onKeyDown={handleKeyDown}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            className="min-w-0 flex-1 resize-none border-none bg-transparent ring-0 outline-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&::placeholder]:truncate [&::placeholder]:overflow-hidden"
+      {/* Main input row — voice mode shows a live waveform + arrow-up Send */}
+      {voiceMode ? (
+        <div className="flex items-center gap-[6px] px-4 py-3">
+          {/* Cancel — light-grey circle, dark-grey ✕; exits voice mode */}
+          <button
+            type="button"
+            aria-label="Cancel voice"
+            onClick={onVoiceCancel}
+            className="flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center justify-center rounded-full transition-transform duration-150 ease-out outline-none focus-visible:ring-2 focus-visible:ring-[#310064] focus-visible:ring-offset-2 active:scale-[0.94]"
             style={{
-              fontSize: "16px",
-              lineHeight: `${LINE_H}px`,
-              color: text ? "#0c0d10" : "rgba(12,13,16,0.38)",
-              height: LINE_H,
-              maxHeight: MAX_TA_H,
-              overflowY: "hidden",
-              padding: 0,
-              margin: 0,
-              display: "block",
-              fontFamily: "JioType, -apple-system, sans-serif",
+              width: BTN_SIZE,
+              height: BTN_SIZE,
+              backgroundColor: "#eeeeef",
+              color: "rgba(12,13,16,0.55)",
+              flexShrink: 0,
             }}
-          />
+          >
+            <CloseIcon className="size-5" />
+          </button>
+          <div
+            className="flex min-w-0 flex-1 items-center overflow-hidden"
+            style={{
+              backgroundColor: "#eeeeef",
+              borderRadius: 40,
+              paddingLeft: 12,
+              paddingRight: 12,
+              minHeight: BTN_SIZE,
+            }}
+          >
+            <Waveform />
+          </div>
+          <button
+            type="button"
+            aria-label="Send voice message"
+            onClick={onVoiceSend}
+            className="flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center justify-center overflow-hidden rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#310064] focus-visible:ring-offset-2"
+            style={{ width: BTN_SIZE, height: BTN_SIZE, backgroundColor: "#3e0084", flexShrink: 0 }}
+          >
+            <Image
+              src={`${HOME_ASSETS}/arrow-up.svg`}
+              alt=""
+              width={20}
+              height={20}
+              className="pointer-events-none size-5"
+              unoptimized
+            />
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-[6px] px-4 py-3">
+          {/* Add button — shrinks when typing */}
+          <motion.button
+            ref={addRef}
+            type="button"
+            aria-label="Add"
+            onClick={onAdd}
+            className="flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center justify-center overflow-hidden rounded-full outline-none"
+            animate={{
+              width: isTyping ? SEND_SIZE : BTN_SIZE,
+              height: isTyping ? SEND_SIZE : BTN_SIZE,
+            }}
+            transition={{ duration: DUR, ease: EASE }}
+            style={{ backgroundColor: "#f0e8fa", flexShrink: 0 }}
+          >
+            <Image
+              src={`${HOME_ASSETS}/add.svg`}
+              alt=""
+              width={20}
+              height={20}
+              className="pointer-events-none size-5"
+              unoptimized
+            />
+          </motion.button>
 
-          {/* Send button — slides in inside pill when typing */}
+          {/* Input pill — borderRadius morphs on multi-line; border + bg change on focus (JDS field-focus pattern) */}
+          <motion.div
+            className="flex min-w-0 flex-1 overflow-hidden"
+            animate={{ borderRadius: isMultiLine ? 18 : 40 }}
+            transition={{ duration: DUR, ease: EASE }}
+            style={{
+              backgroundColor: pillBg,
+              border: `1px solid ${pillBorder}`,
+              borderRadius: 40,
+              paddingLeft: PILL_PX_L,
+              paddingRight: PILL_PX_R,
+              paddingTop: PILL_PY,
+              paddingBottom: PILL_PY,
+              gap: "8px",
+              alignItems: isMultiLine ? "flex-end" : "center",
+              display: "flex",
+              minHeight: BTN_SIZE,
+              transition: "background-color 0.2s ease, border-color 0.2s ease",
+            }}
+          >
+            {/* Date picker trigger — calendar icon, slides in when showDatePicker=true and not typing */}
+            <AnimatePresence>
+              {showDatePicker && !isTyping && (
+                <motion.button
+                  key="calendar"
+                  type="button"
+                  aria-label="Pick date"
+                  onClick={() => setShowCalendar((v) => !v)}
+                  {...slideUp}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-transform duration-[150ms] hover:scale-[1.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#310064] focus-visible:ring-offset-1 active:scale-[0.93]"
+                  style={{
+                    backgroundColor: showCalendar ? "#6d17ce" : "#ede7ff",
+                    color: showCalendar ? "#ffffff" : "#6d17ce",
+                  }}
+                >
+                  {/* Calendar SVG icon */}
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 14 14"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <rect
+                      x="0.65"
+                      y="2.15"
+                      width="12.7"
+                      height="10.7"
+                      rx="1.85"
+                      stroke="currentColor"
+                      strokeWidth="1.3"
+                    />
+                    <line
+                      x1="0.65"
+                      y1="5.35"
+                      x2="13.35"
+                      y2="5.35"
+                      stroke="currentColor"
+                      strokeWidth="1.2"
+                    />
+                    <line
+                      x1="4.5"
+                      y1="0.7"
+                      x2="4.5"
+                      y2="3.5"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                      strokeLinecap="round"
+                    />
+                    <line
+                      x1="9.5"
+                      y1="0.7"
+                      x2="9.5"
+                      y2="3.5"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </motion.button>
+              )}
+            </AnimatePresence>
+
+            {/* Textarea */}
+            <textarea
+              ref={textareaRef}
+              rows={1}
+              placeholder={placeholder}
+              aria-label={placeholder}
+              autoComplete="off"
+              value={text}
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              className="min-w-0 flex-1 resize-none border-none bg-transparent ring-0 outline-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&::placeholder]:truncate [&::placeholder]:overflow-hidden"
+              style={{
+                fontSize: "16px",
+                lineHeight: `${LINE_H}px`,
+                color: text ? "#0c0d10" : "rgba(12,13,16,0.38)",
+                height: LINE_H,
+                maxHeight: MAX_TA_H,
+                overflowY: "hidden",
+                padding: 0,
+                margin: 0,
+                display: "block",
+                fontFamily: "JioType, -apple-system, sans-serif",
+              }}
+            />
+
+            {/* Send button — slides in inside pill when typing */}
+            <AnimatePresence>
+              {isTyping && (
+                <motion.button
+                  key="send"
+                  type="button"
+                  aria-label="Send"
+                  onClick={handleSubmit}
+                  className="flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center justify-center overflow-hidden rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#310064] focus-visible:ring-offset-2"
+                  style={{
+                    width: SEND_SIZE,
+                    height: SEND_SIZE,
+                    backgroundColor: "#3e0084",
+                    flexShrink: 0,
+                  }}
+                  {...btnMotion}
+                >
+                  <Image
+                    src={`${HOME_ASSETS}/arrow-up.svg`}
+                    alt=""
+                    width={20}
+                    height={20}
+                    className="pointer-events-none size-5"
+                    unoptimized
+                  />
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </motion.div>
+
+          {/* Speak button — slides out when typing begins */}
           <AnimatePresence>
-            {isTyping && (
-              <motion.button
-                key="send"
-                type="button"
-                aria-label="Send"
-                onClick={handleSubmit}
-                className="flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center justify-center overflow-hidden rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#310064] focus-visible:ring-offset-2"
-                style={{
-                  width: SEND_SIZE,
-                  height: SEND_SIZE,
-                  backgroundColor: "#3e0084",
-                  flexShrink: 0,
-                }}
-                {...btnMotion}
-              >
-                <Image
-                  src={`${HOME_ASSETS}/arrow-up.svg`}
-                  alt=""
-                  width={20}
-                  height={20}
-                  className="pointer-events-none size-5"
-                  unoptimized
-                />
-              </motion.button>
-            )}
+            {!isTyping &&
+              (isSleek ? (
+                <motion.button
+                  key="speak"
+                  type="button"
+                  aria-label="Speak"
+                  onClick={onSpeak}
+                  className="flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center justify-center overflow-hidden rounded-full outline-none"
+                  style={{
+                    width: BTN_SIZE,
+                    height: BTN_SIZE,
+                    backgroundColor: "#3e0084",
+                    flexShrink: 0,
+                  }}
+                  {...btnMotion}
+                >
+                  <Image
+                    src={`${HOME_ASSETS}/speak.svg`}
+                    alt=""
+                    width={20}
+                    height={20}
+                    className="pointer-events-none size-5"
+                    unoptimized
+                  />
+                </motion.button>
+              ) : (
+                <motion.button
+                  key="speak"
+                  type="button"
+                  aria-label="Speak"
+                  onClick={onSpeak}
+                  className="flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center gap-[5px] overflow-hidden rounded-full px-3 outline-none"
+                  style={{ height: BTN_SIZE, backgroundColor: "#3e0084", flexShrink: 0 }}
+                  {...btnMotion}
+                >
+                  <Image
+                    src={`${HOME_ASSETS}/speak.svg`}
+                    alt=""
+                    width={20}
+                    height={20}
+                    className="pointer-events-none size-5"
+                    unoptimized
+                  />
+                  <span className="font-[JioType,sans-serif] text-base leading-normal whitespace-nowrap text-white">
+                    Speak
+                  </span>
+                </motion.button>
+              ))}
           </AnimatePresence>
-        </motion.div>
-
-        {/* Speak button — slides out when typing begins */}
-        <AnimatePresence>
-          {!isTyping &&
-            (isSleek ? (
-              <motion.button
-                key="speak"
-                type="button"
-                aria-label="Speak"
-                onClick={onSpeak}
-                className="flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center justify-center overflow-hidden rounded-full outline-none"
-                style={{
-                  width: BTN_SIZE,
-                  height: BTN_SIZE,
-                  backgroundColor: "#3e0084",
-                  flexShrink: 0,
-                }}
-                {...btnMotion}
-              >
-                <Image
-                  src={`${HOME_ASSETS}/speak.svg`}
-                  alt=""
-                  width={20}
-                  height={20}
-                  className="pointer-events-none size-5"
-                  unoptimized
-                />
-              </motion.button>
-            ) : (
-              <motion.button
-                key="speak"
-                type="button"
-                aria-label="Speak"
-                onClick={onSpeak}
-                className="flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center gap-[5px] overflow-hidden rounded-full px-3 outline-none"
-                style={{ height: BTN_SIZE, backgroundColor: "#3e0084", flexShrink: 0 }}
-                {...btnMotion}
-              >
-                <Image
-                  src={`${HOME_ASSETS}/speak.svg`}
-                  alt=""
-                  width={20}
-                  height={20}
-                  className="pointer-events-none size-5"
-                  unoptimized
-                />
-                <span className="font-[JioType,sans-serif] text-base leading-normal whitespace-nowrap text-white">
-                  Speak
-                </span>
-              </motion.button>
-            ))}
-        </AnimatePresence>
-      </div>
+        </div>
+      )}
     </footer>
   );
 }

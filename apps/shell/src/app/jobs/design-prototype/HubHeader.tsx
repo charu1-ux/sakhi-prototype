@@ -7,6 +7,8 @@ import { ChevronLeftIcon } from "./hub-icons";
 
 type Props = {
   title: string;
+  /** Custom title content (e.g. an avatar + name) — replaces the text title when set. */
+  titleSlot?: ReactNode;
   backHref?: string;
   scrolled?: boolean;
   /** "grey" = page bg is #f5f5f5 → buttons use white. "white" = page bg is white → buttons use #f5f5f5. "transparent" = over a colored hero → white text + translucent buttons, no gradient. */
@@ -22,6 +24,7 @@ type Props = {
 
 export function HubHeader({
   title,
+  titleSlot,
   backHref = "/",
   scrolled = false,
   pageBg = "grey",
@@ -78,13 +81,17 @@ export function HubHeader({
         >
           <ChevronLeftIcon className="size-5" />
         </button>
-        <h1
-          className={`font-jio flex-1 text-[18px] leading-normal ${
-            isTransparent ? "font-semibold text-white" : "font-bold text-black"
-          }`}
-        >
-          {title}
-        </h1>
+        {titleSlot ? (
+          <div className="min-w-0 flex-1">{titleSlot}</div>
+        ) : (
+          <h1
+            className={`font-jio flex-1 text-[18px] leading-normal ${
+              isTransparent ? "font-semibold text-white" : "font-bold text-black"
+            }`}
+          >
+            {title}
+          </h1>
+        )}
         {rightSlot ? (
           <div className="shrink-0">{rightSlot}</div>
         ) : (

@@ -28,6 +28,20 @@ export function PhoneIcon({ className }: IconProps) {
   );
 }
 
+// Outline variant of PhoneIcon — same handset, rendered as a stroke.
+export function PhoneStrokeIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path
+        d="M7.06 3.34a1.1 1.1 0 0 0-1.32-.32c-.6.27-1.16.65-1.6 1.18-.5.6-.66 1.4-.5 2.16.5 2.32 1.78 4.6 3.6 6.42 1.82 1.82 4.1 3.1 6.42 3.6.76.16 1.56 0 2.16-.5.53-.44.9-1 1.18-1.6a1.1 1.1 0 0 0-.32-1.32l-1.9-1.42a1.1 1.1 0 0 0-1.27-.04l-1.1.73a.6.6 0 0 1-.66 0 9.3 9.3 0 0 1-2.02-2.02.6.6 0 0 1 0-.66l.73-1.1a1.1 1.1 0 0 0-.04-1.27L7.06 3.34Z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function MicIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">

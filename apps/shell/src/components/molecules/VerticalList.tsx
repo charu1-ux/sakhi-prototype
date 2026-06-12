@@ -88,6 +88,16 @@ const verticalPersonalCompanion: Vertical = {
   slug: "personal-companion",
   icon: "/assets/shell/ico-personal-companion.svg",
   gradientFrom: "from-vertical-personal-companion",
+  dropdownItems: [
+    {
+      label: "PM Design",
+      url: "/personal-companion/chat/",
+    },
+    {
+      label: "Design Prototype",
+      url: "/personal-companion/design-prototype/",
+    },
+  ],
 };
 
 const verticalCricket: Vertical = {
