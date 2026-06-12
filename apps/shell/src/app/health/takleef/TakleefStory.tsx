@@ -150,7 +150,7 @@ export function TakleefStory() {
             type="button"
             aria-label="Back"
             onClick={() => {
-              window.location.href = "/";
+              window.location.href = "/health";
             }}
             className="bg-surface-minimal text-fg flex size-10 shrink-0 items-center justify-center rounded-full transition-transform duration-200 hover:scale-105 active:scale-95"
           >

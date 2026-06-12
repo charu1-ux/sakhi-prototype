@@ -142,7 +142,7 @@ export function CloseCardWidget() {
         <button
           type="button"
           onClick={() => {
-            window.location.href = "/";
+            window.location.href = "/health";
           }}
           className="text-fg-muted hover:bg-surface-minimal inline-flex h-11 w-full items-center justify-center gap-2 rounded-full text-sm font-medium transition-colors"
         >

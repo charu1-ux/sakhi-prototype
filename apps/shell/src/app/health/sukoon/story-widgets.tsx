@@ -219,7 +219,9 @@ export function FeedbackWidget() {
       </div>
 
       <div className="mt-4">
-        <SecondaryButton onClick={() => (window.location.href = "/")}>वापस घर</SecondaryButton>
+        <SecondaryButton onClick={() => (window.location.href = "/health")}>
+          वापस घर
+        </SecondaryButton>
       </div>
     </Widget>
   );
