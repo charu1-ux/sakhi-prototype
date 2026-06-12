@@ -1,11 +1,12 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import Image from "next/image";
+import Lottie from "lottie-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
-import { HOME_ASSETS } from "@/app/jobs/design-prototype/hub-data";
+import spinLoaderData from "../../jobs/design-prototype/microlearning/creator/spin-loader.json";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -1608,6 +1609,531 @@ function RevealScreen({ data, onDone }: { data: FormData; onDone: () => void }) 
   );
 }
 
+// ─── ChatOverlay — conversational birth-data collection ─────────────────────────
+
+interface ChatMsg {
+  id: number;
+  role: "ai" | "user";
+  kind: "text" | "confirm" | "reveal";
+  text?: string;
+  snapshot?: FormData;
+}
+
+const MONTH_ABBR = [
+  "jan",
+  "feb",
+  "mar",
+  "apr",
+  "may",
+  "jun",
+  "jul",
+  "aug",
+  "sep",
+  "oct",
+  "nov",
+  "dec",
+];
+
+const TIME_PERIODS: Record<string, { hour: string; period: "AM" | "PM"; label: string }> = {
+  subah: { hour: "7", period: "AM", label: "subah" },
+  morning: { hour: "7", period: "AM", label: "subah" },
+  dopahar: { hour: "1", period: "PM", label: "dopahar" },
+  afternoon: { hour: "1", period: "PM", label: "dopahar" },
+  shaam: { hour: "6", period: "PM", label: "shaam" },
+  evening: { hour: "6", period: "PM", label: "shaam" },
+  raat: { hour: "9", period: "PM", label: "raat" },
+  night: { hour: "9", period: "PM", label: "raat" },
+};
+
+// Regex + keyword extraction — no LLM needed for the happy path
+function extractBirthData(text: string, cur: FormData): FormData {
+  const t = ` ${text.toLowerCase().replace(/,/g, " ")} `;
+  const next: FormData = { ...cur };
+
+  // Numeric date dd/mm/yyyy
+  const numDate = t.match(/\b(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})\b/);
+  if (numDate) {
+    next.day = String(parseInt(numDate[1]));
+    const mi = parseInt(numDate[2]) - 1;
+    if (mi >= 0 && mi < 12) next.month = MONTHS_FULL[mi];
+    let y = numDate[3];
+    if (y.length === 2) y = (parseInt(y) > 30 ? "19" : "20") + y;
+    next.year = y;
+  } else {
+    for (let i = 0; i < 12; i++) {
+      if (
+        t.includes(MONTHS_FULL[i].toLowerCase()) ||
+        new RegExp(`\\b${MONTH_ABBR[i]}[a-z]*\\b`).test(t)
+      ) {
+        next.month = MONTHS_FULL[i];
+        break;
+      }
+    }
+    const dayM =
+      t.match(/\b(\d{1,2})\s*(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/) ||
+      t.match(/(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s*(\d{1,2})\b/);
+    if (dayM && parseInt(dayM[1]) >= 1 && parseInt(dayM[1]) <= 31)
+      next.day = String(parseInt(dayM[1]));
+  }
+
+  const yearM = t.match(/\b(19\d{2}|20\d{2})\b/);
+  if (yearM) next.year = yearM[1];
+
+  // City — match against the known list
+  for (const c of CITIES) {
+    if (t.includes(c.city.toLowerCase())) {
+      next.city = c.city;
+      next.state = c.state;
+      break;
+    }
+  }
+
+  // Time
+  let periodWord: string | null = null;
+  for (const k of Object.keys(TIME_PERIODS)) {
+    if (t.includes(k)) {
+      periodWord = k;
+      break;
+    }
+  }
+  const timeM =
+    t.match(/\b(\d{1,2})(?::(\d{2}))?\s*(?:am|pm|baje|bje|o'?clock)/) ||
+    t.match(/around\s*(\d{1,2})/);
+  if (timeM) {
+    let h = parseInt(timeM[1]);
+    const min = timeM[2] ?? "00";
+    let period: "AM" | "PM";
+    if (/\bpm\b/.test(t)) period = "PM";
+    else if (/\bam\b/.test(t)) period = "AM";
+    else if (periodWord) period = TIME_PERIODS[periodWord].period;
+    else period = h >= 12 ? "PM" : "AM";
+    if (h > 12) {
+      h -= 12;
+      period = "PM";
+    }
+    if (h === 0) h = 12;
+    next.hour = String(h);
+    next.minute = min;
+    next.period = period;
+    next.timeUnknown = false;
+  } else if (periodWord) {
+    const p = TIME_PERIODS[periodWord];
+    next.hour = p.hour;
+    next.minute = "00";
+    next.period = p.period;
+    next.timeUnknown = true;
+  }
+
+  return next;
+}
+
+function timePhrase(d: FormData): string {
+  if (d.timeUnknown) {
+    const label = Object.values(TIME_PERIODS).find(
+      (p) => p.hour === d.hour && p.period === d.period,
+    )?.label;
+    return label ? `${label} ka waqt` : "approx samay";
+  }
+  return `${d.hour}:${d.minute} ${d.period}`;
+}
+
+function ChatOverlay({
+  onComplete,
+  onClose,
+}: {
+  onComplete: (d: FormData) => void;
+  onClose: () => void;
+}) {
+  const [data, setData] = useState<FormData>(EMPTY);
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
+  const [input, setInput] = useState("");
+  const [muted, setMuted] = useState(false);
+  const [thinking, setThinking] = useState(false);
+  const [loaderLabel, setLoaderLabel] = useState("");
+  const [phase, setPhase] = useState<"collect" | "confirm" | "ready">("collect");
+  const idRef = useRef(0);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const mutedRef = useRef(false);
+
+  function speak(text: string) {
+    if (mutedRef.current) return;
+    fetchSarvamAudio(text).then((src) => {
+      if (src && audioRef.current && !mutedRef.current) {
+        audioRef.current.src = src;
+        audioRef.current.play().catch(() => {});
+      }
+    });
+  }
+
+  function pushAi(text: string) {
+    setMessages((m) => [...m, { id: idRef.current++, role: "ai", kind: "text", text }]);
+    speak(text);
+  }
+
+  // Opening greeting
+  useEffect(() => {
+    const greet =
+      'Namaskar! Apni janam details batao — date, time aur jagah ek saath chat me likhiye.\nExample: "15 March 1990, 11:30 AM, Mumbai"';
+    setMessages([{ id: idRef.current++, role: "ai", kind: "text", text: greet }]);
+    speak(greet);
+    return () => audioRef.current?.pause();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auto-scroll to the latest message
+  useEffect(() => {
+    bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages, thinking]);
+
+  const dateDone = (d: FormData) => !!(d.day && d.month && d.year);
+  const timeDone = (d: FormData) => !!(d.hour || d.timeUnknown);
+  const allDone = (d: FormData) => dateDone(d) && timeDone(d) && !!d.city;
+
+  // AI got all three → show the confirmation card
+  function showConfirm(d: FormData) {
+    setMessages((m) => [
+      ...m,
+      { id: idRef.current++, role: "ai", kind: "confirm", snapshot: { ...d } },
+    ]);
+    setPhase("confirm");
+    speak("Yeh details mili hain — sahi hai?");
+  }
+
+  // Confirmed → loader (Lottie + "Perfect…") for 2s, which then vanishes and the reveal card appears
+  function showReveal() {
+    setPhase("ready");
+    setLoaderLabel("Perfect! Janam kundli ban rahi hai");
+    setThinking(true);
+    setTimeout(() => {
+      setThinking(false);
+      setLoaderLabel("");
+      setMessages((m) => [...m, { id: idRef.current++, role: "ai", kind: "reveal" }]);
+    }, 2000);
+  }
+
+  function respond(d: FormData) {
+    setThinking(false);
+    if (allDone(d)) {
+      showConfirm(d);
+      return;
+    }
+    if (!dateDone(d)) {
+      const got: string[] = [];
+      if (d.city) got.push(d.city);
+      if (timeDone(d)) got.push(timePhrase(d));
+      pushAi(
+        `${got.length ? `${got.join(", ")} — mil gaya. ` : ""}Aapki poori janam tithi bata dein — din, mahina aur saal?`,
+      );
+    } else if (!d.city) {
+      pushAi("Theek hai. Aur janam sthan? Kis sheher mein paida hue the?");
+    } else {
+      pushAi("Aur janam ka waqt? Subah, dopahar, ya shaam? Exact pata ho to wo bhi bata dein.");
+    }
+  }
+
+  function handleConfirmDetails() {
+    if (phase !== "confirm") return;
+    showReveal();
+  }
+
+  function handleEditDetails() {
+    if (phase !== "confirm") return;
+    setPhase("collect");
+    pushAi("Theek hai — phir se bata dein. Date, time aur jagah ek saath.");
+  }
+
+  function handleSend(raw?: string) {
+    const text = (raw ?? input).trim();
+    if (!text || phase === "ready") return;
+    setMessages((m) => [...m, { id: idRef.current++, role: "user", kind: "text", text }]);
+    setInput("");
+
+    if (phase === "confirm") {
+      if (/\b(yes|haan|han|sahi|theek|ok|okay|confirm|bilkul|looks?\s*right)\b/i.test(text)) {
+        handleConfirmDetails();
+        return;
+      }
+      if (/\b(edit|nahi|nahin|no|change|galat|wrong)\b/i.test(text)) {
+        handleEditDetails();
+        return;
+      }
+      // otherwise treat as a correction
+    }
+
+    const next = extractBirthData(text, data);
+    setData(next);
+    setThinking(true);
+    setTimeout(() => respond(next), 650);
+  }
+
+  function toggleMute() {
+    const nextMuted = !muted;
+    setMuted(nextMuted);
+    mutedRef.current = nextMuted;
+    if (nextMuted) audioRef.current?.pause();
+  }
+
+  return (
+    <div className="fixed inset-0 z-[70] flex flex-col">
+      <motion.div
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+        className="bg-surface flex h-full flex-col"
+      >
+        <HubHeader
+          title="Chat with Jyotish AI"
+          pageBg="white"
+          onBack={onClose}
+          rightSlot={
+            <button
+              type="button"
+              onClick={toggleMute}
+              aria-label={muted ? "Unmute voice" : "Mute voice"}
+              className="focus-visible:ring-primary-60 flex size-10 items-center justify-center rounded-full bg-[#f5f5f5] text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
+            >
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                <path d="M4 8v4h3l4 3V5L7 8H4z" fill="currentColor" />
+                {muted ? (
+                  <path
+                    d="M14 8l4 4M18 8l-4 4"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                ) : (
+                  <path
+                    d="M14 8a3 3 0 0 1 0 4"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                )}
+              </svg>
+            </button>
+          }
+        />
+
+        {/* Messages — top padding clears the fixed HubHeader */}
+        <div
+          ref={bodyRef}
+          className="flex flex-1 flex-col gap-5 overflow-y-auto px-4 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 72px)" }}
+        >
+          {messages.map((m) => {
+            // ── Confirmation widget — MCP SurfaceCard + tinted IconCircle rows + ActionFooter ──
+            if (m.kind === "confirm" && m.snapshot) {
+              const s = m.snapshot;
+              const isActive = phase === "confirm" && messages[messages.length - 1]?.id === m.id;
+              const rows = [
+                {
+                  label: `${parseInt(s.day)} ${s.month} ${s.year}`,
+                  icon: (
+                    <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+                      <rect
+                        x="2"
+                        y="3.5"
+                        width="14"
+                        height="12"
+                        rx="2.5"
+                        stroke="currentColor"
+                        strokeWidth="1.4"
+                      />
+                      <path
+                        d="M6 1.8v3.4M12 1.8v3.4M2 7.5h14"
+                        stroke="currentColor"
+                        strokeWidth="1.4"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  ),
+                },
+                {
+                  label: timePhrase(s),
+                  icon: (
+                    <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+                      <circle cx="9" cy="9" r="7" stroke="currentColor" strokeWidth="1.4" />
+                      <path
+                        d="M9 5.2V9l2.6 2"
+                        stroke="currentColor"
+                        strokeWidth="1.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  ),
+                },
+                {
+                  label: s.state ? `${s.city}, ${s.state}` : s.city,
+                  icon: (
+                    <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+                      <path
+                        d="M9 1.8a5.6 5.6 0 0 1 5.6 5.6c0 4.2-5.6 8.4-5.6 8.4S3.4 11.6 3.4 7.4A5.6 5.6 0 0 1 9 1.8z"
+                        stroke="currentColor"
+                        strokeWidth="1.4"
+                      />
+                      <circle cx="9" cy="7.4" r="1.9" stroke="currentColor" strokeWidth="1.4" />
+                    </svg>
+                  ),
+                },
+              ];
+              return (
+                <motion.div
+                  key={m.id}
+                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                  className="flex justify-start"
+                >
+                  <div className="shadow-elev-2 bg-surface w-full max-w-[92%] overflow-hidden rounded-lg border border-[rgba(12,13,16,0.08)]">
+                    <div className="p-4">
+                      <p className="text-overline font-jio mb-3 text-[rgba(12,13,16,0.45)]">
+                        YEH DETAILS MILI HAIN — SAHI HAI?
+                      </p>
+                      <div className="flex flex-col gap-3">
+                        {rows.map((r) => (
+                          <div key={r.label} className="flex items-center gap-3">
+                            <span className="bg-surface-ghost-icon text-primary-50 flex size-8 shrink-0 items-center justify-center rounded-full">
+                              {r.icon}
+                            </span>
+                            <span className="text-body-s font-jio text-[#0c0d10]">{r.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    {isActive && (
+                      <div className="flex gap-3 px-4 pb-4">
+                        <button
+                          type="button"
+                          onClick={handleEditDetails}
+                          className="text-body-s font-jio flex-1 rounded-full bg-[#eeeeef] px-5 py-2.5 text-[#0c0d10] transition-transform duration-150 ease-out active:scale-[0.97]"
+                        >
+                          Edit details
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleConfirmDetails}
+                          className="bg-primary-50 text-body-s font-jio flex-1 rounded-full px-5 py-2.5 text-white transition-transform duration-150 ease-out active:scale-[0.97]"
+                        >
+                          Looks right
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            }
+
+            // ── Reveal widget — MCP solid brand surface; tap to start the reveal ──
+            if (m.kind === "reveal") {
+              return (
+                <motion.div
+                  key={m.id}
+                  initial={{ opacity: 0, y: 12, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                  className="flex justify-start"
+                >
+                  <div className="bg-surface w-full max-w-[92%] rounded-lg border border-[rgba(12,13,16,0.08)] p-4">
+                    {/* Icon left · title + description right */}
+                    <div className="flex items-center gap-3">
+                      <span className="bg-surface-ghost-icon text-primary-50 flex size-12 shrink-0 items-center justify-center rounded-full">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                          <path
+                            d="M12 2l2.2 6.4L21 11l-6.8 2.6L12 20l-2.2-6.4L3 11l6.8-2.6L12 2z"
+                            fill="currentColor"
+                          />
+                        </svg>
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-jio text-body-l font-bold tracking-[-0.48px] text-[#0c0d10]">
+                          Your birth chart is ready
+                        </p>
+                        <p className="text-body-s font-jio text-[rgba(12,13,16,0.55)]">
+                          Tap to reveal your Kundli
+                        </p>
+                      </div>
+                    </div>
+                    {/* CTA — bottom-left, JDSButton with chevron */}
+                    <button
+                      type="button"
+                      onClick={() => onComplete(data)}
+                      className="bg-primary-50 text-btn font-jio focus-visible:ring-primary-60 mt-4 inline-flex h-11 items-center gap-1 rounded-full px-[22px] text-white transition-transform duration-150 ease-out hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]"
+                    >
+                      Reveal now
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                        <path
+                          d="M6 4l4 4-4 4"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </motion.div>
+              );
+            }
+
+            // ── Text message — user = bubble, AI = plain text (commerce / microlearning style) ──
+            const isUser = m.role === "user";
+            return (
+              <motion.div
+                key={m.id}
+                initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+              >
+                {isUser ? (
+                  <div
+                    className="text-body-s font-jio max-w-[80%] bg-[#eeeeef] px-3 py-2 text-[#0c0d10]"
+                    style={{ borderRadius: "14px 14px 4px 14px" }}
+                  >
+                    {m.text}
+                  </div>
+                ) : (
+                  <p className="text-body-s font-jio max-w-[92%] leading-relaxed font-medium whitespace-pre-line text-[#0c0d10]">
+                    {m.text}
+                  </p>
+                )}
+              </motion.div>
+            );
+          })}
+          {thinking && (
+            <div className="flex items-center gap-2.5 self-start">
+              <Lottie animationData={spinLoaderData} loop className="size-8 shrink-0" />
+              {loaderLabel && (
+                <span className="text-body-s font-jio font-medium text-[#0c0d10]">
+                  {loaderLabel}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Input — shared HubChatInput */}
+        <HubChatInput
+          variant="sleek"
+          value={input}
+          onChange={setInput}
+          onSubmit={(v) => handleSend(v)}
+          placeholder={
+            phase === "confirm"
+              ? "Type 'yes' to confirm or 'edit' to change…"
+              : "Type your birth details…"
+          }
+        />
+
+        <audio ref={audioRef} style={{ display: "none" }} />
+      </motion.div>
+    </div>
+  );
+}
+
 // ─── FormScreen ─────────────────────────────────────────────────────────────────
 
 function FormScreen({
@@ -1621,6 +2147,7 @@ function FormScreen({
 }) {
   const [sheet, setSheet] = useState<Sheet>(null);
   const [scrolled, setScrolled] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const scrollRef = useRef(false);
 
   function handleScroll(e: React.UIEvent<HTMLElement>) {
@@ -1631,8 +2158,16 @@ function FormScreen({
     }
   }
 
+  const [showErrors, setShowErrors] = useState(false);
+
   // Calculate enabled once all three fields are filled
   const canCalc = !!(data.day && (data.hour || data.timeUnknown) && data.city);
+
+  // Per-field validation messages (only after a Calculate attempt)
+  const dateError = showErrors && !data.day ? "Please select your date of birth" : null;
+  const timeError =
+    showErrors && !data.hour && !data.timeUnknown ? "Please select your time of birth" : null;
+  const cityError = showErrors && !data.city ? "Please select your place of birth" : null;
 
   // Display labels
   const dateLabel = data.day ? `${parseInt(data.day)} ${data.month} ${data.year}` : null;
@@ -1668,6 +2203,11 @@ function FormScreen({
     setSheet(null);
   }
 
+  function toggleTimeUnknown() {
+    if (data.timeUnknown) setData({ ...data, timeUnknown: false });
+    else setData({ ...data, timeUnknown: true, hour: "", minute: "" });
+  }
+
   // Tappable field row — pill button on bg-surface-ghost
   const FieldRow = ({
     icon,
@@ -1675,6 +2215,7 @@ function FormScreen({
     value,
     isApprox,
     active,
+    error,
     onTap,
   }: {
     icon: React.ReactNode;
@@ -1682,6 +2223,7 @@ function FormScreen({
     value: string | null;
     isApprox?: boolean;
     active?: boolean;
+    error?: string | null;
     onTap: () => void;
   }) => (
     <div className="flex flex-col gap-2">
@@ -1690,7 +2232,11 @@ function FormScreen({
         type="button"
         onClick={onTap}
         className={`focus-visible:ring-primary-60 inline-flex h-14 w-full items-center gap-3 rounded-2xl border px-4 transition-[background-color,border-color,transform] duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97] ${
-          active ? "border-surface-moderate bg-white" : "border-[rgba(12,13,16,0.12)] bg-white"
+          error
+            ? "border-error bg-white"
+            : active
+              ? "border-surface-moderate bg-white"
+              : "border-[rgba(12,13,16,0.12)] bg-white"
         }`}
       >
         <span className="shrink-0 text-[#0c0d10]">{icon}</span>
@@ -1729,6 +2275,7 @@ function FormScreen({
           />
         </svg>
       </button>
+      {error && <p className="text-error text-body-2xs font-jio px-1">{error}</p>}
     </div>
   );
 
@@ -1788,6 +2335,7 @@ function FormScreen({
               label="DATE OF BIRTH"
               value={dateLabel}
               active={sheet === "date"}
+              error={dateError}
               onTap={() => setSheet("date")}
               icon={
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -1810,31 +2358,66 @@ function FormScreen({
               }
             />
 
-            {/* Field 2: Time of Birth */}
-            <FieldRow
-              label="TIME OF BIRTH"
-              value={timeLabel}
-              isApprox={data.timeUnknown}
-              active={sheet === "time"}
-              onTap={() => setSheet("time")}
-              icon={
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <circle cx="9" cy="9" r="7.5" stroke="currentColor" strokeWidth="1.3" />
-                  <path
-                    d="M9 5.5v4l2.5 2"
-                    stroke="currentColor"
-                    strokeWidth="1.3"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              }
-            />
+            {/* Field 2: Time of Birth + "I don't know" checkbox */}
+            <div className="flex flex-col gap-3">
+              <FieldRow
+                label="TIME OF BIRTH"
+                value={timeLabel}
+                isApprox={data.timeUnknown}
+                active={sheet === "time"}
+                error={timeError}
+                onTap={() => setSheet("time")}
+                icon={
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <circle cx="9" cy="9" r="7.5" stroke="currentColor" strokeWidth="1.3" />
+                    <path
+                      d="M9 5.5v4l2.5 2"
+                      stroke="currentColor"
+                      strokeWidth="1.3"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                }
+              />
+
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={data.timeUnknown}
+                onClick={toggleTimeUnknown}
+                className="focus-visible:ring-primary-60 flex w-fit items-center gap-2.5 rounded-md px-1 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              >
+                <span
+                  className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border transition-colors ${
+                    data.timeUnknown
+                      ? "bg-primary-50 border-primary-50"
+                      : "border-[rgba(12,13,16,0.3)] bg-white"
+                  }`}
+                >
+                  {data.timeUnknown && (
+                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                      <path
+                        d="M2.5 6l2.5 2.5L9.5 3.5"
+                        stroke="white"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  )}
+                </span>
+                <span className="text-body-s font-jio text-[rgba(12,13,16,0.65)]">
+                  I don&apos;t know my time of birth
+                </span>
+              </button>
+            </div>
 
             {/* Field 3: Place of Birth */}
             <FieldRow
               label="PLACE OF BIRTH"
               value={cityLabel}
               active={sheet === "city"}
+              error={cityError}
               onTap={() => setSheet("city")}
               icon={
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -1858,26 +2441,30 @@ function FormScreen({
           type="button"
           onClick={() => {
             if (canCalc) onCalculate();
+            else setShowErrors(true);
           }}
           className="bg-primary-50 text-btn font-jio focus-visible:ring-primary-60 inline-flex h-14 flex-1 items-center justify-center gap-2 rounded-full text-white transition-transform duration-150 ease-out hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]"
         >
           Calculate Kundali
         </button>
 
-        {/* Secondary: Speak button — primary bg */}
+        {/* Secondary: Chat button — opens the conversational birth-data overlay */}
         <button
           type="button"
-          aria-label="Speak"
-          className="bg-primary-50 focus-visible:ring-primary-60 inline-flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]"
+          aria-label="Chat with assistant"
+          onClick={() => setChatOpen(true)}
+          className="bg-primary-50 focus-visible:ring-primary-60 inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full transition-transform duration-150 ease-out hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]"
         >
-          <Image
-            src={`${HOME_ASSETS}/speak.svg`}
-            alt=""
-            width={22}
-            height={22}
-            className="pointer-events-none size-[22px]"
-            unoptimized
-          />
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-white"
+            />
+          </svg>
         </button>
       </div>
 
@@ -1910,6 +2497,20 @@ function FormScreen({
             data={data}
             onConfirm={handleCityConfirm}
             onClose={() => setSheet(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Conversational chat overlay */}
+      <AnimatePresence>
+        {chatOpen && (
+          <ChatOverlay
+            key="chat"
+            onClose={() => setChatOpen(false)}
+            onComplete={(d) => {
+              setData(d);
+              onCalculate();
+            }}
           />
         )}
       </AnimatePresence>
