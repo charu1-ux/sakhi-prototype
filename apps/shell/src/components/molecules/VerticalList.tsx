@@ -50,6 +50,16 @@ const verticalAstrology: Vertical = {
   slug: "astro",
   icon: "/assets/shell/ico-astro.svg",
   gradientFrom: "from-vertical-astro",
+  dropdownItems: [
+    {
+      label: "PM Design",
+      url: "/astro/",
+    },
+    {
+      label: "Design Prototype",
+      url: "/astro/design-prototype/",
+    },
+  ],
 };
 
 const verticalCommerce: Vertical = {
@@ -91,12 +101,6 @@ const verticalsFeatured: Vertical[] = [
 ];
 
 const verticalsComingSoon: Vertical[] = [
-  {
-    name: "Cricket",
-    slug: "cricket",
-    icon: "/assets/shell/ico-cricket.svg",
-    gradientFrom: "from-vertical-cricket",
-  },
   {
     name: "Devotion",
     slug: "devotion",

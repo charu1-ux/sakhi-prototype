@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import type { ReactNode } from "react";
 
 import { ChevronLeftIcon } from "./hub-icons";
 
@@ -8,11 +9,15 @@ type Props = {
   title: string;
   backHref?: string;
   scrolled?: boolean;
-  /** "grey" = page bg is #f5f5f5 → buttons use white. "white" = page bg is white → buttons use #f5f5f5. */
-  pageBg?: "grey" | "white";
+  /** "grey" = page bg is #f5f5f5 → buttons use white. "white" = page bg is white → buttons use #f5f5f5. "transparent" = over a colored hero → white text + translucent buttons, no gradient. */
+  pageBg?: "grey" | "white" | "transparent";
   rightIconSrc?: string;
   rightIconLabel?: string;
   onRightIconClick?: () => void;
+  /** If set, the back button calls this instead of navigating to backHref (for in-page state transitions). */
+  onBack?: () => void;
+  /** Custom right-side content (e.g. a text "Skip" button) — takes precedence over rightIconSrc. */
+  rightSlot?: ReactNode;
 };
 
 export function HubHeader({
@@ -23,12 +28,21 @@ export function HubHeader({
   rightIconSrc,
   rightIconLabel,
   onRightIconClick,
+  onBack,
+  rightSlot,
 }: Props) {
-  const btnBg = pageBg === "grey" ? "bg-white" : "bg-[#f5f5f5]";
+  const isTransparent = pageBg === "transparent";
+  const btnBg = isTransparent
+    ? "bg-white/15 text-white backdrop-blur-sm"
+    : pageBg === "grey"
+      ? "bg-white"
+      : "bg-[#f5f5f5]";
   const gradient =
     pageBg === "white"
       ? "linear-gradient(180deg, #ffffff 0%, #ffffff 73.27%, rgba(255,255,255,0.60) 86.13%, rgba(255,255,255,0.00) 100%)"
-      : "linear-gradient(180deg, #F5F5F5 0%, #F5F5F5 73.27%, rgba(245,245,245,0.60) 86.13%, rgba(245,245,245,0.00) 100%)";
+      : pageBg === "grey"
+        ? "linear-gradient(180deg, #F5F5F5 0%, #F5F5F5 73.27%, rgba(245,245,245,0.60) 86.13%, rgba(245,245,245,0.00) 100%)"
+        : "none";
   return (
     <header
       className="pointer-events-none fixed inset-x-0 top-0 z-10"
@@ -51,7 +65,9 @@ export function HubHeader({
         <button
           type="button"
           onClick={() => {
-            if (backHref === "/" && window.parent !== window) {
+            if (onBack) {
+              onBack();
+            } else if (backHref === "/" && window.parent !== window) {
               window.parent.postMessage({ type: "jobs:navigate", href: "/" }, "*");
             } else {
               window.location.href = backHref;
@@ -62,23 +78,33 @@ export function HubHeader({
         >
           <ChevronLeftIcon className="size-5" />
         </button>
-        <h1 className="flex-1 text-[18px] leading-normal font-bold text-black">{title}</h1>
-        {rightIconSrc && (
-          <button
-            type="button"
-            aria-label={rightIconLabel ?? "Action"}
-            onClick={onRightIconClick}
-            className={`focus-visible:ring-dock-accent flex size-10 shrink-0 cursor-pointer touch-manipulation appearance-none items-center justify-center overflow-hidden rounded-full ring-0 outline-none focus-visible:ring-2 ${btnBg}`}
-          >
-            <Image
-              src={rightIconSrc}
-              alt=""
-              width={20}
-              height={20}
-              className="size-5"
-              unoptimized
-            />
-          </button>
+        <h1
+          className={`font-jio flex-1 text-[18px] leading-normal ${
+            isTransparent ? "font-semibold text-white" : "font-bold text-black"
+          }`}
+        >
+          {title}
+        </h1>
+        {rightSlot ? (
+          <div className="shrink-0">{rightSlot}</div>
+        ) : (
+          rightIconSrc && (
+            <button
+              type="button"
+              aria-label={rightIconLabel ?? "Action"}
+              onClick={onRightIconClick}
+              className={`focus-visible:ring-dock-accent flex size-10 shrink-0 cursor-pointer touch-manipulation appearance-none items-center justify-center overflow-hidden rounded-full ring-0 outline-none focus-visible:ring-2 ${btnBg}`}
+            >
+              <Image
+                src={rightIconSrc}
+                alt=""
+                width={20}
+                height={20}
+                className="size-5"
+                unoptimized
+              />
+            </button>
+          )
         )}
       </div>
     </header>

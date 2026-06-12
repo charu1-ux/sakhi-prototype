@@ -551,6 +551,7 @@ export default function CreatorChatPage() {
       />
 
       <HubChatInput
+        variant="sleek"
         placeholder="Ask me anything"
         value={input}
         onChange={setInput}

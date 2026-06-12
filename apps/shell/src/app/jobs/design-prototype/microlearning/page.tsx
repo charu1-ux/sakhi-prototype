@@ -141,7 +141,7 @@ export default function MicrolearningPage() {
         backHref={`${JOBS_APP_BASE_PATH}/design-prototype/`}
         scrolled={scrolled}
       />
-      <HubChatInput />
+      <HubChatInput variant="sleek" />
     </div>
   );
 }
