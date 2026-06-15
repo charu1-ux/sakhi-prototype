@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import Lottie from "lottie-react";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, SquarePen } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { cn } from "@intelligence/ui";
@@ -253,6 +253,18 @@ export function JioMartStory() {
             <ChevronLeft size={22} strokeWidth={2.4} />
           </button>
           <DeliveryAddressMenu ref={addressMenuRef} />
+          <button
+            type="button"
+            aria-label="New chat"
+            onClick={() => {
+              seenRef.current = new Set();
+              setBlocks([]);
+              setPhase(0);
+            }}
+            className="bg-surface-minimal text-fg flex size-10 shrink-0 items-center justify-center rounded-full transition-transform duration-200 hover:scale-105 active:scale-95"
+          >
+            <SquarePen size={19} strokeWidth={2} />
+          </button>
         </div>
       </header>
 

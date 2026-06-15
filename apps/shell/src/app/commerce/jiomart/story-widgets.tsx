@@ -480,7 +480,14 @@ export function UseCurrentLocationRow({
         selected ? "bg-primary-20/50" : "hover:bg-surface-minimal/60",
       )}
     >
-      <span className="bg-surface-minimal group-hover:bg-surface-moderate group-focus-visible:bg-surface-moderate group-active:bg-surface-moderate mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full transition-colors">
+      <span
+        className={cn(
+          "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full transition-colors",
+          selected
+            ? "bg-surface-moderate"
+            : "bg-surface-minimal group-hover:bg-surface-moderate group-active:bg-surface-moderate",
+        )}
+      >
         <Navigation size={16} strokeWidth={2.2} className="text-fg-muted" />
       </span>
       <span className="min-w-0 flex-1">
@@ -489,9 +496,6 @@ export function UseCurrentLocationRow({
           {line}
         </span>
       </span>
-      {selected && (
-        <Check size={18} strokeWidth={2.6} className="text-primary-50 mt-0.5 shrink-0" />
-      )}
     </button>
   );
 }

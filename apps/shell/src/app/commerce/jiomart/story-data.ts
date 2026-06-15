@@ -17,11 +17,23 @@ export const GROCERIES_ASSETS = "/commerce/purchasing-groceries";
 
 export type AddressTag = "home" | "default" | "test";
 
+export type AddressDetails = {
+  name: string;
+  phone: string;
+  house: string;
+  area: string;
+  landmark: string;
+  pincode: string;
+  city: string;
+  state: string;
+};
+
 export type SavedAddress = {
   id: string;
   name: string;
   tags: AddressTag[];
   line: string;
+  details?: AddressDetails; // structured fields for the Edit form
 };
 
 // ── Search swim lanes ──────────────────────────────────────────────────────────
@@ -99,18 +111,48 @@ export const SAVED_ADDRESSES: SavedAddress[] = [
     name: "GOKUL KUMAR",
     tags: ["home"],
     line: "37, Cunningham Rd, near Fortis Hospital, Vasanth Nagar, Bengaluru, Karnataka · 560001",
+    details: {
+      name: "Gokul Kumar",
+      phone: "98765 43210",
+      house: "37, Cunningham Rd",
+      area: "Vasanth Nagar",
+      landmark: "near Fortis Hospital",
+      pincode: "560001",
+      city: "Bengaluru",
+      state: "Karnataka",
+    },
   },
   {
     id: "ggn-sector27",
     name: "GOKUL KUMAR",
     tags: ["home", "default"],
     line: "188, 2nd floor, Sector 27, Gurugram, Haryana · 122009",
+    details: {
+      name: "Gokul Kumar",
+      phone: "98765 43210",
+      house: "188, 2nd floor",
+      area: "Sector 27",
+      landmark: "",
+      pincode: "122009",
+      city: "Gurugram",
+      state: "Haryana",
+    },
   },
   {
     id: "knp-harrisganj",
     name: "GOKUL KUMAR",
     tags: ["test"],
     line: "F932J78, Harris Ganj, Mirpur, Kanpur, Uttar Pradesh · 208004",
+    details: {
+      name: "Gokul Kumar",
+      phone: "98765 43210",
+      house: "F932J78",
+      area: "Harris Ganj",
+      landmark: "Mirpur",
+      pincode: "208004",
+      city: "Kanpur",
+      state: "Uttar Pradesh",
+    },
   },
 ];
 

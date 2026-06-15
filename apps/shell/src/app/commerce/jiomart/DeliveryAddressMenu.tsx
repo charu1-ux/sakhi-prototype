@@ -1,7 +1,17 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, ChevronDown, ChevronLeft, Loader2, MapPin, Plus, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  Loader2,
+  MapPin,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 
 import { cn } from "@intelligence/ui";
@@ -66,6 +76,31 @@ const DETECTED_ADDRESS: FormState = {
 
 const tagText = (a: SavedAddress) => (a.tags[0] ? TAG_TEXT[a.tags[0]] : a.name);
 
+// Build the one-line summary stored on a saved address.
+function buildLine(f: FormState): string {
+  return (
+    [f.house, f.area, f.landmark, [f.city, f.state].filter(Boolean).join(", ")]
+      .filter(Boolean)
+      .join(", ") + (f.pincode ? ` · ${f.pincode}` : "")
+  );
+}
+
+// Structured fields for the Edit form (falls back to name + line if unset).
+function detailsOf(a: SavedAddress): FormState {
+  return (
+    a.details ?? {
+      name: a.name,
+      phone: "",
+      house: a.line,
+      area: "",
+      landmark: "",
+      pincode: "",
+      city: "",
+      state: "",
+    }
+  );
+}
+
 // ── Component ───────────────────────────────────────────────────────────────────
 
 export type DeliveryAddressMenuHandle = {
@@ -85,6 +120,10 @@ export const DeliveryAddressMenu = forwardRef<DeliveryAddressMenuHandle>(
     const [addresses, setAddresses] = useState<SavedAddress[]>(SAVED_ADDRESSES);
     const [selectedId, setSelectedId] = useState(SAVED_ADDRESSES[0].id);
     const [form, setForm] = useState<FormState>(EMPTY_FORM);
+    const [kebabId, setKebabId] = useState<string | null>(null); // open 3-dot menu
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+    const [editId, setEditId] = useState<string | null>(null); // address being edited
+    const [formLine, setFormLine] = useState(CURRENT_LOCATION_LINE); // line shown in the form's location area
     const onSavedRef = useRef<(() => void) | null>(null);
     // The sheet is `fixed` inside the phone frame; measure the frame so the form
     // height is a definite px value. Viewport units (dvh) resolve to the real
@@ -126,6 +165,8 @@ export const DeliveryAddressMenu = forwardRef<DeliveryAddressMenuHandle>(
           onSavedRef.current = opts?.onSaved ?? null;
           if (locateTimerRef.current) window.clearTimeout(locateTimerRef.current);
           locateTimerRef.current = null;
+          setEditId(null);
+          setFormLine(CURRENT_LOCATION_LINE);
           setLocating(false);
           if (isManual) {
             // "Add new address": blank form with a tappable "Use current location"
@@ -158,11 +199,40 @@ export const DeliveryAddressMenu = forwardRef<DeliveryAddressMenuHandle>(
       setFromChat(false);
       setLocating(false);
       setLocated(false);
+      setKebabId(null);
+      setConfirmDeleteId(null);
+      setEditId(null);
+      setFormLine(CURRENT_LOCATION_LINE);
       onSavedRef.current = null;
     }
     function selectAddress(id: string) {
       setSelectedId(id);
       close();
+    }
+    function toggleKebab(id: string) {
+      setKebabId((k) => (k === id ? null : id));
+    }
+    function requestDelete(id: string) {
+      setKebabId(null);
+      setConfirmDeleteId(id);
+    }
+    function confirmDelete() {
+      const id = confirmDeleteId;
+      if (!id) return;
+      const remaining = addresses.filter((a) => a.id !== id);
+      setAddresses(remaining);
+      if (selectedId === id) setSelectedId(remaining[0]?.id ?? CURRENT_LOCATION.id);
+      setConfirmDeleteId(null);
+    }
+    function openEdit(a: SavedAddress) {
+      setKebabId(null);
+      setEditId(a.id);
+      setForm(detailsOf(a));
+      setFormLine(a.line);
+      setLocated(true);
+      setLocating(false);
+      setFromChat(false);
+      setMode("form");
     }
     function useCurrentLocation() {
       // Tap inside the form → spinner in the location area, then populate.
@@ -176,15 +246,25 @@ export const DeliveryAddressMenu = forwardRef<DeliveryAddressMenuHandle>(
       }, 1200);
     }
     function saveAddress() {
-      const line =
-        [form.house, form.area, form.landmark, [form.city, form.state].filter(Boolean).join(", ")]
-          .filter(Boolean)
-          .join(", ") + (form.pincode ? ` · ${form.pincode}` : "");
+      const line = buildLine(form);
+      if (editId) {
+        // Editing an existing address → update in place, return to the list.
+        setAddresses((prev) =>
+          prev.map((a) =>
+            a.id === editId ? { ...a, name: form.name || a.name, line, details: { ...form } } : a,
+          ),
+        );
+        setEditId(null);
+        setForm(EMPTY_FORM);
+        setMode("list");
+        return;
+      }
       const addr: SavedAddress = {
         id: `new-${Date.now()}`,
         name: form.name || "New address",
         tags: [],
         line,
+        details: { ...form },
       };
       setAddresses((prev) => [addr, ...prev]);
       setSelectedId(addr.id);
@@ -267,8 +347,14 @@ export const DeliveryAddressMenu = forwardRef<DeliveryAddressMenuHandle>(
                   <ListContent
                     addresses={addresses}
                     selectedId={selectedId}
+                    kebabId={kebabId}
                     onSelect={selectAddress}
+                    onToggleKebab={toggleKebab}
+                    onEdit={openEdit}
+                    onDeleteRequest={requestDelete}
                     onAddNew={() => {
+                      setEditId(null);
+                      setFormLine(CURRENT_LOCATION_LINE);
                       setLocated(false);
                       setLocating(false);
                       setForm(EMPTY_FORM);
@@ -283,6 +369,8 @@ export const DeliveryAddressMenu = forwardRef<DeliveryAddressMenuHandle>(
                     fromChat={fromChat}
                     locating={locating}
                     located={located}
+                    editing={editId !== null}
+                    locationLine={formLine}
                     onUseLocation={useCurrentLocation}
                     onBack={() => setMode("list")}
                     onClose={close}
@@ -290,6 +378,36 @@ export const DeliveryAddressMenu = forwardRef<DeliveryAddressMenuHandle>(
                   />
                 )}
               </motion.div>
+
+              {/* Delete confirmation — centred on the whole screen, above the sheet */}
+              {confirmDeleteId && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/35 px-8">
+                  <div
+                    className="bg-surface w-full max-w-[320px] rounded-2xl p-5 shadow-[0_16px_50px_rgba(0,0,0,0.25)]"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <p className="text-fg text-center text-[15px] leading-relaxed font-medium">
+                      Are you sure you want to remove this address?
+                    </p>
+                    <div className="mt-4 flex gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="bg-surface-minimal text-fg h-11 flex-1 rounded-full text-sm font-bold transition-transform duration-200 hover:scale-[1.02] active:scale-95"
+                      >
+                        No
+                      </button>
+                      <button
+                        type="button"
+                        onClick={confirmDelete}
+                        className="bg-error/10 text-error h-11 flex-1 rounded-full text-sm font-bold transition-transform duration-200 hover:scale-[1.02] active:scale-95"
+                      >
+                        Yes
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </AnimatePresence>
@@ -339,13 +457,21 @@ function PanelHeader({
 function ListContent({
   addresses,
   selectedId,
+  kebabId,
   onSelect,
+  onToggleKebab,
+  onEdit,
+  onDeleteRequest,
   onAddNew,
   onClose,
 }: {
   addresses: SavedAddress[];
   selectedId: string;
+  kebabId: string | null;
   onSelect: (id: string) => void;
+  onToggleKebab: (id: string) => void;
+  onEdit: (a: SavedAddress) => void;
+  onDeleteRequest: (id: string) => void;
   onAddNew: () => void;
   onClose: () => void;
 }) {
@@ -353,7 +479,7 @@ function ListContent({
     <div className="flex min-h-0 flex-col">
       <PanelHeader title="Delivery address" onClose={onClose} />
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1">
         {/* Use current location */}
         <UseCurrentLocationRow
           line={CURRENT_LOCATION.line}
@@ -365,15 +491,17 @@ function ListContent({
           Saved addresses
         </div>
 
-        {addresses.map((a) => (
+        {addresses.map((a, i) => (
           <PickRow
             key={a.id}
-            icon={<MapPin size={16} strokeWidth={2.2} className="text-fg-muted" />}
-            title={tagText(a)}
-            tags={a.tags}
-            line={a.line}
+            address={a}
             selected={selectedId === a.id}
-            onClick={() => onSelect(a.id)}
+            kebabOpen={kebabId === a.id}
+            openUp={i >= addresses.length - 2}
+            onSelect={() => onSelect(a.id)}
+            onToggleKebab={() => onToggleKebab(a.id)}
+            onEdit={() => onEdit(a)}
+            onDelete={() => onDeleteRequest(a.id)}
           />
         ))}
       </div>
@@ -388,56 +516,148 @@ function ListContent({
   );
 }
 
+// Saved-address row. Selected = purple bg + one-shade-darker icon (no check).
+// The 3-dot opens a per-address menu (Delete / Edit / Set as delivery / Cancel).
 function PickRow({
-  icon,
-  title,
-  tags,
-  line,
+  address,
   selected,
-  onClick,
+  kebabOpen,
+  openUp,
+  onSelect,
+  onToggleKebab,
+  onEdit,
+  onDelete,
 }: {
-  icon: React.ReactNode;
-  title: string;
-  tags?: AddressTag[];
-  line: string;
+  address: SavedAddress;
   selected: boolean;
+  kebabOpen: boolean;
+  openUp: boolean;
+  onSelect: () => void;
+  onToggleKebab: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div
+      className={cn("relative flex items-start transition-colors", selected && "bg-primary-20/50")}
+    >
+      <button
+        type="button"
+        onClick={onSelect}
+        className="group flex min-w-0 flex-1 items-start gap-3 py-3 pr-1 pl-4 text-left"
+      >
+        <span
+          className={cn(
+            "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full transition-colors",
+            selected
+              ? "bg-surface-moderate"
+              : "bg-surface-minimal group-hover:bg-surface-moderate group-active:bg-surface-moderate",
+          )}
+        >
+          <MapPin size={16} strokeWidth={2.2} className="text-fg-muted" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-center gap-2 text-sm font-bold">
+            {tagText(address)}
+            {address.tags.map((t) => (
+              <Tag key={t} tag={t} />
+            ))}
+          </span>
+          <span className="text-fg-muted mt-0.5 line-clamp-2 text-xs leading-snug font-medium">
+            {address.line}
+          </span>
+        </span>
+      </button>
+      <button
+        type="button"
+        aria-label="More options"
+        onClick={onToggleKebab}
+        className="text-fg-muted hover:bg-surface-minimal mt-1.5 mr-2 flex size-8 shrink-0 items-center justify-center rounded-full transition-colors active:scale-95"
+      >
+        <MoreHorizontal size={18} strokeWidth={2.2} />
+      </button>
+      {kebabOpen && (
+        <KebabMenu
+          openUp={openUp}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onSelect={onSelect}
+          onCancel={onToggleKebab}
+        />
+      )}
+    </div>
+  );
+}
+
+function KebabMenu({
+  openUp,
+  onEdit,
+  onDelete,
+  onSelect,
+  onCancel,
+}: {
+  openUp: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+  onSelect: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "bg-surface absolute right-3 z-30 w-56 overflow-hidden rounded-2xl border border-black/10 py-1 shadow-[0_12px_36px_rgba(0,0,0,0.18)]",
+        openUp ? "bottom-12" : "top-12",
+      )}
+    >
+      <KebabItem onClick={onDelete} danger>
+        <Trash2 size={16} strokeWidth={2.2} />
+        Delete
+      </KebabItem>
+      <KebabItem onClick={onEdit}>
+        <Pencil size={16} strokeWidth={2.2} />
+        Edit
+      </KebabItem>
+      <KebabItem onClick={onSelect}>
+        <MapPin size={16} strokeWidth={2.2} />
+        Set as delivery address
+      </KebabItem>
+      <KebabItem onClick={onCancel}>
+        <X size={16} strokeWidth={2.2} />
+        Cancel
+      </KebabItem>
+    </div>
+  );
+}
+
+function KebabItem({
+  children,
+  onClick,
+  danger,
+}: {
+  children: React.ReactNode;
   onClick: () => void;
+  danger?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "group flex w-full items-start gap-3 px-4 py-3 text-left transition-colors",
-        selected ? "bg-primary-20/50" : "hover:bg-surface-minimal/60",
+        "hover:bg-surface-minimal flex w-full items-center gap-2.5 px-4 py-2 text-left text-sm font-medium transition-colors",
+        danger ? "text-error" : "text-fg",
       )}
     >
-      <span className="bg-surface-minimal group-hover:bg-surface-moderate group-focus-visible:bg-surface-moderate group-active:bg-surface-moderate mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full transition-colors">
-        {icon}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex flex-wrap items-center gap-2 text-sm font-bold">
-          {title}
-          {tags?.map((t) => (
-            <Tag key={t} tag={t} />
-          ))}
-        </span>
-        <span className="text-fg-muted mt-0.5 line-clamp-2 text-xs leading-snug font-medium">
-          {line}
-        </span>
-      </span>
-      {selected && (
-        <Check size={18} strokeWidth={2.6} className="text-primary-50 mt-0.5 shrink-0" />
-      )}
+      {children}
     </button>
   );
 }
 
 // ── Form mode (New Delivery Address) ─────────────────────────────────────────────
 
-// "Current location" header shown inside the form when opened from chat. While
-// detecting (Add new address) it shows a spinner, then populates the address.
-function CurrentLocationArea({ locating }: { locating: boolean }) {
+// Location header shown inside the form. While detecting it shows a spinner,
+// then the populated address line (the detected location, or — when editing —
+// the address being edited).
+function CurrentLocationArea({ locating, line }: { locating: boolean; line: string }) {
   return (
     <div className="flex items-start gap-3 px-4 py-3">
       <span className="bg-surface-minimal mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full">
@@ -450,7 +670,7 @@ function CurrentLocationArea({ locating }: { locating: boolean }) {
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-bold">Current location</span>
         <span className="text-fg-muted mt-0.5 block text-xs leading-snug font-medium">
-          {locating ? "Detecting your current location…" : CURRENT_LOCATION_LINE}
+          {locating ? "Detecting your current location…" : line}
         </span>
       </span>
     </div>
@@ -463,6 +683,8 @@ function FormContent({
   fromChat,
   locating,
   located,
+  editing,
+  locationLine,
   onUseLocation,
   onBack,
   onClose,
@@ -473,6 +695,8 @@ function FormContent({
   fromChat: boolean;
   locating: boolean;
   located: boolean;
+  editing: boolean;
+  locationLine: string;
   onUseLocation: () => void;
   onBack: () => void;
   onClose: () => void;
@@ -482,16 +706,16 @@ function FormContent({
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* From chat: a close ✕ + the detected location (no back, no picker row).
-          From the list: a back arrow + the tappable "Use current location" row. */}
+          From the list / edit: a back arrow + the tappable "Use current location". */}
       <PanelHeader
-        title="New Delivery Address"
+        title={editing ? "Edit delivery address" : "New Delivery Address"}
         onBack={fromChat ? undefined : onBack}
         onClose={fromChat ? onClose : undefined}
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {located || locating ? (
-          <CurrentLocationArea locating={locating} />
+          <CurrentLocationArea locating={locating} line={locationLine} />
         ) : (
           /* Tappable "Use current location" — the tap runs the spinner → populate */
           <UseCurrentLocationRow line="Detect your delivery address" onClick={onUseLocation} />
