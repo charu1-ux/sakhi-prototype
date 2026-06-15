@@ -6,10 +6,12 @@ import { Avatar } from "./_components/Avatar";
 import { ModeButtons } from "./_components/ModeButtons";
 import { RemindersWidget } from "./_components/RemindersWidget";
 import { SaathiHeader } from "./_components/SaathiHeader";
+import { SuggestedReplies } from "./_components/SuggestedReplies";
 import { type Filter } from "./reminders/reminders-data";
-import { ASSETS, SAATHI } from "./saathi-data";
+import { ASSETS, ROUTES, SAATHI } from "./saathi-data";
 import { useLang } from "./saathi-i18n";
-import { SparkleIcon } from "./saathi-icons";
+import { BellIcon, DocIcon, ImageIcon, SparkleIcon } from "./saathi-icons";
+import { useNav } from "./use-nav";
 
 const rise = (i: number): CSSProperties => ({
   animation: "sf-rise 0.5s cubic-bezier(0.05,0.7,0.1,1) both",
@@ -20,7 +22,27 @@ const FILTERS: Filter[] = ["overdue", "today", "upcoming", "all"];
 
 export default function DailySaathiHome() {
   const { t } = useLang();
+  const { go } = useNav();
   const name = SAATHI.firstName?.trim();
+
+  // Quick actions → jump straight to a Kaam Ki Baat capability from home.
+  const quickActions = [
+    {
+      label: t.kaam.pills.reminder,
+      icon: <BellIcon className="size-4" />,
+      onPick: () => go(ROUTES.reminders),
+    },
+    {
+      label: t.kaam.pills.doc,
+      icon: <DocIcon className="size-4" />,
+      onPick: () => go(ROUTES.explainDoc),
+    },
+    {
+      label: t.kaam.pills.image,
+      icon: <ImageIcon className="size-4" />,
+      onPick: () => go(ROUTES.createImage),
+    },
+  ];
 
   // Read the widget auto-jump filter from the URL (?reminders=<filter>) set on save.
   // ?reminders=empty forces the first-time empty state (demo hook).
@@ -56,8 +78,14 @@ export default function DailySaathiHome() {
             <ModeButtons />
           </div>
 
-          {/* Reminders — the one live "for today" surface in this cut */}
-          <div style={rise(2)}>
+          {/* Quick actions — shortcuts into the Kaam Ki Baat capabilities */}
+          <div className="-mx-4" style={rise(2)}>
+            <SuggestedReplies items={quickActions} />
+          </div>
+
+          {/* For Today — the reminders surface */}
+          <div style={rise(3)}>
+            <h2 className="mb-2.5 px-0.5 text-[13px] font-bold text-[#0c0d10]">{t.forToday}</h2>
             <RemindersWidget initialFilter={remFilter} forceEmpty={forceEmpty} />
           </div>
         </div>

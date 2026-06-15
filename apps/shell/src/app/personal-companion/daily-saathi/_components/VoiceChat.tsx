@@ -2,21 +2,29 @@
 
 import { type ReactNode, useEffect, useRef, useState } from "react";
 
-import { Avatar } from "./Avatar";
 import { ChevronLeftIcon, MicIcon } from "../../chat/icons";
-import { useLang } from "../saathi-i18n";
 
-// Live voice-chat mode for Kaam Ki Baat (tap Speak). Mirrors the product voice
-// experience: a breathing avatar orb + status ("Connecting…" → "Say something" →
-// "Listening…" → "Thinking…"), the spoken line is transcribed into the chat and
-// the assistant replies, then the keyboard button switches back to text. There's
-// no real STT in the prototype — tapping the mic plays a stubbed turn.
+// Shared live voice-chat mode (tap Speak). Used by Kaam Ki Baat and Dil Ki Baat
+// so the experience is identical. A breathing avatar orb + status ("Connecting…"
+// → "Say something" → "Listening…" → "Thinking…"); the spoken line is transcribed
+// into the chat and the assistant replies; the keyboard button switches back to
+// text. No real STT in the prototype — tapping the mic plays a stubbed turn.
+// Fully prop-driven (avatar nodes, copy, content) — no i18n/avatar coupling.
 type Phase = "connecting" | "ready" | "listening" | "thinking";
 type VMsg = { id: number; role: "user" | "assistant"; text: string };
 
 let vid = 0;
 
-// Keyboard glyph (switch-to-typing) — no keyboard icon exists in the icon set.
+export type VoiceStrings = {
+  connecting: string;
+  prompt: string;
+  listening: string;
+  thinking: string;
+  exitToText: string;
+  back: string;
+};
+
+// Keyboard glyph (switch-to-typing) — no keyboard icon in the shared icon set.
 function KeyboardIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -33,22 +41,32 @@ function KeyboardIcon({ className }: { className?: string }) {
 
 type Props = {
   title: string;
-  avatar: { src: string; alt: string; fallback: ReactNode };
-  // Sync each voice turn back into the underlying chat so it persists on exit.
+  subtitle?: string;
+  // Pre-sized avatar nodes (image or video) for the large orb and the small orb.
+  avatarBig: ReactNode;
+  avatarSmall: ReactNode;
+  strings: VoiceStrings;
+  // Stubbed speech transcripts + canned replies (cycled per turn).
+  utterances: string[];
+  replies: string[];
+  // Sync each turn back into the underlying chat so it persists on exit.
   onUserUtterance: (text: string) => void;
   onAssistantReply: (text: string) => void;
   onExitToText: () => void;
 };
 
-export function KaamVoiceChat({
+export function VoiceChat({
   title,
-  avatar,
+  subtitle,
+  avatarBig,
+  avatarSmall,
+  strings,
+  utterances,
+  replies,
   onUserUtterance,
   onAssistantReply,
   onExitToText,
 }: Props) {
-  const { t } = useLang();
-  const v = t.kaam.voice;
   const [phase, setPhase] = useState<Phase>("connecting");
   const [msgs, setMsgs] = useState<VMsg[]>([]);
 
@@ -74,12 +92,12 @@ export function KaamVoiceChat({
     setPhase("listening");
     after(1500, () => {
       const i = turnRef.current++;
-      const userText = v.utterances[i % v.utterances.length];
+      const userText = utterances[i % utterances.length];
       setMsgs((m) => [...m, { id: vid++, role: "user", text: userText }]);
       onUserUtterance(userText);
       setPhase("thinking");
       after(1300, () => {
-        const reply = v.replies[i % v.replies.length];
+        const reply = replies[i % replies.length];
         setMsgs((m) => [...m, { id: vid++, role: "assistant", text: reply }]);
         onAssistantReply(reply);
         setPhase("ready");
@@ -90,12 +108,12 @@ export function KaamVoiceChat({
 
   const status =
     phase === "connecting"
-      ? v.connecting
+      ? strings.connecting
       : phase === "listening"
-        ? v.listening
+        ? strings.listening
         : phase === "thinking"
-          ? v.thinking
-          : v.prompt;
+          ? strings.thinking
+          : strings.prompt;
 
   const started = msgs.length > 0;
   const orbActive = phase === "listening" || phase === "thinking";
@@ -111,20 +129,15 @@ export function KaamVoiceChat({
         style={{
           width: big ? 140 : 52,
           height: big ? 140 : 52,
-          animation: `kvb-breathe ${orbActive ? "1.4s" : "3.2s"} ease-in-out infinite`,
+          animation: `vc-breathe ${orbActive ? "1.4s" : "3.2s"} ease-in-out infinite`,
         }}
       />
-      <Avatar
-        src={avatar.src}
-        alt={avatar.alt}
-        fallback={avatar.fallback}
-        className={`bg-surface-ghost-icon rounded-full ${big ? "size-28" : "size-11"}`}
-      />
+      {big ? avatarBig : avatarSmall}
     </span>
   );
 
   return (
-    <div className="bg-surface absolute inset-0 z-40 flex flex-col text-[#0c0d10]">
+    <div className="bg-surface absolute inset-0 z-50 flex flex-col text-[#0c0d10]">
       {/* Header */}
       <header
         className="bg-surface flex shrink-0 items-center gap-2.5 px-3 pb-3"
@@ -135,21 +148,16 @@ export function KaamVoiceChat({
       >
         <button
           type="button"
-          aria-label={t.back}
+          aria-label={strings.back}
           onClick={onExitToText}
           className="bg-surface-ghost focus-visible:ring-primary-60 flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-[#0c0d10] transition-transform duration-200 outline-none hover:scale-[1.05] focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
         >
           <ChevronLeftIcon className="size-5" />
         </button>
-        <Avatar
-          src={avatar.src}
-          alt={avatar.alt}
-          fallback={avatar.fallback}
-          className="bg-surface-ghost-icon size-9 shrink-0 rounded-full"
-        />
+        {avatarSmall}
         <div className="min-w-0">
           <h1 className="text-title-s text-[#0c0d10]">{title}</h1>
-          <p className="text-[12px] text-[rgba(12,13,16,0.65)]">{t.kaam.headerSub}</p>
+          {subtitle && <p className="text-[12px] text-[rgba(12,13,16,0.65)]">{subtitle}</p>}
         </div>
       </header>
 
@@ -183,7 +191,7 @@ export function KaamVoiceChat({
         )}
       </main>
 
-      {/* Dock — small orb + status (when chatting) over the +/mic/keyboard row */}
+      {/* Dock — small orb + status (when chatting) over the mic/keyboard row */}
       <div
         className="bg-surface flex shrink-0 flex-col items-center gap-3 border-t border-[rgba(12,13,16,0.08)] px-4 pt-3"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)" }}
@@ -197,7 +205,7 @@ export function KaamVoiceChat({
         <div className="flex items-center justify-center gap-6">
           <button
             type="button"
-            aria-label={orbActive ? v.listening : t.speak}
+            aria-label={orbActive ? strings.listening : strings.prompt}
             onClick={speak}
             className={`focus-visible:ring-primary-60 flex size-14 cursor-pointer items-center justify-center rounded-full transition-transform duration-200 ease-[cubic-bezier(0.2,0,0,1)] outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95] ${
               phase === "listening"
@@ -209,7 +217,7 @@ export function KaamVoiceChat({
           </button>
           <button
             type="button"
-            aria-label={v.exitToText}
+            aria-label={strings.exitToText}
             onClick={onExitToText}
             className="bg-primary-20 text-primary-50 focus-visible:ring-primary-60 flex size-12 cursor-pointer items-center justify-center rounded-full transition-transform duration-200 outline-none hover:scale-[1.05] focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
           >
@@ -219,7 +227,7 @@ export function KaamVoiceChat({
       </div>
 
       <style>{`
-        @keyframes kvb-breathe {
+        @keyframes vc-breathe {
           0%, 100% { transform: scale(1); opacity: 0.55; }
           50%      { transform: scale(1.12); opacity: 0.25; }
         }

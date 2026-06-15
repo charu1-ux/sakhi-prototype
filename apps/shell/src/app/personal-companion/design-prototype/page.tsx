@@ -1,22 +1,12 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import { useRef, useState } from "react";
 
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
-import {
-  ChatIcon,
-  MuteIcon,
-  MuteOffIcon,
-  PhoneEndIcon,
-  PhoneIcon,
-  PhoneStrokeIcon,
-  PlayIcon,
-  PrivacyIcon,
-  SpeakerIcon,
-  VoiceWaveIcon,
-} from "../chat/icons";
+import { VoiceChat } from "../daily-saathi/_components/VoiceChat";
+import { PrivacyIcon } from "../chat/icons";
 
 const AVATAR = "/assets/personal-companion/avatar-welcome.mp4";
 const POSTER = "/assets/personal-companion/avatar.png";
@@ -33,11 +23,10 @@ const CHIPS = [
 
 interface Msg {
   id: number;
-  // "call"/"incognito" = centred system pills; companion = AI prompt; user = person
-  role: "user" | "companion" | "call" | "incognito";
+  // "incognito" = centred system pill; companion = AI prompt; user = person
+  role: "user" | "companion" | "incognito";
   text: string;
   chipId?: string; // when seeded from an intent chip → shared-layout morph
-  voice?: boolean; // user voice note → waveform bubble instead of text
 }
 
 const COMPANION_REPLIES = [
@@ -46,43 +35,25 @@ const COMPANION_REPLIES = [
   "Main yahin hoon. Jo bhi mann mein hai, keh do.",
 ];
 
-// mm:ss for the active-call timer.
-function formatCall(total: number) {
-  const m = Math.floor(total / 60)
-    .toString()
-    .padStart(2, "0");
-  const s = (total % 60).toString().padStart(2, "0");
-  return `${m}:${s}`;
-}
+// Stubbed voice transcripts for the live voice-chat (no real STT in the prototype).
+const VOICE_UTTERANCES = [
+  "Aaj kaafi thaka hua feel kar raha hoon",
+  "Pata nahi kyun mann udaas hai aaj",
+  "Office mein bahut stress tha aaj",
+];
 
 export default function PersonalCompanionDesignPrototypePage() {
   const [view, setView] = useState<"home" | "chat">("home");
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Msg[]>([]);
   const [typing, setTyping] = useState(false);
-  const [voiceMode, setVoiceMode] = useState(false);
+  const [voiceChatOpen, setVoiceChatOpen] = useState(false);
   const idRef = useRef(0);
   const replyRef = useRef(0);
-  const voiceStartRef = useRef(0);
-
-  // Call screen state — `callActive` shows the call as an overlay over the
-  // current view, so the chat underneath is never unmounted.
-  const [callActive, setCallActive] = useState(false);
-  const [callSeconds, setCallSeconds] = useState(0);
-  const [muted, setMuted] = useState(false);
-  const [speaker, setSpeaker] = useState(false);
 
   const goHome = () => {
     window.location.href = "/";
   };
-
-  // Tick the call timer for the lifetime of the call.
-  useEffect(() => {
-    if (!callActive) return;
-    setCallSeconds(0);
-    const id = window.setInterval(() => setCallSeconds((s) => s + 1), 1000);
-    return () => window.clearInterval(id);
-  }, [callActive]);
 
   function pushCompanionReply() {
     const text = COMPANION_REPLIES[replyRef.current % COMPANION_REPLIES.length];
@@ -95,12 +66,9 @@ export default function PersonalCompanionDesignPrototypePage() {
   }
 
   // From home: open the chat, seeding it with the user's text/chip.
-  // chipId drives the chip→bubble morph; the reply is delayed so it lands
-  // after the morph settles (no abrupt loader pop).
   function startChat(text: string, chipId?: string) {
     const t = text.trim();
     setInput("");
-    setVoiceMode(false);
     setView("chat");
     if (t) {
       setMessages([{ id: idRef.current++, role: "user", text: t, chipId }]);
@@ -108,99 +76,18 @@ export default function PersonalCompanionDesignPrototypePage() {
     }
   }
 
-  // From home (chat icon): open the chat, then let the first companion prompt
-  // rise in from the bottom (no abrupt loader), then a typing beat → 2nd prompt.
-  function openChatGreeting() {
-    setInput("");
-    setVoiceMode(false);
-    setMessages([]);
-    setTyping(false);
-    setView("chat");
-    window.setTimeout(() => {
-      setMessages([
-        { id: idRef.current++, role: "companion", text: "Hi, how was your day today?" },
-      ]);
-      window.setTimeout(() => {
-        setTyping(true);
-        window.setTimeout(() => {
-          setTyping(false);
-          setMessages((m) => [
-            ...m,
-            {
-              id: idRef.current++,
-              role: "companion",
-              text: "Do you want to share anything today?",
-            },
-          ]);
-        }, 1100);
-      }, 800);
-    }, 260);
-  }
-
-  // Chat-header incognito button → a fresh chat fronted by a centred
-  // "Incognito chat" pill (same treatment as the call pill).
+  // Chat-header incognito button → a fresh chat fronted by a centred pill.
   function startIncognito() {
     setInput("");
-    setVoiceMode(false);
     setTyping(false);
     setMessages([{ id: idRef.current++, role: "incognito", text: "Incognito chat" }]);
     setView("chat");
   }
 
-  // Speak button (home or chat) → voice/listening mode: the composer becomes a
-  // live waveform and the Speak icon becomes an arrow-up Send.
-  function openVoiceChat() {
-    setInput("");
-    setMessages([]);
-    setTyping(false);
-    voiceStartRef.current = Date.now();
+  // Speak → the live voice-chat overlay (same experience as Kaam Ki Baat).
+  function openVoice() {
     setView("chat");
-    setVoiceMode(true);
-  }
-
-  function enterVoice() {
-    voiceStartRef.current = Date.now();
-    setVoiceMode(true);
-  }
-
-  // Cancel listening → back to the text composer (or home if nothing was said yet).
-  function cancelVoice() {
-    setVoiceMode(false);
-    if (messages.length === 0) setView("home");
-  }
-
-  // Send the voice note → a user waveform bubble with its duration, then a reply.
-  function sendVoiceNote() {
-    const sec = Math.max(1, Math.round((Date.now() - voiceStartRef.current) / 1000));
-    const dur = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
-    setVoiceMode(false);
-    setMessages((m) => [...m, { id: idRef.current++, role: "user", text: dur, voice: true }]);
-    setTimeout(pushCompanionReply, 450);
-  }
-
-  function openCall() {
-    setVoiceMode(false);
-    setMuted(false);
-    setSpeaker(false);
-    setCallActive(true);
-  }
-
-  // Hang up → drop a centred call-ended timestamp pill into the chat, then
-  // return to the chat so the call reads as part of the conversation.
-  function endCall() {
-    const now = new Date();
-    const day = now.getDate();
-    const month = now.toLocaleDateString("en-IN", { month: "short" });
-    const time = now.toLocaleTimeString("en-IN", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-    const stamp = `Today, ${day} ${month} · ${time}`;
-    setVoiceMode(false);
-    setCallActive(false);
-    setMessages((m) => [...m, { id: idRef.current++, role: "call", text: stamp }]);
-    setView("chat");
+    setVoiceChatOpen(true);
   }
 
   function sendInChat() {
@@ -211,108 +98,58 @@ export default function PersonalCompanionDesignPrototypePage() {
     setTimeout(pushCompanionReply, 450);
   }
 
-  // ── Call overlay — rendered ABOVE the current view (absolute, z-50) so the
-  // chat underneath is never unmounted. Returning from a call therefore does
-  // NOT re-load/animate the chat — only the new call pill appears.
-  const callOverlay = (
-    <AnimatePresence>
-      {callActive && (
-        <motion.div
-          key="call"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="absolute inset-0 z-50 flex h-full flex-col overflow-hidden bg-white"
-        >
-          {/* top — name + running timer */}
-          <div
-            className="relative z-10 flex flex-col items-center gap-1"
-            style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 30px)" }}
-          >
-            <p className="font-jio text-[18px] font-bold text-[#0c0d10]">Dil Ki Baat</p>
-            <p className="text-body-s font-jio text-[rgba(12,13,16,0.45)] tabular-nums">
-              {formatCall(callSeconds)}
-            </p>
-          </div>
-
-          {/* centre — GIF inside a breathing border ring */}
-          <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center gap-8">
-            <div
-              className="relative flex items-center justify-center"
-              style={{ width: 240, height: 240 }}
-            >
-              {/* breathing ring — clean 1px light-grey border, ~20px offset from the GIF */}
-              <motion.span
-                aria-hidden
-                className="absolute rounded-full"
-                style={{ width: 200, height: 200, border: "1px solid rgba(12,13,16,0.14)" }}
-                animate={{ scale: [1, 1.08, 1] }}
-                transition={{ duration: 3.2, ease: "easeInOut", repeat: Infinity }}
-              />
-              <span className="relative inline-flex" style={{ width: 160, height: 160 }}>
-                <video
-                  src={AVATAR}
-                  poster={POSTER}
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  preload="auto"
-                  className="size-full rounded-full object-cover"
-                  aria-label="Dil Ki Baat"
-                />
-              </span>
-            </div>
-
-            {/* listening / speaking animation + subtext */}
-            <div className="flex flex-col items-center gap-2.5">
-              <VoiceWaveIcon className="size-6 text-[rgba(12,13,16,0.32)]" />
-              <p className="text-body-m font-jio text-[rgba(12,13,16,0.45)]">
-                Dil Ki Baat is listening
-              </p>
-            </div>
-          </div>
-
-          {/* bottom — Mute · Hang up (red, larger) · Speaker */}
-          <div
-            className="relative z-10 flex items-center justify-center gap-7"
-            style={{ paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 34px)" }}
-          >
-            <button
-              type="button"
-              aria-label={muted ? "Unmute" : "Mute"}
-              onClick={() => setMuted((m) => !m)}
-              className="focus-visible:ring-primary-60 flex size-14 items-center justify-center rounded-full border border-[rgba(12,13,16,0.12)] bg-white text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
-            >
-              {muted ? <MuteOffIcon className="size-6" /> : <MuteIcon className="size-6" />}
-            </button>
-
-            <button
-              type="button"
-              aria-label="End call"
-              onClick={endCall}
-              className="flex size-[68px] items-center justify-center rounded-full bg-[#FA2F40] text-white transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FA2F40] focus-visible:ring-offset-2 active:scale-[0.95]"
-            >
-              <PhoneEndIcon className="size-7" />
-            </button>
-
-            <button
-              type="button"
-              aria-label={speaker ? "Speaker off" : "Speaker on"}
-              onClick={() => setSpeaker((s) => !s)}
-              className={`focus-visible:ring-primary-60 flex size-14 items-center justify-center rounded-full border transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95] ${
-                speaker
-                  ? "bg-primary-30 text-primary-50 border-transparent"
-                  : "border-[rgba(12,13,16,0.12)] bg-white text-[#0c0d10]"
-              }`}
-            >
-              <SpeakerIcon className="size-6" />
-            </button>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+  // ── Live voice-chat overlay (shared VoiceChat) — rendered above the current
+  // view so the chat underneath is never unmounted.
+  const voiceOverlay = voiceChatOpen && (
+    <VoiceChat
+      title="Dil Ki Baat"
+      subtitle="Active now"
+      avatarBig={
+        <video
+          src={AVATAR}
+          poster={POSTER}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          className="size-28 rounded-full object-cover"
+          aria-label="Dil Ki Baat"
+        />
+      }
+      avatarSmall={
+        <video
+          src={AVATAR}
+          poster={POSTER}
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="size-11 shrink-0 rounded-full object-cover"
+          aria-label="Dil Ki Baat"
+        />
+      }
+      strings={{
+        connecting: "Connecting…",
+        prompt: "Say something",
+        listening: "Listening…",
+        thinking: "Thinking…",
+        exitToText: "Switch to typing",
+        back: "Back",
+      }}
+      utterances={VOICE_UTTERANCES}
+      replies={COMPANION_REPLIES}
+      onUserUtterance={(text) =>
+        setMessages((m) => [...m, { id: idRef.current++, role: "user", text }])
+      }
+      onAssistantReply={(text) =>
+        setMessages((m) => [...m, { id: idRef.current++, role: "companion", text }])
+      }
+      onExitToText={() => {
+        setVoiceChatOpen(false);
+        setView("chat");
+      }}
+    />
   );
 
   // ── Chat view ──
@@ -323,10 +160,7 @@ export default function PersonalCompanionDesignPrototypePage() {
           <HubHeader
             title="Dil Ki Baat"
             pageBg="white"
-            onBack={() => {
-              setVoiceMode(false);
-              setView("home");
-            }}
+            onBack={() => setView("home")}
             titleSlot={
               <div className="flex items-center gap-2.5">
                 <span className="relative inline-flex size-9 shrink-0">
@@ -351,24 +185,14 @@ export default function PersonalCompanionDesignPrototypePage() {
               </div>
             }
             rightSlot={
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  aria-label="Incognito chat"
-                  onClick={startIncognito}
-                  className="focus-visible:ring-primary-60 flex size-10 items-center justify-center rounded-full bg-[#f5f5f5] text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
-                >
-                  <PrivacyIcon className="size-[22px]" />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Call Dil Ki Baat"
-                  onClick={openCall}
-                  className="focus-visible:ring-primary-60 flex size-10 items-center justify-center rounded-full bg-[#f5f5f5] text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
-                >
-                  <PhoneStrokeIcon className="size-5" />
-                </button>
-              </div>
+              <button
+                type="button"
+                aria-label="Incognito chat"
+                onClick={startIncognito}
+                className="focus-visible:ring-primary-60 flex size-10 items-center justify-center rounded-full bg-[#f5f5f5] text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
+              >
+                <PrivacyIcon className="size-[22px]" />
+              </button>
             }
           />
 
@@ -378,22 +202,18 @@ export default function PersonalCompanionDesignPrototypePage() {
             style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 72px)" }}
           >
             {messages.map((m, i) => {
-              // Call-ended / Incognito — centred light-grey pill with an icon + label
-              if (m.role === "call" || m.role === "incognito") {
+              // Incognito — centred light-grey pill with an icon + label
+              if (m.role === "incognito") {
                 return (
                   <div key={m.id} className="flex justify-center py-1">
                     <span className="text-body-2xs font-jio inline-flex items-center gap-1.5 rounded-full bg-[#eeeeef] px-3 py-1.5 font-medium text-[rgba(12,13,16,0.55)]">
-                      {m.role === "call" ? (
-                        <PhoneIcon className="size-3.5" />
-                      ) : (
-                        <PrivacyIcon className="size-3.5" />
-                      )}
+                      <PrivacyIcon className="size-3.5" />
                       {m.text}
                     </span>
                   </div>
                 );
               }
-              // User — light grey pill, dark text, right (text or a voice note)
+              // User — light grey pill, dark text, right
               if (m.role === "user") {
                 return (
                   <div key={m.id} className="flex justify-end">
@@ -405,30 +225,13 @@ export default function PersonalCompanionDesignPrototypePage() {
                       className="text-body-s font-jio max-w-[80%] bg-[#eeeeef] px-3 py-2 text-[#0c0d10]"
                       style={{ borderRadius: "14px 14px 4px 14px" }}
                     >
-                      {m.voice ? (
-                        <span className="flex items-center gap-2">
-                          <PlayIcon className="size-4 shrink-0" />
-                          <span className="flex items-center gap-[2px]" aria-hidden>
-                            {[6, 11, 15, 9, 16, 7, 13, 8, 5, 12, 15, 8, 6].map((h, k) => (
-                              <span
-                                key={k}
-                                className="w-[2px] rounded-full bg-[rgba(12,13,16,0.45)]"
-                                style={{ height: h }}
-                              />
-                            ))}
-                          </span>
-                          <span className="text-[rgba(12,13,16,0.55)] tabular-nums">{m.text}</span>
-                        </span>
-                      ) : (
-                        m.text
-                      )}
+                      {m.text}
                     </motion.div>
                   </div>
                 );
               }
               // Companion — rises in from the bottom; avatar only on the LAST bubble
-              // of a consecutive companion run (earlier ones get a spacer so the run
-              // stays indented and the avatar bottom-aligns to the last bubble).
+              // of a consecutive companion run.
               const isLast = i === messages.length - 1;
               const nextIsCompanion = !isLast && messages[i + 1].role === "companion";
               const showAvatar = !nextIsCompanion && !(isLast && typing);
@@ -459,7 +262,7 @@ export default function PersonalCompanionDesignPrototypePage() {
               );
             })}
 
-            {/* Companion typing — rises in (avatar + three dots), then the reply replaces it */}
+            {/* Companion typing — rises in (avatar + three dots) */}
             {typing && (
               <motion.div
                 className="flex items-end justify-start gap-2"
@@ -490,17 +293,14 @@ export default function PersonalCompanionDesignPrototypePage() {
 
           <HubChatInput
             variant="sleek"
-            voiceMode={voiceMode}
             value={input}
             onChange={setInput}
             onSubmit={sendInChat}
-            onSpeak={enterVoice}
-            onVoiceSend={sendVoiceNote}
-            onVoiceCancel={cancelVoice}
+            onSpeak={openVoice}
             placeholder="Type a message…"
           />
         </div>
-        {callOverlay}
+        {voiceOverlay}
       </div>
     );
   }
@@ -525,12 +325,12 @@ export default function PersonalCompanionDesignPrototypePage() {
           }
         />
 
-        {/* Centre — three sections with a uniform gap: avatar · content block · actions */}
+        {/* Centre — avatar · content block · action */}
         <div
           className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 overflow-y-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 64px)" }}
         >
-          {/* 1 · avatar — static, no float, no shadow */}
+          {/* 1 · avatar */}
           <div
             className="relative flex items-center justify-center"
             style={{ width: 150, height: 150 }}
@@ -577,26 +377,6 @@ export default function PersonalCompanionDesignPrototypePage() {
               Active now
             </span>
           </div>
-
-          {/* 3 · actions — chat · call */}
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              aria-label="Chat"
-              onClick={openChatGreeting}
-              className="focus-visible:ring-primary-60 flex size-14 items-center justify-center rounded-full border border-[rgba(12,13,16,0.12)] bg-white text-[#0c0d10] transition-transform duration-150 ease-out hover:scale-[1.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
-            >
-              <ChatIcon className="size-6" />
-            </button>
-            <button
-              type="button"
-              aria-label="Call"
-              onClick={openCall}
-              className="focus-visible:ring-primary-60 flex size-14 items-center justify-center rounded-full border border-[rgba(12,13,16,0.12)] bg-white text-[#0c0d10] transition-transform duration-150 ease-out hover:scale-[1.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
-            >
-              <PhoneStrokeIcon className="size-6" />
-            </button>
-          </div>
         </div>
 
         {/* Intent chips — above the input separator; tapping opens the chat */}
@@ -624,11 +404,11 @@ export default function PersonalCompanionDesignPrototypePage() {
           value={input}
           onChange={setInput}
           onSubmit={(v) => startChat(v)}
-          onSpeak={openVoiceChat}
+          onSpeak={openVoice}
           placeholder="Type a message…"
         />
       </div>
-      {callOverlay}
+      {voiceOverlay}
     </div>
   );
 }

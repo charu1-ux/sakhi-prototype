@@ -15,9 +15,9 @@ import {
   resolveDate,
 } from "../_components/ReminderWidget";
 import { AttachSheet } from "../_components/AttachSheet";
-import { KaamVoiceChat } from "../_components/KaamVoiceChat";
 import { SaathiComposer } from "../_components/SaathiComposer";
 import { StubHeader } from "../_components/StubHeader";
+import { VoiceChat } from "../_components/VoiceChat";
 import { CheckIcon } from "../../chat/icons";
 import { parseReminder } from "../reminders/parse";
 import { fmtDate } from "../reminders/reminders-data";
@@ -289,13 +289,35 @@ export default function KaamKiBaatChat() {
       )}
 
       {voiceOpen && (
-        <KaamVoiceChat
+        <VoiceChat
           title={t.kaam.title}
-          avatar={{
-            src: ASSETS.kaamKiBaat,
-            alt: t.kaam.title,
-            fallback: <TasksIcon className="text-primary-50 size-6" />,
+          subtitle={t.kaam.headerSub}
+          avatarBig={
+            <Avatar
+              src={ASSETS.kaamKiBaat}
+              alt={t.kaam.title}
+              fallback={<TasksIcon className="text-primary-50 size-9" />}
+              className="bg-surface-ghost-icon size-28 rounded-full"
+            />
+          }
+          avatarSmall={
+            <Avatar
+              src={ASSETS.kaamKiBaat}
+              alt={t.kaam.title}
+              fallback={<TasksIcon className="text-primary-50 size-4" />}
+              className="bg-surface-ghost-icon size-11 shrink-0 rounded-full"
+            />
+          }
+          strings={{
+            connecting: t.kaam.voice.connecting,
+            prompt: t.kaam.voice.prompt,
+            listening: t.kaam.voice.listening,
+            thinking: t.kaam.voice.thinking,
+            exitToText: t.kaam.voice.exitToText,
+            back: t.back,
           }}
+          utterances={t.kaam.voice.utterances}
+          replies={t.kaam.voice.replies}
           onUserUtterance={pushUser}
           onAssistantReply={pushAssistant}
           onExitToText={() => setVoiceOpen(false)}
