@@ -116,6 +116,15 @@ export const SAVED_ADDRESSES: SavedAddress[] = [
 
 export const KANPUR_ADDRESS = SAVED_ADDRESSES[2];
 
+// Detected "current location" line, shared by the header picker and the
+// new-address widgets so the "Use current location" molecule reads the same.
+export const CURRENT_LOCATION_LINE = "100 Feet Rd, Indiranagar, Bengaluru, Karnataka · 560038";
+
+// Does the detected current location already match a saved address? When set,
+// tapping "Use current location" in chat shows that saved delivery address;
+// when null it opens the "Add new delivery address" sheet directly.
+export const CURRENT_LOCATION_SAVED: SavedAddress | null = null;
+
 export const CONFIRM_DELIVER_TO = {
   name: "GOKUL KUMAR",
   tag: "home" as AddressTag,
@@ -141,6 +150,9 @@ export const TIMING = {
 // Actions emitted by the gated buttons inside widgets.
 export type StoryAction =
   | "checkout"
+  | "confirm-address"
+  | "change-address"
+  | "add-new-address"
   | "use-current-location"
   | "save-address"
   | "place-order"

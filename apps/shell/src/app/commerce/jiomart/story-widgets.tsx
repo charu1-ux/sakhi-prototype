@@ -2,7 +2,16 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { Check, ChevronRight, CreditCard, MapPin, Minus, Plus, Trash2 } from "lucide-react";
+import {
+  Check,
+  ChevronRight,
+  CreditCard,
+  MapPin,
+  Minus,
+  Navigation,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { useState } from "react";
 
 import { cn } from "@intelligence/ui";
@@ -11,6 +20,7 @@ import {
   APPLE_PRODUCTS,
   CART,
   CONFIRM_DELIVER_TO,
+  CURRENT_LOCATION_LINE,
   formatRupees,
   GHEE_PRODUCTS,
   GROCERIES_ASSETS,
@@ -72,7 +82,7 @@ function WidgetTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Tag({ tag }: { tag: AddressTag }) {
+export function Tag({ tag }: { tag: AddressTag }) {
   const label = tag === "default" ? "DEFAULT" : tag === "test" ? "TEST" : "HOME";
   return (
     <span
@@ -260,7 +270,7 @@ export function SwimLanes() {
         </button>
         <button
           type="button"
-          className="bg-primary-30 text-primary-60 inline-flex h-9 items-center rounded-full px-4 text-[13px] font-bold transition-transform duration-200 hover:scale-[1.02] active:scale-95"
+          className="bg-surface-minimal text-fg inline-flex h-9 items-center rounded-full px-4 text-[13px] font-bold transition-transform duration-200 hover:scale-[1.02] active:scale-95"
         >
           Search more
         </button>
@@ -273,6 +283,7 @@ export function SwimLanes() {
 
 export function CartWidget({ onAction }: { onAction: (a: StoryAction) => void }) {
   const [appleQty, setAppleQty] = useState(1);
+  const [done, setDone] = useState(false);
 
   const appleLine = CART.appleUnit * appleQty;
   const total = appleLine + CART.gheeLine;
@@ -321,9 +332,18 @@ export function CartWidget({ onAction }: { onAction: (a: StoryAction) => void })
         <Totals total={total} mrp={mrp} saved={saved} count={count} />
       </div>
 
-      <div className="px-4 pt-0 pb-4">
-        <SecondaryButton onClick={() => onAction("checkout")}>Checkout</SecondaryButton>
-      </div>
+      {!done && (
+        <div className="px-4 pt-0 pb-4">
+          <SecondaryButton
+            onClick={() => {
+              setDone(true);
+              onAction("checkout");
+            }}
+          >
+            Checkout
+          </SecondaryButton>
+        </div>
+      )}
     </Widget>
   );
 }
@@ -440,6 +460,95 @@ function AddressRow({ address, divider }: { address: SavedAddress; divider?: boo
   );
 }
 
+// Shared "Use current location" molecule — the same row used in the header
+// address picker, reused inside the new-address widgets.
+export function UseCurrentLocationRow({
+  onClick,
+  line = CURRENT_LOCATION_LINE,
+  selected = false,
+}: {
+  onClick: () => void;
+  line?: string;
+  selected?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "group flex w-full items-start gap-3 px-4 py-3 text-left transition-colors",
+        selected ? "bg-primary-20/50" : "hover:bg-surface-minimal/60",
+      )}
+    >
+      <span className="bg-surface-minimal group-hover:bg-surface-moderate group-focus-visible:bg-surface-moderate group-active:bg-surface-moderate mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full transition-colors">
+        <Navigation size={16} strokeWidth={2.2} className="text-fg-muted" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-bold">Use current location</span>
+        <span className="text-fg-muted mt-0.5 line-clamp-2 block text-xs leading-snug font-medium">
+          {line}
+        </span>
+      </span>
+      {selected && (
+        <Check size={18} strokeWidth={2.6} className="text-primary-50 mt-0.5 shrink-0" />
+      )}
+    </button>
+  );
+}
+
+// Two small pill buttons under the "confirm delivery address" prompt.
+export function ConfirmAddressActions({ onAction }: { onAction: (a: StoryAction) => void }) {
+  const [done, setDone] = useState(false);
+  if (done) return null;
+  return (
+    <div className="flex flex-wrap gap-2">
+      <button
+        type="button"
+        onClick={() => {
+          setDone(true);
+          onAction("confirm-address");
+        }}
+        className="bg-primary-30 text-primary-60 inline-flex h-9 items-center rounded-full px-4 text-[13px] font-bold transition-transform duration-200 hover:scale-[1.02] active:scale-95"
+      >
+        Confirm address
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          setDone(true);
+          onAction("change-address");
+        }}
+        className="bg-surface-minimal text-fg inline-flex h-9 items-center rounded-full px-4 text-[13px] font-bold transition-transform duration-200 hover:scale-[1.02] active:scale-95"
+      >
+        Change address
+      </button>
+    </div>
+  );
+}
+
+// Confirmation card — the delivery address now set (Home).
+export function DeliveryAddressWidget() {
+  return (
+    <Widget>
+      <div className="bg-success/10 flex items-center gap-2.5 border-b border-black/5 px-4 py-3.5">
+        <Check size={20} strokeWidth={2.6} className="text-success" />
+        <span className="text-success text-sm font-bold">Delivery address</span>
+      </div>
+      <AddressRow address={SAVED_ADDRESSES[0]} />
+    </Widget>
+  );
+}
+
+// Single CTA shown after confirmation to start the add-new-address flow.
+export function AddNewAddressAction({ onAction }: { onAction: (a: StoryAction) => void }) {
+  return (
+    <SecondaryButton onClick={() => onAction("add-new-address")}>
+      <Plus size={18} strokeWidth={2.4} />
+      Add a new address
+    </SecondaryButton>
+  );
+}
+
 export function SavedAddressesWidget() {
   return (
     <Widget>
@@ -475,32 +584,45 @@ export function DeliveryUpdatedWidget() {
 // ── New address — capture location ───────────────────────────────────────────────
 
 export function NewAddressLocationWidget({ onAction }: { onAction: (a: StoryAction) => void }) {
+  // The rows open the address sheet, which can be cancelled — so they don't
+  // self-hide on tap. The conversation only moves on once the sheet is saved.
   return (
     <Widget>
       <WidgetTitle>New delivery address</WidgetTitle>
-      <div className="flex flex-col gap-3.5 p-4">
-        <SecondaryButton onClick={() => onAction("use-current-location")}>
-          <MapPin size={18} strokeWidth={2} />
-          Use my current location
-        </SecondaryButton>
-        <p className="text-fg-muted text-center text-xs leading-relaxed font-medium">
-          We use your location to give you accurate delivery ETAs and stock.
-        </p>
-      </div>
+      <UseCurrentLocationRow onClick={() => onAction("use-current-location")} />
+      <div className="h-px bg-black/5" />
+      <button
+        type="button"
+        onClick={() => onAction("add-new-address")}
+        className="group hover:bg-surface-minimal/60 flex w-full items-center gap-3 px-4 py-3 text-left transition-colors"
+      >
+        <span className="bg-surface-minimal group-hover:bg-surface-moderate group-focus-visible:bg-surface-moderate group-active:bg-surface-moderate flex size-8 shrink-0 items-center justify-center rounded-full transition-colors">
+          <Plus size={16} strokeWidth={2.4} className="text-fg-muted" />
+        </span>
+        <span className="text-sm font-bold">Add new address</span>
+      </button>
+      <div className="h-px bg-black/5" />
+      <p className="text-fg-muted px-4 py-3 text-xs leading-relaxed font-medium">
+        We use your location to give you accurate delivery ETAs and stock.
+      </p>
     </Widget>
   );
 }
 
 // ── New address — captured form ──────────────────────────────────────────────────
 
+// JDS FormField / Input — MCP §11.12 (white bg, rounded-md, border darkens to
+// surface-moderate on focus; no focus ring).
 function Field({ label, placeholder }: { label: string; placeholder: string }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-fg-muted text-[11px] font-bold tracking-wide uppercase">{label}</label>
-      <input
-        placeholder={placeholder}
-        className="bg-surface-minimal text-fg h-[46px] w-full rounded-xl border border-black/10 px-3.5 text-sm font-medium outline-none focus:bg-white"
-      />
+    <div className="flex w-full flex-col gap-1">
+      <label className="text-body-xs font-jio text-[rgba(12,13,16,0.65)]">{label}</label>
+      <div className="focus-within:border-surface-moderate flex flex-row items-center gap-2 rounded-md border border-[rgba(12,13,16,0.12)] bg-white px-3">
+        <input
+          placeholder={placeholder}
+          className="text-body-s font-jio min-w-0 flex-1 bg-transparent py-3.5 text-[#0c0d10] outline-none placeholder:text-[rgba(12,13,16,0.38)]"
+        />
+      </div>
     </div>
   );
 }
@@ -539,6 +661,7 @@ export function NewAddressFormWidget({ onAction }: { onAction: (a: StoryAction) 
 // ── Confirm order ────────────────────────────────────────────────────────────────
 
 export function ConfirmOrderWidget({ onAction }: { onAction: (a: StoryAction) => void }) {
+  const [done, setDone] = useState(false);
   return (
     <Widget>
       <WidgetTitle>Confirm your order</WidgetTitle>
@@ -585,9 +708,18 @@ export function ConfirmOrderWidget({ onAction }: { onAction: (a: StoryAction) =>
         Cash on Delivery
       </div>
 
-      <div className="px-4 pt-0 pb-4">
-        <SecondaryButton onClick={() => onAction("place-order")}>Place Order</SecondaryButton>
-      </div>
+      {!done && (
+        <div className="px-4 pt-0 pb-4">
+          <SecondaryButton
+            onClick={() => {
+              setDone(true);
+              onAction("place-order");
+            }}
+          >
+            Place Order
+          </SecondaryButton>
+        </div>
+      )}
     </Widget>
   );
 }

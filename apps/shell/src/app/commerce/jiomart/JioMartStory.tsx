@@ -2,31 +2,22 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import Lottie from "lottie-react";
-import {
-  ChevronLeft,
-  Copy,
-  MessageSquareText,
-  PenLine,
-  Plus,
-  ThumbsDown,
-  ThumbsUp,
-  Volume2,
-} from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { cn } from "@intelligence/ui";
 
 import { HubChatInput } from "../../jobs/design-prototype/HubChatInput";
 import spinLoaderData from "../../jobs/design-prototype/microlearning/creator/spin-loader.json";
-import { type StoryAction, TIMING } from "./story-data";
+import { DeliveryAddressMenu, type DeliveryAddressMenuHandle } from "./DeliveryAddressMenu";
+import { CURRENT_LOCATION_SAVED, type StoryAction, TIMING } from "./story-data";
 import {
   CartWidget,
+  ConfirmAddressActions,
   ConfirmOrderWidget,
-  DeliveryUpdatedWidget,
-  NewAddressFormWidget,
+  DeliveryAddressWidget,
   NewAddressLocationWidget,
   OrderPlacedWidget,
-  SavedAddressesWidget,
   SwimLanes,
 } from "./story-widgets";
 
@@ -35,16 +26,15 @@ import {
 type WidgetVariant =
   | "swimlanes"
   | "cart"
-  | "saved"
-  | "deliveryUpdated"
+  | "confirmAddress"
+  | "deliveryAddress"
   | "newLoc"
-  | "newForm"
   | "confirm"
   | "orderPlaced";
 
 type Block =
   | { kind: "user"; id: string; text: string; mono?: boolean }
-  | { kind: "asst"; id: string; text?: string; node?: ReactNode; feedback?: boolean }
+  | { kind: "asst"; id: string; text?: string; node?: ReactNode }
   | { kind: "loader"; id: string; text: string }
   | { kind: "widget"; id: string; variant: WidgetVariant };
 
@@ -54,6 +44,7 @@ export function JioMartStory() {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [phase, setPhase] = useState(0);
   const scrollRef = useRef<HTMLElement | null>(null);
+  const addressMenuRef = useRef<DeliveryAddressMenuHandle>(null);
   // Ids that have already played their entrance — used so an existing block
   // (e.g. the first user prompt) never re-animates when later blocks appear.
   const seenRef = useRef<Set<string>>(new Set());
@@ -71,9 +62,16 @@ export function JioMartStory() {
 
   const onAction = useCallback((a: StoryAction) => {
     if (a === "checkout") setPhase(5);
-    else if (a === "use-current-location") setPhase(13);
-    else if (a === "save-address") setPhase(15);
-    else if (a === "place-order") setPhase(17);
+    else if (a === "confirm-address") setPhase(6);
+    else if (a === "change-address") setPhase(7);
+    else if (a === "use-current-location") {
+      // Saved location → show that address; else capture it via the sheet.
+      // Either way it lands on the confirmed-address step (8).
+      if (CURRENT_LOCATION_SAVED) setPhase(8);
+      else addressMenuRef.current?.openAddNew({ onSaved: () => setPhase(8) });
+    } else if (a === "add-new-address") {
+      addressMenuRef.current?.openAddNew({ manual: true, onSaved: () => setPhase(8) });
+    } else if (a === "place-order") setPhase(10);
     // track-order: terminal, no-op
   }, []);
 
@@ -100,7 +98,7 @@ export function JioMartStory() {
     // Defer the phase's immediate work off the effect body (avoids synchronous
     // setState-in-effect; idempotent appends keep Strict Mode double-runs safe).
     const now = (fn: () => void) => at(0, fn);
-    const { initial, beat, searchHold, loaderHold, addressHold } = TIMING;
+    const { initial, beat, searchHold, loaderHold } = TIMING;
 
     switch (phase) {
       case 0:
@@ -163,117 +161,58 @@ export function JioMartStory() {
         break;
 
       case 5:
+        // After checkout, the AI states where it's shipping (the header address)
+        // and offers Confirm / Change — no "which address?" user turn, no feedback row.
         now(() =>
           append({
-            kind: "user",
-            id: "u-which-addr",
-            text: "Which address is this being shipped to?",
+            kind: "asst",
+            id: "a-deliver-to",
+            text: "Okay — this order is going to your JioMart delivery location (Home — 37, Cunningham Rd, Bengaluru). Do you want me to keep it, or switch to a different saved address?",
           }),
         );
-        at(beat, () => setPhase(6));
+        at(beat, () => append({ kind: "widget", id: "w-confirm-addr", variant: "confirmAddress" }));
+        // gated: Confirm address → 6 · Change address → 7
         break;
 
       case 6:
-        now(() =>
-          append({
-            kind: "asst",
-            id: "a-current-addr",
-            feedback: true,
-            node: (
-              <>
-                It&rsquo;s going to the address currently set as your JioMart delivery location{" "}
-                <span className="text-fg-muted">(37 Cunningham Rd, Bengaluru — Home)</span>. Want me
-                to keep it, or switch to a different saved address?
-              </>
-            ),
-          }),
-        );
-        at(addressHold, () => setPhase(7));
-        break;
-
-      case 7:
-        now(() =>
-          append({ kind: "user", id: "u-show-saved", text: "Switch it — show my saved addresses" }),
-        );
-        at(beat, () => setPhase(8));
-        break;
-
-      case 8:
-        now(() =>
-          append({ kind: "loader", id: "l-saved", text: "Searching your saved JioMart addresses" }),
-        );
-        at(loaderHold, () => {
-          replace("l-saved", {
-            kind: "asst",
-            id: "l-saved",
-            text: "Here are your saved JioMart addresses. Tap one to make it the delivery address.",
-          });
-          append({ kind: "widget", id: "w-saved", variant: "saved" });
-        });
-        at(loaderHold + beat, () => setPhase(9));
-        break;
-
-      case 9:
-        now(() => append({ kind: "user", id: "u-kanpur", text: "Use my Kanpur address" }));
-        at(beat, () => setPhase(10));
-        break;
-
-      case 10:
+        // Confirm → show the delivery address, then straight to "Confirm your order".
         now(() => {
           append({
             kind: "asst",
-            id: "a-switched",
-            text: "Done — I’ve switched your delivery address to Kanpur.",
+            id: "a-addr-confirmed",
+            text: "Done — I’ve confirmed your delivery address as the one shown on your header.",
           });
-          append({ kind: "widget", id: "w-delivery-updated", variant: "deliveryUpdated" });
+          append({ kind: "widget", id: "w-delivery-addr", variant: "deliveryAddress" });
         });
-        at(beat, () => setPhase(11));
+        at(beat, () => setPhase(9));
         break;
 
-      case 11:
-        now(() =>
-          append({ kind: "user", id: "u-new-addr", text: "Actually, add a new address instead" }),
-        );
-        at(beat, () => setPhase(12));
-        break;
-
-      case 12:
+      case 7:
         now(() => {
           append({
             kind: "asst",
             id: "a-share-loc",
-            text: "Sure — share your location and I’ll capture the delivery address.",
+            text: "Sure — share your location and I’ll capture the new delivery address.",
           });
           append({ kind: "widget", id: "w-new-loc", variant: "newLoc" });
         });
-        // gated: waits for "Use my current location" → phase 13
+        // gated: Use current location → 8
         break;
 
-      case 13:
-        now(() => append({ kind: "user", id: "u-use-loc", text: "Use my current location" }));
-        at(beat, () => setPhase(14));
-        break;
-
-      case 14:
+      case 8:
+        // Address captured/selected → confirm it, then continue to checkout.
         now(() => {
           append({
             kind: "asst",
-            id: "a-got-loc",
-            text: "Got your location. Add a few details and I’ll save it.",
+            id: "a-loc-saved",
+            text: "Done. I have confirmed your delivery address.",
           });
-          append({ kind: "widget", id: "w-new-form", variant: "newForm" });
+          append({ kind: "widget", id: "w-delivery-addr-loc", variant: "deliveryAddress" });
         });
-        // gated: waits for "Save & use this address" → phase 15
+        at(beat, () => setPhase(9));
         break;
 
-      case 15:
-        now(() =>
-          append({ kind: "user", id: "u-saved-checkout", text: "Saved it — take me to checkout" }),
-        );
-        at(beat, () => setPhase(16));
-        break;
-
-      case 16:
+      case 9:
         now(() => {
           append({
             kind: "asst",
@@ -282,15 +221,10 @@ export function JioMartStory() {
           });
           append({ kind: "widget", id: "w-confirm", variant: "confirm" });
         });
-        // gated: waits for "Place Order" → phase 17
+        // gated: Place Order → 10
         break;
 
-      case 17:
-        now(() => append({ kind: "user", id: "u-place", text: "Place my order" }));
-        at(beat, () => setPhase(18));
-        break;
-
-      case 18:
+      case 10:
         now(() => append({ kind: "loader", id: "l-place", text: "Placing your order" }));
         at(loaderHold, () => {
           remove("l-place");
@@ -305,7 +239,7 @@ export function JioMartStory() {
   return (
     <div className="bg-surface relative flex h-dvh flex-col overflow-hidden">
       {/* Header — gradient overlay */}
-      <header className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[68px]">
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-30 h-[68px]">
         <div className="absolute inset-0 bg-gradient-to-b from-white from-[73%] to-transparent" />
         <div className="pointer-events-auto relative flex items-center gap-3 px-4 pt-3.5">
           <button
@@ -318,21 +252,7 @@ export function JioMartStory() {
           >
             <ChevronLeft size={22} strokeWidth={2.4} />
           </button>
-          <h1 className="flex-1 text-lg font-bold">Purchasing groceries</h1>
-          <button
-            type="button"
-            aria-label="Chats"
-            className="bg-surface-minimal text-fg flex size-10 shrink-0 items-center justify-center rounded-full transition-transform duration-200 hover:scale-105 active:scale-95"
-          >
-            <MessageSquareText size={20} strokeWidth={2} />
-          </button>
-          <button
-            type="button"
-            aria-label="New chat"
-            className="bg-surface-minimal text-fg flex size-10 shrink-0 items-center justify-center rounded-full transition-transform duration-200 hover:scale-105 active:scale-95"
-          >
-            <PenLine size={19} strokeWidth={2} />
-          </button>
+          <DeliveryAddressMenu ref={addressMenuRef} />
         </div>
       </header>
 
@@ -398,7 +318,6 @@ function BlockView({ block, onAction }: { block: Block; onAction: (a: StoryActio
       return (
         <div className="text-fg max-w-[92%] self-start text-[15px] leading-relaxed font-semibold">
           {block.node ?? block.text}
-          {block.feedback && <FeedbackRow />}
         </div>
       );
 
@@ -427,38 +346,15 @@ function WidgetView({
       return <SwimLanes />;
     case "cart":
       return <CartWidget onAction={onAction} />;
-    case "saved":
-      return <SavedAddressesWidget />;
-    case "deliveryUpdated":
-      return <DeliveryUpdatedWidget />;
+    case "confirmAddress":
+      return <ConfirmAddressActions onAction={onAction} />;
+    case "deliveryAddress":
+      return <DeliveryAddressWidget />;
     case "newLoc":
       return <NewAddressLocationWidget onAction={onAction} />;
-    case "newForm":
-      return <NewAddressFormWidget onAction={onAction} />;
     case "confirm":
       return <ConfirmOrderWidget onAction={onAction} />;
     case "orderPlaced":
       return <OrderPlacedWidget onAction={onAction} />;
   }
-}
-
-function FeedbackRow() {
-  const base =
-    "text-fg-muted/70 transition-colors hover:text-primary-50 hover:scale-110 transition-transform";
-  return (
-    <div className="mt-2.5 flex items-center gap-[18px]">
-      <button type="button" aria-label="Good" className={base}>
-        <ThumbsUp size={18} />
-      </button>
-      <button type="button" aria-label="Bad" className={base}>
-        <ThumbsDown size={18} />
-      </button>
-      <button type="button" aria-label="Copy" className={base}>
-        <Copy size={18} />
-      </button>
-      <button type="button" aria-label="Read aloud" className={base}>
-        <Volume2 size={18} />
-      </button>
-    </div>
-  );
 }
