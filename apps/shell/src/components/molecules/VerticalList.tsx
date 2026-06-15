@@ -91,7 +91,7 @@ const verticalPersonalCompanion: Vertical = {
   dropdownItems: [
     {
       label: "PM Design",
-      url: "/personal-companion/chat/",
+      url: "/personal-companion/daily-saathi/",
     },
     {
       label: "Design Prototype",

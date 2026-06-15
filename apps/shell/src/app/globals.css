@@ -343,6 +343,16 @@
   --font-sans: var(--font-jio-type), -apple-system, "Segoe UI", sans-serif;
 }
 
+[data-daily-saathi] {
+  color-scheme: light;
+  --color-bg: 245 245 245;
+  --color-fg: 12 13 16;
+  --color-fg-muted: 107 110 116;
+  --color-surface: 255 255 255;
+  --color-border: 228 228 231;
+  --font-sans: var(--font-jio-type), -apple-system, "Segoe UI", sans-serif;
+}
+
 /* Safe-area utilities — keep content out of the iOS notch and bottom handle. */
 @utility pt-safe {
   padding-top: env(safe-area-inset-top);
