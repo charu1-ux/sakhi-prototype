@@ -14,6 +14,8 @@ type Props = {
   // Voice-first: show the animated "Speak" pill instead of a mic circle.
   voiceFirst?: boolean;
   speakLabel?: string;
+  // Tapped Speak/mic while empty. Defaults to focusing the input.
+  onVoice?: () => void;
 };
 
 export function SaathiComposer({
@@ -21,6 +23,7 @@ export function SaathiComposer({
   onSubmit,
   voiceFirst = false,
   speakLabel = "Speak",
+  onVoice,
 }: Props) {
   const [value, setValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -65,7 +68,7 @@ export function SaathiComposer({
         // Voice-first "Speak" pill with the animated equaliser (Dil Ki Baat style).
         <button
           type="button"
-          onClick={() => inputRef.current?.focus()}
+          onClick={onVoice ?? (() => inputRef.current?.focus())}
           aria-label={speakLabel}
           className="bg-primary-50 focus-visible:ring-primary-60 flex h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-full pr-4 pl-3.5 text-white transition-transform duration-200 ease-[cubic-bezier(0.2,0,0,1)] outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]"
         >

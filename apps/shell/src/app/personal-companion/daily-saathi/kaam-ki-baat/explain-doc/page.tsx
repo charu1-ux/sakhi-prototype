@@ -1,19 +1,21 @@
 "use client";
 
-import { AssistantChatStub } from "../../_components/AssistantChatStub";
+import { ScriptedChatStub } from "../../_components/ScriptedChatStub";
 import { useLang } from "../../saathi-i18n";
 
-// Explain a doc (stub). On the user's input it shows a canned summary card.
+// Explain a doc (scripted demo). The user shares a document, a summary card
+// appears, then they ask follow-up questions across several turns (canned).
 export default function ExplainDocChat() {
   const { t } = useLang();
   return (
-    <AssistantChatStub
+    <ScriptedChatStub
       title={t.doc.title}
       subtitle={t.doc.sub}
-      seededText={t.doc.greet}
-      ack={t.doc.ack}
+      greet={t.doc.greet}
+      turns={t.doc.story}
       placeholder={t.doc.placeholder}
-      replyCard={() => (
+      resultTurnIndex={0}
+      resultCard={() => (
         <div className="bg-surface w-full rounded-xl border border-[rgba(12,13,16,0.08)] p-3.5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
           <span className="text-primary-60 mb-2 block text-[10px] font-bold tracking-wide uppercase">
             {t.doc.summaryTag}

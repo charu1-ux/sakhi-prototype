@@ -159,7 +159,7 @@ export function seedReminders(now: Date = new Date()): Reminder[] {
       done: false,
     },
     {
-      title: "Dyuthi portfolio review call",
+      title: "Create Resume & Portfolio",
       datetime: mk(3, 9, 0),
       list: "Personal",
       priority: "none",

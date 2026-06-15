@@ -14,6 +14,10 @@ const LANG_EVENT = "saathi-lang-change";
 
 type CardRows = [string, string][];
 
+// One scripted exchange: the suggested replies the user can tap this turn, and
+// the assistant's bubbles after they respond (typing freely advances it too).
+export type StoryTurn = { suggestions: string[]; reply: string[] };
+
 export type Strings = {
   appTitle: string;
   back: string;
@@ -38,6 +42,12 @@ export type Strings = {
     pills: { reminder: string; image: string; doc: string };
     placeholder: string;
     fallback: string;
+    // Tappable example prompts that drive the three reminder widget states.
+    examples: {
+      empty: { chip: string; line: string };
+      partial: { chip: string; line: string; what: string };
+      full: { chip: string; line: string; what: string };
+    };
   };
   image: {
     title: string;
@@ -47,6 +57,7 @@ export type Strings = {
     resultTag: string;
     resultNote: string;
     placeholder: string;
+    story: StoryTurn[];
   };
   doc: {
     title: string;
@@ -56,6 +67,7 @@ export type Strings = {
     summaryTag: string;
     summary: string[];
     placeholder: string;
+    story: StoryTurn[];
   };
   remindersChat: { seed: string; ack: string; cardHeading: string; cardRows: CardRows };
   briefingChat: { seed: string; ack: string; cardHeading: string; cardRows: CardRows };
@@ -136,6 +148,19 @@ export const STRINGS: Record<Lang, Strings> = {
       placeholder: "Ask me anything…",
       fallback:
         "I can help with reminders, creating an image, or explaining a document — tap one above to start.",
+      examples: {
+        empty: { chip: "Set a reminder", line: "Set a reminder" },
+        partial: {
+          chip: "Remind me to call the bank",
+          line: "Remind me to call the bank",
+          what: "Call the bank",
+        },
+        full: {
+          chip: "Pay rent tomorrow 9 AM",
+          line: "Remind me to pay the rent tomorrow at 9 AM",
+          what: "Pay the rent",
+        },
+      },
     },
     image: {
       title: "Create an image",
@@ -145,6 +170,36 @@ export const STRINGS: Record<Lang, Strings> = {
       resultTag: "Generated image",
       resultNote: "Tap to save or regenerate",
       placeholder: "Describe an image…",
+      story: [
+        {
+          suggestions: [
+            "A Diwali greeting card",
+            "A poster for my shop",
+            "A birthday card for Mom",
+          ],
+          reply: ["On it — give me a moment.", "Here's a first version 👇"],
+        },
+        {
+          suggestions: ["Make it warmer", "Add 'Happy Diwali' text", "More colourful"],
+          reply: ["Nice idea — tweaking it now.", "How does this version feel?"],
+        },
+        {
+          suggestions: ["Add my shop name", "Make the diya bigger"],
+          reply: ["Done — added that in.", "Want any other change?"],
+        },
+        {
+          suggestions: ["That's perfect", "Try a different style"],
+          reply: ["Glad you like it!", "I can save it or make a few variations."],
+        },
+        {
+          suggestions: ["Save it", "Make 2 more variations"],
+          reply: ["Saved to your gallery.", "Anything else you'd like to create?"],
+        },
+        {
+          suggestions: ["Resize for WhatsApp status", "I'm done for now"],
+          reply: ["Sure — resized for a WhatsApp status.", "Ping me whenever you need another."],
+        },
+      ],
     },
     doc: {
       title: "Explain a doc",
@@ -153,11 +208,50 @@ export const STRINGS: Record<Lang, Strings> = {
       ack: "Here's the gist —",
       summaryTag: "Summary",
       summary: [
-        "Main point captured in one line.",
-        "Key dates and numbers pulled out.",
-        "Action items highlighted for you.",
+        "It's an 11-month rent agreement for ₹18,000/month.",
+        "Deposit of ₹54,000 is due within 7 days of signing.",
+        "You need to sign page 3; a 2% monthly late fee applies.",
       ],
       placeholder: "Paste text or describe the doc…",
+      story: [
+        {
+          suggestions: [
+            "Summarise my rent agreement",
+            "Explain this bank SMS",
+            "What does this form ask for?",
+          ],
+          reply: ["Got it — reading through it now.", "Here's the gist 👇"],
+        },
+        {
+          suggestions: ["What do I need to do?", "Any important dates?"],
+          reply: [
+            "Two things need you: sign page 3, and pay the deposit.",
+            "The deposit is due within 7 days of signing.",
+          ],
+        },
+        {
+          suggestions: ["Is anything unusual in it?", "Explain the late-fee clause"],
+          reply: [
+            "One thing to note: there's a 2% monthly late fee on delayed rent.",
+            "Nothing else looks out of the ordinary.",
+          ],
+        },
+        {
+          suggestions: ["Draft a reply to the landlord", "Add the deadline to my reminders"],
+          reply: ["Sure — I can do either.", "Which would help more right now?"],
+        },
+        {
+          suggestions: ["Add the deadline to reminders", "Just save the summary"],
+          reply: [
+            "Done — I'll remind you before the deposit is due.",
+            "Anything else from the document?",
+          ],
+        },
+        {
+          suggestions: ["No, that's all — thanks", "Explain one more line"],
+          reply: ["Anytime.", "Send me any document and I'll break it down just like this."],
+        },
+      ],
     },
     remindersChat: {
       seed: "You have one reminder set for today. Tell me if you'd like to add another.",
@@ -261,6 +355,19 @@ export const STRINGS: Record<Lang, Strings> = {
       placeholder: "कुछ भी पूछें…",
       fallback:
         "मैं रिमाइंडर, इमेज बनाने, या डॉक समझाने में मदद कर सकता हूँ — ऊपर किसी एक को चुनें।",
+      examples: {
+        empty: { chip: "रिमाइंडर सेट करें", line: "रिमाइंडर सेट करो" },
+        partial: {
+          chip: "बैंक कॉल याद दिलाओ",
+          line: "बैंक को कॉल करना याद दिलाओ",
+          what: "बैंक को कॉल करें",
+        },
+        full: {
+          chip: "कल 9 बजे किराया",
+          line: "कल सुबह 9 बजे किराया देना याद दिलाओ",
+          what: "किराया देना",
+        },
+      },
     },
     image: {
       title: "इमेज बनाएं",
@@ -270,6 +377,32 @@ export const STRINGS: Record<Lang, Strings> = {
       resultTag: "बनाई गई इमेज",
       resultNote: "सेव या दोबारा बनाने के लिए टैप करें",
       placeholder: "इमेज का विवरण दें…",
+      story: [
+        {
+          suggestions: ["दिवाली ग्रीटिंग कार्ड", "मेरी दुकान का पोस्टर", "माँ के लिए बर्थडे कार्ड"],
+          reply: ["ठीक है — एक पल दीजिए।", "यह पहला वर्शन है 👇"],
+        },
+        {
+          suggestions: ["थोड़ा गर्म रंग करो", "'Happy Diwali' लिखो", "और रंगीन करो"],
+          reply: ["अच्छा सुझाव — अभी बदल देता हूँ।", "यह वर्शन कैसा लग रहा है?"],
+        },
+        {
+          suggestions: ["दुकान का नाम जोड़ो", "दीया बड़ा करो"],
+          reply: ["हो गया — जोड़ दिया।", "कोई और बदलाव चाहिए?"],
+        },
+        {
+          suggestions: ["यह परफेक्ट है", "कोई अलग स्टाइल दिखाओ"],
+          reply: ["अच्छा लगा कि पसंद आया!", "मैं इसे सेव कर सकता हूँ या कुछ वैरिएशन बना सकता हूँ।"],
+        },
+        {
+          suggestions: ["इसे सेव करो", "2 और वैरिएशन बनाओ"],
+          reply: ["आपकी गैलरी में सेव कर दिया।", "और कुछ बनाना चाहेंगे?"],
+        },
+        {
+          suggestions: ["WhatsApp स्टेटस साइज़ करो", "अभी के लिए बस"],
+          reply: ["ज़रूर — WhatsApp स्टेटस के लिए साइज़ कर दिया।", "जब भी ज़रूरत हो, बता दीजिए।"],
+        },
+      ],
     },
     doc: {
       title: "डॉक समझाएं",
@@ -278,11 +411,47 @@ export const STRINGS: Record<Lang, Strings> = {
       ack: "संक्षेप में यह है —",
       summaryTag: "सारांश",
       summary: [
-        "मुख्य बात एक लाइन में।",
-        "ज़रूरी तारीखें और आँकड़े निकाले गए।",
-        "करने वाले काम हाइलाइट किए गए।",
+        "यह ₹18,000/माह का 11 महीने का रेंट एग्रीमेंट है।",
+        "साइन करने के 7 दिन में ₹54,000 जमा देना है।",
+        "पेज 3 पर साइन करना है; देरी पर 2% मासिक लेट फीस लगेगी।",
       ],
       placeholder: "टेक्स्ट पेस्ट करें या डॉक बताएं…",
+      story: [
+        {
+          suggestions: [
+            "मेरा रेंट एग्रीमेंट समझाओ",
+            "यह बैंक SMS समझाओ",
+            "यह फॉर्म क्या माँग रहा है?",
+          ],
+          reply: ["ठीक है — पढ़ रहा हूँ।", "संक्षेप में यह है 👇"],
+        },
+        {
+          suggestions: ["मुझे क्या करना है?", "कोई ज़रूरी तारीख?"],
+          reply: [
+            "दो काम आपके हैं: पेज 3 पर साइन, और डिपॉज़िट देना।",
+            "डिपॉज़िट साइन करने के 7 दिन के अंदर देना है।",
+          ],
+        },
+        {
+          suggestions: ["कुछ असामान्य है क्या?", "लेट-फीस वाला हिस्सा समझाओ"],
+          reply: [
+            "एक बात ध्यान दें: देरी से किराए पर 2% मासिक लेट फीस है।",
+            "बाकी कुछ असामान्य नहीं दिख रहा।",
+          ],
+        },
+        {
+          suggestions: ["मकान-मालिक को जवाब लिखो", "तारीख रिमाइंडर में डालो"],
+          reply: ["ज़रूर — दोनों कर सकता हूँ।", "अभी किससे ज़्यादा मदद होगी?"],
+        },
+        {
+          suggestions: ["तारीख रिमाइंडर में डालो", "बस सारांश सेव करो"],
+          reply: ["हो गया — डिपॉज़िट से पहले याद दिला दूँगा।", "डॉक्यूमेंट से और कुछ?"],
+        },
+        {
+          suggestions: ["नहीं, बस — शुक्रिया", "एक और लाइन समझाओ"],
+          reply: ["कभी भी।", "कोई भी डॉक्यूमेंट भेजिए, मैं ऐसे ही समझा दूँगा।"],
+        },
+      ],
     },
     remindersChat: {
       seed: "आज के लिए एक रिमाइंडर सेट है। नया जोड़ना हो तो बताइए।",

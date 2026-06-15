@@ -16,6 +16,7 @@ import {
 } from "../_components/ReminderWidget";
 import { SaathiComposer } from "../_components/SaathiComposer";
 import { StubHeader } from "../_components/StubHeader";
+import { SuggestedReplies } from "../_components/SuggestedReplies";
 import { CheckIcon } from "../../chat/icons";
 import { parseReminder } from "../reminders/parse";
 import { fmtDate } from "../reminders/reminders-data";
@@ -78,6 +79,39 @@ export default function KaamKiBaatChat() {
     setDraft(EMPTY_DRAFT);
     setMode("reminder-editing");
   };
+
+  // Scripted reminder demos — each lands the widget in one of the three states
+  // (empty / partially filled / fully filled) without relying on the parser, so
+  // it reads correctly in both languages.
+  const demoReminder = (line: string, next: ReminderDraft) => {
+    pushUser(line);
+    setDraft(next);
+    setMode("reminder-editing");
+  };
+  const ex = t.kaam.examples;
+  const reminderExamples = [
+    { label: ex.empty.chip, onPick: () => demoReminder(ex.empty.line, EMPTY_DRAFT) },
+    {
+      label: ex.partial.chip,
+      onPick: () =>
+        demoReminder(ex.partial.line, {
+          what: ex.partial.what,
+          dateChip: null,
+          customDate: null,
+          time: null,
+        }),
+    },
+    {
+      label: ex.full.chip,
+      onPick: () =>
+        demoReminder(ex.full.line, {
+          what: ex.full.what,
+          dateChip: "tomorrow",
+          customDate: null,
+          time: { h: 9, m: 0 },
+        }),
+    },
+  ];
 
   const send = (text: string) => {
     const clean = text.trim();
@@ -238,8 +272,9 @@ export default function KaamKiBaatChat() {
 
       {/* Pills (hidden while actively filling the widget) + composer */}
       <div className="bg-surface shrink-0">
+        {mode !== "reminder-editing" && <SuggestedReplies items={reminderExamples} />}
         {mode !== "reminder-editing" && (
-          <div className="flex gap-2 overflow-x-auto px-4 pt-3 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex gap-2 overflow-x-auto px-4 pt-2 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {pills.map((p) => (
               <button
                 key={p.label}

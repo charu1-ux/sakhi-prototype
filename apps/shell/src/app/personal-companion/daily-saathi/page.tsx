@@ -64,7 +64,13 @@ export default function DailySaathiHome() {
       </main>
 
       {/* Catch-all composer → companion with the input as opening message */}
-      <SaathiComposer placeholder={t.composer} onSubmit={() => go(ROUTES.companion)} />
+      <SaathiComposer
+        placeholder={t.composer}
+        onSubmit={() => go(ROUTES.companion)}
+        voiceFirst
+        speakLabel={t.speak}
+        onVoice={() => go(ROUTES.companion)}
+      />
 
       <style>{`
         @keyframes sf-rise {

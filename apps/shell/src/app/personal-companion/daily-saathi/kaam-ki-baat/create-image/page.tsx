@@ -1,21 +1,23 @@
 "use client";
 
-import { AssistantChatStub } from "../../_components/AssistantChatStub";
+import { ScriptedChatStub } from "../../_components/ScriptedChatStub";
 import { useLang } from "../../saathi-i18n";
 import { ImageIcon } from "../../saathi-icons";
 
-// Create an image (stub). On the user's prompt it shows a placeholder
-// "generated image" card (no real generation in the prototype).
+// Create an image (scripted demo). A response-driven multi-turn story: the user
+// describes an image, a placeholder "generated image" card appears, then they
+// refine it across several turns (no real generation in the prototype).
 export default function CreateImageChat() {
   const { t } = useLang();
   return (
-    <AssistantChatStub
+    <ScriptedChatStub
       title={t.image.title}
       subtitle={t.image.sub}
-      seededText={t.image.greet}
-      ack={t.image.ack}
+      greet={t.image.greet}
+      turns={t.image.story}
       placeholder={t.image.placeholder}
-      replyCard={(prompt) => (
+      resultTurnIndex={0}
+      resultCard={(prompt) => (
         <div className="bg-surface w-full overflow-hidden rounded-xl border border-[rgba(12,13,16,0.08)] shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
           <div className="bg-surface-ghost-icon flex aspect-video items-center justify-center">
             <ImageIcon className="text-primary-50 size-9" />
