@@ -136,6 +136,7 @@ export type Strings = {
       needTime: string;
       needMore: string;
       edit: string;
+      viewInReminders: string;
       dpToday: string;
       dpTomorrow: string;
       dpOn: string;
@@ -372,6 +373,7 @@ export const STRINGS: Record<Lang, Strings> = {
         needTime: "Got it. Just pick a time and you're set.",
         needMore: "Got it. Fill in the highlighted fields and you're set.",
         edit: "Edit",
+        viewInReminders: "View in Reminders",
         dpToday: "today",
         dpTomorrow: "tomorrow",
         dpOn: "on ",
@@ -599,6 +601,7 @@ export const STRINGS: Record<Lang, Strings> = {
         needTime: "ठीक है। बस समय चुनें।",
         needMore: "ठीक है। हाइलाइट किए फ़ील्ड भरें।",
         edit: "बदलें",
+        viewInReminders: "रिमाइंडर में देखें",
         dpToday: "आज",
         dpTomorrow: "कल",
         dpOn: "",

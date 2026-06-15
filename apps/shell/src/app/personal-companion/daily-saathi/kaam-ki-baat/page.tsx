@@ -20,7 +20,7 @@ import { StubHeader } from "../_components/StubHeader";
 import { VoiceChat } from "../_components/VoiceChat";
 import { CheckIcon } from "../../chat/icons";
 import { parseReminder } from "../reminders/parse";
-import { fmtDate } from "../reminders/reminders-data";
+import { filterForDate, fmtDate } from "../reminders/reminders-data";
 import { addReminder } from "../reminders/reminders-store";
 import { ASSETS, ROUTES } from "../saathi-data";
 import { useLang } from "../saathi-i18n";
@@ -128,6 +128,19 @@ export default function KaamKiBaatChat() {
     setMode("reminder-editing");
   };
 
+  // Close the loop: jump to the Daily Saathi home, opening the reminders widget
+  // on the bucket where the just-saved reminder landed.
+  const viewInReminders = (d: ReminderDraft) => {
+    const date = resolveDate(d);
+    if (!date) {
+      go(ROUTES.home);
+      return;
+    }
+    const dt = new Date(date);
+    if (d.time) dt.setHours(d.time.h, d.time.m, 0, 0);
+    go(`${ROUTES.home}?reminders=${filterForDate(dt.toISOString())}`);
+  };
+
   const leadIn = (): string => {
     const count = [isWhatFilled(draft), isDateFilled(draft), isTimeFilled(draft)].filter(
       Boolean,
@@ -198,13 +211,20 @@ export default function KaamKiBaatChat() {
                       {summary(m.card)}
                     </p>
                   </div>
-                  <div className="mt-2 flex justify-end">
+                  <div className="mt-2.5 flex justify-end gap-2">
                     <button
                       type="button"
                       onClick={() => onEdit(m.id, m.card!)}
                       className="border-primary-50 text-primary-50 focus-visible:ring-primary-60 cursor-pointer rounded-full border px-3 py-1.5 text-[12px] font-bold transition-transform duration-200 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]"
                     >
                       {w.edit}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => viewInReminders(m.card!)}
+                      className="bg-primary-50 focus-visible:ring-primary-60 cursor-pointer rounded-full px-3 py-1.5 text-[12px] font-bold text-white transition-transform duration-200 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]"
+                    >
+                      {w.viewInReminders}
                     </button>
                   </div>
                 </div>
