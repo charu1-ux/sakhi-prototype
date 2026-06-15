@@ -621,7 +621,7 @@ function Field({ label, placeholder }: { label: string; placeholder: string }) {
   return (
     <div className="flex w-full flex-col gap-1">
       <label className="text-body-xs font-jio text-[rgba(12,13,16,0.65)]">{label}</label>
-      <div className="focus-within:border-surface-moderate flex flex-row items-center gap-2 rounded-md border border-[rgba(12,13,16,0.12)] bg-white px-3">
+      <div className="flex flex-row items-center gap-2 rounded-md border border-[rgba(12,13,16,0.12)] bg-white px-3 focus-within:border-[rgba(12,13,16,0.55)]">
         <input
           placeholder={placeholder}
           className="text-body-s font-jio min-w-0 flex-1 bg-transparent py-3.5 text-[#0c0d10] outline-none placeholder:text-[rgba(12,13,16,0.38)]"
