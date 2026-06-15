@@ -58,6 +58,15 @@ export type Strings = {
       utterances: string[];
       replies: string[];
     };
+    // Attach sheet (tap "+"): upload a photo/document to analyse or summarize.
+    attach: {
+      title: string;
+      camera: string;
+      photo: string;
+      document: string;
+      documentSub: string;
+      cancel: string;
+    };
   };
   image: {
     title: string;
@@ -190,6 +199,14 @@ export const STRINGS: Record<Lang, Strings> = {
           "Sure thing. I'm on it.",
           "Okay, noted. Anything else you'd like to add?",
         ],
+      },
+      attach: {
+        title: "Add to chat",
+        camera: "Take a photo",
+        photo: "Choose a photo",
+        document: "Add a document",
+        documentSub: "Analyse or summarize",
+        cancel: "Cancel",
       },
     },
     image: {
@@ -417,6 +434,14 @@ export const STRINGS: Record<Lang, Strings> = {
           "ज़रूर, कर रहा हूँ।",
           "ठीक है, नोट कर लिया। और कुछ?",
         ],
+      },
+      attach: {
+        title: "चैट में जोड़ें",
+        camera: "फोटो लें",
+        photo: "गैलरी से फोटो",
+        document: "डॉक्यूमेंट जोड़ें",
+        documentSub: "विश्लेषण या सारांश",
+        cancel: "रद्द करें",
       },
     },
     image: {

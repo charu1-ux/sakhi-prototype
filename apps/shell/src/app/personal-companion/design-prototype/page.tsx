@@ -510,7 +510,7 @@ export default function PersonalCompanionDesignPrototypePage() {
     <div className="relative h-full">
       <div className="relative flex h-full flex-col bg-white">
         <HubHeader
-          title="Personal Companion"
+          title="Dil Ki Baat"
           pageBg="white"
           onBack={goHome}
           rightSlot={
@@ -574,7 +574,7 @@ export default function PersonalCompanionDesignPrototypePage() {
             </div>
             <span className="text-body-2xs font-jio inline-flex items-center gap-1.5 font-medium text-[#25ab21]">
               <span className="size-1.5 rounded-full bg-[#25ab21]" />
-              Dil Ki Baat · Active now
+              Active now
             </span>
           </div>
 

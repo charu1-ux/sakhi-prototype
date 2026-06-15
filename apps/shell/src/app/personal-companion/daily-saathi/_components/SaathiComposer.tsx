@@ -3,6 +3,7 @@
 import { type FormEvent, useRef, useState } from "react";
 
 import { MicIcon, SendIcon, VoiceWaveIcon } from "../../chat/icons";
+import { PlusIcon } from "../saathi-icons";
 
 // Bottom composer dock. Pill input + Send when text present. When empty it shows
 // either a plain mic (default) or, in `voiceFirst` mode, an animated "Speak"
@@ -16,6 +17,9 @@ type Props = {
   speakLabel?: string;
   // Tapped Speak/mic while empty. Defaults to focusing the input.
   onVoice?: () => void;
+  // When set, a leading "+" button appears to attach a doc/photo (opens a sheet).
+  onAttach?: () => void;
+  attachLabel?: string;
 };
 
 export function SaathiComposer({
@@ -24,6 +28,8 @@ export function SaathiComposer({
   voiceFirst = false,
   speakLabel = "Speak",
   onVoice,
+  onAttach,
+  attachLabel = "Add",
 }: Props) {
   const [value, setValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -43,6 +49,17 @@ export function SaathiComposer({
       className="bg-surface flex shrink-0 items-center gap-2 border-t border-[rgba(12,13,16,0.08)] px-3 pt-2.5"
       style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)" }}
     >
+      {onAttach && (
+        <button
+          type="button"
+          onClick={onAttach}
+          aria-label={attachLabel}
+          className="bg-primary-20 text-primary-50 focus-visible:ring-primary-60 flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full transition-transform duration-200 ease-[cubic-bezier(0.2,0,0,1)] outline-none hover:scale-[1.05] focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
+        >
+          <PlusIcon className="size-5" />
+        </button>
+      )}
+
       <div className="bg-surface-ghost flex flex-1 items-center rounded-full border border-[rgba(12,13,16,0.12)] px-4">
         <input
           ref={inputRef}

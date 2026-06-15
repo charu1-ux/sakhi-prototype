@@ -14,6 +14,7 @@ import {
   ReminderWidget,
   resolveDate,
 } from "../_components/ReminderWidget";
+import { AttachSheet } from "../_components/AttachSheet";
 import { KaamVoiceChat } from "../_components/KaamVoiceChat";
 import { SaathiComposer } from "../_components/SaathiComposer";
 import { StubHeader } from "../_components/StubHeader";
@@ -64,6 +65,7 @@ export default function KaamKiBaatChat() {
   const [mode, setMode] = useState<Mode>("chat");
   const [draft, setDraft] = useState<ReminderDraft>(EMPTY_DRAFT);
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const [attachOpen, setAttachOpen] = useState(false);
 
   const pushUser = (text: string) => setMessages((m) => [...m, { id: uid++, role: "user", text }]);
   const pushAssistant = (text: string) =>
@@ -271,8 +273,20 @@ export default function KaamKiBaatChat() {
           voiceFirst
           speakLabel={t.speak}
           onVoice={() => setVoiceOpen(true)}
+          onAttach={() => setAttachOpen(true)}
+          attachLabel={t.kaam.attach.title}
         />
       </div>
+
+      {attachOpen && (
+        <AttachSheet
+          onPick={() => {
+            setAttachOpen(false);
+            go(ROUTES.explainDoc);
+          }}
+          onClose={() => setAttachOpen(false)}
+        />
+      )}
 
       {voiceOpen && (
         <KaamVoiceChat
