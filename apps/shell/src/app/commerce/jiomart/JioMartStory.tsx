@@ -269,7 +269,7 @@ export function JioMartStory() {
       </header>
 
       {/* Chat thread */}
-      <main ref={scrollRef} className="flex flex-1 flex-col overflow-y-auto px-4 pt-[68px] pb-5">
+      <main ref={scrollRef} className="flex flex-1 flex-col overflow-y-auto px-4 pt-[80px] pb-5">
         {blocks.map((b, i) => {
           const prev = i > 0 ? blocks[i - 1] : null;
           // 32px before a new user prompt · 24px from a user prompt to the reply
