@@ -23,10 +23,13 @@ export default function DailySaathiHome() {
   const name = SAATHI.firstName?.trim();
 
   // Read the widget auto-jump filter from the URL (?reminders=<filter>) set on save.
+  // ?reminders=empty forces the first-time empty state (demo hook).
   const [remFilter, setRemFilter] = useState<Filter | undefined>(undefined);
+  const [forceEmpty, setForceEmpty] = useState(false);
   useEffect(() => {
     const p = new URLSearchParams(window.location.search).get("reminders");
-    if (p && (FILTERS as string[]).includes(p)) setRemFilter(p as Filter);
+    if (p === "empty") setForceEmpty(true);
+    else if (p && (FILTERS as string[]).includes(p)) setRemFilter(p as Filter);
   }, []);
 
   return (
@@ -55,7 +58,7 @@ export default function DailySaathiHome() {
 
           {/* Reminders — the one live "for today" surface in this cut */}
           <div style={rise(2)}>
-            <RemindersWidget initialFilter={remFilter} />
+            <RemindersWidget initialFilter={remFilter} forceEmpty={forceEmpty} />
           </div>
         </div>
       </main>

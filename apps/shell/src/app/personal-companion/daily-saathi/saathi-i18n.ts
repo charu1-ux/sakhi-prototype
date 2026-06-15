@@ -87,6 +87,9 @@ export type Strings = {
     add: string;
     filters: { overdue: string; today: string; upcoming: string; all: string };
     allClear: string;
+    emptyTitle: string;
+    emptyBody: string;
+    emptyCta: string;
     moreSuffix: string;
     tapExpand: string;
     overdueWord: string;
@@ -311,6 +314,9 @@ export const STRINGS: Record<Lang, Strings> = {
       add: "Add",
       filters: { overdue: "Overdue", today: "Today", upcoming: "Upcoming", all: "All" },
       allClear: "All clear",
+      emptyTitle: "No reminders to show",
+      emptyBody: "Create your first reminder and I'll keep track of it for you.",
+      emptyCta: "Create a reminder",
       moreSuffix: "more",
       tapExpand: "tap to expand",
       overdueWord: "overdue",
@@ -528,6 +534,9 @@ export const STRINGS: Record<Lang, Strings> = {
       add: "जोड़ें",
       filters: { overdue: "बकाया", today: "आज", upcoming: "आगामी", all: "सभी" },
       allClear: "सब हो गया",
+      emptyTitle: "कोई रिमाइंडर नहीं",
+      emptyBody: "अपना पहला रिमाइंडर बनाएं, मैं आपके लिए याद रखूँगा।",
+      emptyCta: "रिमाइंडर बनाएं",
       moreSuffix: "और",
       tapExpand: "देखने के लिए टैप करें",
       overdueWord: "बकाया",

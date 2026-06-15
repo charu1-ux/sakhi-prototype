@@ -22,10 +22,18 @@ import { useNav } from "../use-nav";
 const MAX = 4;
 const ORDER: Filter[] = ["overdue", "today", "upcoming", "all"];
 
-export function RemindersWidget({ initialFilter }: { initialFilter?: Filter }) {
+export function RemindersWidget({
+  initialFilter,
+  forceEmpty = false,
+}: {
+  initialFilter?: Filter;
+  // Demo hook: render the first-time empty state regardless of stored reminders.
+  forceEmpty?: boolean;
+}) {
   const { t } = useLang();
   const { go } = useNav();
   const { reminders, toggle } = useReminders();
+  const isEmpty = forceEmpty || reminders.length === 0;
   const [filter, setFilter] = useState<Filter>(initialFilter ?? "today");
   const [expanded, setExpanded] = useState(false);
   const didInit = useRef(false);
@@ -155,7 +163,7 @@ export function RemindersWidget({ initialFilter }: { initialFilter?: Filter }) {
             <BellIcon className="text-primary-50 size-[15px]" />
             {t.rem.title}
           </span>
-          <span className="text-[11px] text-[rgba(12,13,16,0.55)]">{sub}</span>
+          {!isEmpty && <span className="text-[11px] text-[rgba(12,13,16,0.55)]">{sub}</span>}
         </div>
         <button
           type="button"
@@ -168,81 +176,104 @@ export function RemindersWidget({ initialFilter }: { initialFilter?: Filter }) {
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-1.5 overflow-x-auto px-4 pt-3 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {ORDER.map((f) => (
-          <button
-            key={f}
-            type="button"
-            onClick={() => {
-              setFilter(f);
-              setExpanded(false);
-            }}
-            className={`focus-visible:ring-primary-60 shrink-0 cursor-pointer rounded-full px-3 py-1 text-[12px] font-medium transition-colors outline-none focus-visible:ring-2 ${chipCls(f)}`}
-          >
-            {t.rem.filters[f]}
-          </button>
-        ))}
-      </div>
-
-      {/* Body */}
-      <div className="px-2 pb-1">
-        {/* Overdue nudge on Today */}
-        {filter === "today" && c.overdue > 0 && (
+      {isEmpty ? (
+        /* First-time empty state — no reminders ever created */
+        <div className="flex flex-col items-center gap-2 px-6 pt-4 pb-7 text-center">
+          <span className="bg-surface-ghost-icon flex size-12 items-center justify-center rounded-full">
+            <BellIcon className="text-primary-50 size-6" />
+          </span>
+          <span className="text-[15px] font-bold text-[#0c0d10]">{t.rem.emptyTitle}</span>
+          <span className="max-w-[260px] text-[12px] leading-snug text-[rgba(12,13,16,0.55)]">
+            {t.rem.emptyBody}
+          </span>
           <button
             type="button"
-            onClick={() => setFilter("overdue")}
-            className="mb-1 flex w-full cursor-pointer items-center gap-2 rounded-lg bg-[#fde8ea] px-3 py-2 text-left transition-transform duration-200 active:scale-[0.99]"
+            onClick={() => go(ROUTES.reminders)}
+            className="bg-primary-50 focus-visible:ring-primary-60 mt-1.5 flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-2.5 text-white transition-transform duration-200 ease-[cubic-bezier(0.2,0,0,1)] outline-none hover:scale-[1.03] focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]"
           >
-            <AlertIcon className="text-error size-4 shrink-0" />
-            <span className="text-error flex-1 text-[12px] font-medium">
-              {c.overdue} {t.rem.overdueWord} {t.rem.nudgeSuffix}
-            </span>
-            <ChevronRightIcon className="text-error size-4 shrink-0" />
+            <PlusIcon className="size-4" />
+            <span className="text-[13px] font-bold">{t.rem.emptyCta}</span>
           </button>
-        )}
-
-        {total === 0 ? (
-          <div className="flex flex-col items-center gap-1.5 px-4 py-7">
-            <CheckIcon className="size-6 text-[rgba(12,13,16,0.24)]" />
-            <span className="text-[13px] text-[rgba(12,13,16,0.55)]">{t.rem.allClear}</span>
+        </div>
+      ) : (
+        <>
+          {/* Filters */}
+          <div className="flex gap-1.5 overflow-x-auto px-4 pt-3 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {ORDER.map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => {
+                  setFilter(f);
+                  setExpanded(false);
+                }}
+                className={`focus-visible:ring-primary-60 shrink-0 cursor-pointer rounded-full px-3 py-1 text-[12px] font-medium transition-colors outline-none focus-visible:ring-2 ${chipCls(f)}`}
+              >
+                {t.rem.filters[f]}
+              </button>
+            ))}
           </div>
-        ) : filter === "upcoming" ? (
-          groups.map(([label, rows]) => (
-            <div key={label}>
-              <div className="px-2 pt-2 pb-0.5 text-[11px] font-medium tracking-wide text-[rgba(12,13,16,0.55)] uppercase">
-                {label}
+
+          {/* Body */}
+          <div className="px-2 pb-1">
+            {/* Overdue nudge on Today */}
+            {filter === "today" && c.overdue > 0 && (
+              <button
+                type="button"
+                onClick={() => setFilter("overdue")}
+                className="mb-1 flex w-full cursor-pointer items-center gap-2 rounded-lg bg-[#fde8ea] px-3 py-2 text-left transition-transform duration-200 active:scale-[0.99]"
+              >
+                <AlertIcon className="text-error size-4 shrink-0" />
+                <span className="text-error flex-1 text-[12px] font-medium">
+                  {c.overdue} {t.rem.overdueWord} {t.rem.nudgeSuffix}
+                </span>
+                <ChevronRightIcon className="text-error size-4 shrink-0" />
+              </button>
+            )}
+
+            {total === 0 ? (
+              <div className="flex flex-col items-center gap-1.5 px-4 py-7">
+                <CheckIcon className="size-6 text-[rgba(12,13,16,0.24)]" />
+                <span className="text-[13px] text-[rgba(12,13,16,0.55)]">{t.rem.allClear}</span>
               </div>
+            ) : filter === "upcoming" ? (
+              groups.map(([label, rows]) => (
+                <div key={label}>
+                  <div className="px-2 pt-2 pb-0.5 text-[11px] font-medium tracking-wide text-[rgba(12,13,16,0.55)] uppercase">
+                    {label}
+                  </div>
+                  <div className="divide-y divide-[rgba(12,13,16,0.06)]">
+                    {rows.map((r) => (
+                      <Row key={r.id} r={r} />
+                    ))}
+                  </div>
+                </div>
+              ))
+            ) : (
               <div className="divide-y divide-[rgba(12,13,16,0.06)]">
-                {rows.map((r) => (
+                {shown.map((r) => (
                   <Row key={r.id} r={r} />
                 ))}
               </div>
-            </div>
-          ))
-        ) : (
-          <div className="divide-y divide-[rgba(12,13,16,0.06)]">
-            {shown.map((r) => (
-              <Row key={r.id} r={r} />
-            ))}
-          </div>
-        )}
+            )}
 
-        {/* Overflow expand */}
-        {!expanded && hidden > 0 && (
-          <button
-            type="button"
-            onClick={() => setExpanded(true)}
-            className="active:bg-surface-minimal mt-0.5 flex w-full cursor-pointer items-center justify-between border-t border-[rgba(12,13,16,0.06)] px-3 py-2.5 transition-colors"
-          >
-            <span className="text-primary-50 flex items-center gap-1 text-[12px] font-medium">
-              <ChevronDownIcon className="size-3.5" />
-              {hidden} {t.rem.moreSuffix}
-            </span>
-            <span className="text-[11px] text-[rgba(12,13,16,0.55)]">{t.rem.tapExpand}</span>
-          </button>
-        )}
-      </div>
+            {/* Overflow expand */}
+            {!expanded && hidden > 0 && (
+              <button
+                type="button"
+                onClick={() => setExpanded(true)}
+                className="active:bg-surface-minimal mt-0.5 flex w-full cursor-pointer items-center justify-between border-t border-[rgba(12,13,16,0.06)] px-3 py-2.5 transition-colors"
+              >
+                <span className="text-primary-50 flex items-center gap-1 text-[12px] font-medium">
+                  <ChevronDownIcon className="size-3.5" />
+                  {hidden} {t.rem.moreSuffix}
+                </span>
+                <span className="text-[11px] text-[rgba(12,13,16,0.55)]">{t.rem.tapExpand}</span>
+              </button>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
