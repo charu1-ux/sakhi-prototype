@@ -5,13 +5,11 @@ import { type CSSProperties, useEffect, useState } from "react";
 import { Avatar } from "./_components/Avatar";
 import { ModeButtons } from "./_components/ModeButtons";
 import { RemindersWidget } from "./_components/RemindersWidget";
-import { SaathiComposer } from "./_components/SaathiComposer";
 import { SaathiHeader } from "./_components/SaathiHeader";
 import { type Filter } from "./reminders/reminders-data";
-import { ASSETS, ROUTES, SAATHI } from "./saathi-data";
+import { ASSETS, SAATHI } from "./saathi-data";
 import { useLang } from "./saathi-i18n";
 import { SparkleIcon } from "./saathi-icons";
-import { useNav } from "./use-nav";
 
 const rise = (i: number): CSSProperties => ({
   animation: "sf-rise 0.5s cubic-bezier(0.05,0.7,0.1,1) both",
@@ -22,7 +20,6 @@ const FILTERS: Filter[] = ["overdue", "today", "upcoming", "all"];
 
 export default function DailySaathiHome() {
   const { t } = useLang();
-  const { go } = useNav();
   const name = SAATHI.firstName?.trim();
 
   // Read the widget auto-jump filter from the URL (?reminders=<filter>) set on save.
@@ -62,15 +59,6 @@ export default function DailySaathiHome() {
           </div>
         </div>
       </main>
-
-      {/* Catch-all composer → companion with the input as opening message */}
-      <SaathiComposer
-        placeholder={t.composer}
-        onSubmit={() => go(ROUTES.companion)}
-        voiceFirst
-        speakLabel={t.speak}
-        onVoice={() => go(ROUTES.companion)}
-      />
 
       <style>{`
         @keyframes sf-rise {
