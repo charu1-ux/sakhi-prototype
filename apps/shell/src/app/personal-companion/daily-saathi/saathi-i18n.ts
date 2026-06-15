@@ -48,6 +48,16 @@ export type Strings = {
       partial: { chip: string; line: string; what: string };
       full: { chip: string; line: string; what: string };
     };
+    // Live voice-chat mode (tap Speak): status copy + stubbed speech + replies.
+    voice: {
+      connecting: string;
+      prompt: string;
+      listening: string;
+      thinking: string;
+      exitToText: string;
+      utterances: string[];
+      replies: string[];
+    };
   };
   image: {
     title: string;
@@ -160,6 +170,23 @@ export const STRINGS: Record<Lang, Strings> = {
           line: "Remind me to pay the rent tomorrow at 9 AM",
           what: "Pay the rent",
         },
+      },
+      voice: {
+        connecting: "Connecting…",
+        prompt: "Say something",
+        listening: "Listening…",
+        thinking: "Thinking…",
+        exitToText: "Switch to typing",
+        utterances: [
+          "Remind me to call the bank tomorrow at 5 PM",
+          "Create a Diwali greeting image",
+          "Summarise my rent agreement",
+        ],
+        replies: [
+          "Got it — I understand. Let me take care of that.",
+          "Sure thing. I'm on it.",
+          "Okay, noted. Anything else you'd like to add?",
+        ],
       },
     },
     image: {
@@ -367,6 +394,23 @@ export const STRINGS: Record<Lang, Strings> = {
           line: "कल सुबह 9 बजे किराया देना याद दिलाओ",
           what: "किराया देना",
         },
+      },
+      voice: {
+        connecting: "कनेक्ट हो रहा है…",
+        prompt: "कुछ कहिए",
+        listening: "सुन रहा हूँ…",
+        thinking: "सोच रहा हूँ…",
+        exitToText: "टाइप करें",
+        utterances: [
+          "कल शाम 5 बजे बैंक कॉल याद दिलाओ",
+          "दिवाली की ग्रीटिंग इमेज बनाओ",
+          "मेरा रेंट एग्रीमेंट समझाओ",
+        ],
+        replies: [
+          "समझ गया — मैं इसे कर देता हूँ।",
+          "ज़रूर, कर रहा हूँ।",
+          "ठीक है, नोट कर लिया। और कुछ?",
+        ],
       },
     },
     image: {

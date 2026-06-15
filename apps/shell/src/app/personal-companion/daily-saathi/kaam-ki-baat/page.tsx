@@ -14,6 +14,7 @@ import {
   ReminderWidget,
   resolveDate,
 } from "../_components/ReminderWidget";
+import { KaamVoiceChat } from "../_components/KaamVoiceChat";
 import { SaathiComposer } from "../_components/SaathiComposer";
 import { StubHeader } from "../_components/StubHeader";
 import { CheckIcon } from "../../chat/icons";
@@ -62,8 +63,11 @@ export default function KaamKiBaatChat() {
   ]);
   const [mode, setMode] = useState<Mode>("chat");
   const [draft, setDraft] = useState<ReminderDraft>(EMPTY_DRAFT);
+  const [voiceOpen, setVoiceOpen] = useState(false);
 
   const pushUser = (text: string) => setMessages((m) => [...m, { id: uid++, role: "user", text }]);
+  const pushAssistant = (text: string) =>
+    setMessages((m) => [...m, { id: uid++, role: "assistant", text }]);
 
   // Entry via the home "+ Add" → /kaam-ki-baat/?intent=reminder
   useEffect(() => {
@@ -266,8 +270,23 @@ export default function KaamKiBaatChat() {
           onSubmit={send}
           voiceFirst
           speakLabel={t.speak}
+          onVoice={() => setVoiceOpen(true)}
         />
       </div>
+
+      {voiceOpen && (
+        <KaamVoiceChat
+          title={t.kaam.title}
+          avatar={{
+            src: ASSETS.kaamKiBaat,
+            alt: t.kaam.title,
+            fallback: <TasksIcon className="text-primary-50 size-6" />,
+          }}
+          onUserUtterance={pushUser}
+          onAssistantReply={pushAssistant}
+          onExitToText={() => setVoiceOpen(false)}
+        />
+      )}
     </div>
   );
 }
