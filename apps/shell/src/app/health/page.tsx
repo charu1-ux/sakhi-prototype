@@ -52,7 +52,7 @@ export default function HealthPage() {
   return (
     <main className="bg-surface mx-auto flex min-h-dvh w-full max-w-[480px] flex-col px-5 pt-6 pb-12">
       <div className="text-fg text-[22px] font-bold">सेहत साथी</div>
-      <h1 className="text-fg mt-3 text-[24px] font-bold">नमस्ते 👋</h1>
+      <h1 className="text-fg mt-3 text-[24px] font-bold">नमस्ते</h1>
       <p className="text-fg-muted mb-5 text-[14px]">आज मैं किसमें मदद करूँ?</p>
 
       <div className="flex flex-col gap-3">

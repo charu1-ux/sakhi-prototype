@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
   Check,
@@ -9,6 +10,7 @@ import {
   Droplet,
   Flame,
   Frown,
+  Home,
   Leaf,
   Meh,
   Moon,
@@ -84,32 +86,17 @@ function BucketGlyph({ icon, size = 26 }: { icon: BucketIcon; size?: number }) {
   return <Sparkles {...c} />;
 }
 
-function BackRow({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="text-fg-muted hover:text-fg mb-2 inline-flex items-center gap-1 text-[13px] font-medium transition-colors"
-    >
-      <ChevronLeft size={16} /> {label}
-    </button>
-  );
-}
-
 // ── Explore widget — self-contained wellness browse → remedy → walkthrough ─────────
 
-type View = "buckets" | "remedies" | "remedy" | "walk" | "done";
+type View = "buckets" | "remedies" | "walk" | "done";
 
-export function ExploreWidget() {
+export function ExploreWidget({ goHome }: { goHome: () => void }) {
   const [view, setView] = useState<View>("buckets");
   const [bucket, setBucket] = useState<Bucket | null>(null);
   const [remedy, setRemedy] = useState<Remedy | null>(null);
   const [step, setStep] = useState(0);
   const [mood, setMood] = useState<string | null>(null);
 
-  const goHome = () => {
-    window.location.href = "/health";
-  };
   const restart = () => {
     setBucket(null);
     setRemedy(null);
@@ -121,7 +108,7 @@ export function ExploreWidget() {
   // ── View: pick a wellness bucket ──────────────────────────────────────────────
   if (view === "buckets") {
     return (
-      <Widget className="p-4">
+      <Widget className="rounded-3xl p-4">
         <div className="mb-3 text-[14px] font-bold">किस चीज़ के लिए नुस्खा देखना है?</div>
         <div className="grid grid-cols-2 gap-2.5">
           {BUCKETS.map((b) => (
@@ -153,67 +140,82 @@ export function ExploreWidget() {
   if (view === "remedies" && bucket) {
     return (
       <Widget className="p-4">
-        <BackRow label="सारे विषय" onClick={restart} />
-        <div className="mb-3 flex items-center gap-2.5">
+        {/* Back row carries the bucket identity — chevron + icon + title + hint */}
+        <button
+          type="button"
+          onClick={restart}
+          className="mb-3 flex w-full items-center gap-2.5 text-left"
+        >
+          <ChevronLeft className="text-fg-muted shrink-0" size={20} />
           <span
-            className="flex size-9 items-center justify-center rounded-full"
+            className="flex size-9 shrink-0 items-center justify-center rounded-full"
             style={{ background: bucket.bg, color: bucket.fg }}
           >
             <BucketGlyph icon={bucket.icon} size={18} />
           </span>
-          <div>
-            <div className="text-[15px] font-bold">{bucket.title}</div>
-            <div className="text-fg-muted text-[12px]">इनमें से कोई चुनें</div>
-          </div>
-        </div>
-        <div className="space-y-2">
-          {bucket.remedies.map((r) => (
-            <button
-              key={r.id}
-              type="button"
-              onClick={() => {
-                setRemedy(r);
-                setStep(0);
-                setView("remedy");
-              }}
-              className="bg-surface-minimal flex w-full items-center gap-3 rounded-xl p-3 text-left transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99]"
-            >
-              <span className="bg-success/10 text-success flex size-10 shrink-0 items-center justify-center rounded-xl">
-                <StepGlyph icon={r.icon} size={20} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="text-fg block text-[14px] font-bold">{r.title}</span>
-                <span className="text-fg-muted block text-[12px]">{r.meta}</span>
-              </span>
-              <ChevronRight className="text-fg-muted shrink-0" size={18} />
-            </button>
-          ))}
-        </div>
-      </Widget>
-    );
-  }
-
-  // ── View: the chosen remedy card ──────────────────────────────────────────────
-  if (view === "remedy" && bucket && remedy) {
-    return (
-      <Widget className="p-3.5">
-        <BackRow label={bucket.title} onClick={() => setView("remedies")} />
-        <div className="flex items-center gap-3">
-          <span className="bg-success/10 text-success flex size-12 shrink-0 items-center justify-center rounded-xl">
-            <StepGlyph icon={remedy.icon} size={24} />
+          <span className="min-w-0 flex-1">
+            <span className="block text-[15px] font-bold">{bucket.title}</span>
+            <span className="text-fg-muted block text-[12px]">इनमें से कोई चुनें</span>
           </span>
-          <div className="min-w-0 flex-1">
-            <div className="text-[15px] font-bold">{remedy.title}</div>
-            <div className="text-fg-muted mt-0.5 text-[12px]">{remedy.meta}</div>
-            <div className="text-fg-muted mt-1 flex items-center gap-1 text-[11px]">
-              <Check size={13} /> {remedy.social}
-            </div>
-          </div>
-        </div>
-        <div className="mt-3">
-          <SecondaryButton onClick={() => setView("walk")}>
-            चलो, मैं आपके साथ करती हूँ <ArrowRight size={18} />
-          </SecondaryButton>
+        </button>
+        <div className="space-y-2">
+          {bucket.remedies.map((r) => {
+            const open = remedy?.id === r.id;
+            return (
+              <div
+                key={r.id}
+                className="bg-surface overflow-hidden rounded-xl border border-black/10"
+              >
+                <button
+                  type="button"
+                  onClick={() => setRemedy(open ? null : r)}
+                  className="flex w-full items-center gap-3 p-3 text-left"
+                >
+                  <span className="bg-success/10 text-success flex size-10 shrink-0 items-center justify-center rounded-xl">
+                    <StepGlyph icon={r.icon} size={20} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="text-fg block text-[14px] font-bold">{r.title}</span>
+                    <span className="text-fg-muted block text-[12px]">{r.meta}</span>
+                  </span>
+                  <ChevronRight
+                    className={cn(
+                      "text-fg-muted shrink-0 transition-transform duration-200",
+                      open && "rotate-90",
+                    )}
+                    size={18}
+                  />
+                </button>
+                {/* Accordion body — social proof + CTA expand in place, no navigation */}
+                <AnimatePresence initial={false}>
+                  {open && (
+                    <motion.div
+                      key="body"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ type: "spring", stiffness: 460, damping: 40 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-3 pb-3">
+                        <div className="text-fg-muted mb-2.5 flex items-center gap-1.5 text-[12px]">
+                          <Check className="text-success shrink-0" size={14} /> {r.social}
+                        </div>
+                        <SecondaryButton
+                          onClick={() => {
+                            setStep(0);
+                            setView("walk");
+                          }}
+                        >
+                          चलो, मैं आपके साथ करती हूँ <ArrowRight size={18} />
+                        </SecondaryButton>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
         </div>
       </Widget>
     );
@@ -254,16 +256,25 @@ export function ExploreWidget() {
           </span>
         </div>
 
-        <div className="mt-4 flex items-center gap-3">
-          <button
-            type="button"
-            aria-label="पिछला"
-            disabled={step === 0}
-            onClick={() => setStep((n) => Math.max(0, n - 1))}
-            className="bg-surface-minimal text-fg flex size-12 shrink-0 items-center justify-center rounded-full transition-transform duration-200 hover:scale-105 active:scale-95 disabled:opacity-40"
-          >
-            <ChevronLeft size={22} />
-          </button>
+        <div className="mt-4 flex items-center">
+          {/* Back chevron only from step 2 — slides in from the left, अगला कदम shrinks. */}
+          <AnimatePresence initial={false}>
+            {step > 0 && (
+              <motion.button
+                key="back"
+                type="button"
+                aria-label="पिछला"
+                onClick={() => setStep((n) => Math.max(0, n - 1))}
+                initial={{ width: 0, marginRight: 0, opacity: 0 }}
+                animate={{ width: 48, marginRight: 12, opacity: 1 }}
+                exit={{ width: 0, marginRight: 0, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 460, damping: 38 }}
+                className="bg-surface-ghost text-fg flex h-12 shrink-0 items-center justify-center overflow-hidden rounded-full transition-transform duration-200 hover:scale-105 active:scale-95"
+              >
+                <ChevronLeft size={22} className="shrink-0" />
+              </motion.button>
+            )}
+          </AnimatePresence>
           <div className="flex-1">
             <SecondaryButton onClick={() => (isLast ? setView("done") : setStep((n) => n + 1))}>
               {isLast ? (
@@ -297,27 +308,32 @@ export function ExploreWidget() {
         <span className="bg-success/10 text-success mb-3 flex size-[72px] items-center justify-center rounded-full">
           <Check size={40} />
         </span>
-        <div className="text-[20px] font-bold">बस, हो गया! 🌿</div>
+        <div className="text-[20px] font-bold">बस, हो गया!</div>
         <div className="text-fg-muted mt-1.5 max-w-[260px] text-[13px] leading-relaxed">
           {remedy?.title} पूरा हुआ। थोड़ा आराम करें — जल्दी फ़ायदा दिखेगा।
         </div>
       </div>
 
-      <div className="bg-surface-minimal mt-5 rounded-2xl p-4">
+      <div className="mt-5">
         <div className="mb-3 text-[14px] font-bold">क्या थोड़ा आराम मिला?</div>
         <div className="flex gap-2.5">
           {FEELINGS.map((f) => {
             const active = mood === f.id;
+            // Grey by default; on tap it takes its sentiment colour: smile = green, meh = orange, frown = red.
+            const toneOn =
+              f.icon === "smile"
+                ? "bg-success/10 border-success/10 text-success"
+                : f.icon === "meh"
+                  ? "bg-warning/10 border-warning/10 text-warning"
+                  : "bg-error/10 border-error/10 text-error";
             return (
               <button
                 key={f.id}
                 type="button"
                 onClick={() => setMood(f.id)}
                 className={cn(
-                  "flex flex-1 flex-col items-center gap-1 rounded-xl border px-1.5 py-3 text-[12px] transition-colors",
-                  active
-                    ? "bg-success/10 border-success text-success font-bold"
-                    : "bg-surface text-fg border-black/12",
+                  "flex flex-1 flex-col items-center gap-1 rounded-xl border px-1.5 py-3 text-[12px] transition-all",
+                  active ? cn(toneOn, "font-bold") : "bg-surface text-fg border-black/12",
                 )}
               >
                 {glyph(f.icon)}
@@ -333,9 +349,9 @@ export function ExploreWidget() {
         <button
           type="button"
           onClick={goHome}
-          className="text-fg-muted hover:bg-surface-minimal inline-flex h-11 w-full items-center justify-center rounded-full text-sm font-medium transition-colors"
+          className="bg-surface-ghost text-fg inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-transform duration-200 ease-out hover:scale-[1.02] active:scale-[0.97]"
         >
-          वापस घर
+          <Home size={17} /> वापस घर
         </button>
       </div>
     </Widget>

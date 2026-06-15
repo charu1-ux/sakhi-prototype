@@ -46,7 +46,7 @@ export const BREATH_PHASES: BreathPhase[] = [
 export const TOTAL_CYCLES = 4;
 
 export const FINISH = {
-  headline: "बहुत अच्छा, सुनीता 🌙",
+  headline: "बहुत अच्छा, सुनीता",
   body: "आपने पूरा अभ्यास किया। मन थोड़ा हल्का लगे तो दिन में जब भी घबराहट हो, यही दोहरा सकती हैं।",
 };
 

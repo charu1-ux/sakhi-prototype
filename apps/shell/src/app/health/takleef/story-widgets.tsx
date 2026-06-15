@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, Home, Stethoscope, TriangleAlert } from "lucide-react";
+import { useState } from "react";
 
 import { cn } from "@intelligence/ui";
 
@@ -65,7 +66,7 @@ export function ClarifyChips({
           key={o.id}
           type="button"
           onClick={() => onAction(action)}
-          className="bg-surface-minimal text-fg rounded-full px-3.5 py-2 text-[13px] font-medium transition-transform duration-200 hover:scale-[1.03] active:scale-95"
+          className="bg-surface-ghost text-fg rounded-full px-3.5 py-2 text-[13px] font-medium transition-transform duration-200 hover:scale-[1.03] active:scale-95"
         >
           {o.label}
         </button>
@@ -77,22 +78,25 @@ export function ClarifyChips({
 // ── Triage card — "ghar pe ye karein" + "doctor ko kab dikhayein" ─────────────────
 
 export function TriageCardWidget({ onAction }: { onAction: (a: StoryAction) => void }) {
+  const [acted, setActed] = useState(false);
   return (
     <Widget className="p-4">
-      {/* Safe self-care */}
-      <div className="text-success flex items-center gap-2 text-[14px] font-bold">
-        <Check size={18} strokeWidth={2.4} /> घर पे ये करें
+      {/* Safe self-care — light green container */}
+      <div className="bg-success/10 rounded-2xl p-3.5">
+        <div className="text-success flex items-center gap-2 text-[14px] font-bold">
+          <Check size={18} strokeWidth={2.4} /> घर पे ये करें
+        </div>
+        <ul className="mt-2.5 space-y-2">
+          {TRIAGE.selfCare.map((t) => (
+            <li key={t} className="text-fg flex items-start gap-2 text-[13px] leading-relaxed">
+              <span className="text-success mt-0.5 shrink-0">
+                <Check size={15} strokeWidth={2.4} />
+              </span>
+              {t}
+            </li>
+          ))}
+        </ul>
       </div>
-      <ul className="mt-2.5 space-y-2">
-        {TRIAGE.selfCare.map((t) => (
-          <li key={t} className="text-fg flex items-start gap-2 text-[13px] leading-relaxed">
-            <span className="bg-success/10 text-success mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full">
-              <Check size={13} strokeWidth={3} />
-            </span>
-            {t}
-          </li>
-        ))}
-      </ul>
 
       {/* Red flags */}
       <div className="bg-warning/10 mt-4 rounded-2xl p-3.5">
@@ -111,18 +115,25 @@ export function TriageCardWidget({ onAction }: { onAction: (a: StoryAction) => v
         </ul>
       </div>
 
-      <div className="mt-4">
-        <SecondaryButton onClick={() => onAction("acknowledge")}>
-          ठीक है, समझ गई <Check size={18} />
-        </SecondaryButton>
-      </div>
+      {!acted && (
+        <div className="mt-4">
+          <SecondaryButton
+            onClick={() => {
+              setActed(true);
+              onAction("acknowledge");
+            }}
+          >
+            ठीक है, समझ गई <Check size={18} />
+          </SecondaryButton>
+        </div>
+      )}
     </Widget>
   );
 }
 
 // ── Closing care card ─────────────────────────────────────────────────────────────
 
-export function CloseCardWidget() {
+export function CloseCardWidget({ goHome }: { goHome: () => void }) {
   return (
     <Widget className="p-5">
       <div className="flex flex-col items-center text-center">
@@ -141,10 +152,8 @@ export function CloseCardWidget() {
         </SecondaryButton>
         <button
           type="button"
-          onClick={() => {
-            window.location.href = "/health";
-          }}
-          className="text-fg-muted hover:bg-surface-minimal inline-flex h-11 w-full items-center justify-center gap-2 rounded-full text-sm font-medium transition-colors"
+          onClick={goHome}
+          className="bg-surface-ghost text-fg inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-transform duration-200 ease-out hover:scale-[1.02] active:scale-[0.97]"
         >
           <Home size={17} /> वापस घर
         </button>

@@ -1,7 +1,9 @@
 "use client";
 
-import { BellRing, Check, Droplet, Minus, Moon, Plus, Sun, Sunrise } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
+import { BellRing, Check, Droplet, Home, Minus, Moon, Plus, Sun, Sunrise } from "lucide-react";
 import { useState } from "react";
+import { createPortal } from "react-dom";
 
 import { cn } from "@intelligence/ui";
 
@@ -19,6 +21,7 @@ import {
   type StoryAction,
   TIME_STEP,
 } from "./story-data";
+import { ReminderTimeSheet } from "./TimeSheet";
 
 // ── Shared building blocks (mirrors ../nuskha/story-widgets) ──────────────────────
 
@@ -79,7 +82,7 @@ export function ClarifyChips({
           key={o.id}
           type="button"
           onClick={() => onAction(action)}
-          className="bg-surface-minimal text-fg rounded-full px-3.5 py-2 text-[13px] font-medium transition-transform duration-200 hover:scale-[1.03] active:scale-95"
+          className="bg-surface-ghost text-fg rounded-full px-3.5 py-2 text-[13px] font-medium transition-transform duration-200 hover:scale-[1.03] active:scale-95"
         >
           {o.label}
         </button>
@@ -94,12 +97,14 @@ function Stepper({
   value,
   onDec,
   onInc,
+  onPick,
   decDisabled,
   incDisabled,
 }: {
   value: string;
   onDec: () => void;
   onInc: () => void;
+  onPick: () => void;
   decDisabled?: boolean;
   incDisabled?: boolean;
 }) {
@@ -116,9 +121,13 @@ function Stepper({
       >
         <Minus size={18} strokeWidth={2.4} />
       </button>
-      <span className="bg-surface text-fg flex-1 rounded-full border border-black/10 py-2 text-center text-[15px] font-bold">
+      <button
+        type="button"
+        onClick={onPick}
+        className="bg-surface text-fg flex-1 rounded-full border border-black/10 py-2 text-center text-[15px] font-bold transition-transform duration-150 active:scale-[0.98]"
+      >
         {value}
-      </span>
+      </button>
       <button
         type="button"
         aria-label="बढ़ाएँ"
@@ -135,6 +144,8 @@ function Stepper({
 // ── Reminder setup card (self-contained: per-reminder time + on/off) ──────────────
 
 export function ReminderSetupWidget({ onAction }: { onAction: (a: StoryAction) => void }) {
+  const [acted, setActed] = useState(false);
+  const [editing, setEditing] = useState<Reminder | null>(null);
   const [on, setOn] = useState<Record<string, boolean>>(
     Object.fromEntries(REMINDERS.map((r) => [r.id, r.on])),
   );
@@ -197,14 +208,14 @@ export function ReminderSetupWidget({ onAction }: { onAction: (a: StoryAction) =
                   aria-label={`${r.label} रिमाइंडर`}
                   onClick={() => toggle(r.id)}
                   className={cn(
-                    "relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200",
+                    "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full px-0.5 transition-colors duration-200",
                     active ? "bg-primary-50" : "bg-black/15",
                   )}
                 >
                   <span
                     className={cn(
-                      "absolute top-0.5 size-5 rounded-full bg-white shadow transition-transform duration-200",
-                      active ? "translate-x-[22px]" : "translate-x-0.5",
+                      "size-5 rounded-full bg-white shadow transition-transform duration-200",
+                      active ? "translate-x-5" : "translate-x-0",
                     )}
                   />
                 </button>
@@ -216,6 +227,7 @@ export function ReminderSetupWidget({ onAction }: { onAction: (a: StoryAction) =
                     value={displayValue(r)}
                     onDec={() => stepInterval(r.id, -1)}
                     onInc={() => stepInterval(r.id, +1)}
+                    onPick={() => setEditing(r)}
                     decDisabled={vals[r.id] <= INTERVAL_MIN}
                     incDisabled={vals[r.id] >= INTERVAL_MAX}
                   />
@@ -224,6 +236,7 @@ export function ReminderSetupWidget({ onAction }: { onAction: (a: StoryAction) =
                     value={displayValue(r)}
                     onDec={() => stepTime(r.id, -1)}
                     onInc={() => stepTime(r.id, +1)}
+                    onPick={() => setEditing(r)}
                   />
                 ))}
             </div>
@@ -231,18 +244,44 @@ export function ReminderSetupWidget({ onAction }: { onAction: (a: StoryAction) =
         })}
       </div>
 
-      <div className="mt-4">
-        <SecondaryButton onClick={() => onAction("confirm")}>
-          रिमाइंडर सेट करें <Check size={18} />
-        </SecondaryButton>
-      </div>
+      {!acted && (
+        <div className="mt-4">
+          <SecondaryButton
+            onClick={() => {
+              setActed(true);
+              onAction("confirm");
+            }}
+          >
+            रिमाइंडर सेट करें <Check size={18} />
+          </SecondaryButton>
+        </div>
+      )}
+
+      {/* Time picker — astro-style bottom sheet, portalled past the chat's transformed blocks */}
+      {typeof document !== "undefined" &&
+        createPortal(
+          <AnimatePresence>
+            {editing && (
+              <ReminderTimeSheet
+                reminder={editing}
+                value={vals[editing.id]}
+                onConfirm={(v) => {
+                  setVals((s) => ({ ...s, [editing.id]: v }));
+                  setEditing(null);
+                }}
+                onClose={() => setEditing(null)}
+              />
+            )}
+          </AnimatePresence>,
+          document.getElementById("reminders-chat-root") ?? document.body,
+        )}
     </Widget>
   );
 }
 
 // ── Finish — "now I'll remind you" + a sample notification ────────────────────────
 
-export function FinishWidget() {
+export function FinishWidget({ goHome }: { goHome: () => void }) {
   return (
     <Widget className="p-4">
       <div className="flex flex-col items-center text-center">
@@ -256,7 +295,7 @@ export function FinishWidget() {
       </div>
 
       {/* Sample notification preview */}
-      <div className="bg-surface-minimal mt-5 rounded-2xl p-3.5">
+      <div className="bg-surface mt-5 rounded-2xl border border-black/10 p-3.5">
         <div className="text-fg-muted mb-2 text-[11px] font-bold tracking-wide uppercase">
           ऐसे याद दिलाऊँगी
         </div>
@@ -274,9 +313,13 @@ export function FinishWidget() {
       </div>
 
       <div className="mt-4">
-        <SecondaryButton onClick={() => (window.location.href = "/health")}>
-          वापस घर
-        </SecondaryButton>
+        <button
+          type="button"
+          onClick={goHome}
+          className="bg-surface-ghost text-fg inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-transform duration-200 ease-out hover:scale-[1.02] active:scale-[0.97]"
+        >
+          <Home size={17} /> वापस घर
+        </button>
       </div>
     </Widget>
   );

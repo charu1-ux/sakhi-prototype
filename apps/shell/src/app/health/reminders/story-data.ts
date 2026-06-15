@@ -76,10 +76,10 @@ export function formatClock(minutes: number): string {
 }
 
 export const FINISH = {
-  headline: "हो गया, सुनीता! 🔔",
+  headline: "हो गया, सुनीता!",
   body: "अब मैं समय पर खाना और पानी की याद दिलाती रहूँगी। चाहें तो कभी भी यहाँ से बदल सकती हैं।",
   // A sample of how the reminder will look when it pops up.
-  sampleTitle: "पानी पीने का समय 💧",
+  sampleTitle: "पानी पीने का समय",
   sampleBody: "एक गिलास पानी पी लीजिए — थोड़ा-थोड़ा दिन भर।",
 };
 

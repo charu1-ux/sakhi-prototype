@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, Check, Frown, Meh, Smile, Wind } from "lucide-react";
+import { ArrowRight, Check, Frown, Home, Meh, Smile, Wind } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { cn } from "@intelligence/ui";
@@ -70,7 +70,7 @@ export function ClarifyChips({
           key={o.id}
           type="button"
           onClick={() => onAction(action)}
-          className="bg-surface-minimal text-fg rounded-full px-3.5 py-2 text-[13px] font-medium transition-transform duration-200 hover:scale-[1.03] active:scale-95"
+          className="bg-surface-ghost text-fg rounded-full px-3.5 py-2 text-[13px] font-medium transition-transform duration-200 hover:scale-[1.03] active:scale-95"
         >
           {o.label}
         </button>
@@ -82,25 +82,33 @@ export function ClarifyChips({
 // ── Exercise card ───────────────────────────────────────────────────────────────
 
 export function BreathCardWidget({ onAction }: { onAction: (a: StoryAction) => void }) {
+  const [acted, setActed] = useState(false);
   return (
     <Widget className="p-3.5">
       <div className="flex items-center gap-3">
-        <span className="bg-primary-20 text-primary-50 flex size-12 shrink-0 items-center justify-center rounded-xl">
-          <Wind size={24} strokeWidth={1.8} />
+        <span className="bg-primary-20 text-primary-50 flex size-10 shrink-0 items-center justify-center rounded-xl">
+          <Wind size={20} strokeWidth={1.8} />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-[15px] font-bold">{EXERCISE.title}</div>
+          <div className="text-[14px] font-bold">{EXERCISE.title}</div>
           <div className="text-fg-muted mt-0.5 text-[12px]">{EXERCISE.meta}</div>
-          <div className="text-fg-muted mt-1 flex items-center gap-1 text-[11px]">
-            <Check size={13} /> {EXERCISE.social}
-          </div>
         </div>
       </div>
-      <div className="mt-3">
-        <SecondaryButton onClick={() => onAction("start-breath")}>
-          चलो, साथ में करते हैं <ArrowRight size={18} />
-        </SecondaryButton>
+      <div className="text-fg-muted mt-2.5 flex items-center gap-1.5 text-[12px]">
+        <Check className="text-success shrink-0" size={14} /> {EXERCISE.social}
       </div>
+      {!acted && (
+        <div className="mt-3">
+          <SecondaryButton
+            onClick={() => {
+              setActed(true);
+              onAction("start-breath");
+            }}
+          >
+            चलो, साथ में करते हैं <ArrowRight size={18} />
+          </SecondaryButton>
+        </div>
+      )}
     </Widget>
   );
 }
@@ -170,7 +178,7 @@ export function BreathingWidget({ onAction }: { onAction: (a: StoryAction) => vo
 
 // ── Finish / how-do-you-feel-now ──────────────────────────────────────────────────
 
-export function FeedbackWidget() {
+export function FeedbackWidget({ goHome }: { goHome: () => void }) {
   const [picked, setPicked] = useState<string | null>(null);
   const glyph = (icon: "smile" | "meh" | "frown") =>
     icon === "meh" ? (
@@ -193,21 +201,26 @@ export function FeedbackWidget() {
         </div>
       </div>
 
-      <div className="bg-surface-minimal mt-5 rounded-2xl p-4">
+      <div className="bg-surface mt-5 rounded-2xl border border-black/10 p-4">
         <div className="mb-3 text-[14px] font-bold">अब कैसा लग रहा है?</div>
         <div className="flex gap-2.5">
           {FEELINGS.map((f) => {
             const active = picked === f.id;
+            // Grey by default; on tap it takes its sentiment colour: smile = green, meh = orange, frown = red.
+            const toneOn =
+              f.icon === "smile"
+                ? "bg-success/10 border-success/10 text-success"
+                : f.icon === "meh"
+                  ? "bg-warning/10 border-warning/10 text-warning"
+                  : "bg-error/10 border-error/10 text-error";
             return (
               <button
                 key={f.id}
                 type="button"
                 onClick={() => setPicked(f.id)}
                 className={cn(
-                  "flex flex-1 flex-col items-center gap-1 rounded-xl border px-1.5 py-3 text-[12px] transition-colors",
-                  active
-                    ? "bg-primary-20 border-primary-50 text-primary-60 font-bold"
-                    : "bg-surface text-fg border-black/12",
+                  "flex flex-1 flex-col items-center gap-1 rounded-xl border px-1.5 py-3 text-[12px] transition-all",
+                  active ? cn(toneOn, "font-bold") : "bg-surface text-fg border-black/12",
                 )}
               >
                 {glyph(f.icon)}
@@ -219,9 +232,13 @@ export function FeedbackWidget() {
       </div>
 
       <div className="mt-4">
-        <SecondaryButton onClick={() => (window.location.href = "/health")}>
-          वापस घर
-        </SecondaryButton>
+        <button
+          type="button"
+          onClick={goHome}
+          className="bg-surface-ghost text-fg inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-transform duration-200 ease-out hover:scale-[1.02] active:scale-[0.97]"
+        >
+          <Home size={17} /> वापस घर
+        </button>
       </div>
     </Widget>
   );

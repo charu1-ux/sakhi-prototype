@@ -43,6 +43,16 @@ const verticalHealth: Vertical = {
   slug: "health",
   icon: "/assets/shell/ico-health.svg",
   gradientFrom: "from-vertical-health",
+  dropdownItems: [
+    {
+      label: "PM Design",
+      url: "/health/",
+    },
+    {
+      label: "Design Prototype",
+      url: "/health/design-prototype/",
+    },
+  ],
 };
 
 const verticalAstrology: Vertical = {

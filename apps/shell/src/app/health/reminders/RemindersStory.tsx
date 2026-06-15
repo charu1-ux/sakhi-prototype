@@ -24,7 +24,15 @@ type Block =
 
 // ── Story orchestrator ─────────────────────────────────────────────────────────────
 
-export function RemindersStory() {
+export function RemindersStory({
+  intro,
+  onBack,
+  hideNewChat,
+}: {
+  intro?: string;
+  onBack?: () => void;
+  hideNewChat?: boolean;
+} = {}) {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [phase, setPhase] = useState(0);
   const scrollRef = useRef<HTMLElement | null>(null);
@@ -47,6 +55,17 @@ export function RemindersStory() {
     else if (a === "confirm") setPhase(6);
     else if (a === "finish") setPhase(8);
   }, []);
+
+  // वापस घर / back: design prototype → pills home (onBack); PM design → health landing.
+  const goHome = useCallback(() => {
+    if (onBack) onBack();
+    else window.location.href = "/health";
+  }, [onBack]);
+
+  // Optional AI intro (the design prototype leads with the topic line).
+  useEffect(() => {
+    if (intro) append({ kind: "asst", id: "a-intro", text: intro });
+  }, [intro, append]);
 
   useEffect(() => {
     blocks.forEach((b) => seenRef.current.add(b.id));
@@ -87,7 +106,7 @@ export function RemindersStory() {
           replace("l-q1", {
             kind: "asst",
             id: "l-q1",
-            text: "बहुत अच्छा सोचा! अब मैं ख्याल रखूँगी 🙂 पहले बताओ — पानी कितनी-कितनी देर में याद दिलाऊँ?",
+            text: "बहुत अच्छा सोचा! अब मैं ख्याल रखूँगी। पहले बताओ — पानी कितनी-कितनी देर में याद दिलाऊँ?",
           });
           append({ kind: "widget", id: "w-water", variant: "clarifyWater" });
         });
@@ -134,7 +153,7 @@ export function RemindersStory() {
 
       case 7:
         now(() => {
-          append({ kind: "asst", id: "a-done", text: "हो गया! अब याद दिलाती रहूँगी 🔔" });
+          append({ kind: "asst", id: "a-done", text: "हो गया! अब याद दिलाती रहूँगी" });
           append({ kind: "widget", id: "w-finish", variant: "finish" });
         });
         break;
@@ -144,7 +163,10 @@ export function RemindersStory() {
   }, [phase, append, remove, replace]);
 
   return (
-    <div className="bg-surface relative flex h-dvh flex-col overflow-hidden">
+    <div
+      id="reminders-chat-root"
+      className="bg-surface relative flex h-dvh flex-col overflow-hidden"
+    >
       <header className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[68px]">
         <div className="absolute inset-0 bg-gradient-to-b from-white from-[73%] to-transparent" />
         <div className="pointer-events-auto relative flex items-center gap-3 px-4 pt-3.5">
@@ -152,7 +174,8 @@ export function RemindersStory() {
             type="button"
             aria-label="Back"
             onClick={() => {
-              window.location.href = "/health";
+              if (onBack) onBack();
+              else window.location.href = "/health";
             }}
             className="bg-surface-minimal text-fg flex size-10 shrink-0 items-center justify-center rounded-full transition-transform duration-200 hover:scale-105 active:scale-95"
           >
@@ -166,24 +189,26 @@ export function RemindersStory() {
           >
             <MessageSquareText size={20} strokeWidth={2} />
           </button>
-          <button
-            type="button"
-            aria-label="New chat"
-            className="bg-surface-minimal text-fg flex size-10 shrink-0 items-center justify-center rounded-full transition-transform duration-200 hover:scale-105 active:scale-95"
-          >
-            <PenLine size={19} strokeWidth={2} />
-          </button>
+          {!hideNewChat && (
+            <button
+              type="button"
+              aria-label="New chat"
+              className="bg-surface-minimal text-fg flex size-10 shrink-0 items-center justify-center rounded-full transition-transform duration-200 hover:scale-105 active:scale-95"
+            >
+              <PenLine size={19} strokeWidth={2} />
+            </button>
+          )}
         </div>
       </header>
 
-      <main ref={scrollRef} className="flex flex-1 flex-col overflow-y-auto px-4 pt-[68px] pb-5">
+      <main ref={scrollRef} className="flex flex-1 flex-col overflow-y-auto px-4 pt-[80px] pb-5">
         {blocks.map((b, i) => {
           const prev = i > 0 ? blocks[i - 1] : null;
           const gap =
             i === 0
               ? ""
               : b.kind === "user"
-                ? "mt-8"
+                ? "mt-4"
                 : prev?.kind === "user"
                   ? "mt-6"
                   : b.kind === "widget"
@@ -202,7 +227,7 @@ export function RemindersStory() {
                 b.kind === "user" ? "items-end" : "items-stretch",
               )}
             >
-              <BlockView block={b} onAction={onAction} />
+              <BlockView block={b} onAction={onAction} goHome={goHome} />
             </motion.div>
           );
         })}
@@ -215,11 +240,19 @@ export function RemindersStory() {
 
 // ── Block renderer ───────────────────────────────────────────────────────────────
 
-function BlockView({ block, onAction }: { block: Block; onAction: (a: StoryAction) => void }) {
+function BlockView({
+  block,
+  onAction,
+  goHome,
+}: {
+  block: Block;
+  onAction: (a: StoryAction) => void;
+  goHome: () => void;
+}) {
   switch (block.kind) {
     case "user":
       return (
-        <div className="bg-surface-minimal text-fg max-w-[80%] rounded-[18px_18px_4px_18px] px-3.5 py-2.5 text-[15px] leading-relaxed font-medium">
+        <div className="bg-surface-ghost text-fg max-w-[80%] rounded-[18px_18px_4px_18px] px-3.5 py-2.5 text-[15px] leading-relaxed font-medium">
           {block.text}
         </div>
       );
@@ -237,16 +270,18 @@ function BlockView({ block, onAction }: { block: Block; onAction: (a: StoryActio
         </div>
       );
     case "widget":
-      return <WidgetView variant={block.variant} onAction={onAction} />;
+      return <WidgetView variant={block.variant} onAction={onAction} goHome={goHome} />;
   }
 }
 
 function WidgetView({
   variant,
   onAction,
+  goHome,
 }: {
   variant: WidgetVariant;
   onAction: (a: StoryAction) => void;
+  goHome: () => void;
 }) {
   switch (variant) {
     case "clarifyWater":
@@ -256,6 +291,6 @@ function WidgetView({
     case "setup":
       return <ReminderSetupWidget onAction={onAction} />;
     case "finish":
-      return <FinishWidget />;
+      return <FinishWidget goHome={goHome} />;
   }
 }
