@@ -1,27 +1,14 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import DilKiBaatPrototype from "../design-prototype/page";
 
-import { CompanionExperience } from "./_components/CompanionExperience";
-import { HappyFlowStory } from "./_components/HappyFlowStory";
-
-// Route entry, decided from the URL on the client (useSyncExternalStore is the
-// blessed pattern for browser state — works with static export, no hydration
-// mismatch):
-//   ?demo=happy → scripted Happy-Flow story
-//   ?intro=0    → straight into the chat (skip the animated arrival)
-//   (default)   → animated welcome arrival, then transitions to chat
-const subscribe = () => () => {};
-const getModeSnapshot = (): "demo" | "plain" | "welcome" => {
-  const p = new URLSearchParams(window.location.search);
-  if (p.get("demo") === "happy") return "demo";
-  if (p.get("intro") === "0") return "plain";
-  return "welcome";
-};
-const getServerSnapshot = () => "welcome" as const;
-
+// PM Design's "Dil Ki Baat" is intentionally identical to the Design Prototype's
+// Dil Ki Baat. Rather than maintain a second design, this route renders the exact
+// same experience component. The Design Prototype itself is left untouched.
+//
+// (The richer chat/_components experience — CompanionExperience, HappyFlowStory,
+// scripted chip stories, etc. — remains in this folder for reference but is no
+// longer the surface shown from PM Design.)
 export default function PersonalCompanionChat() {
-  const mode = useSyncExternalStore(subscribe, getModeSnapshot, getServerSnapshot);
-  if (mode === "demo") return <HappyFlowStory />;
-  return <CompanionExperience initialPhase={mode === "plain" ? "chat" : "welcome"} />;
+  return <DilKiBaatPrototype />;
 }

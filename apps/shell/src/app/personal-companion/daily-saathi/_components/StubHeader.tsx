@@ -1,13 +1,24 @@
 "use client";
 
+import { type ReactNode } from "react";
+
+import { Avatar } from "./Avatar";
 import { LangToggle } from "./LangToggle";
 import { ChevronLeftIcon } from "../../chat/icons";
 import { useLang } from "../saathi-i18n";
 import { useNav } from "../use-nav";
 
-// Shared JDS header for the destination stub screens — back button + title +
-// top-right language toggle.
-export function StubHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+// Shared JDS header for the destination stub screens — back button + optional
+// avatar + title + top-right language toggle.
+export function StubHeader({
+  title,
+  subtitle,
+  avatar,
+}: {
+  title: string;
+  subtitle?: string;
+  avatar?: { src: string; alt: string; fallback: ReactNode };
+}) {
   const { t } = useLang();
   const { back } = useNav();
   return (
@@ -26,6 +37,14 @@ export function StubHeader({ title, subtitle }: { title: string; subtitle?: stri
       >
         <ChevronLeftIcon className="size-5" />
       </button>
+      {avatar && (
+        <Avatar
+          src={avatar.src}
+          alt={avatar.alt}
+          fallback={avatar.fallback}
+          className="bg-surface-ghost-icon size-9 shrink-0 rounded-full"
+        />
+      )}
       <div className="min-w-0">
         <h1 className="text-title-s text-[#0c0d10]">{title}</h1>
         {subtitle && <p className="text-[12px] text-[rgba(12,13,16,0.65)]">{subtitle}</p>}
