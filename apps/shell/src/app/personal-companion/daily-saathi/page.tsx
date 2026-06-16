@@ -35,12 +35,12 @@ export default function DailySaathiHome() {
     {
       label: t.kaam.pills.doc,
       icon: <DocIcon className="size-4" />,
-      onPick: () => go(ROUTES.explainDoc),
+      onPick: () => go(`${ROUTES.kaam}?intent=doc`),
     },
     {
       label: t.kaam.pills.image,
       icon: <ImageIcon className="size-4" />,
-      onPick: () => go(ROUTES.createImage),
+      onPick: () => go(`${ROUTES.kaam}?intent=image`),
     },
   ];
 

@@ -1,14 +1,10 @@
 "use client";
 
-import DilKiBaatPrototype from "../design-prototype/page";
+import { DilKiBaatExperience } from "../_shared/DilKiBaatExperience";
 
-// PM Design's "Dil Ki Baat" is intentionally identical to the Design Prototype's
-// Dil Ki Baat. Rather than maintain a second design, this route renders the exact
-// same experience component. The Design Prototype itself is left untouched.
-//
-// (The richer chat/_components experience — CompanionExperience, HappyFlowStory,
-// scripted chip stories, etc. — remains in this folder for reference but is no
-// longer the surface shown from PM Design.)
+// PM Design's "Dil Ki Baat" — the same experience as the Design Prototype, plus a
+// lead "Get to know me" pill that opens a companion-led personality intro. This
+// divergence is PM-Design-only; the Design Prototype route stays without it.
 export default function PersonalCompanionChat() {
-  return <DilKiBaatPrototype />;
+  return <DilKiBaatExperience getToKnowMe />;
 }

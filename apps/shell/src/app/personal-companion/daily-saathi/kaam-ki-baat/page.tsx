@@ -17,6 +17,7 @@ import {
 import { AttachSheet } from "../_components/AttachSheet";
 import { SaathiComposer } from "../_components/SaathiComposer";
 import { StubHeader } from "../_components/StubHeader";
+import { SuggestedReplies } from "../_components/SuggestedReplies";
 import { VoiceChat } from "../_components/VoiceChat";
 import { CheckIcon } from "../../chat/icons";
 import { parseReminder } from "../reminders/parse";
@@ -27,9 +28,17 @@ import { useLang } from "../saathi-i18n";
 import { BellIcon, DocIcon, ImageIcon, TasksIcon } from "../saathi-icons";
 import { useNav } from "../use-nav";
 
-// Each chat item is either a text bubble or a persisted reminder success card.
-type Msg = { id: number; role: "assistant" | "user"; text?: string; card?: ReminderDraft };
-type Mode = "chat" | "reminder-editing";
+// Each chat item is a text bubble, a reminder success card, or an arbitrary
+// result card node (generated image / doc summary).
+type Msg = {
+  id: number;
+  role: "assistant" | "user";
+  text?: string;
+  card?: ReminderDraft;
+  node?: ReactNode;
+};
+// "image" / "doc" run scripted, inline conversations in the same chat + header.
+type Mode = "chat" | "reminder-editing" | "image" | "doc";
 let uid = 0;
 
 function dateToChip(date: Date, now = new Date()): { dateChip: DateChip; customDate: Date | null } {
@@ -66,18 +75,50 @@ export default function KaamKiBaatChat() {
   const [draft, setDraft] = useState<ReminderDraft>(EMPTY_DRAFT);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [attachOpen, setAttachOpen] = useState(false);
+  const [storyTurn, setStoryTurn] = useState(0); // image / doc scripted-turn cursor
 
   const pushUser = (text: string) => setMessages((m) => [...m, { id: uid++, role: "user", text }]);
   const pushAssistant = (text: string) =>
     setMessages((m) => [...m, { id: uid++, role: "assistant", text }]);
+  const pushNode = (node: ReactNode) =>
+    setMessages((m) => [...m, { id: uid++, role: "assistant", node }]);
 
-  // Entry via the home "+ Add" → /kaam-ki-baat/?intent=reminder
-  useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("intent") === "reminder") {
-      setDraft(EMPTY_DRAFT);
-      setMode("reminder-editing");
-    }
-  }, []);
+  // Stream assistant reply bubbles, then an optional result card.
+  const playReply = (lines: string[], card?: ReactNode) => {
+    lines.forEach((line, i) => setTimeout(() => pushAssistant(line), 400 + i * 450));
+    if (card) setTimeout(() => pushNode(card), 400 + lines.length * 450);
+  };
+
+  // ── Result cards (no real generation in the prototype) ──────────────────────
+  const imageCard = (prompt: string): ReactNode => (
+    <div className="bg-surface w-full overflow-hidden rounded-xl border border-[rgba(12,13,16,0.08)] shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+      <div className="bg-surface-ghost-icon flex aspect-video items-center justify-center">
+        <ImageIcon className="text-primary-50 size-9" />
+      </div>
+      <div className="flex flex-col gap-1 p-3">
+        <span className="text-primary-60 text-[10px] font-bold tracking-wide uppercase">
+          {t.image.resultTag}
+        </span>
+        <span className="text-[13px] text-[#0c0d10]">{prompt}</span>
+        <span className="text-[11px] text-[rgba(12,13,16,0.55)]">{t.image.resultNote}</span>
+      </div>
+    </div>
+  );
+  const docCard = (): ReactNode => (
+    <div className="bg-surface w-full rounded-xl border border-[rgba(12,13,16,0.08)] p-3.5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+      <span className="text-primary-60 mb-2 block text-[10px] font-bold tracking-wide uppercase">
+        {t.doc.summaryTag}
+      </span>
+      <ul className="flex flex-col gap-2">
+        {t.doc.summary.map((point, i) => (
+          <li key={i} className="flex items-start gap-2 text-[13px] leading-snug text-[#0c0d10]">
+            <span className="bg-primary-50 mt-1.5 size-1.5 shrink-0 rounded-full" />
+            {point}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 
   const enterReminder = () => {
     pushUser(t.kaam.pills.reminder);
@@ -85,10 +126,68 @@ export default function KaamKiBaatChat() {
     setMode("reminder-editing");
   };
 
+  // Inline "Create an image" — companion asks what to create, then a scripted
+  // refine loop with a generated-image card. Same chat + header.
+  const enterImage = () => {
+    pushUser(t.kaam.pills.image);
+    setMode("image");
+    setStoryTurn(0);
+    setTimeout(() => pushAssistant(t.image.greet), 400);
+  };
+
+  // Inline "Explain a doc" — companion asks for the document (with the "+" upload
+  // option), then summarizes and answers follow-ups. Same chat + header.
+  const enterDoc = () => {
+    pushUser(t.kaam.pills.doc);
+    setMode("doc");
+    setStoryTurn(0);
+    setTimeout(() => pushAssistant(t.doc.greet), 400);
+  };
+
+  // Advance the image/doc scripted story by one turn (result card on turn 0).
+  const advanceStory = (kind: "image" | "doc", userText: string) => {
+    const story = kind === "image" ? t.image.story : t.doc.story;
+    const turn = storyTurn;
+    const step = story[turn];
+    if (!step) {
+      setTimeout(() => pushAssistant(t.kaam.fallback), 400);
+      return;
+    }
+    const card = turn === 0 ? (kind === "image" ? imageCard(userText) : docCard()) : undefined;
+    playReply(step.reply, card);
+    setStoryTurn(turn + 1);
+  };
+
+  // "+" attach → simulate a document upload landing in the chat, then summarize.
+  const attachDocument = () => {
+    setAttachOpen(false);
+    setMessages((m) => [...m, { id: uid++, role: "user", text: "Rent agreement.pdf" }]);
+    setMode("doc");
+    setStoryTurn(1);
+    playReply(t.doc.story[0].reply, docCard());
+  };
+
+  // Entry via deep-link: /kaam-ki-baat/?intent=reminder | image | doc
+  useEffect(() => {
+    const intent = new URLSearchParams(window.location.search).get("intent");
+    if (intent === "reminder") {
+      setDraft(EMPTY_DRAFT);
+      setMode("reminder-editing");
+    } else if (intent === "image") {
+      enterImage();
+    } else if (intent === "doc") {
+      enterDoc();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const send = (text: string) => {
     const clean = text.trim();
     if (!clean) return;
     pushUser(clean);
+    // Inline image/doc stories take precedence while their flow is active.
+    if (mode === "image") return advanceStory("image", clean);
+    if (mode === "doc") return advanceStory("doc", clean);
     const p = parseReminder(clean);
     const reminderIntent =
       mode === "reminder-editing" ||
@@ -170,17 +269,17 @@ export default function KaamKiBaatChat() {
 
   const pills: { label: string; icon: ReactNode; onClick: () => void }[] = [
     { label: t.kaam.pills.reminder, icon: <BellIcon className="size-4" />, onClick: enterReminder },
-    {
-      label: t.kaam.pills.image,
-      icon: <ImageIcon className="size-4" />,
-      onClick: () => go(ROUTES.createImage),
-    },
-    {
-      label: t.kaam.pills.doc,
-      icon: <DocIcon className="size-4" />,
-      onClick: () => go(ROUTES.explainDoc),
-    },
+    { label: t.kaam.pills.image, icon: <ImageIcon className="size-4" />, onClick: enterImage },
+    { label: t.kaam.pills.doc, icon: <DocIcon className="size-4" />, onClick: enterDoc },
   ];
+
+  // Suggested replies for the active image/doc story turn.
+  const storySuggestions =
+    mode === "image"
+      ? (t.image.story[storyTurn]?.suggestions ?? [])
+      : mode === "doc"
+        ? (t.doc.story[storyTurn]?.suggestions ?? [])
+        : [];
 
   return (
     <div className="bg-surface relative flex h-full flex-col text-[#0c0d10]">
@@ -197,6 +296,13 @@ export default function KaamKiBaatChat() {
       <main className="bg-surface-minimal min-h-0 flex-1 overflow-y-auto px-4 py-4">
         <div className="mx-auto flex w-full max-w-md flex-col gap-3">
           {messages.map((m, i) => {
+            if (m.node) {
+              return (
+                <div key={m.id} className="w-full self-start">
+                  {m.node}
+                </div>
+              );
+            }
             if (m.card) {
               return (
                 <div
@@ -270,9 +376,9 @@ export default function KaamKiBaatChat() {
         </div>
       </main>
 
-      {/* Pills (hidden while actively filling the widget) + composer */}
+      {/* Bottom dock: capability pills (chat) · story suggestions (image/doc) · composer */}
       <div className="bg-surface shrink-0">
-        {mode !== "reminder-editing" && (
+        {mode === "chat" && (
           <div className="flex gap-2 overflow-x-auto px-4 pt-3 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {pills.map((p) => (
               <button
@@ -287,6 +393,11 @@ export default function KaamKiBaatChat() {
             ))}
           </div>
         )}
+        {(mode === "image" || mode === "doc") && storySuggestions.length > 0 && (
+          <SuggestedReplies
+            items={storySuggestions.map((label) => ({ label, onPick: () => send(label) }))}
+          />
+        )}
         <SaathiComposer
           placeholder={t.kaam.placeholder}
           onSubmit={send}
@@ -298,15 +409,7 @@ export default function KaamKiBaatChat() {
         />
       </div>
 
-      {attachOpen && (
-        <AttachSheet
-          onPick={() => {
-            setAttachOpen(false);
-            go(ROUTES.explainDoc);
-          }}
-          onClose={() => setAttachOpen(false)}
-        />
-      )}
+      {attachOpen && <AttachSheet onPick={attachDocument} onClose={() => setAttachOpen(false)} />}
 
       {voiceOpen && (
         <VoiceChat
