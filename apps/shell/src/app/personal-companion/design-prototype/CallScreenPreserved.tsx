@@ -52,15 +52,17 @@ export function CallScreenPreserved({ open, onEnd }: { open: boolean; onEnd: () 
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="absolute inset-0 z-50 flex h-full flex-col overflow-hidden bg-white"
+          className="dark:bg-bg-panel absolute inset-0 z-50 flex h-full flex-col overflow-hidden bg-white"
         >
           {/* top — name + running timer */}
           <div
             className="relative z-10 flex flex-col items-center gap-1"
             style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 30px)" }}
           >
-            <p className="font-jio text-[18px] font-bold text-[#0c0d10]">Dil Ki Baat</p>
-            <p className="text-body-s font-jio text-[rgba(12,13,16,0.45)] tabular-nums">
+            <p className="font-jio dark:text-ink text-[18px] font-bold text-[#0c0d10]">
+              Dil Ki Baat
+            </p>
+            <p className="text-body-s font-jio dark:text-ink-mute text-[rgba(12,13,16,0.45)] tabular-nums">
               {formatCall(callSeconds)}
             </p>
           </div>
@@ -94,8 +96,8 @@ export function CallScreenPreserved({ open, onEnd }: { open: boolean; onEnd: () 
             </div>
 
             <div className="flex flex-col items-center gap-2.5">
-              <VoiceWaveIcon className="size-6 text-[rgba(12,13,16,0.32)]" />
-              <p className="text-body-m font-jio text-[rgba(12,13,16,0.45)]">
+              <VoiceWaveIcon className="dark:text-ink-mute size-6 text-[rgba(12,13,16,0.32)]" />
+              <p className="text-body-m font-jio dark:text-ink-mute text-[rgba(12,13,16,0.45)]">
                 Dil Ki Baat is listening
               </p>
             </div>
@@ -110,7 +112,7 @@ export function CallScreenPreserved({ open, onEnd }: { open: boolean; onEnd: () 
               type="button"
               aria-label={muted ? "Unmute" : "Mute"}
               onClick={() => setMuted((m) => !m)}
-              className="focus-visible:ring-primary-60 flex size-14 items-center justify-center rounded-full border border-[rgba(12,13,16,0.12)] bg-white text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
+              className="focus-visible:ring-primary-60 dark:bg-bg-elev dark:text-ink flex size-14 items-center justify-center rounded-full border border-[rgba(12,13,16,0.12)] bg-white text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95] dark:border-white/10"
             >
               {muted ? <MuteOffIcon className="size-6" /> : <MuteIcon className="size-6" />}
             </button>
@@ -130,8 +132,8 @@ export function CallScreenPreserved({ open, onEnd }: { open: boolean; onEnd: () 
               onClick={() => setSpeaker((s) => !s)}
               className={`focus-visible:ring-primary-60 flex size-14 items-center justify-center rounded-full border transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95] ${
                 speaker
-                  ? "bg-primary-30 text-primary-50 border-transparent"
-                  : "border-[rgba(12,13,16,0.12)] bg-white text-[#0c0d10]"
+                  ? "bg-primary-30 text-primary-50 dark:bg-primary-60/40 dark:text-primary-20 border-transparent"
+                  : "dark:bg-bg-elev dark:text-ink border-[rgba(12,13,16,0.12)] bg-white text-[#0c0d10] dark:border-white/10"
               }`}
             >
               <SpeakerIcon className="size-6" />

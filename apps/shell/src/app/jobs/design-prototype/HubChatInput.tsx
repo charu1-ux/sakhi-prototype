@@ -17,10 +17,12 @@ type Props = {
   onSubmit?: (v: string) => void;
   onAdd?: () => void;
   onSpeak?: () => void;
+  /** Mic / dictate button (companion variant) — opens inline speech-to-text (STT). */
+  onMic?: () => void;
   /** Focus the textarea on mount (e.g. when a quick-action opens the chat). */
   autoFocus?: boolean;
-  /** "sleek" — icon-only Speak button (48×48 circle), fixed 48px input height, no multiline */
-  variant?: "default" | "sleek";
+  /** "sleek" — icon-only Speak; "companion" — adds a mic (STT) inside the pill + icon-only Speak. */
+  variant?: "default" | "sleek" | "companion";
   /** Voice/listening mode — replaces the input + Speak with a live waveform and an arrow-up Send. */
   voiceMode?: boolean;
   onVoiceSend?: () => void;
@@ -279,13 +281,29 @@ function CloseIcon({ className }: { className?: string }) {
   );
 }
 
+// ─── MicIcon ──────────────────────────────────────────────────────────────────
+
+function MicIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="9" y="2.5" width="6" height="11" rx="3" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="M5.5 11a6.5 6.5 0 0 0 13 0"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+      <path d="M12 17.5V21" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 // ─── Waveform ─────────────────────────────────────────────────────────────────
 // A row of neutral-grey dots spanning the box end-to-end. At rest a bright pulse
 // travels right→left; while "speaking" the dots stretch into amplitude lines.
 // Speech is simulated in natural bursts so both states read in the prototype.
 
 const WAVE_DOTS = Array.from({ length: 26 }, (_, i) => i);
-const WAVE_DOT = "rgba(12,13,16,0.5)";
 
 function Waveform() {
   const [speaking, setSpeaking] = useState(true);
@@ -320,12 +338,11 @@ function Waveform() {
         return (
           <span
             key={i}
-            className="rounded-full"
+            className="rounded-full bg-[rgba(12,13,16,0.5)] dark:bg-white/40"
             style={
               {
                 width: 3.5,
                 height: 3.5,
-                backgroundColor: WAVE_DOT,
                 transformOrigin: "center",
                 animationName: speaking ? "wf-osc" : "wf-travel",
                 animationDuration: `${dur}s`,
@@ -362,6 +379,7 @@ export function HubChatInput({
   onSubmit,
   onAdd,
   onSpeak,
+  onMic,
   autoFocus = false,
   variant = "default",
   voiceMode = false,
@@ -376,6 +394,7 @@ export function HubChatInput({
   onHubBack,
 }: Props) {
   const isSleek = variant === "sleek";
+  const isCompanion = variant === "companion";
   const isControlled = onChange !== undefined;
 
   const [localVal, setLocalVal] = useState("");
@@ -390,8 +409,24 @@ export function HubChatInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const addRef = useRef<HTMLButtonElement>(null);
 
+  // Auto-focus on mount and drop the caret at the end of any pre-filled text
+  // (the `autoFocus` attr alone doesn't reliably position the caret).
+  useEffect(() => {
+    if (!autoFocus) return;
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.focus();
+    const end = ta.value.length;
+    ta.setSelectionRange(end, end);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoFocus]);
+
   // Resize textarea and sync multi-line state
   useEffect(() => {
+    // Track "has content" off the real value so externally pre-filled text
+    // (e.g. a quick-action seeding the input) also swaps mic→send and hides chips.
+    setIsTyping(text.length > 0);
+
     const ta = textareaRef.current;
     const add = addRef.current;
     if (!ta || !add) return;
@@ -507,21 +542,18 @@ export function HubChatInput({
             type="button"
             aria-label="Cancel voice"
             onClick={onVoiceCancel}
-            className="flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center justify-center rounded-full transition-transform duration-150 ease-out outline-none focus-visible:ring-2 focus-visible:ring-[#310064] focus-visible:ring-offset-2 active:scale-[0.94]"
+            className="dark:bg-bg-elev dark:text-ink-mute flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center justify-center rounded-full bg-[#eeeeef] text-[rgba(12,13,16,0.55)] transition-transform duration-150 ease-out outline-none focus-visible:ring-2 focus-visible:ring-[#310064] focus-visible:ring-offset-2 active:scale-[0.94]"
             style={{
               width: BTN_SIZE,
               height: BTN_SIZE,
-              backgroundColor: "#eeeeef",
-              color: "rgba(12,13,16,0.55)",
               flexShrink: 0,
             }}
           >
             <CloseIcon className="size-5" />
           </button>
           <div
-            className="flex min-w-0 flex-1 items-center overflow-hidden"
+            className="dark:bg-bg-elev flex min-w-0 flex-1 items-center overflow-hidden bg-[#eeeeef]"
             style={{
-              backgroundColor: "#eeeeef",
               borderRadius: 40,
               paddingLeft: 12,
               paddingRight: 12,
@@ -662,7 +694,6 @@ export function HubChatInput({
             <textarea
               ref={textareaRef}
               rows={1}
-              autoFocus={autoFocus}
               placeholder={placeholder}
               aria-label={placeholder}
               autoComplete="off"
@@ -684,6 +715,23 @@ export function HubChatInput({
                 fontFamily: "JioType, -apple-system, sans-serif",
               }}
             />
+
+            {/* Mic — companion variant: opens inline speech-to-text; swaps with Send while typing */}
+            <AnimatePresence>
+              {isCompanion && !isTyping && (
+                <motion.button
+                  key="mic"
+                  type="button"
+                  aria-label="Dictate"
+                  onClick={onMic}
+                  className="dark:text-ink-mute flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center justify-center rounded-full text-[rgba(12,13,16,0.5)] transition-transform duration-150 ease-out outline-none focus-visible:ring-2 focus-visible:ring-[#310064] focus-visible:ring-offset-1 active:scale-[0.9]"
+                  style={{ width: SEND_SIZE, height: SEND_SIZE, flexShrink: 0 }}
+                  {...btnMotion}
+                >
+                  <MicIcon className="size-[22px]" />
+                </motion.button>
+              )}
+            </AnimatePresence>
 
             {/* Send button — slides in inside pill when typing */}
             <AnimatePresence>
@@ -718,7 +766,7 @@ export function HubChatInput({
           {/* Speak button — slides out when typing begins */}
           <AnimatePresence>
             {!isTyping &&
-              (isSleek ? (
+              (isSleek || isCompanion ? (
                 <motion.button
                   key="speak"
                   type="button"

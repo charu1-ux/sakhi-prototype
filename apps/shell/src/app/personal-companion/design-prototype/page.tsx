@@ -28,7 +28,7 @@ const COPY: Record<
   en: {
     greetName: "Hi Akshay",
     greetLine: "How are you doing?",
-    speak: "Speak",
+    speak: "Talk to me",
     message: "Message",
     actions: ["Explain a document", "Create an image", "Today's briefing"],
     chatOpen: "Hey — tell me, how's it going?",
@@ -36,7 +36,7 @@ const COPY: Record<
   hi: {
     greetName: "नमस्ते अक्षय!",
     greetLine: "आज कैसा चल रहा है?",
-    speak: "बोलें",
+    speak: "मुझसे बात करें",
     message: "मैसेज",
     actions: ["डॉक्यूमेंट समझाएँ", "इमेज बनाएँ", "आज की ब्रीफ़िंग"],
     chatOpen: "बताओ कैसे चल रहा है?",
@@ -127,8 +127,9 @@ export default function PersonalCompanionDesignPrototypePage() {
 
   // Quick-action (doc / image / briefing) → open the chat with that flow's
   // quick-start chips above the input (no seeded message).
-  function openAction(actionChips: { id: string; label: string }[]) {
-    setInput("");
+  function openAction(prompt: string, actionChips: { id: string; label: string }[]) {
+    // Trailing space so the caret sits one space after the pre-filled prompt.
+    setInput(`${prompt} `);
     setVoiceMode(false);
     setTyping(false);
     setChatChips(actionChips);
@@ -205,7 +206,7 @@ export default function PersonalCompanionDesignPrototypePage() {
   }
 
   const langToggle = (
-    <div className="flex items-center gap-0.5 rounded-full bg-[#eeeeef] p-0.5">
+    <div className="dark:bg-bg-elev flex items-center gap-0.5 rounded-full bg-[#eeeeef] p-0.5">
       {(["en", "hi"] as const).map((l) => (
         <button
           key={l}
@@ -214,7 +215,9 @@ export default function PersonalCompanionDesignPrototypePage() {
           aria-label={l === "en" ? "English" : "Hindi"}
           onClick={() => setLang(l)}
           className={`focus-visible:ring-primary-60 rounded-full px-3 py-1.5 text-[13px] font-semibold transition-colors focus:outline-none focus-visible:ring-2 ${
-            lang === l ? "bg-white text-[#0c0d10] shadow-sm" : "text-[rgba(12,13,16,0.5)]"
+            lang === l
+              ? "dark:bg-bg-panel dark:text-ink bg-white text-[#0c0d10] shadow-sm"
+              : "dark:text-ink-mute text-[rgba(12,13,16,0.5)]"
           }`}
         >
           {l === "en" ? "EN" : "हिं"}
@@ -235,14 +238,16 @@ export default function PersonalCompanionDesignPrototypePage() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="absolute inset-0 z-50 flex h-full flex-col overflow-hidden bg-white"
+          className="dark:bg-bg-panel absolute inset-0 z-50 flex h-full flex-col overflow-hidden bg-white"
         >
           {/* top — name */}
           <div
             className="relative z-10 flex flex-col items-center gap-1"
             style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 30px)" }}
           >
-            <p className="font-jio text-[18px] font-bold text-[#0c0d10]">Dil Ki Baat</p>
+            <p className="font-jio dark:text-ink text-[18px] font-bold text-[#0c0d10]">
+              Dil Ki Baat
+            </p>
           </div>
 
           {/* centre — GIF inside a breathing border ring */}
@@ -276,8 +281,8 @@ export default function PersonalCompanionDesignPrototypePage() {
 
             {/* listening / speaking animation + subtext */}
             <div className="flex flex-col items-center gap-2.5">
-              <VoiceWaveIcon className="size-6 text-[rgba(12,13,16,0.32)]" />
-              <p className="text-body-m font-jio text-[rgba(12,13,16,0.45)]">
+              <VoiceWaveIcon className="dark:text-ink-mute size-6 text-[rgba(12,13,16,0.32)]" />
+              <p className="text-body-m font-jio dark:text-ink-mute text-[rgba(12,13,16,0.45)]">
                 Dil Ki Baat is listening
               </p>
             </div>
@@ -292,7 +297,7 @@ export default function PersonalCompanionDesignPrototypePage() {
               type="button"
               aria-label="Close"
               onClick={() => setCallActive(false)}
-              className="focus-visible:ring-primary-60 flex size-14 items-center justify-center rounded-full border border-[rgba(12,13,16,0.12)] bg-white text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
+              className="focus-visible:ring-primary-60 dark:bg-bg-elev dark:text-ink flex size-14 items-center justify-center rounded-full border border-[rgba(12,13,16,0.12)] bg-white text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95] dark:border-white/10"
             >
               <X className="size-6" strokeWidth={1.75} />
             </button>
@@ -306,9 +311,9 @@ export default function PersonalCompanionDesignPrototypePage() {
   if (view === "chat") {
     return (
       <div className="relative h-full">
-        <div className="relative flex h-full flex-col bg-white">
+        <div className="dark:bg-bg-panel relative flex h-full flex-col bg-white">
           <HubHeader
-            title="दिल की बात"
+            title="Daily Saathi"
             pageBg="white"
             onBack={() => {
               setVoiceMode(false);
@@ -329,8 +334,8 @@ export default function PersonalCompanionDesignPrototypePage() {
                   />
                 </span>
                 <span className="flex flex-col">
-                  <span className="font-jio text-[16px] leading-tight font-semibold text-[#0c0d10]">
-                    दिल की बात
+                  <span className="font-jio dark:text-ink text-[16px] leading-tight font-semibold text-[#0c0d10]">
+                    Daily Saathi
                   </span>
                   <span className="text-body-2xs font-jio inline-flex items-center gap-1 font-medium text-[#25ab21]">
                     <span className="size-1.5 rounded-full bg-[#25ab21]" />
@@ -344,7 +349,7 @@ export default function PersonalCompanionDesignPrototypePage() {
                 type="button"
                 aria-label="Incognito chat"
                 onClick={startIncognito}
-                className="focus-visible:ring-primary-60 flex size-10 items-center justify-center rounded-full bg-[#f5f5f5] text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
+                className="focus-visible:ring-primary-60 dark:bg-bg-elev dark:text-ink flex size-10 items-center justify-center rounded-full bg-[#f5f5f5] text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
               >
                 <PrivacyIcon className="size-[22px]" />
               </button>
@@ -361,7 +366,7 @@ export default function PersonalCompanionDesignPrototypePage() {
               if (m.role === "call" || m.role === "incognito") {
                 return (
                   <div key={m.id} className="flex justify-center py-1">
-                    <span className="text-body-2xs font-jio inline-flex items-center gap-1.5 rounded-full bg-[#eeeeef] px-3 py-1.5 font-medium text-[rgba(12,13,16,0.55)]">
+                    <span className="text-body-2xs font-jio dark:bg-bg-elev dark:text-ink-mute inline-flex items-center gap-1.5 rounded-full bg-[#eeeeef] px-3 py-1.5 font-medium text-[rgba(12,13,16,0.55)]">
                       {m.role === "call" ? (
                         <PhoneIcon className="size-3.5" />
                       ) : (
@@ -391,12 +396,14 @@ export default function PersonalCompanionDesignPrototypePage() {
                             {[6, 11, 15, 9, 16, 7, 13, 8, 5, 12, 15, 8, 6].map((h, k) => (
                               <span
                                 key={k}
-                                className="w-[2px] rounded-full bg-[rgba(12,13,16,0.45)]"
+                                className="dark:bg-ink-mute w-[2px] rounded-full bg-[rgba(12,13,16,0.45)]"
                                 style={{ height: h }}
                               />
                             ))}
                           </span>
-                          <span className="text-[rgba(12,13,16,0.55)] tabular-nums">{m.text}</span>
+                          <span className="dark:text-ink-mute text-[rgba(12,13,16,0.55)] tabular-nums">
+                            {m.text}
+                          </span>
                         </span>
                       ) : (
                         m.text
@@ -429,7 +436,7 @@ export default function PersonalCompanionDesignPrototypePage() {
                     <span aria-hidden className="size-7 shrink-0" />
                   )}
                   <div
-                    className="bg-primary-30 text-body-s font-jio max-w-[78%] px-3 py-2 text-[#0c0d10]"
+                    className="bg-primary-30 text-body-s font-jio dark:bg-primary-60/40 dark:text-ink max-w-[78%] px-3 py-2 text-[#0c0d10]"
                     style={{ borderRadius: "14px 14px 14px 4px" }}
                   >
                     {m.text}
@@ -452,13 +459,13 @@ export default function PersonalCompanionDesignPrototypePage() {
                   style={{ backgroundImage: `url(${POSTER})` }}
                 />
                 <div
-                  className="bg-primary-30 inline-flex gap-1 px-3.5 py-3.5"
+                  className="bg-primary-30 dark:bg-primary-60/40 inline-flex gap-1 px-3.5 py-3.5"
                   style={{ borderRadius: "14px 14px 14px 4px" }}
                 >
                   {[0, 1, 2].map((i) => (
                     <span
                       key={i}
-                      className="bg-primary-50 size-1.5 animate-bounce rounded-full"
+                      className="bg-primary-50 dark:bg-primary-20 size-1.5 animate-bounce rounded-full"
                       style={{ animationDelay: `${i * 0.15}s` }}
                     />
                   ))}
@@ -475,7 +482,7 @@ export default function PersonalCompanionDesignPrototypePage() {
                   key={chip.id}
                   type="button"
                   onClick={() => sendChip(chip.label)}
-                  className="bg-primary-30 text-primary-50 text-body-s font-jio focus-visible:ring-primary-60 flex shrink-0 items-center rounded-full px-4 py-2 font-medium whitespace-nowrap focus:outline-none focus-visible:ring-2"
+                  className="bg-primary-30 text-primary-50 text-body-s font-jio focus-visible:ring-primary-60 dark:bg-primary-60/40 dark:text-primary-20 flex shrink-0 items-center rounded-full px-4 py-2 font-medium whitespace-nowrap focus:outline-none focus-visible:ring-2"
                 >
                   {chip.label}
                 </button>
@@ -484,13 +491,14 @@ export default function PersonalCompanionDesignPrototypePage() {
           )}
 
           <HubChatInput
-            variant="sleek"
+            variant="companion"
             voiceMode={voiceMode}
             autoFocus={chatAutoFocus}
             value={input}
             onChange={setInput}
             onSubmit={sendInChat}
-            onSpeak={enterVoice}
+            onMic={enterVoice}
+            onSpeak={openCall}
             onVoiceSend={sendVoiceNote}
             onVoiceCancel={cancelVoice}
             placeholder="Type a message…"
@@ -504,8 +512,8 @@ export default function PersonalCompanionDesignPrototypePage() {
   // ── Landing (welcome) view ──
   return (
     <div className="relative h-full">
-      <div className="relative flex h-full flex-col bg-white">
-        <HubHeader title="Companion" pageBg="white" onBack={goHome} rightSlot={langToggle} />
+      <div className="dark:bg-bg-panel relative flex h-full flex-col bg-white">
+        <HubHeader title="Daily Saathi" pageBg="white" onBack={goHome} rightSlot={langToggle} />
 
         {/* Upper cluster — greeting · avatar+ripple · quick-action cards */}
         <div
@@ -514,8 +522,12 @@ export default function PersonalCompanionDesignPrototypePage() {
         >
           {/* 1 · greeting — addresses the user by name */}
           <div className="flex max-w-[320px] flex-col items-center gap-1 text-center">
-            <p className="font-jio text-2xl font-bold text-[#0c0d10]">{copy.greetName}</p>
-            <p className="text-body-l font-jio text-[rgba(12,13,16,0.65)]">{copy.greetLine}</p>
+            <p className="font-jio dark:text-ink text-2xl font-bold text-[#0c0d10]">
+              {copy.greetName}
+            </p>
+            <p className="text-body-l font-jio dark:text-ink-soft text-[rgba(12,13,16,0.65)]">
+              {copy.greetLine}
+            </p>
           </div>
 
           {/* 2 · avatar with ripple — no status dot; rings emanate (call-screen pulse) */}
@@ -556,11 +568,11 @@ export default function PersonalCompanionDesignPrototypePage() {
                 <button
                   key={i}
                   type="button"
-                  onClick={() => openAction(action.chips)}
-                  className="focus-visible:ring-primary-60 flex flex-col items-center gap-2 rounded-2xl border border-[rgba(12,13,16,0.1)] bg-white px-2 py-4 text-center transition-transform duration-150 ease-out hover:scale-[1.02] focus:outline-none focus-visible:ring-2 active:scale-[0.97]"
+                  onClick={() => openAction(copy.actions[i], action.chips)}
+                  className="focus-visible:ring-primary-60 dark:bg-bg-elev flex flex-col items-center gap-2 rounded-3xl border border-[rgba(12,13,16,0.1)] bg-white px-2 py-4 text-center transition-transform duration-150 ease-out hover:scale-[1.02] focus:outline-none focus-visible:ring-2 active:scale-[0.97] dark:border-white/10"
                 >
-                  <Icon className="size-5 text-[#0c0d10]" strokeWidth={1.5} />
-                  <span className="text-body-2xs font-jio leading-tight font-medium text-[rgba(12,13,16,0.7)]">
+                  <Icon className="dark:text-ink size-5 text-[#0c0d10]" strokeWidth={1.5} />
+                  <span className="text-body-2xs font-jio dark:text-ink-soft leading-tight font-medium text-[rgba(12,13,16,0.7)]">
                     {copy.actions[i]}
                   </span>
                 </button>
@@ -579,11 +591,11 @@ export default function PersonalCompanionDesignPrototypePage() {
               type="button"
               aria-label={copy.message}
               onClick={openChatGreeting}
-              className="focus-visible:ring-primary-60 flex size-14 items-center justify-center rounded-full border border-[rgba(12,13,16,0.12)] bg-white text-[#0c0d10] transition-transform duration-150 ease-out hover:scale-[1.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
+              className="focus-visible:ring-primary-60 dark:bg-bg-elev dark:text-ink flex size-14 items-center justify-center rounded-full border border-[rgba(12,13,16,0.12)] bg-white text-[#0c0d10] transition-transform duration-150 ease-out hover:scale-[1.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95] dark:border-white/10"
             >
               <ChatIcon className="size-6" />
             </button>
-            <span className="text-body-2xs font-jio font-medium text-[rgba(12,13,16,0.7)]">
+            <span className="text-body-2xs font-jio dark:text-ink-soft font-medium text-[rgba(12,13,16,0.7)]">
               {copy.message}
             </span>
           </div>
@@ -596,7 +608,7 @@ export default function PersonalCompanionDesignPrototypePage() {
             >
               <VoiceWaveIcon className="size-6" />
             </button>
-            <span className="text-body-2xs font-jio font-medium text-[rgba(12,13,16,0.7)]">
+            <span className="text-body-2xs font-jio dark:text-ink-soft font-medium text-[rgba(12,13,16,0.7)]">
               {copy.speak}
             </span>
           </div>
