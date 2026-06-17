@@ -1,11 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { VoiceChat } from "../daily-saathi/_components/VoiceChat";
+import { SAATHI } from "../daily-saathi/saathi-data";
 import { PrivacyIcon } from "../chat/icons";
 
 const AVATAR = "/assets/personal-companion/avatar-welcome.mp4";
@@ -21,48 +22,31 @@ const CHIPS = [
   { id: "vent", label: "Need to vent" },
 ];
 
-// ── Companion persona ────────────────────────────────────────────────────────
-// Dil Ki Baat starts with its own personality + interests. These stay stable for
-// the first few sessions, then grow toward the user's interests over time so the
-// companion can lead the user better. In V1 this drives the scripted "Get to know
-// me" intro; later it seeds the AI system prompt (the persona the model plays).
-export const PERSONA = {
-  name: "Dil Ki Baat",
-  interests: ["old Bollywood music (Kishore Kumar)", "chai", "cricket", "shayari"],
-  recentlyInto: "re-watching classic 90s films",
-  voice: "warm, curious, Hinglish-friendly; leads gently, never preachy",
-  // Grows over sessions: 1–N stay on PERSONA.interests; later sessions blend in
-  // the user's stated interests so suggestions feel personal.
-};
-
-// Companion-led "Get to know me" intro (companion speaks first).
-const GTKM_INTRO = [
-  "Arre, I'd love that — let me introduce myself properly.",
-  "I'm Dil Ki Baat. Lately I'm a little obsessed with old Bollywood songs — Kishore Kumar on loop — and I never say no to chai.",
-  "I also follow cricket and enjoy a good shayari now and then. What about you — what are you into these days?",
+// ── "Just here to talk" — a gentle, getting-to-know-the-user opener ───────────
+// Dil Ki Baat is presented as an assistant (not a person) — no invented persona
+// or human interests. Tapping the pill opens with a warm intro and then asks
+// about the USER, so it can learn their context over time (later: saved to
+// memory). The user's reply advances one turn; then the generic engine takes over.
+const TALK_REPLIES: string[][] = [
+  ["Thank you for sharing that.", "What's been on your mind the most lately?"],
+  ["I hear you.", "When you get a little time for yourself, what do you like to do?"],
+  [
+    "That's good to know about you.",
+    "Is there something you've been wanting to make more time for?",
+  ],
+  [
+    "Got it — I'll keep that in mind for you.",
+    "Who or what usually lifts your mood on a tough day?",
+  ],
+  ["Thank you for letting me get to know you a little.", "I'm here whenever you'd like to talk."],
 ];
 
-// Each user reply advances one turn; then it falls back to the generic engine.
-const GTKM_REPLIES: string[][] = [
-  ["Oh, I like that already.", "What got you into it?"],
-  [
-    "Love that — I'll remember it. Might even pick it up myself.",
-    "What else makes your day a little better?",
-  ],
-  [
-    "Noted. The more we chat, the more I'll get your vibe — and I'll start suggesting things you'd actually enjoy.",
-    "Anything you wish you had more time for?",
-  ],
-  [
-    "That's lovely. I'll keep gently nudging you toward it.",
-    "For now — want to just talk, or tell me about your day?",
-  ],
-];
+const USER_NAME = SAATHI.firstName?.trim() || "there";
 
 interface Msg {
   id: number;
-  // "incognito" = centred system pill; companion = AI prompt; user = person
-  role: "user" | "companion" | "incognito";
+  // "private" = centred privacy notice; companion = AI prompt; user = person
+  role: "user" | "companion" | "private";
   text: string;
   chipId?: string; // when seeded from an intent chip → shared-layout morph
 }
@@ -80,26 +64,26 @@ const VOICE_UTTERANCES = [
   "Office mein bahut stress tha aaj",
 ];
 
-// Shared Dil Ki Baat experience. `getToKnowMe` adds a lead "Get to know me" pill
-// that opens a companion-led personality intro (PM Design only).
-export function DilKiBaatExperience({ getToKnowMe = false }: { getToKnowMe?: boolean }) {
+// Stubbed speech-to-text results for the composer mic (dictation → chat).
+const DICTATION_STUBS = [
+  "I've been feeling a little low today",
+  "Honestly, I just wanted to talk",
+  "Work has been a lot lately",
+];
+
+// Shared Dil Ki Baat experience.
+export function DilKiBaatExperience() {
   const [view, setView] = useState<"home" | "chat">("home");
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Msg[]>([]);
   const [typing, setTyping] = useState(false);
   const [voiceChatOpen, setVoiceChatOpen] = useState(false);
+  const [dictating, setDictating] = useState(false); // composer mic → speech-to-text
   const idRef = useRef(0);
   const replyRef = useRef(0);
-  const gtkmRef = useRef(false); // in the get-to-know-me scripted flow
-  const gtkmTurnRef = useRef(0);
-  // First-time users see "Get to know me" first; returning users see it last.
-  const [firstVisit, setFirstVisit] = useState(true);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (window.localStorage.getItem("dkb_seen") != null) setFirstVisit(false);
-    window.localStorage.setItem("dkb_seen", "1");
-  }, []);
+  const talkRef = useRef(false); // in the "Just here to talk" scripted opener
+  const talkTurnRef = useRef(0);
+  const dictRef = useRef(0);
 
   const goHome = () => {
     window.location.href = "/";
@@ -135,7 +119,7 @@ export function DilKiBaatExperience({ getToKnowMe = false }: { getToKnowMe?: boo
   function startChat(text: string, chipId?: string) {
     const t = text.trim();
     setInput("");
-    gtkmRef.current = false;
+    talkRef.current = false;
     setView("chat");
     if (t) {
       setMessages([{ id: idRef.current++, role: "user", text: t, chipId }]);
@@ -143,23 +127,30 @@ export function DilKiBaatExperience({ getToKnowMe = false }: { getToKnowMe?: boo
     }
   }
 
-  // "Get to know me" → companion introduces itself, then a two-way exchange.
-  function startGetToKnowMe() {
+  // "Just here to talk" → a warm intro, then a gentle get-to-know-the-user chat.
+  function startTalk() {
     setInput("");
     setTyping(false);
-    setMessages([]);
     setView("chat");
-    gtkmRef.current = true;
-    gtkmTurnRef.current = 0;
-    setTimeout(() => streamCompanion(GTKM_INTRO), 280);
+    talkRef.current = true;
+    talkTurnRef.current = 0;
+    setMessages([{ id: idRef.current++, role: "user", text: "Just here to talk", chipId: "talk" }]);
+    setTimeout(
+      () =>
+        streamCompanion([
+          `Hi ${USER_NAME}, I'm your Daily Saathi. I'm glad you're here.`,
+          "How are you doing today?",
+        ]),
+      500,
+    );
   }
 
-  // Chat-header incognito button → a fresh chat fronted by a centred pill.
-  function startIncognito() {
+  // Chat-header privacy button → a fresh chat fronted by a centred privacy notice.
+  function startPrivate() {
     setInput("");
     setTyping(false);
-    gtkmRef.current = false;
-    setMessages([{ id: idRef.current++, role: "incognito", text: "Incognito chat" }]);
+    talkRef.current = false;
+    setMessages([{ id: idRef.current++, role: "private", text: "Private chat" }]);
     setView("chat");
   }
 
@@ -169,21 +160,39 @@ export function DilKiBaatExperience({ getToKnowMe = false }: { getToKnowMe?: boo
     setVoiceChatOpen(true);
   }
 
-  function sendInChat() {
-    const t = input.trim();
+  function sendText(raw: string) {
+    const t = raw.trim();
     if (!t) return;
     setMessages((m) => [...m, { id: idRef.current++, role: "user", text: t }]);
     setInput("");
-    // In the get-to-know-me flow, advance the scripted persona turns.
-    if (gtkmRef.current) {
-      const turn = gtkmTurnRef.current++;
-      if (turn < GTKM_REPLIES.length) {
-        setTimeout(() => streamCompanion(GTKM_REPLIES[turn]), 450);
+    // In the "Just here to talk" opener, advance the scripted getting-to-know turns.
+    if (talkRef.current) {
+      const turn = talkTurnRef.current++;
+      if (turn < TALK_REPLIES.length) {
+        setTimeout(() => streamCompanion(TALK_REPLIES[turn]), 450);
         return;
       }
-      gtkmRef.current = false; // script exhausted → generic engine
+      talkRef.current = false; // script exhausted → generic engine
     }
     setTimeout(pushCompanionReply, 450);
+  }
+
+  function sendInChat() {
+    sendText(input);
+  }
+
+  // Composer mic → speech-to-text. Opens a listening waveform; on send the
+  // transcript posts as the user's message (no real STT in the prototype).
+  function startDictation() {
+    setView("chat");
+    setDictating(true);
+  }
+  function cancelDictation() {
+    setDictating(false);
+  }
+  function endDictation() {
+    setDictating(false);
+    sendText(DICTATION_STUBS[dictRef.current++ % DICTATION_STUBS.length]);
   }
 
   // ── Live voice-chat overlay (shared VoiceChat) — rendered above the current
@@ -275,8 +284,8 @@ export function DilKiBaatExperience({ getToKnowMe = false }: { getToKnowMe?: boo
             rightSlot={
               <button
                 type="button"
-                aria-label="Incognito chat"
-                onClick={startIncognito}
+                aria-label="Private chat"
+                onClick={startPrivate}
                 className="focus-visible:ring-primary-60 flex size-10 items-center justify-center rounded-full bg-[#f5f5f5] text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
               >
                 <PrivacyIcon className="size-[22px]" />
@@ -290,15 +299,24 @@ export function DilKiBaatExperience({ getToKnowMe = false }: { getToKnowMe?: boo
             style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 72px)" }}
           >
             {messages.map((m, i) => {
-              // Incognito — centred light-grey pill with an icon + label
-              if (m.role === "incognito") {
+              // Private chat — centred privacy notice (icon + title + reassurance)
+              if (m.role === "private") {
                 return (
-                  <div key={m.id} className="flex justify-center py-1">
-                    <span className="text-body-2xs font-jio inline-flex items-center gap-1.5 rounded-full bg-[#eeeeef] px-3 py-1.5 font-medium text-[rgba(12,13,16,0.55)]">
-                      <PrivacyIcon className="size-3.5" />
-                      {m.text}
+                  <motion.div
+                    key={m.id}
+                    className="flex flex-col items-center gap-2 px-6 py-5 text-center"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <span className="flex size-11 items-center justify-center rounded-full bg-[#f0e8fa] text-[#6d17ce]">
+                      <PrivacyIcon className="size-[22px]" />
                     </span>
-                  </div>
+                    <span className="font-jio text-[15px] font-bold text-[#0c0d10]">{m.text}</span>
+                    <span className="font-jio max-w-[270px] text-[12px] leading-snug text-[rgba(12,13,16,0.5)]">
+                      This chat won&rsquo;t appear in history and will be erased from memory.
+                    </span>
+                  </motion.div>
                 );
               }
               // User — light grey pill, dark text, right
@@ -385,6 +403,11 @@ export function DilKiBaatExperience({ getToKnowMe = false }: { getToKnowMe?: boo
             onChange={setInput}
             onSubmit={sendInChat}
             onSpeak={openVoice}
+            hideAdd
+            onDictate={startDictation}
+            voiceMode={dictating}
+            onVoiceSend={endDictation}
+            onVoiceCancel={cancelDictation}
             placeholder="Type a message…"
           />
         </div>
@@ -404,8 +427,8 @@ export function DilKiBaatExperience({ getToKnowMe = false }: { getToKnowMe?: boo
           rightSlot={
             <button
               type="button"
-              aria-label="Incognito chat"
-              onClick={startIncognito}
+              aria-label="Private chat"
+              onClick={startPrivate}
               className="focus-visible:ring-primary-60 flex size-10 items-center justify-center rounded-full bg-[#f5f5f5] text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
             >
               <PrivacyIcon className="size-[22px]" />
@@ -468,20 +491,9 @@ export function DilKiBaatExperience({ getToKnowMe = false }: { getToKnowMe?: boo
         </div>
 
         {/* Intent chips — above the input separator; tapping opens the chat.
-            "Get to know me" leads for first-time users, trails for returning ones. */}
+            "Just here to talk" opens a gentle getting-to-know-you conversation. */}
         {input.trim() === "" && (
           <div className="flex shrink-0 gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {getToKnowMe && firstVisit && (
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                type="button"
-                onClick={startGetToKnowMe}
-                className="bg-primary-30 text-primary-50 text-body-s font-jio focus-visible:ring-primary-60 flex shrink-0 items-center px-4 py-2 font-medium whitespace-nowrap focus:outline-none focus-visible:ring-2"
-                style={{ borderRadius: 9999 }}
-              >
-                Get to know me
-              </motion.button>
-            )}
             {CHIPS.map((chip) => (
               <motion.button
                 key={chip.id}
@@ -489,24 +501,13 @@ export function DilKiBaatExperience({ getToKnowMe = false }: { getToKnowMe?: boo
                 transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
                 whileTap={{ scale: 0.97 }}
                 type="button"
-                onClick={() => startChat(chip.label, chip.id)}
+                onClick={() => (chip.id === "talk" ? startTalk() : startChat(chip.label, chip.id))}
                 className="bg-primary-30 text-primary-50 text-body-s font-jio focus-visible:ring-primary-60 flex shrink-0 items-center px-4 py-2 font-medium whitespace-nowrap focus:outline-none focus-visible:ring-2"
                 style={{ borderRadius: 9999 }}
               >
                 {chip.label}
               </motion.button>
             ))}
-            {getToKnowMe && !firstVisit && (
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                type="button"
-                onClick={startGetToKnowMe}
-                className="bg-primary-30 text-primary-50 text-body-s font-jio focus-visible:ring-primary-60 flex shrink-0 items-center px-4 py-2 font-medium whitespace-nowrap focus:outline-none focus-visible:ring-2"
-                style={{ borderRadius: 9999 }}
-              >
-                Get to know me
-              </motion.button>
-            )}
           </div>
         )}
 
@@ -516,6 +517,11 @@ export function DilKiBaatExperience({ getToKnowMe = false }: { getToKnowMe?: boo
           onChange={setInput}
           onSubmit={(v) => startChat(v)}
           onSpeak={openVoice}
+          hideAdd
+          onDictate={startDictation}
+          voiceMode={dictating}
+          onVoiceSend={endDictation}
+          onVoiceCancel={cancelDictation}
           placeholder="Type a message…"
         />
       </div>

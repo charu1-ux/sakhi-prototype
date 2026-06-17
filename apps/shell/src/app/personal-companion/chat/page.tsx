@@ -2,9 +2,8 @@
 
 import { DilKiBaatExperience } from "../_shared/DilKiBaatExperience";
 
-// PM Design's "Dil Ki Baat" — the same experience as the Design Prototype, plus a
-// lead "Get to know me" pill that opens a companion-led personality intro. This
-// divergence is PM-Design-only; the Design Prototype route stays without it.
+// PM Design's "Dil Ki Baat" renders the same shared experience as the Design
+// Prototype (tapping "Just here to talk" opens a gentle getting-to-know-you chat).
 export default function PersonalCompanionChat() {
-  return <DilKiBaatExperience getToKnowMe />;
+  return <DilKiBaatExperience />;
 }
