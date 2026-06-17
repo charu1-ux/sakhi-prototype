@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 
 import { Avatar } from "../_components/Avatar";
 import { AttachSheet } from "../_components/AttachSheet";
@@ -159,8 +159,13 @@ export default function KaamKiBaatChat() {
     playReply(t.doc.story[0].reply, docCard());
   };
 
-  // Entry via deep-link: /kaam-ki-baat/?intent=image | doc
+  // Entry via deep-link: /kaam-ki-baat/?intent=image | doc.
+  // Ref guard so React StrictMode's double-invoked effect (dev) doesn't seed the
+  // intent twice — otherwise the pill + greeting post into the chat two times.
+  const didIntent = useRef(false);
   useEffect(() => {
+    if (didIntent.current) return;
+    didIntent.current = true;
     const intent = new URLSearchParams(window.location.search).get("intent");
     if (intent === "image") enterImage();
     else if (intent === "doc") enterDoc();

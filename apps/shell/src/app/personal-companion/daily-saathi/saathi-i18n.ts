@@ -29,7 +29,6 @@ export type Strings = {
     hi: (name: string) => string;
     how: string;
     talk: string;
-    opensDil: string;
   };
   modes: {
     dil: { label: string; sub: string };
@@ -163,7 +162,6 @@ export const STRINGS: Record<Lang, Strings> = {
       hi: (name) => (name ? `Hi ${name},` : "Hi,"),
       how: "how are you doing today?",
       talk: "Talk to me",
-      opensDil: "Opens Dil Ki Baat",
     },
     modes: {
       dil: { label: "Dil Ki Baat", sub: "About your feelings, day, or life" },
@@ -410,7 +408,6 @@ export const STRINGS: Record<Lang, Strings> = {
       hi: (name) => (name ? `नमस्ते ${name},` : "नमस्ते,"),
       how: "आज आप कैसा महसूस कर रहे हैं?",
       talk: "मुझसे बात करें",
-      opensDil: "दिल की बात खोलें",
     },
     modes: {
       dil: { label: "दिल की बात", sub: "अपनी भावनाओं, दिन या ज़िंदगी के बारे में" },

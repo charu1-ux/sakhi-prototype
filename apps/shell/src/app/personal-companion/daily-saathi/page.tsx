@@ -6,7 +6,7 @@ import { Avatar } from "./_components/Avatar";
 import { SaathiHeader } from "./_components/SaathiHeader";
 import { ASSETS, ROUTES, SAATHI } from "./saathi-data";
 import { useLang } from "./saathi-i18n";
-import { DocIcon, ImageIcon, MicIcon, SparkleIcon, SunIcon } from "./saathi-icons";
+import { DocIcon, ImageIcon, SparkleIcon, SunIcon } from "./saathi-icons";
 import { useNav } from "./use-nav";
 
 // ── Reminders parked while Daily Briefing is WIP ──────────────────────────────
@@ -109,16 +109,14 @@ export default function DailySaathiHome() {
           </div>
 
           {/* Talk to me — primary CTA into Dil Ki Baat */}
-          <div className="flex flex-col items-center gap-1.5" style={rise(2)}>
+          <div className="flex flex-col items-center" style={rise(2)}>
             <button
               type="button"
               onClick={() => go(ROUTES.companion)}
-              className="bg-primary-50 focus-visible:ring-primary-60 inline-flex cursor-pointer items-center gap-2 rounded-full px-6 py-3 text-[15px] font-medium text-white shadow-[0_8px_24px_rgba(109,23,206,0.22)] transition-transform duration-200 ease-[cubic-bezier(0.2,0,0,1)] outline-none hover:scale-[1.03] focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.96]"
+              className="bg-primary-50 focus-visible:ring-primary-60 inline-flex cursor-pointer items-center justify-center rounded-full px-7 py-3 text-[15px] font-medium text-white shadow-[0_8px_24px_rgba(109,23,206,0.22)] transition-transform duration-200 ease-[cubic-bezier(0.2,0,0,1)] outline-none hover:scale-[1.03] focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.96]"
             >
-              <MicIcon className="size-[18px]" />
               {t.home.talk}
             </button>
-            <span className="text-[11px] text-[rgba(12,13,16,0.4)]">{t.home.opensDil}</span>
           </div>
 
           {/* Use-case tiles → open the Kaam Ki Baat chat on that capability */}
