@@ -17,6 +17,8 @@ type Props = {
   onSubmit?: (v: string) => void;
   onAdd?: () => void;
   onSpeak?: () => void;
+  /** Focus the textarea on mount (e.g. when a quick-action opens the chat). */
+  autoFocus?: boolean;
   /** "sleek" — icon-only Speak button (48×48 circle), fixed 48px input height, no multiline */
   variant?: "default" | "sleek";
   /** Voice/listening mode — replaces the input + Speak with a live waveform and an arrow-up Send. */
@@ -360,6 +362,7 @@ export function HubChatInput({
   onSubmit,
   onAdd,
   onSpeak,
+  autoFocus = false,
   variant = "default",
   voiceMode = false,
   onVoiceSend,
@@ -659,6 +662,7 @@ export function HubChatInput({
             <textarea
               ref={textareaRef}
               rows={1}
+              autoFocus={autoFocus}
               placeholder={placeholder}
               aria-label={placeholder}
               autoComplete="off"

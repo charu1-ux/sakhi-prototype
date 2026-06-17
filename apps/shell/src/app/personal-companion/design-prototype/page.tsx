@@ -1,27 +1,73 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { FileText, ImagePlus, Newspaper, X } from "lucide-react";
+import { useRef, useState } from "react";
 
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
-import {
-  ChatIcon,
-  MuteIcon,
-  MuteOffIcon,
-  PhoneEndIcon,
-  PhoneIcon,
-  PhoneStrokeIcon,
-  PlayIcon,
-  PrivacyIcon,
-  SpeakerIcon,
-  VoiceWaveIcon,
-} from "../chat/icons";
+import { ChatIcon, PhoneIcon, PlayIcon, PrivacyIcon, VoiceWaveIcon } from "../chat/icons";
 
 const AVATAR = "/assets/personal-companion/avatar-welcome.mp4";
 const POSTER = "/assets/personal-companion/avatar.png";
 
-// Emotion-scaffolding quick replies. Tapping one opens the chat with that text.
+type Lang = "en" | "hi";
+
+// Companion copy — toggled by the header EN ↔ हिं switch.
+const COPY: Record<
+  Lang,
+  {
+    greetName: string;
+    greetLine: string;
+    speak: string;
+    message: string;
+    actions: [string, string, string];
+    chatOpen: string;
+  }
+> = {
+  en: {
+    greetName: "Hi Akshay",
+    greetLine: "How are you doing?",
+    speak: "Speak",
+    message: "Message",
+    actions: ["Explain a document", "Create an image", "Today's briefing"],
+    chatOpen: "Hey — tell me, how's it going?",
+  },
+  hi: {
+    greetName: "नमस्ते अक्षय!",
+    greetLine: "आज कैसा चल रहा है?",
+    speak: "बोलें",
+    message: "मैसेज",
+    actions: ["डॉक्यूमेंट समझाएँ", "इमेज बनाएँ", "आज की ब्रीफ़िंग"],
+    chatOpen: "बताओ कैसे चल रहा है?",
+  },
+};
+
+// Per-action quick-start chips — shown above the chat input inside each flow.
+const DOC_CHIPS = [
+  { id: "rent", label: "Summarize the rent agreement" },
+  { id: "sms", label: "Explain the bank SMS" },
+  { id: "form", label: "What does this form ask for?" },
+];
+const IMAGE_CHIPS = [
+  { id: "diwali", label: "Diwali greeting card" },
+  { id: "poster", label: "Poster for my shop" },
+  { id: "bday", label: "Birthday card for my mom" },
+];
+const BRIEFING_CHIPS = [
+  { id: "today", label: "What's new today?" },
+  { id: "schedule", label: "My schedule today" },
+  { id: "headlines", label: "Top headlines" },
+];
+
+// Landing quick-actions — 3×1 grid under the avatar. Labels come from COPY[lang].actions.
+const QUICK_ACTIONS = [
+  { icon: FileText, chips: DOC_CHIPS },
+  { icon: ImagePlus, chips: IMAGE_CHIPS },
+  { icon: Newspaper, chips: BRIEFING_CHIPS },
+];
+
+// Emotion-scaffolding quick replies. Tapping one continues the chat.
 const CHIPS = [
   { id: "talk", label: "Just here to talk" },
   { id: "mind", label: "Got a lot on my mind" },
@@ -46,21 +92,15 @@ const COMPANION_REPLIES = [
   "Main yahin hoon. Jo bhi mann mein hai, keh do.",
 ];
 
-// mm:ss for the active-call timer.
-function formatCall(total: number) {
-  const m = Math.floor(total / 60)
-    .toString()
-    .padStart(2, "0");
-  const s = (total % 60).toString().padStart(2, "0");
-  return `${m}:${s}`;
-}
-
 export default function PersonalCompanionDesignPrototypePage() {
   const [view, setView] = useState<"home" | "chat">("home");
+  const [lang, setLang] = useState<Lang>("en");
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Msg[]>([]);
   const [typing, setTyping] = useState(false);
   const [voiceMode, setVoiceMode] = useState(false);
+  const [chatChips, setChatChips] = useState(CHIPS);
+  const [chatAutoFocus, setChatAutoFocus] = useState(false);
   const idRef = useRef(0);
   const replyRef = useRef(0);
   const voiceStartRef = useRef(0);
@@ -68,21 +108,12 @@ export default function PersonalCompanionDesignPrototypePage() {
   // Call screen state — `callActive` shows the call as an overlay over the
   // current view, so the chat underneath is never unmounted.
   const [callActive, setCallActive] = useState(false);
-  const [callSeconds, setCallSeconds] = useState(0);
-  const [muted, setMuted] = useState(false);
-  const [speaker, setSpeaker] = useState(false);
+
+  const copy = COPY[lang];
 
   const goHome = () => {
     window.location.href = "/";
   };
-
-  // Tick the call timer for the lifetime of the call.
-  useEffect(() => {
-    if (!callActive) return;
-    setCallSeconds(0);
-    const id = window.setInterval(() => setCallSeconds((s) => s + 1), 1000);
-    return () => window.clearInterval(id);
-  }, [callActive]);
 
   function pushCompanionReply() {
     const text = COMPANION_REPLIES[replyRef.current % COMPANION_REPLIES.length];
@@ -94,46 +125,31 @@ export default function PersonalCompanionDesignPrototypePage() {
     }, 1100);
   }
 
-  // From home: open the chat, seeding it with the user's text/chip.
-  // chipId drives the chip→bubble morph; the reply is delayed so it lands
-  // after the morph settles (no abrupt loader pop).
-  function startChat(text: string, chipId?: string) {
-    const t = text.trim();
+  // Quick-action (doc / image / briefing) → open the chat with that flow's
+  // quick-start chips above the input (no seeded message).
+  function openAction(actionChips: { id: string; label: string }[]) {
     setInput("");
     setVoiceMode(false);
+    setTyping(false);
+    setChatChips(actionChips);
+    setChatAutoFocus(true);
+    setMessages([]);
     setView("chat");
-    if (t) {
-      setMessages([{ id: idRef.current++, role: "user", text: t, chipId }]);
-      setTimeout(pushCompanionReply, 650);
-    }
   }
 
-  // From home (chat icon): open the chat, then let the first companion prompt
-  // rise in from the bottom (no abrupt loader), then a typing beat → 2nd prompt.
+  // Message button → open the chat fronted by the companion's opening line
+  // (in the current language), which rises in from the bottom.
   function openChatGreeting() {
     setInput("");
     setVoiceMode(false);
     setMessages([]);
     setTyping(false);
+    setChatChips(CHIPS);
+    setChatAutoFocus(false);
     setView("chat");
+    const greeting = copy.chatOpen;
     window.setTimeout(() => {
-      setMessages([
-        { id: idRef.current++, role: "companion", text: "Hi, how was your day today?" },
-      ]);
-      window.setTimeout(() => {
-        setTyping(true);
-        window.setTimeout(() => {
-          setTyping(false);
-          setMessages((m) => [
-            ...m,
-            {
-              id: idRef.current++,
-              role: "companion",
-              text: "Do you want to share anything today?",
-            },
-          ]);
-        }, 1100);
-      }, 800);
+      setMessages([{ id: idRef.current++, role: "companion", text: greeting }]);
     }, 260);
   }
 
@@ -144,18 +160,9 @@ export default function PersonalCompanionDesignPrototypePage() {
     setVoiceMode(false);
     setTyping(false);
     setMessages([{ id: idRef.current++, role: "incognito", text: "Incognito chat" }]);
+    setChatChips(CHIPS);
+    setChatAutoFocus(false);
     setView("chat");
-  }
-
-  // Speak button (home or chat) → voice/listening mode: the composer becomes a
-  // live waveform and the Speak icon becomes an arrow-up Send.
-  function openVoiceChat() {
-    setInput("");
-    setMessages([]);
-    setTyping(false);
-    voiceStartRef.current = Date.now();
-    setView("chat");
-    setVoiceMode(true);
   }
 
   function enterVoice() {
@@ -180,27 +187,7 @@ export default function PersonalCompanionDesignPrototypePage() {
 
   function openCall() {
     setVoiceMode(false);
-    setMuted(false);
-    setSpeaker(false);
     setCallActive(true);
-  }
-
-  // Hang up → drop a centred call-ended timestamp pill into the chat, then
-  // return to the chat so the call reads as part of the conversation.
-  function endCall() {
-    const now = new Date();
-    const day = now.getDate();
-    const month = now.toLocaleDateString("en-IN", { month: "short" });
-    const time = now.toLocaleTimeString("en-IN", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-    const stamp = `Today, ${day} ${month} · ${time}`;
-    setVoiceMode(false);
-    setCallActive(false);
-    setMessages((m) => [...m, { id: idRef.current++, role: "call", text: stamp }]);
-    setView("chat");
   }
 
   function sendInChat() {
@@ -210,6 +197,31 @@ export default function PersonalCompanionDesignPrototypePage() {
     setInput("");
     setTimeout(pushCompanionReply, 450);
   }
+
+  // Quick-reply chip tapped inside the chat → send it as a user message.
+  function sendChip(label: string) {
+    setMessages((m) => [...m, { id: idRef.current++, role: "user", text: label }]);
+    setTimeout(pushCompanionReply, 450);
+  }
+
+  const langToggle = (
+    <div className="flex items-center gap-0.5 rounded-full bg-[#eeeeef] p-0.5">
+      {(["en", "hi"] as const).map((l) => (
+        <button
+          key={l}
+          type="button"
+          aria-pressed={lang === l}
+          aria-label={l === "en" ? "English" : "Hindi"}
+          onClick={() => setLang(l)}
+          className={`focus-visible:ring-primary-60 rounded-full px-3 py-1.5 text-[13px] font-semibold transition-colors focus:outline-none focus-visible:ring-2 ${
+            lang === l ? "bg-white text-[#0c0d10] shadow-sm" : "text-[rgba(12,13,16,0.5)]"
+          }`}
+        >
+          {l === "en" ? "EN" : "हिं"}
+        </button>
+      ))}
+    </div>
+  );
 
   // ── Call overlay — rendered ABOVE the current view (absolute, z-50) so the
   // chat underneath is never unmounted. Returning from a call therefore does
@@ -225,15 +237,12 @@ export default function PersonalCompanionDesignPrototypePage() {
           transition={{ duration: 0.2 }}
           className="absolute inset-0 z-50 flex h-full flex-col overflow-hidden bg-white"
         >
-          {/* top — name + running timer */}
+          {/* top — name */}
           <div
             className="relative z-10 flex flex-col items-center gap-1"
             style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 30px)" }}
           >
             <p className="font-jio text-[18px] font-bold text-[#0c0d10]">Dil Ki Baat</p>
-            <p className="text-body-s font-jio text-[rgba(12,13,16,0.45)] tabular-nums">
-              {formatCall(callSeconds)}
-            </p>
           </div>
 
           {/* centre — GIF inside a breathing border ring */}
@@ -274,40 +283,18 @@ export default function PersonalCompanionDesignPrototypePage() {
             </div>
           </div>
 
-          {/* bottom — Mute · Hang up (red, larger) · Speaker */}
+          {/* bottom — close the call */}
           <div
-            className="relative z-10 flex items-center justify-center gap-7"
+            className="relative z-10 flex items-center justify-center"
             style={{ paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 34px)" }}
           >
             <button
               type="button"
-              aria-label={muted ? "Unmute" : "Mute"}
-              onClick={() => setMuted((m) => !m)}
+              aria-label="Close"
+              onClick={() => setCallActive(false)}
               className="focus-visible:ring-primary-60 flex size-14 items-center justify-center rounded-full border border-[rgba(12,13,16,0.12)] bg-white text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
             >
-              {muted ? <MuteOffIcon className="size-6" /> : <MuteIcon className="size-6" />}
-            </button>
-
-            <button
-              type="button"
-              aria-label="End call"
-              onClick={endCall}
-              className="flex size-[68px] items-center justify-center rounded-full bg-[#FA2F40] text-white transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FA2F40] focus-visible:ring-offset-2 active:scale-[0.95]"
-            >
-              <PhoneEndIcon className="size-7" />
-            </button>
-
-            <button
-              type="button"
-              aria-label={speaker ? "Speaker off" : "Speaker on"}
-              onClick={() => setSpeaker((s) => !s)}
-              className={`focus-visible:ring-primary-60 flex size-14 items-center justify-center rounded-full border transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95] ${
-                speaker
-                  ? "bg-primary-30 text-primary-50 border-transparent"
-                  : "border-[rgba(12,13,16,0.12)] bg-white text-[#0c0d10]"
-              }`}
-            >
-              <SpeakerIcon className="size-6" />
+              <X className="size-6" strokeWidth={1.75} />
             </button>
           </div>
         </motion.div>
@@ -321,7 +308,7 @@ export default function PersonalCompanionDesignPrototypePage() {
       <div className="relative h-full">
         <div className="relative flex h-full flex-col bg-white">
           <HubHeader
-            title="Dil Ki Baat"
+            title="दिल की बात"
             pageBg="white"
             onBack={() => {
               setVoiceMode(false);
@@ -340,35 +327,27 @@ export default function PersonalCompanionDesignPrototypePage() {
                     className="size-full rounded-full object-cover"
                     aria-label="Dil Ki Baat"
                   />
-                  <span
-                    aria-hidden
-                    className="absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-white bg-[#25ab21]"
-                  />
                 </span>
-                <span className="font-jio text-[16px] font-semibold text-[#0c0d10]">
-                  Dil Ki Baat
+                <span className="flex flex-col">
+                  <span className="font-jio text-[16px] leading-tight font-semibold text-[#0c0d10]">
+                    दिल की बात
+                  </span>
+                  <span className="text-body-2xs font-jio inline-flex items-center gap-1 font-medium text-[#25ab21]">
+                    <span className="size-1.5 rounded-full bg-[#25ab21]" />
+                    Active now
+                  </span>
                 </span>
               </div>
             }
             rightSlot={
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  aria-label="Incognito chat"
-                  onClick={startIncognito}
-                  className="focus-visible:ring-primary-60 flex size-10 items-center justify-center rounded-full bg-[#f5f5f5] text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
-                >
-                  <PrivacyIcon className="size-[22px]" />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Call Dil Ki Baat"
-                  onClick={openCall}
-                  className="focus-visible:ring-primary-60 flex size-10 items-center justify-center rounded-full bg-[#f5f5f5] text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
-                >
-                  <PhoneStrokeIcon className="size-5" />
-                </button>
-              </div>
+              <button
+                type="button"
+                aria-label="Incognito chat"
+                onClick={startIncognito}
+                className="focus-visible:ring-primary-60 flex size-10 items-center justify-center rounded-full bg-[#f5f5f5] text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
+              >
+                <PrivacyIcon className="size-[22px]" />
+              </button>
             }
           />
 
@@ -488,9 +467,26 @@ export default function PersonalCompanionDesignPrototypePage() {
             )}
           </div>
 
+          {/* Intent chips — a separate row ABOVE the input (hidden while typing) */}
+          {input.trim() === "" && (
+            <div className="flex shrink-0 gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {chatChips.map((chip) => (
+                <button
+                  key={chip.id}
+                  type="button"
+                  onClick={() => sendChip(chip.label)}
+                  className="bg-primary-30 text-primary-50 text-body-s font-jio focus-visible:ring-primary-60 flex shrink-0 items-center rounded-full px-4 py-2 font-medium whitespace-nowrap focus:outline-none focus-visible:ring-2"
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+          )}
+
           <HubChatInput
             variant="sleek"
             voiceMode={voiceMode}
+            autoFocus={chatAutoFocus}
             value={input}
             onChange={setInput}
             onSubmit={sendInChat}
@@ -505,46 +501,38 @@ export default function PersonalCompanionDesignPrototypePage() {
     );
   }
 
-  // ── Home (welcome) view ──
+  // ── Landing (welcome) view ──
   return (
     <div className="relative h-full">
       <div className="relative flex h-full flex-col bg-white">
-        <HubHeader
-          title="Personal Companion"
-          pageBg="white"
-          onBack={goHome}
-          rightSlot={
-            <button
-              type="button"
-              aria-label="Incognito chat"
-              onClick={startIncognito}
-              className="focus-visible:ring-primary-60 flex size-10 items-center justify-center rounded-full bg-[#f5f5f5] text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
-            >
-              <PrivacyIcon className="size-[22px]" />
-            </button>
-          }
-        />
+        <HubHeader title="Companion" pageBg="white" onBack={goHome} rightSlot={langToggle} />
 
-        {/* Centre — three sections with a uniform gap: avatar · content block · actions */}
+        {/* Upper cluster — greeting · avatar+ripple · quick-action cards */}
         <div
-          className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 overflow-y-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 64px)" }}
+          className="flex min-h-0 flex-1 flex-col items-center gap-6 overflow-y-auto px-6 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 76px)" }}
         >
-          {/* 1 · avatar — static, no float, no shadow */}
+          {/* 1 · greeting — addresses the user by name */}
+          <div className="flex max-w-[320px] flex-col items-center gap-1 text-center">
+            <p className="font-jio text-2xl font-bold text-[#0c0d10]">{copy.greetName}</p>
+            <p className="text-body-l font-jio text-[rgba(12,13,16,0.65)]">{copy.greetLine}</p>
+          </div>
+
+          {/* 2 · avatar with ripple — no status dot; rings emanate (call-screen pulse) */}
           <div
-            className="relative flex items-center justify-center"
-            style={{ width: 150, height: 150 }}
+            className="relative flex shrink-0 items-center justify-center"
+            style={{ width: 160, height: 160 }}
           >
-            <span
-              aria-hidden
-              className="absolute rounded-full"
-              style={{
-                width: 150,
-                height: 150,
-                background:
-                  "radial-gradient(circle, rgba(109,23,206,0.14) 0%, rgba(109,23,206,0) 70%)",
-              }}
-            />
+            {[0, 1].map((i) => (
+              <motion.span
+                key={i}
+                aria-hidden
+                className="absolute top-1/2 left-1/2 rounded-full border border-[#6d17ce]"
+                style={{ x: "-50%", y: "-50%", width: 136, height: 136 }}
+                animate={{ width: [136, 192], height: [136, 192], opacity: [0, 0.3, 0] }}
+                transition={{ duration: 3, ease: "easeOut", repeat: Infinity, delay: i * 1.5 }}
+              />
+            ))}
             <span className="relative inline-flex" style={{ width: 136, height: 136 }}>
               <video
                 src={AVATAR}
@@ -557,76 +545,62 @@ export default function PersonalCompanionDesignPrototypePage() {
                 className="size-full rounded-full object-cover"
                 aria-label="Dil Ki Baat"
               />
-              <span
-                aria-hidden
-                className="absolute right-1.5 bottom-1.5 size-5 rounded-full border-2 border-white bg-[#25ab21]"
-              />
             </span>
           </div>
 
-          {/* 2 · content block — greeting + status */}
-          <div className="flex flex-col items-center gap-2.5">
-            <div className="flex max-w-[320px] flex-col items-center gap-1 text-center">
-              <p className="font-jio text-2xl font-bold text-[#0c0d10]">Arre, aa gaye!</p>
-              <p className="text-body-l font-jio text-[rgba(12,13,16,0.65)]">
-                Batao, kaisa chal raha hai?
-              </p>
-            </div>
-            <span className="text-body-2xs font-jio inline-flex items-center gap-1.5 font-medium text-[#25ab21]">
-              <span className="size-1.5 rounded-full bg-[#25ab21]" />
-              Dil Ki Baat · Active now
-            </span>
+          {/* 3 · quick actions — 3×1 grid, plain stroke icons */}
+          <div className="grid w-full max-w-[340px] grid-cols-3 gap-2.5">
+            {QUICK_ACTIONS.map((action, i) => {
+              const Icon = action.icon;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => openAction(action.chips)}
+                  className="focus-visible:ring-primary-60 flex flex-col items-center gap-2 rounded-2xl border border-[rgba(12,13,16,0.1)] bg-white px-2 py-4 text-center transition-transform duration-150 ease-out hover:scale-[1.02] focus:outline-none focus-visible:ring-2 active:scale-[0.97]"
+                >
+                  <Icon className="size-5 text-[#0c0d10]" strokeWidth={1.5} />
+                  <span className="text-body-2xs font-jio leading-tight font-medium text-[rgba(12,13,16,0.7)]">
+                    {copy.actions[i]}
+                  </span>
+                </button>
+              );
+            })}
           </div>
+        </div>
 
-          {/* 3 · actions — chat · call */}
-          <div className="flex items-center gap-4">
+        {/* Bottom — Speak + Message */}
+        <div
+          className="flex shrink-0 items-start justify-center gap-6 px-6 pt-2"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 28px)" }}
+        >
+          <div className="flex flex-col items-center gap-2">
             <button
               type="button"
-              aria-label="Chat"
+              aria-label={copy.message}
               onClick={openChatGreeting}
               className="focus-visible:ring-primary-60 flex size-14 items-center justify-center rounded-full border border-[rgba(12,13,16,0.12)] bg-white text-[#0c0d10] transition-transform duration-150 ease-out hover:scale-[1.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
             >
               <ChatIcon className="size-6" />
             </button>
+            <span className="text-body-2xs font-jio font-medium text-[rgba(12,13,16,0.7)]">
+              {copy.message}
+            </span>
+          </div>
+          <div className="flex flex-col items-center gap-2">
             <button
               type="button"
-              aria-label="Call"
+              aria-label={copy.speak}
               onClick={openCall}
-              className="focus-visible:ring-primary-60 flex size-14 items-center justify-center rounded-full border border-[rgba(12,13,16,0.12)] bg-white text-[#0c0d10] transition-transform duration-150 ease-out hover:scale-[1.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
+              className="focus-visible:ring-primary-60 flex size-14 items-center justify-center rounded-full bg-[#3e0084] text-white transition-transform duration-150 ease-out hover:scale-[1.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
             >
-              <PhoneStrokeIcon className="size-6" />
+              <VoiceWaveIcon className="size-6" />
             </button>
+            <span className="text-body-2xs font-jio font-medium text-[rgba(12,13,16,0.7)]">
+              {copy.speak}
+            </span>
           </div>
         </div>
-
-        {/* Intent chips — above the input separator; tapping opens the chat */}
-        {input.trim() === "" && (
-          <div className="flex shrink-0 gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {CHIPS.map((chip) => (
-              <motion.button
-                key={chip.id}
-                layoutId={`intent-${chip.id}`}
-                transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-                whileTap={{ scale: 0.97 }}
-                type="button"
-                onClick={() => startChat(chip.label, chip.id)}
-                className="bg-primary-30 text-primary-50 text-body-s font-jio focus-visible:ring-primary-60 flex shrink-0 items-center px-4 py-2 font-medium whitespace-nowrap focus:outline-none focus-visible:ring-2"
-                style={{ borderRadius: 9999 }}
-              >
-                {chip.label}
-              </motion.button>
-            ))}
-          </div>
-        )}
-
-        <HubChatInput
-          variant="sleek"
-          value={input}
-          onChange={setInput}
-          onSubmit={(v) => startChat(v)}
-          onSpeak={openVoiceChat}
-          placeholder="Type a message…"
-        />
       </div>
       {callOverlay}
     </div>
