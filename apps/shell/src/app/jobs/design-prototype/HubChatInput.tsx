@@ -441,15 +441,10 @@ export function HubChatInput({
 
   const hasChips = !!chips?.length;
 
-  // JDS field focus: bg flips surface-ghost → surface; border darkens
-  const pillBg = isFocused ? "#ffffff" : "#f5f5f5";
-  const pillBorder = isFocused ? "rgba(12,13,16,0.24)" : "rgba(12,13,16,0.10)";
-
   return (
     <footer
-      className="sticky bottom-0 w-full bg-white"
+      className="dark:bg-bg-panel sticky bottom-0 w-full border-t border-[rgba(12,13,16,0.08)] bg-white dark:border-[rgba(255,255,255,0.08)]"
       style={{
-        borderTop: "1px solid rgba(12,13,16,0.08)",
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
         position: "relative",
       }}
@@ -550,32 +545,34 @@ export function HubChatInput({
             type="button"
             aria-label="Add"
             onClick={onAdd}
-            className="flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center justify-center overflow-hidden rounded-full outline-none"
+            className="dark:bg-primary-60/50 flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center justify-center overflow-hidden rounded-full bg-[#f0e8fa] outline-none"
             animate={{
               width: isTyping ? SEND_SIZE : BTN_SIZE,
               height: isTyping ? SEND_SIZE : BTN_SIZE,
             }}
             transition={{ duration: DUR, ease: EASE }}
-            style={{ backgroundColor: "#f0e8fa", flexShrink: 0 }}
+            style={{ flexShrink: 0 }}
           >
             <Image
               src={`${HOME_ASSETS}/add.svg`}
               alt=""
               width={20}
               height={20}
-              className="pointer-events-none size-5"
+              className="pointer-events-none size-5 dark:[filter:brightness(0)_invert(1)]"
               unoptimized
             />
           </motion.button>
 
           {/* Input pill — borderRadius morphs on multi-line; border + bg change on focus (JDS field-focus pattern) */}
           <motion.div
-            className="flex min-w-0 flex-1 overflow-hidden"
+            className={`flex min-w-0 flex-1 overflow-hidden border ${
+              isFocused
+                ? "dark:bg-bg-elev border-[rgba(12,13,16,0.24)] bg-white dark:border-[rgba(255,255,255,0.2)]"
+                : "dark:bg-bg-elev border-[rgba(12,13,16,0.10)] bg-[#f5f5f5] dark:border-[rgba(255,255,255,0.12)]"
+            }`}
             animate={{ borderRadius: isMultiLine ? 18 : 40 }}
             transition={{ duration: DUR, ease: EASE }}
             style={{
-              backgroundColor: pillBg,
-              border: `1px solid ${pillBorder}`,
               borderRadius: 40,
               paddingLeft: PILL_PX_L,
               paddingRight: PILL_PX_R,
@@ -663,11 +660,10 @@ export function HubChatInput({
               onKeyDown={handleKeyDown}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
-              className="min-w-0 flex-1 resize-none border-none bg-transparent ring-0 outline-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&::placeholder]:truncate [&::placeholder]:overflow-hidden"
+              className="dark:text-ink dark:placeholder:text-ink-mute min-w-0 flex-1 resize-none border-none bg-transparent text-[#0c0d10] ring-0 outline-none [scrollbar-width:none] placeholder:text-[rgba(12,13,16,0.38)] [&::-webkit-scrollbar]:hidden [&::placeholder]:truncate [&::placeholder]:overflow-hidden"
               style={{
                 fontSize: "16px",
                 lineHeight: `${LINE_H}px`,
-                color: text ? "#0c0d10" : "rgba(12,13,16,0.38)",
                 height: LINE_H,
                 maxHeight: MAX_TA_H,
                 overflowY: "hidden",

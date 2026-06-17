@@ -32,7 +32,7 @@ export function SecondaryButton({
     <button
       type="button"
       onClick={onClick}
-      className="bg-primary-30 text-primary-60 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-transform duration-200 ease-out hover:scale-[1.02] active:scale-[0.97]"
+      className="bg-primary-30 text-primary-60 dark:bg-primary-50/40 dark:text-primary-20 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-transform duration-200 ease-out hover:scale-[1.02] active:scale-[0.97]"
     >
       {children}
     </button>
@@ -43,7 +43,7 @@ function Widget({ children, className }: { children: React.ReactNode; className?
   return (
     <div
       className={cn(
-        "bg-surface self-stretch overflow-hidden rounded-2xl border border-black/10",
+        "bg-surface self-stretch overflow-hidden rounded-2xl border border-black/10 dark:border-white/10",
         className,
       )}
     >
@@ -70,7 +70,7 @@ export function ClarifyChips({
           key={o.id}
           type="button"
           onClick={() => onAction(action)}
-          className="bg-surface-ghost text-fg rounded-full px-3.5 py-2 text-[13px] font-medium transition-transform duration-200 hover:scale-[1.03] active:scale-95"
+          className="bg-surface-ghost dark:text-ink text-fg rounded-full px-3.5 py-2 text-[13px] font-medium transition-transform duration-200 hover:scale-[1.03] active:scale-95 dark:bg-[#2a2d40]"
         >
           {o.label}
         </button>
@@ -86,7 +86,7 @@ export function BreathCardWidget({ onAction }: { onAction: (a: StoryAction) => v
   return (
     <Widget className="p-3.5">
       <div className="flex items-center gap-3">
-        <span className="bg-primary-20 text-primary-50 flex size-10 shrink-0 items-center justify-center rounded-xl">
+        <span className="bg-primary-20 text-primary-50 dark:bg-primary-60/40 dark:text-primary-20 flex size-10 shrink-0 items-center justify-center rounded-xl">
           <Wind size={20} strokeWidth={1.8} />
         </span>
         <div className="min-w-0 flex-1">
@@ -118,6 +118,7 @@ export function BreathCardWidget({ onAction }: { onAction: (a: StoryAction) => v
 export function BreathingWidget({ onAction }: { onAction: (a: StoryAction) => void }) {
   // Absolute step index across all cycles. step = tick % 4, cycle = tick / 4.
   const [tick, setTick] = useState(0);
+  const [acted, setActed] = useState(false);
   const reduceMotion = useReducedMotion();
 
   const stepIdx = tick % BREATH_PHASES.length;
@@ -146,13 +147,13 @@ export function BreathingWidget({ onAction }: { onAction: (a: StoryAction) => vo
 
       {/* Breathing orb */}
       <div className="relative mx-auto my-6 flex h-[200px] w-[200px] items-center justify-center">
-        <span className="bg-primary-20/60 absolute inset-0 rounded-full" />
+        <span className="bg-primary-20/60 dark:bg-primary-60/20 absolute inset-0 rounded-full" />
         <motion.span
-          className="bg-primary-30 absolute size-[140px] rounded-full"
+          className="bg-primary-30 dark:bg-primary-60/40 absolute size-[140px] rounded-full"
           animate={reduceMotion ? { scale: 1 } : { scale: done ? 1 : phase.scale }}
           transition={{ duration: reduceMotion ? 0 : phase.durationMs / 1000, ease: "easeInOut" }}
         />
-        <span className="bg-primary-50 text-primary-fg relative z-10 flex size-[88px] items-center justify-center rounded-full text-center text-[15px] leading-tight font-bold">
+        <span className="bg-primary-50 relative z-10 flex size-[88px] items-center justify-center rounded-full text-center text-[15px] leading-tight font-bold text-white">
           {done ? <Check size={34} /> : phase.label}
         </span>
       </div>
@@ -161,17 +162,24 @@ export function BreathingWidget({ onAction }: { onAction: (a: StoryAction) => vo
         {done ? "बस हो गया — आराम से।" : "गोले के साथ धीरे-धीरे साँस लीजिए।"}
       </p>
 
-      <div className="mt-5">
-        <SecondaryButton onClick={() => onAction("finish")}>
-          {done ? (
-            <>
-              पूरा हुआ <Check size={18} />
-            </>
-          ) : (
-            "बस करो"
-          )}
-        </SecondaryButton>
-      </div>
+      {!acted && (
+        <div className="mt-5">
+          <SecondaryButton
+            onClick={() => {
+              setActed(true);
+              onAction("finish");
+            }}
+          >
+            {done ? (
+              <>
+                पूरा हुआ <Check size={18} />
+              </>
+            ) : (
+              "बस करो"
+            )}
+          </SecondaryButton>
+        </div>
+      )}
     </Widget>
   );
 }
@@ -192,7 +200,7 @@ export function FeedbackWidget({ goHome }: { goHome: () => void }) {
   return (
     <Widget className="p-4">
       <div className="flex flex-col items-center text-center">
-        <span className="bg-primary-20 text-primary-50 mb-3 flex size-[72px] items-center justify-center rounded-full">
+        <span className="bg-primary-20 text-primary-50 dark:bg-primary-60/40 dark:text-primary-20 mb-3 flex size-[72px] items-center justify-center rounded-full">
           <Wind size={36} />
         </span>
         <div className="text-[20px] font-bold">{FINISH.headline}</div>
@@ -201,7 +209,7 @@ export function FeedbackWidget({ goHome }: { goHome: () => void }) {
         </div>
       </div>
 
-      <div className="bg-surface mt-5 rounded-2xl border border-black/10 p-4">
+      <div className="bg-surface mt-5 rounded-2xl border border-black/10 p-4 dark:border-white/10">
         <div className="mb-3 text-[14px] font-bold">अब कैसा लग रहा है?</div>
         <div className="flex gap-2.5">
           {FEELINGS.map((f) => {
@@ -220,7 +228,9 @@ export function FeedbackWidget({ goHome }: { goHome: () => void }) {
                 onClick={() => setPicked(f.id)}
                 className={cn(
                   "flex flex-1 flex-col items-center gap-1 rounded-xl border px-1.5 py-3 text-[12px] transition-all",
-                  active ? cn(toneOn, "font-bold") : "bg-surface text-fg border-black/12",
+                  active
+                    ? cn(toneOn, "font-bold")
+                    : "bg-surface dark:bg-bg-elev text-fg border-black/12 dark:border-white/10",
                 )}
               >
                 {glyph(f.icon)}
@@ -235,7 +245,7 @@ export function FeedbackWidget({ goHome }: { goHome: () => void }) {
         <button
           type="button"
           onClick={goHome}
-          className="bg-surface-ghost text-fg inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-transform duration-200 ease-out hover:scale-[1.02] active:scale-[0.97]"
+          className="bg-surface-ghost dark:text-ink text-fg inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-transform duration-200 ease-out hover:scale-[1.02] active:scale-[0.97] dark:bg-[#2a2d40]"
         >
           <Home size={17} /> वापस घर
         </button>

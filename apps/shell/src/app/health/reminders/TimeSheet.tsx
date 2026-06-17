@@ -48,23 +48,17 @@ function ScrollPicker({
     <div className={`relative ${flex} overflow-hidden`}>
       {/* Selection band */}
       <div
-        className="bg-surface-ghost-icon pointer-events-none absolute right-1 left-1 rounded-xl"
+        className="bg-surface-ghost-icon dark:bg-primary-60/60 pointer-events-none absolute right-1 left-1 rounded-xl"
         style={{ top: PAD, height: ITEM_H }}
       />
       {/* Fades */}
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 z-10"
-        style={{
-          height: PAD,
-          background: "linear-gradient(to bottom,rgba(255,255,255,0.97),rgba(255,255,255,0))",
-        }}
+        className="pointer-events-none absolute inset-x-0 top-0 z-10 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.97),rgba(255,255,255,0))] dark:bg-[linear-gradient(to_bottom,rgba(18,19,26,0.97),rgba(18,19,26,0))]"
+        style={{ height: PAD }}
       />
       <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-10"
-        style={{
-          height: PAD,
-          background: "linear-gradient(to top,rgba(255,255,255,0.97),rgba(255,255,255,0))",
-        }}
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-[linear-gradient(to_top,rgba(255,255,255,0.97),rgba(255,255,255,0))] dark:bg-[linear-gradient(to_top,rgba(18,19,26,0.97),rgba(18,19,26,0))]"
+        style={{ height: PAD }}
       />
 
       <div
@@ -90,10 +84,9 @@ function ScrollPicker({
                 zIndex: active ? 30 : undefined,
                 fontSize: active ? 20 : 15,
                 fontWeight: active ? 700 : 400,
-                color: active ? "#0c0d10" : "rgba(12,13,16,0.55)",
                 transition: "font-size 75ms, color 75ms",
               }}
-              className="font-jio"
+              className={`font-jio ${active ? "dark:text-ink text-[#0c0d10]" : "dark:text-ink-mute text-[rgba(12,13,16,0.55)]"}`}
             >
               {item}
             </div>
@@ -166,7 +159,7 @@ export function ReminderTimeSheet({
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-        className="mx-auto w-full max-w-[480px] rounded-t-xl bg-white px-5 pt-3 pb-8"
+        className="dark:bg-bg-panel mx-auto w-full max-w-[480px] rounded-t-xl bg-white px-5 pt-3 pb-8"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Drag handle */}
@@ -174,14 +167,14 @@ export function ReminderTimeSheet({
 
         {/* Header */}
         <div className="mb-5 flex items-center justify-between">
-          <p className="font-jio text-[17px] font-bold text-[#0c0d10]">
+          <p className="font-jio dark:text-ink text-[17px] font-bold text-[#0c0d10]">
             {reminder.label} · {isInterval ? "कितनी देर में?" : "समय चुनें"}
           </p>
           <button
             type="button"
             aria-label="बंद करें"
             onClick={onClose}
-            className="bg-surface-ghost inline-flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-150 ease-out active:scale-[0.95]"
+            className="bg-surface-ghost inline-flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-150 ease-out active:scale-[0.95] dark:bg-[#2a2d40]"
           >
             <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
               <path
@@ -205,7 +198,10 @@ export function ReminderTimeSheet({
           </div>
         ) : (
           <>
-            <div className="font-jio mb-0 flex text-[rgba(12,13,16,0.38)]" style={{ fontSize: 11 }}>
+            <div
+              className="font-jio dark:text-ink-mute mb-0 flex text-[rgba(12,13,16,0.38)]"
+              style={{ fontSize: 11 }}
+            >
               <div className="flex-1 text-center">घंटा</div>
               <div className="flex-1 text-center">मिनट</div>
               <div className="w-[72px] text-center">AM / PM</div>
@@ -213,7 +209,7 @@ export function ReminderTimeSheet({
             <div className="flex items-start gap-2">
               <ScrollPicker items={hours} value={hour} onChange={setHour} flex="flex-1" />
               <span
-                className="shrink-0 text-[22px] font-bold text-[rgba(12,13,16,0.35)]"
+                className="dark:text-ink-mute shrink-0 text-[22px] font-bold text-[rgba(12,13,16,0.35)]"
                 style={{ marginTop: "109px" }}
               >
                 :
@@ -231,7 +227,7 @@ export function ReminderTimeSheet({
                     className={`font-jio h-[52px] rounded-full border text-sm transition-transform duration-150 ease-out active:scale-[0.97] ${
                       period === p
                         ? "bg-primary-20 border-transparent font-bold text-[#0c0d10]"
-                        : "border-[rgba(12,13,16,0.12)] bg-white text-[rgba(12,13,16,0.45)]"
+                        : "dark:bg-bg-panel dark:text-ink-soft border-[rgba(12,13,16,0.12)] bg-white text-[rgba(12,13,16,0.45)] dark:border-[rgba(255,255,255,0.14)]"
                     }`}
                   >
                     {p}

@@ -402,7 +402,7 @@ export default function PersonalCompanionDesignPrototypePage() {
                       initial={m.chipId ? false : { opacity: 0, y: 12 }}
                       animate={m.chipId ? undefined : { opacity: 1, y: 0 }}
                       transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-                      className="text-body-s font-jio max-w-[80%] bg-[#eeeeef] px-3 py-2 text-[#0c0d10]"
+                      className="text-body-s font-jio dark:text-ink max-w-[80%] bg-[#eeeeef] px-3 py-2 text-[#0c0d10] dark:bg-[#2a2d40]"
                       style={{ borderRadius: "14px 14px 4px 14px" }}
                     >
                       {m.voice ? (

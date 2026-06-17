@@ -28,7 +28,7 @@ export function SecondaryButton({
     <button
       type="button"
       onClick={onClick}
-      className="bg-primary-30 text-primary-60 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-transform duration-200 ease-out hover:scale-[1.02] active:scale-[0.97]"
+      className="bg-primary-30 text-primary-60 dark:bg-primary-50/40 dark:text-primary-20 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-transform duration-200 ease-out hover:scale-[1.02] active:scale-[0.97]"
     >
       {children}
     </button>
@@ -39,7 +39,7 @@ function Widget({ children, className }: { children: React.ReactNode; className?
   return (
     <div
       className={cn(
-        "bg-surface self-stretch overflow-hidden rounded-2xl border border-black/10",
+        "bg-surface self-stretch overflow-hidden rounded-2xl border border-black/10 dark:border-white/10",
         className,
       )}
     >
@@ -66,7 +66,7 @@ export function ClarifyChips({
           key={o.id}
           type="button"
           onClick={() => onAction(action)}
-          className="bg-surface-ghost text-fg rounded-full px-3.5 py-2 text-[13px] font-medium transition-transform duration-200 hover:scale-[1.03] active:scale-95"
+          className="bg-surface-ghost dark:text-ink text-fg rounded-full px-3.5 py-2 text-[13px] font-medium transition-transform duration-200 hover:scale-[1.03] active:scale-95 dark:bg-[#2a2d40]"
         >
           {o.label}
         </button>
@@ -99,7 +99,7 @@ export function TriageCardWidget({ onAction }: { onAction: (a: StoryAction) => v
       </div>
 
       {/* Red flags */}
-      <div className="bg-warning/10 mt-4 rounded-2xl p-3.5">
+      <div className="bg-warning/10 mt-4 rounded-2xl p-3.5 dark:bg-[#2a2410]">
         <div className="text-warning flex items-center gap-2 text-[14px] font-bold">
           <TriangleAlert size={18} strokeWidth={2.4} /> डॉक्टर को कब दिखाएँ
         </div>
@@ -137,7 +137,7 @@ export function CloseCardWidget({ goHome }: { goHome: () => void }) {
   return (
     <Widget className="p-5">
       <div className="flex flex-col items-center text-center">
-        <span className="bg-primary-20 text-primary-50 mb-3 flex size-[64px] items-center justify-center rounded-full">
+        <span className="bg-primary-20 text-primary-50 dark:bg-primary-60/40 dark:text-primary-20 mb-3 flex size-[64px] items-center justify-center rounded-full">
           <Stethoscope size={34} strokeWidth={1.8} />
         </span>
         <div className="text-[19px] font-bold">{CLOSE.headline}</div>
@@ -153,7 +153,7 @@ export function CloseCardWidget({ goHome }: { goHome: () => void }) {
         <button
           type="button"
           onClick={goHome}
-          className="bg-surface-ghost text-fg inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-transform duration-200 ease-out hover:scale-[1.02] active:scale-[0.97]"
+          className="bg-surface-ghost dark:text-ink text-fg inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-transform duration-200 ease-out hover:scale-[1.02] active:scale-[0.97] dark:bg-[#2a2d40]"
         >
           <Home size={17} /> वापस घर
         </button>

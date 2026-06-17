@@ -22,6 +22,16 @@ type Props = {
   rightSlot?: ReactNode;
 };
 
+/**
+ * Shared chat/page header. Three sanctioned shapes — composed via props, not a `variant` enum:
+ *
+ *   1. back + heading + right icon           →  title="…"                  rightSlot={<button/>}
+ *   2. back + address + right icon           →  titleSlot={<AddressMenu/>}  rightSlot={<button/>}
+ *   3. back + heading + multiple right icons →  title="…"                  rightSlot={<div className="flex items-center gap-3">…</div>}
+ *
+ * `title` ↔ `titleSlot` selects heading-vs-custom centre; `rightSlot` carries one OR many buttons.
+ * `pageBg`: "white"=white screen · "grey"=#f5f5f5 screen · "transparent"=over a colored hero.
+ */
 export function HubHeader({
   title,
   titleSlot,
@@ -38,11 +48,13 @@ export function HubHeader({
   const btnBg = isTransparent
     ? "bg-white/15 text-white backdrop-blur-sm"
     : pageBg === "grey"
-      ? "bg-white"
-      : "bg-[#f5f5f5]";
+      ? "bg-white dark:bg-bg-elev dark:text-ink"
+      : "bg-[#f5f5f5] dark:bg-bg-elev dark:text-ink";
+  // pageBg="white" derives from --color-surface so the fade exactly matches the
+  // screen bg in both light and dark (no hardcoded dark guess). grey stays light.
   const gradient =
     pageBg === "white"
-      ? "linear-gradient(180deg, #ffffff 0%, #ffffff 73.27%, rgba(255,255,255,0.60) 86.13%, rgba(255,255,255,0.00) 100%)"
+      ? "linear-gradient(180deg, rgb(var(--color-surface)) 0%, rgb(var(--color-surface)) 73.27%, rgb(var(--color-surface) / 0.6) 86.13%, rgb(var(--color-surface) / 0) 100%)"
       : pageBg === "grey"
         ? "linear-gradient(180deg, #F5F5F5 0%, #F5F5F5 73.27%, rgba(245,245,245,0.60) 86.13%, rgba(245,245,245,0.00) 100%)"
         : "none";
@@ -82,11 +94,11 @@ export function HubHeader({
           <ChevronLeftIcon className="size-5" />
         </button>
         {titleSlot ? (
-          <div className="min-w-0 flex-1">{titleSlot}</div>
+          <div className="flex min-w-0 flex-1">{titleSlot}</div>
         ) : (
           <h1
             className={`font-jio flex-1 text-[18px] leading-normal ${
-              isTransparent ? "font-semibold text-white" : "font-bold text-black"
+              isTransparent ? "font-semibold text-white" : "dark:text-ink font-bold text-black"
             }`}
           >
             {title}

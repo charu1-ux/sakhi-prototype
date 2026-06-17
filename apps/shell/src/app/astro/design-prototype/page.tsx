@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import Lottie from "lottie-react";
+import { PenLine, Volume2, VolumeX } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
@@ -276,24 +277,18 @@ function ScrollPicker({
     <div className={`relative ${flex} overflow-hidden`}>
       {/* Selection band — bg-surface-ghost-icon tinted, no border */}
       <div
-        className="bg-surface-ghost-icon pointer-events-none absolute right-1 left-1 rounded-xl"
+        className="bg-surface-ghost-icon dark:bg-primary-60/60 pointer-events-none absolute right-1 left-1 rounded-xl"
         style={{ top: PAD, height: ITEM_H }}
       />
       {/* Fade top */}
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 z-10"
-        style={{
-          height: PAD,
-          background: "linear-gradient(to bottom,rgba(255,255,255,0.97),rgba(255,255,255,0))",
-        }}
+        className="dark:from-bg-panel pointer-events-none absolute inset-x-0 top-0 z-10 bg-gradient-to-b from-white to-transparent"
+        style={{ height: PAD }}
       />
       {/* Fade bottom */}
       <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-10"
-        style={{
-          height: PAD,
-          background: "linear-gradient(to top,rgba(255,255,255,0.97),rgba(255,255,255,0))",
-        }}
+        className="dark:from-bg-panel pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-white to-transparent"
+        style={{ height: PAD }}
       />
 
       <div
@@ -319,10 +314,9 @@ function ScrollPicker({
                 zIndex: active ? 30 : undefined,
                 fontSize: active ? 20 : 15,
                 fontWeight: active ? 700 : 400,
-                color: active ? "#0c0d10" : "rgba(12,13,16,0.55)",
                 transition: "font-size 75ms, color 75ms",
               }}
-              className="font-jio"
+              className={`font-jio ${active ? "dark:text-ink text-[#0c0d10]" : "dark:text-ink-mute text-[rgba(12,13,16,0.55)]"}`}
             >
               {item}
             </div>
@@ -417,13 +411,13 @@ function CalendarModal({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 12 }}
         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        className="shadow-elev-2 w-full max-w-sm overflow-hidden rounded-xl bg-white"
+        className="shadow-elev-2 dark:bg-bg-panel w-full max-w-sm overflow-hidden rounded-xl bg-white"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header — hidden in year sub-view (replaced by back + Select Year) */}
         {!showYears && (
           <div className="px-5 pt-5 pb-3">
-            <p className="text-headline-2xs font-jio text-[#0c0d10]">Date of Birth</p>
+            <p className="text-headline-2xs font-jio dark:text-ink text-[#0c0d10]">Date of Birth</p>
           </div>
         )}
 
@@ -434,7 +428,7 @@ function CalendarModal({
               <button
                 type="button"
                 onClick={() => setShowYears(false)}
-                className="bg-surface-ghost focus-visible:ring-primary-60 inline-flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
+                className="bg-surface-ghost dark:bg-bg-elev focus-visible:ring-primary-60 inline-flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path
@@ -446,7 +440,7 @@ function CalendarModal({
                   />
                 </svg>
               </button>
-              <p className="text-title-s font-jio text-[#0c0d10]">Select Year</p>
+              <p className="text-title-s font-jio dark:text-ink text-[#0c0d10]">Select Year</p>
             </div>
             <ScrollPicker items={years} value={yearVal} onChange={setYearVal} />
             <button
@@ -464,7 +458,7 @@ function CalendarModal({
               <button
                 type="button"
                 onClick={prevMonth}
-                className="bg-surface-ghost focus-visible:ring-primary-60 inline-flex h-9 w-9 items-center justify-center rounded-full transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
+                className="bg-surface-ghost dark:bg-bg-elev focus-visible:ring-primary-60 inline-flex h-9 w-9 items-center justify-center rounded-full transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path
@@ -486,7 +480,7 @@ function CalendarModal({
                 }}
                 className="focus-visible:ring-primary-60 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]"
               >
-                <span className="text-title-s font-jio text-[#0c0d10]">
+                <span className="text-title-s font-jio dark:text-ink text-[#0c0d10]">
                   {MONTHS_FULL[viewMonth]} {viewYear}
                 </span>
                 <svg
@@ -494,7 +488,7 @@ function CalendarModal({
                   height="11"
                   viewBox="0 0 12 12"
                   fill="none"
-                  className="text-[rgba(12,13,16,0.55)]"
+                  className="dark:text-ink-soft text-[rgba(12,13,16,0.55)]"
                 >
                   <path
                     d="M2 4l4 4 4-4"
@@ -510,7 +504,7 @@ function CalendarModal({
                 type="button"
                 onClick={nextMonth}
                 disabled={!canNext}
-                className="bg-surface-ghost focus-visible:ring-primary-60 inline-flex h-9 w-9 items-center justify-center rounded-full transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95] disabled:pointer-events-none disabled:opacity-25"
+                className="bg-surface-ghost dark:bg-bg-elev focus-visible:ring-primary-60 inline-flex h-9 w-9 items-center justify-center rounded-full transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95] disabled:pointer-events-none disabled:opacity-25"
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path
@@ -529,7 +523,7 @@ function CalendarModal({
               {DAY_LABELS.map((d) => (
                 <div
                   key={d}
-                  className="text-overline font-jio py-1 text-center text-[rgba(12,13,16,0.38)]"
+                  className="text-overline font-jio dark:text-ink-mute py-1 text-center text-[rgba(12,13,16,0.38)]"
                 >
                   {d}
                 </div>
@@ -554,8 +548,8 @@ function CalendarModal({
                       selected
                         ? "bg-primary-20 text-primary-50 font-bold active:scale-[0.95]"
                         : future
-                          ? "text-[rgba(12,13,16,0.18)]"
-                          : "text-[#0c0d10] active:scale-[0.95]"
+                          ? "dark:text-ink-mute text-[rgba(12,13,16,0.18)]"
+                          : "dark:text-ink text-[#0c0d10] active:scale-[0.95]"
                     }`}
                   >
                     {d}
@@ -570,7 +564,7 @@ function CalendarModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="bg-surface-ghost text-btn font-jio focus-visible:ring-primary-60 inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full px-[22px] text-[rgba(12,13,16,0.65)] transition-transform duration-150 ease-out hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]"
+                className="bg-surface-ghost dark:bg-bg-elev text-btn font-jio focus-visible:ring-primary-60 dark:text-ink-soft inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full px-[22px] text-[rgba(12,13,16,0.65)] transition-transform duration-150 ease-out hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]"
               >
                 Cancel
               </button>
@@ -630,7 +624,7 @@ function TimeSheet({
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-        className="rounded-t-xl bg-white px-5 pt-3 pb-8"
+        className="dark:bg-bg-panel rounded-t-xl bg-white px-5 pt-3 pb-8"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Drag handle */}
@@ -638,11 +632,13 @@ function TimeSheet({
 
         {/* Header: "Select time of birth" + close */}
         <div className="mb-5 flex items-center justify-between">
-          <p className="text-headline-2xs font-jio text-[#0c0d10]">Select time of birth</p>
+          <p className="text-headline-2xs font-jio dark:text-ink text-[#0c0d10]">
+            Select time of birth
+          </p>
           <button
             type="button"
             onClick={onClose}
-            className="bg-surface-ghost focus-visible:ring-primary-60 inline-flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
+            className="bg-surface-ghost dark:bg-bg-elev focus-visible:ring-primary-60 inline-flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
           >
             <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
               <path
@@ -656,7 +652,10 @@ function TimeSheet({
         </div>
 
         {/* Column labels */}
-        <div className="font-jio mb-0 flex text-[rgba(12,13,16,0.38)]" style={{ fontSize: 11 }}>
+        <div
+          className="font-jio dark:text-ink-mute mb-0 flex text-[rgba(12,13,16,0.38)]"
+          style={{ fontSize: 11 }}
+        >
           <div className="flex-1 text-center">Hour</div>
           <div className="flex-1 text-center">Minute</div>
           <div className="w-[72px] text-center">AM / PM</div>
@@ -667,7 +666,7 @@ function TimeSheet({
           <ScrollPicker items={hours} value={hour} onChange={setHour} flex="flex-1" />
           {/* Colon vertically centered on selection band: PAD(96) + ITEM_H/2(24) - half-line-height(11) = 109px */}
           <span
-            className="shrink-0 text-[22px] font-bold text-[rgba(12,13,16,0.35)]"
+            className="dark:text-ink-mute shrink-0 text-[22px] font-bold text-[rgba(12,13,16,0.35)]"
             style={{ marginTop: "109px" }}
           >
             :
@@ -687,7 +686,7 @@ function TimeSheet({
                 className={`text-btn font-jio focus-visible:ring-primary-60 h-[52px] rounded-full border transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97] ${
                   period === p
                     ? "bg-primary-20 border-transparent font-bold text-[#0c0d10]"
-                    : "border-[rgba(12,13,16,0.12)] bg-white text-[rgba(12,13,16,0.45)]"
+                    : "dark:bg-bg-panel dark:text-ink-soft border-[rgba(12,13,16,0.12)] bg-white text-[rgba(12,13,16,0.45)] dark:border-[rgba(255,255,255,0.14)]"
                 }`}
               >
                 {p}
@@ -709,7 +708,7 @@ function TimeSheet({
         <button
           type="button"
           onClick={onUnknown}
-          className="bg-surface-ghost text-btn font-jio focus-visible:ring-primary-60 mt-3 inline-flex h-12 w-full items-center justify-center rounded-full text-[#0c0d10] transition-transform duration-150 ease-out hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]"
+          className="bg-surface-ghost dark:bg-bg-elev text-btn font-jio focus-visible:ring-primary-60 dark:text-ink mt-3 inline-flex h-12 w-full items-center justify-center rounded-full text-[#0c0d10] transition-transform duration-150 ease-out hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]"
         >
           I don&apos;t know my time of birth
         </button>
@@ -788,7 +787,7 @@ function PlaceSheet({
       <button
         type="button"
         onClick={() => onConfirm(city, state)}
-        className={`focus-visible:ring-primary-60 flex w-full items-start gap-3 px-5 py-3 text-left transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 active:scale-[0.99] ${selected ? "bg-primary-20" : "hover:bg-surface-minimal"}`}
+        className={`focus-visible:ring-primary-60 flex w-full items-start gap-3 px-5 py-3 text-left transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 active:scale-[0.99] ${selected ? "bg-primary-20" : "hover:bg-surface-minimal dark:hover:bg-bg-elev"}`}
       >
         <div className="mt-0.5 flex w-9 shrink-0 items-center justify-center">
           <svg
@@ -796,7 +795,7 @@ function PlaceSheet({
             height="18"
             viewBox="0 0 18 18"
             fill="none"
-            className="text-[rgba(12,13,16,0.45)]"
+            className="dark:text-ink-soft text-[rgba(12,13,16,0.45)]"
           >
             <path
               d="M9 1.5a6 6 0 0 1 6 6c0 4.5-6 9-6 9S3 12 3 7.5a6 6 0 0 1 6-6z"
@@ -807,8 +806,10 @@ function PlaceSheet({
           </svg>
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-title-2xs font-jio text-[#0c0d10]">{city}</p>
-          <p className="text-body-2xs font-jio mt-0.5 text-[rgba(12,13,16,0.65)]">{state}</p>
+          <p className="text-title-2xs font-jio dark:text-ink text-[#0c0d10]">{city}</p>
+          <p className="text-body-2xs font-jio dark:text-ink-soft mt-0.5 text-[rgba(12,13,16,0.65)]">
+            {state}
+          </p>
         </div>
         {selected && (
           <div className="bg-primary-50 flex h-5 w-5 shrink-0 items-center justify-center self-center rounded-full">
@@ -840,7 +841,7 @@ function PlaceSheet({
           animate={{ y: 0 }}
           exit={{ y: "100%" }}
           transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-col overflow-hidden rounded-t-xl bg-white"
+          className="dark:bg-bg-panel flex flex-col overflow-hidden rounded-t-xl bg-white"
           style={{ height: "85%" }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -849,11 +850,13 @@ function PlaceSheet({
 
           {/* Header */}
           <div className="flex shrink-0 items-center justify-between px-5 pt-4 pb-3">
-            <p className="text-headline-2xs font-jio text-[#0c0d10]">Select place of birth</p>
+            <p className="text-headline-2xs font-jio dark:text-ink text-[#0c0d10]">
+              Select place of birth
+            </p>
             <button
               type="button"
               onClick={onClose}
-              className="bg-surface-ghost focus-visible:ring-primary-60 inline-flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
+              className="bg-surface-ghost dark:bg-bg-elev focus-visible:ring-primary-60 inline-flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
             >
               <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
                 <path
@@ -868,13 +871,13 @@ function PlaceSheet({
 
           {/* Search — web field focus: white bg + surface-moderate border (§12.1) */}
           <div className="mb-2 shrink-0 px-5">
-            <div className="focus-within:border-surface-moderate flex items-center gap-2 rounded-2xl border border-[rgba(12,13,16,0.12)] bg-white px-4 py-3 transition-colors">
+            <div className="focus-within:border-surface-moderate dark:bg-bg-panel flex items-center gap-2 rounded-2xl border border-[rgba(12,13,16,0.12)] bg-white px-4 py-3 transition-colors dark:border-[rgba(255,255,255,0.14)]">
               <svg
                 width="16"
                 height="16"
                 viewBox="0 0 16 16"
                 fill="none"
-                className="shrink-0 text-[rgba(12,13,16,0.38)]"
+                className="dark:text-ink-mute shrink-0 text-[rgba(12,13,16,0.38)]"
               >
                 <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.3" />
                 <path
@@ -889,7 +892,7 @@ function PlaceSheet({
                 placeholder="Search city"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="text-body-s font-jio flex-1 bg-transparent text-[#0c0d10] outline-none placeholder:text-[rgba(12,13,16,0.38)]"
+                className="text-body-s font-jio dark:text-ink flex-1 bg-transparent text-[#0c0d10] outline-none placeholder:text-[rgba(12,13,16,0.38)]"
               />
               {search.length > 0 && (
                 <button
@@ -912,7 +915,7 @@ function PlaceSheet({
 
           {/* Locate me + Enter manually — fixed list rows above the scrolling cities */}
           {!search && (
-            <div className="shrink-0 border-b border-[rgba(12,13,16,0.09)] pb-1">
+            <div className="shrink-0 border-b border-[rgba(12,13,16,0.09)] pb-1 dark:border-[rgba(255,255,255,0.12)]">
               <button
                 type="button"
                 onClick={handleLocate}
@@ -938,18 +941,18 @@ function PlaceSheet({
                 <div
                   className={`mx-5 mb-2 rounded-xl px-3.5 py-2.5 ${
                     locKind === "error"
-                      ? "bg-[#fde8ea]"
+                      ? "bg-[#fde8ea] dark:bg-[#3b1f22]"
                       : locKind === "success"
-                        ? "bg-[#e6f7e6]"
+                        ? "bg-[#e6f7e6] dark:bg-[#16261a]"
                         : "bg-primary-20"
                   }`}
                 >
                   <p
                     className={`text-body-2xs font-jio font-medium ${
                       locKind === "error"
-                        ? "text-[#b3261e]"
+                        ? "text-[#b3261e] dark:text-[#ffb4ab]"
                         : locKind === "success"
-                          ? "text-[#1e7d32]"
+                          ? "text-[#1e7d32] dark:text-[#7ee787]"
                           : "text-primary-60"
                     }`}
                   >
@@ -989,7 +992,7 @@ function PlaceSheet({
                 filtered.map((c) => <CityRow key={c.city} city={c.city} state={c.state} />)
               ) : (
                 <div className="flex flex-col items-center gap-3 px-5 pt-8">
-                  <p className="text-body-s font-jio text-[rgba(12,13,16,0.45)]">
+                  <p className="text-body-s font-jio dark:text-ink-soft text-[rgba(12,13,16,0.45)]">
                     No results for &ldquo;{search}&rdquo;
                   </p>
                   <button
@@ -1007,14 +1010,14 @@ function PlaceSheet({
             ) : (
               /* Sectioned list */
               <>
-                <p className="text-overline font-jio px-5 pt-3 pb-1 text-[rgba(12,13,16,0.38)]">
+                <p className="text-overline font-jio dark:text-ink-mute px-5 pt-3 pb-1 text-[rgba(12,13,16,0.38)]">
                   TOP CITIES
                 </p>
                 {TOP_CITIES.map((c) => (
                   <CityRow key={c.city} city={c.city} state={c.state} />
                 ))}
-                <div className="mx-5 my-2 border-t border-[rgba(12,13,16,0.07)]" />
-                <p className="text-overline font-jio px-5 pt-1 pb-1 text-[rgba(12,13,16,0.38)]">
+                <div className="mx-5 my-2 border-t border-[rgba(12,13,16,0.07)] dark:border-[rgba(255,255,255,0.1)]" />
+                <p className="text-overline font-jio dark:text-ink-mute px-5 pt-1 pb-1 text-[rgba(12,13,16,0.38)]">
                   OTHER CITIES
                 </p>
                 {OTHER_CITIES.map((c) => (
@@ -1039,20 +1042,20 @@ function PlaceSheet({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 12 }}
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="shadow-elev-2 w-full max-w-sm rounded-xl bg-white px-5 pt-5 pb-5"
+              className="shadow-elev-2 dark:bg-bg-panel w-full max-w-sm rounded-xl bg-white px-5 pt-5 pb-5"
               onClick={(e) => e.stopPropagation()}
             >
-              <p className="font-jio mb-5 text-[18px] font-semibold text-[#0c0d10]">
+              <p className="font-jio dark:text-ink mb-5 text-[18px] font-semibold text-[#0c0d10]">
                 Enter City Name
               </p>
 
-              <div className="focus-within:border-surface-moderate mb-6 flex items-center gap-3 rounded-2xl border border-[rgba(12,13,16,0.12)] bg-white px-4 py-4 transition-colors">
+              <div className="focus-within:border-surface-moderate dark:bg-bg-panel mb-6 flex items-center gap-3 rounded-2xl border border-[rgba(12,13,16,0.12)] bg-white px-4 py-4 transition-colors dark:border-[rgba(255,255,255,0.14)]">
                 <svg
                   width="16"
                   height="16"
                   viewBox="0 0 18 18"
                   fill="none"
-                  className="shrink-0 text-[rgba(12,13,16,0.45)]"
+                  className="dark:text-ink-soft shrink-0 text-[rgba(12,13,16,0.45)]"
                 >
                   <path
                     d="M9 1.5a6 6 0 0 1 6 6c0 4.5-6 9-6 9S3 12 3 7.5a6 6 0 0 1 6-6z"
@@ -1067,7 +1070,7 @@ function PlaceSheet({
                   placeholder="Type your city / town / village"
                   value={manual}
                   onChange={(e) => setManual(e.target.value)}
-                  className="text-body-s font-jio flex-1 bg-transparent text-[#0c0d10] outline-none placeholder:text-[rgba(12,13,16,0.38)]"
+                  className="text-body-s font-jio dark:text-ink flex-1 bg-transparent text-[#0c0d10] outline-none placeholder:text-[rgba(12,13,16,0.38)]"
                 />
               </div>
 
@@ -1075,7 +1078,7 @@ function PlaceSheet({
                 <button
                   type="button"
                   onClick={() => setView("list")}
-                  className="bg-surface-ghost text-btn font-jio focus-visible:ring-primary-60 inline-flex h-11 flex-1 items-center justify-center rounded-full text-[#0c0d10] transition-transform duration-150 ease-out hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]"
+                  className="bg-surface-ghost dark:bg-bg-elev text-btn font-jio focus-visible:ring-primary-60 dark:text-ink inline-flex h-11 flex-1 items-center justify-center rounded-full text-[#0c0d10] transition-transform duration-150 ease-out hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]"
                 >
                   Cancel
                 </button>
@@ -1115,7 +1118,11 @@ function KundaliChart({
   const centroidEntries = Object.entries(HOUSE_CENTROIDS) as [string, [number, number]][];
 
   return (
-    <svg viewBox="0 0 480 480" className={className} style={{ display: "block" }}>
+    <svg
+      viewBox="0 0 480 480"
+      className={`${className ?? ""} text-[rgba(12,13,16,0.18)] dark:text-[rgba(255,255,255,0.22)]`}
+      style={{ display: "block" }}
+    >
       <defs>
         <clipPath id="dp-kclip">
           <rect x="0" y="0" width="480" height="480" rx="24" ry="24" />
@@ -1152,7 +1159,7 @@ function KundaliChart({
         })}
 
         {/* Inner grid — light gray, each line drawn exactly once */}
-        <g style={{ stroke: "rgba(12,13,16,0.16)", strokeWidth: 1.2 }}>
+        <g style={{ stroke: "currentColor", strokeWidth: 1.2 }}>
           <line x1="0" y1="0" x2="480" y2="480" />
           <line x1="480" y1="0" x2="0" y2="480" />
           <polygon points="240,0 480,240 240,480 0,240" fill="none" />
@@ -1181,7 +1188,7 @@ function KundaliChart({
         rx="23"
         ry="23"
         fill="none"
-        stroke="rgba(12,13,16,0.20)"
+        stroke="currentColor"
         strokeWidth="1.4"
       />
 
@@ -1196,11 +1203,12 @@ function KundaliChart({
             y={cy}
             textAnchor="middle"
             dominantBaseline="central"
+            className={active ? "fill-[#6d17ce]" : "dark:fill-ink fill-[#0c0d10]"}
             style={{
-              // Numbers lg; only active is purple, rest gray
+              // Numbers lg; only active is purple, rest gray (currentColor via fill-* class)
               fontSize: active ? 27 : visited ? 26 : 24,
               fontWeight: active ? 800 : visited ? 700 : 600,
-              fill: active ? "#6d17ce" : visited ? "rgba(12,13,16,0.82)" : "rgba(12,13,16,0.5)",
+              fillOpacity: active ? 1 : visited ? 0.82 : 0.5,
               animation: "dp-kText 0.3s ease both",
               animationDelay: `${i * 0.07 + 0.18}s`,
               transition: "fill 0.5s ease",
@@ -1264,7 +1272,7 @@ function LoadingScreen({ onComplete }: { onComplete: () => void }) {
   ];
 
   return (
-    <div className="bg-surface-minimal flex flex-1 flex-col items-center justify-center gap-8 px-8">
+    <div className="bg-surface-minimal dark:bg-bg-panel flex flex-1 flex-col items-center justify-center gap-8 px-8">
       <div className="relative flex h-48 w-48 items-center justify-center">
         <div
           className="absolute inset-0 animate-pulse rounded-full"
@@ -1288,11 +1296,14 @@ function LoadingScreen({ onComplete }: { onComplete: () => void }) {
         ))}
       </div>
 
-      <p key={msgIdx} className="text-headline-2xs font-jio text-center text-[#0c0d10]">
+      <p
+        key={msgIdx}
+        className="text-headline-2xs font-jio dark:text-ink text-center text-[#0c0d10]"
+      >
         {LOADING_MESSAGES[msgIdx]}
       </p>
 
-      <div className="bg-primary-20 h-1.5 w-48 overflow-hidden rounded-full">
+      <div className="bg-primary-20 dark:bg-primary-50/25 h-1.5 w-48 overflow-hidden rounded-full">
         <div
           className="bg-primary-50 h-full rounded-full"
           style={{ animation: "dp-kundliload 5s ease-in-out forwards" }}
@@ -1410,7 +1421,7 @@ function RevealScreen({ data, onDone }: { data: FormData; onDone: () => void }) 
           <button
             type="button"
             onClick={onDone}
-            className="text-btn font-jio focus-visible:ring-primary-60 inline-flex h-10 items-center gap-1 rounded-full bg-[#f5f5f5] px-4 text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 active:scale-[0.97]"
+            className="text-btn font-jio focus-visible:ring-primary-60 dark:bg-bg-elev dark:text-ink inline-flex h-10 items-center gap-1 rounded-full bg-[#f5f5f5] px-4 text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 active:scale-[0.97]"
           >
             Skip
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
@@ -1433,10 +1444,10 @@ function RevealScreen({ data, onDone }: { data: FormData; onDone: () => void }) 
       >
         {/* Title + description */}
         <div className="px-5 pb-3">
-          <p className="font-jio text-xl leading-tight font-bold text-[#0c0d10]">
+          <p className="font-jio dark:text-ink text-xl leading-tight font-bold text-[#0c0d10]">
             {USER_NAME} ki Kundali
           </p>
-          <p className="text-body-2xs font-jio mt-0.5 text-[rgba(12,13,16,0.65)]">
+          <p className="text-body-2xs font-jio dark:text-ink-soft mt-0.5 text-[rgba(12,13,16,0.65)]">
             {data.day} {data.month} {data.year} · {data.city}
           </p>
         </div>
@@ -1461,7 +1472,7 @@ function RevealScreen({ data, onDone }: { data: FormData; onDone: () => void }) 
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 12 }}
             transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            className="font-jio px-5 pt-3 pb-1 text-center font-bold text-[#0c0d10]"
+            className="font-jio dark:text-ink px-5 pt-3 pb-1 text-center font-bold text-[#0c0d10]"
             style={{ fontSize: 30, lineHeight: 1.15, letterSpacing: "-0.3px" }}
           >
             {activeBeat.keyword}
@@ -1487,7 +1498,7 @@ function RevealScreen({ data, onDone }: { data: FormData; onDone: () => void }) 
             }}
             className="flex justify-center px-5 pb-5"
           >
-            <span className="text-body-s font-jio text-primary-50 bg-primary-20 border-primary-20 inline-flex items-center gap-2 rounded-full border px-5 py-2.5 font-semibold">
+            <span className="text-body-s font-jio text-primary-50 dark:text-primary-30 bg-primary-20 dark:bg-primary-60/40 border-primary-20 dark:border-primary-60/40 inline-flex items-center gap-2 rounded-full border px-5 py-2.5 font-semibold">
               ✦ {activeBeat.insight}
             </span>
           </motion.div>
@@ -1504,7 +1515,7 @@ function RevealScreen({ data, onDone }: { data: FormData; onDone: () => void }) 
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.8 }}
                   transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                  className="bg-surface-ghost text-label-s inline-flex items-center rounded-full px-3 py-1 text-[#0c0d10]"
+                  className="bg-surface-ghost dark:bg-bg-elev text-label-s dark:text-ink inline-flex items-center rounded-full px-3 py-1 text-[#0c0d10]"
                 >
                   {(beat.badge ?? beat.title).replace(/^[^\p{L}]+/u, "").trim()}
                 </motion.span>
@@ -1517,7 +1528,7 @@ function RevealScreen({ data, onDone }: { data: FormData; onDone: () => void }) 
       </div>
 
       {/* Footer */}
-      <div className="bg-surface border-t border-[rgba(12,13,16,0.06)] px-5 pt-3 pb-6">
+      <div className="bg-surface border-t border-[rgba(12,13,16,0.06)] px-5 pt-3 pb-6 dark:border-[rgba(255,255,255,0.1)]">
         {/* Narration controls — play/pause + seek bar */}
         <div className="mb-3 flex items-center gap-3">
           <button
@@ -1568,7 +1579,7 @@ function RevealScreen({ data, onDone }: { data: FormData; onDone: () => void }) 
             }}
             onPointerUp={() => setSeeking(false)}
             onPointerCancel={() => setSeeking(false)}
-            className="bg-surface-ghost relative h-2 flex-1 cursor-pointer touch-none rounded-full"
+            className="bg-surface-ghost dark:bg-bg-elev relative h-2 flex-1 cursor-pointer touch-none rounded-full"
           >
             <div
               className="bg-primary-50 absolute inset-y-0 left-0 rounded-full"
@@ -1578,7 +1589,7 @@ function RevealScreen({ data, onDone }: { data: FormData; onDone: () => void }) 
               }}
             />
             <div
-              className="bg-primary-50 shadow-elev-1 absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white"
+              className="bg-primary-50 shadow-elev-1 border-primary-50 absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2"
               style={{
                 left: `${progress * 100}%`,
                 transition: seeking ? "none" : "left 1s linear",
@@ -1888,31 +1899,27 @@ function ChatOverlay({
           pageBg="white"
           onBack={onClose}
           rightSlot={
-            <button
-              type="button"
-              onClick={toggleMute}
-              aria-label={muted ? "Unmute voice" : "Mute voice"}
-              className="focus-visible:ring-primary-60 flex size-10 items-center justify-center rounded-full bg-[#f5f5f5] text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
-            >
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                <path d="M4 8v4h3l4 3V5L7 8H4z" fill="currentColor" />
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={toggleMute}
+                aria-label={muted ? "Unmute voice" : "Mute voice"}
+                className="focus-visible:ring-primary-60 dark:bg-bg-elev dark:text-ink flex size-10 shrink-0 items-center justify-center rounded-full bg-[#f5f5f5] text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
+              >
                 {muted ? (
-                  <path
-                    d="M14 8l4 4M18 8l-4 4"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
+                  <VolumeX size={18} strokeWidth={2} />
                 ) : (
-                  <path
-                    d="M14 8a3 3 0 0 1 0 4"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
+                  <Volume2 size={18} strokeWidth={2} />
                 )}
-              </svg>
-            </button>
+              </button>
+              <button
+                type="button"
+                aria-label="New chat"
+                className="focus-visible:ring-primary-60 dark:bg-bg-elev dark:text-ink flex size-10 shrink-0 items-center justify-center rounded-full bg-[#f5f5f5] text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
+              >
+                <PenLine size={19} strokeWidth={2} />
+              </button>
+            </div>
           }
         />
 
@@ -1987,18 +1994,20 @@ function ChatOverlay({
                   transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
                   className="flex justify-start"
                 >
-                  <div className="shadow-elev-2 bg-surface w-full max-w-[92%] overflow-hidden rounded-lg border border-[rgba(12,13,16,0.08)]">
+                  <div className="shadow-elev-2 bg-surface w-full max-w-[92%] overflow-hidden rounded-lg border border-[rgba(12,13,16,0.08)] dark:border-[rgba(255,255,255,0.1)]">
                     <div className="p-4">
-                      <p className="text-overline font-jio mb-3 text-[rgba(12,13,16,0.45)]">
+                      <p className="text-overline font-jio dark:text-ink-soft mb-3 text-[rgba(12,13,16,0.45)]">
                         YEH DETAILS MILI HAIN — SAHI HAI?
                       </p>
                       <div className="flex flex-col gap-3">
                         {rows.map((r) => (
                           <div key={r.label} className="flex items-center gap-3">
-                            <span className="bg-surface-ghost-icon text-primary-50 flex size-8 shrink-0 items-center justify-center rounded-full">
+                            <span className="bg-surface-ghost-icon dark:bg-primary-60/60 text-primary-50 dark:text-primary-30 flex size-8 shrink-0 items-center justify-center rounded-full">
                               {r.icon}
                             </span>
-                            <span className="text-body-s font-jio text-[#0c0d10]">{r.label}</span>
+                            <span className="text-body-s font-jio dark:text-ink text-[#0c0d10]">
+                              {r.label}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -2008,7 +2017,7 @@ function ChatOverlay({
                         <button
                           type="button"
                           onClick={handleEditDetails}
-                          className="text-body-s font-jio flex-1 rounded-full bg-[#eeeeef] px-5 py-2.5 text-[#0c0d10] transition-transform duration-150 ease-out active:scale-[0.97]"
+                          className="text-body-s font-jio dark:bg-bg-elev dark:text-ink flex-1 rounded-full bg-[#eeeeef] px-5 py-2.5 text-[#0c0d10] transition-transform duration-150 ease-out active:scale-[0.97]"
                         >
                           Edit details
                         </button>
@@ -2036,10 +2045,10 @@ function ChatOverlay({
                   transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                   className="flex justify-start"
                 >
-                  <div className="bg-surface w-full max-w-[92%] rounded-lg border border-[rgba(12,13,16,0.08)] p-4">
+                  <div className="bg-surface w-full max-w-[92%] rounded-lg border border-[rgba(12,13,16,0.08)] p-4 dark:border-[rgba(255,255,255,0.1)]">
                     {/* Icon left · title + description right */}
                     <div className="flex items-center gap-3">
-                      <span className="bg-surface-ghost-icon text-primary-50 flex size-12 shrink-0 items-center justify-center rounded-full">
+                      <span className="bg-surface-ghost-icon dark:bg-primary-60/60 text-primary-50 dark:text-primary-30 flex size-12 shrink-0 items-center justify-center rounded-full">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                           <path
                             d="M12 2l2.2 6.4L21 11l-6.8 2.6L12 20l-2.2-6.4L3 11l6.8-2.6L12 2z"
@@ -2048,10 +2057,10 @@ function ChatOverlay({
                         </svg>
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="font-jio text-body-l font-bold tracking-[-0.48px] text-[#0c0d10]">
+                        <p className="font-jio text-body-l dark:text-ink font-bold tracking-[-0.48px] text-[#0c0d10]">
                           Your birth chart is ready
                         </p>
-                        <p className="text-body-s font-jio text-[rgba(12,13,16,0.55)]">
+                        <p className="text-body-s font-jio dark:text-ink-soft text-[rgba(12,13,16,0.55)]">
                           Tap to reveal your Kundli
                         </p>
                       </div>
@@ -2090,13 +2099,13 @@ function ChatOverlay({
               >
                 {isUser ? (
                   <div
-                    className="text-body-s font-jio max-w-[80%] bg-[#eeeeef] px-3 py-2 text-[#0c0d10]"
+                    className="text-body-s font-jio dark:text-ink max-w-[80%] bg-[#eeeeef] px-3 py-2 text-[#0c0d10] dark:bg-[#2a2d40]"
                     style={{ borderRadius: "14px 14px 4px 14px" }}
                   >
                     {m.text}
                   </div>
                 ) : (
-                  <p className="text-body-s font-jio max-w-[92%] leading-relaxed font-medium whitespace-pre-line text-[#0c0d10]">
+                  <p className="text-body-s font-jio dark:text-ink max-w-[92%] leading-relaxed font-medium whitespace-pre-line text-[#0c0d10]">
                     {m.text}
                   </p>
                 )}
@@ -2107,7 +2116,7 @@ function ChatOverlay({
             <div className="flex items-center gap-2.5 self-start">
               <Lottie animationData={spinLoaderData} loop className="size-8 shrink-0" />
               {loaderLabel && (
-                <span className="text-body-s font-jio font-medium text-[#0c0d10]">
+                <span className="text-body-s font-jio dark:text-ink font-medium text-[#0c0d10]">
                   {loaderLabel}
                 </span>
               )}
@@ -2208,7 +2217,7 @@ function FormScreen({
     else setData({ ...data, timeUnknown: true, hour: "", minute: "" });
   }
 
-  // Tappable field row — pill button on bg-surface-ghost
+  // Tappable field row — pill button on bg-surface-ghost dark:bg-bg-elev
   const FieldRow = ({
     icon,
     label,
@@ -2227,26 +2236,28 @@ function FormScreen({
     onTap: () => void;
   }) => (
     <div className="flex flex-col gap-2">
-      <p className="text-overline font-jio px-1 text-[rgba(12,13,16,0.38)]">{label}</p>
+      <p className="text-overline font-jio dark:text-ink-mute px-1 text-[rgba(12,13,16,0.38)]">
+        {label}
+      </p>
       <button
         type="button"
         onClick={onTap}
         className={`focus-visible:ring-primary-60 inline-flex h-14 w-full items-center gap-3 rounded-2xl border px-4 transition-[background-color,border-color,transform] duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97] ${
           error
-            ? "border-error bg-white"
+            ? "border-error dark:bg-bg-panel bg-white"
             : active
-              ? "border-surface-moderate bg-white"
-              : "border-[rgba(12,13,16,0.12)] bg-white"
+              ? "border-surface-moderate dark:bg-bg-panel bg-white"
+              : "dark:bg-bg-panel border-[rgba(12,13,16,0.12)] bg-white dark:border-[rgba(255,255,255,0.14)]"
         }`}
       >
-        <span className="shrink-0 text-[#0c0d10]">{icon}</span>
+        <span className="dark:text-ink shrink-0 text-[#0c0d10]">{icon}</span>
         <span
           className={`text-body-s font-jio flex-1 text-left ${
             value
               ? data.timeUnknown && label === "TIME OF BIRTH"
-                ? "text-[rgba(12,13,16,0.5)] italic"
-                : "font-semibold text-[#0c0d10]"
-              : "text-[rgba(12,13,16,0.38)]"
+                ? "dark:text-ink-soft text-[rgba(12,13,16,0.5)] italic"
+                : "dark:text-ink font-semibold text-[#0c0d10]"
+              : "dark:text-ink-mute text-[rgba(12,13,16,0.38)]"
           }`}
         >
           {value ?? `Select ${label.toLowerCase().replace(" of birth", "")}`}
@@ -2264,7 +2275,7 @@ function FormScreen({
           height="16"
           viewBox="0 0 16 16"
           fill="none"
-          className="shrink-0 text-[rgba(12,13,16,0.3)]"
+          className="dark:text-ink-mute shrink-0 text-[rgba(12,13,16,0.3)]"
         >
           <path
             d="M5 7l3 3 3-3"
@@ -2321,10 +2332,10 @@ function FormScreen({
         {/* ── Form content — bg-surface (default) ── */}
         <div className="bg-surface px-5 pt-6 pb-4">
           {/* Section heading */}
-          <p className="text-headline-2xs font-jio mb-1 leading-tight text-[#0c0d10]">
+          <p className="text-headline-2xs font-jio dark:text-ink mb-1 leading-tight text-[#0c0d10]">
             Your Birth Details
           </p>
-          <p className="text-body-s font-jio mb-6 text-[rgba(12,13,16,0.65)]">
+          <p className="text-body-s font-jio dark:text-ink-soft mb-6 text-[rgba(12,13,16,0.65)]">
             to help us map your unique cosmic blueprint
           </p>
 
@@ -2391,7 +2402,7 @@ function FormScreen({
                   className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border transition-colors ${
                     data.timeUnknown
                       ? "bg-primary-50 border-primary-50"
-                      : "border-[rgba(12,13,16,0.3)] bg-white"
+                      : "dark:bg-bg-panel border-[rgba(12,13,16,0.3)] bg-white dark:border-[rgba(255,255,255,0.28)]"
                   }`}
                 >
                   {data.timeUnknown && (
@@ -2406,7 +2417,7 @@ function FormScreen({
                     </svg>
                   )}
                 </span>
-                <span className="text-body-s font-jio text-[rgba(12,13,16,0.65)]">
+                <span className="text-body-s font-jio dark:text-ink-soft text-[rgba(12,13,16,0.65)]">
                   I don&apos;t know my time of birth
                 </span>
               </button>
@@ -2435,7 +2446,7 @@ function FormScreen({
       </div>
 
       {/* ── Sticky bottom CTA ── */}
-      <div className="bg-surface flex shrink-0 items-center gap-3 border-t border-[rgba(12,13,16,0.07)] px-5 pt-4 pb-6">
+      <div className="bg-surface flex shrink-0 items-center gap-3 border-t border-[rgba(12,13,16,0.07)] px-5 pt-4 pb-6 dark:border-[rgba(255,255,255,0.1)]">
         {/* Primary: Calculate Kundali — always enabled; only proceeds once all three fields are filled */}
         <button
           type="button"

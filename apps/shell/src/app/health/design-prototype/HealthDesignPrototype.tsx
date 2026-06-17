@@ -1,9 +1,10 @@
 "use client";
 
-import { BellRing, ChevronLeft, Leaf, MessageSquareText, Stethoscope, Wind } from "lucide-react";
+import { BellRing, Leaf, PenLine, Stethoscope, Wind } from "lucide-react";
 import { useState } from "react";
 
 import { HubChatInput } from "../../jobs/design-prototype/HubChatInput";
+import { HubHeader } from "../../jobs/design-prototype/HubHeader";
 import { NuskhaStory } from "../nuskha/NuskhaStory";
 import { RemindersStory } from "../reminders/RemindersStory";
 import { SukoonStory } from "../sukoon/SukoonStory";
@@ -65,31 +66,27 @@ export function HealthDesignPrototype() {
   // Pre-chat: chat shell + greeting, with the four sleek pills above the input.
   return (
     <div className="bg-surface relative flex h-dvh flex-col overflow-hidden">
-      <header className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[68px]">
-        <div className="absolute inset-0 bg-gradient-to-b from-white from-[73%] to-transparent" />
-        <div className="pointer-events-auto relative flex items-center gap-3 px-4 pt-3.5">
+      <HubHeader
+        title="सेहत साथी"
+        pageBg="white"
+        onBack={() => {
+          window.location.href = "/";
+        }}
+        rightSlot={
           <button
             type="button"
-            aria-label="Back"
-            onClick={() => {
-              window.location.href = "/";
-            }}
-            className="bg-surface-minimal text-fg flex size-10 shrink-0 items-center justify-center rounded-full transition-transform duration-200 hover:scale-105 active:scale-95"
+            aria-label="New chat"
+            className="focus-visible:ring-primary-60 dark:bg-bg-elev dark:text-ink flex size-10 shrink-0 items-center justify-center rounded-full bg-[#f5f5f5] text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
           >
-            <ChevronLeft size={22} strokeWidth={2.4} />
+            <PenLine size={19} strokeWidth={2} />
           </button>
-          <h1 className="flex-1 text-lg font-bold">सेहत साथी</h1>
-          <button
-            type="button"
-            aria-label="Chats"
-            className="bg-surface-minimal text-fg flex size-10 shrink-0 items-center justify-center rounded-full transition-transform duration-200 hover:scale-105 active:scale-95"
-          >
-            <MessageSquareText size={20} strokeWidth={2} />
-          </button>
-        </div>
-      </header>
+        }
+      />
 
-      <main className="flex flex-1 flex-col overflow-y-auto px-4 pt-[80px] pb-5" />
+      <main
+        className="flex flex-1 flex-col overflow-y-auto px-4 pb-5"
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 80px)" }}
+      />
 
       {/* Greeting title + four sleek pills — icon · title · description, no chevron, rounded-full */}
       <div className="flex shrink-0 flex-col gap-2.5 px-4 pb-2">
@@ -103,7 +100,7 @@ export function HealthDesignPrototype() {
               key={o.key}
               type="button"
               onClick={() => setSelected(o.key)}
-              className="bg-surface flex items-center gap-3 rounded-full border border-black/10 py-2 pr-4 pl-2 text-left transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99]"
+              className="bg-surface dark:bg-bg-elev flex items-center gap-3 rounded-full border border-black/10 py-2 pr-4 pl-2 text-left transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99] dark:border-white/10"
             >
               <span
                 className="flex size-10 shrink-0 items-center justify-center rounded-full"

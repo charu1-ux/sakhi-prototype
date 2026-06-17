@@ -48,7 +48,7 @@ function SecondaryButton({
     <button
       type="button"
       onClick={onClick}
-      className="bg-primary-30 text-primary-60 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-transform duration-200 ease-out hover:scale-[1.02] active:scale-[0.97]"
+      className="bg-primary-30 text-primary-60 dark:bg-primary-50/40 dark:text-primary-20 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-transform duration-200 ease-out hover:scale-[1.02] active:scale-[0.97]"
     >
       {children}
     </button>
@@ -59,7 +59,7 @@ function Widget({ children, className }: { children: React.ReactNode; className?
   return (
     <div
       className={cn(
-        "bg-surface self-stretch overflow-hidden rounded-2xl border border-black/10",
+        "bg-surface self-stretch overflow-hidden rounded-2xl border border-black/10 dark:border-white/10",
         className,
       )}
     >
@@ -119,7 +119,7 @@ export function ExploreWidget({ goHome }: { goHome: () => void }) {
                 setBucket(b);
                 setView("remedies");
               }}
-              className="bg-surface flex flex-col items-start gap-2 rounded-xl border border-black/10 p-3 text-left transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              className="bg-surface dark:bg-bg-elev flex flex-col items-start gap-2 rounded-xl border border-black/10 p-3 text-left transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] dark:border-white/10"
             >
               <span
                 className="flex size-10 items-center justify-center rounded-full"
@@ -164,7 +164,7 @@ export function ExploreWidget({ goHome }: { goHome: () => void }) {
             return (
               <div
                 key={r.id}
-                className="bg-surface overflow-hidden rounded-xl border border-black/10"
+                className="bg-surface overflow-hidden rounded-xl border border-black/10 dark:border-white/10"
               >
                 <button
                   type="button"
@@ -234,7 +234,7 @@ export function ExploreWidget({ goHome }: { goHome: () => void }) {
           </span>
           <span className="text-fg-muted text-[12px]">{remedy.title}</span>
         </div>
-        <div className="bg-surface-minimal h-1.5 overflow-hidden rounded-full">
+        <div className="bg-surface-minimal h-1.5 overflow-hidden rounded-full dark:bg-white/10">
           <div
             className="bg-primary-50 h-full rounded-full transition-all"
             style={{ width: `${pct}%` }}
@@ -251,7 +251,7 @@ export function ExploreWidget({ goHome }: { goHome: () => void }) {
         </div>
 
         <div className="mt-3 flex justify-center">
-          <span className="bg-primary-20 text-primary-50 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-bold">
+          <span className="bg-primary-20 text-primary-50 dark:bg-primary-60/40 dark:text-primary-20 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-bold">
             <Volume2 size={18} /> दादी से सुनें
           </span>
         </div>
@@ -269,7 +269,7 @@ export function ExploreWidget({ goHome }: { goHome: () => void }) {
                 animate={{ width: 48, marginRight: 12, opacity: 1 }}
                 exit={{ width: 0, marginRight: 0, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 460, damping: 38 }}
-                className="bg-surface-ghost text-fg flex h-12 shrink-0 items-center justify-center overflow-hidden rounded-full transition-transform duration-200 hover:scale-105 active:scale-95"
+                className="bg-surface-ghost dark:text-ink text-fg flex h-12 shrink-0 items-center justify-center overflow-hidden rounded-full transition-transform duration-200 hover:scale-105 active:scale-95 dark:bg-[#2a2d40]"
               >
                 <ChevronLeft size={22} className="shrink-0" />
               </motion.button>
@@ -333,7 +333,9 @@ export function ExploreWidget({ goHome }: { goHome: () => void }) {
                 onClick={() => setMood(f.id)}
                 className={cn(
                   "flex flex-1 flex-col items-center gap-1 rounded-xl border px-1.5 py-3 text-[12px] transition-all",
-                  active ? cn(toneOn, "font-bold") : "bg-surface text-fg border-black/12",
+                  active
+                    ? cn(toneOn, "font-bold")
+                    : "bg-surface dark:bg-bg-elev text-fg border-black/12 dark:border-white/10",
                 )}
               >
                 {glyph(f.icon)}
@@ -349,7 +351,7 @@ export function ExploreWidget({ goHome }: { goHome: () => void }) {
         <button
           type="button"
           onClick={goHome}
-          className="bg-surface-ghost text-fg inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-transform duration-200 ease-out hover:scale-[1.02] active:scale-[0.97]"
+          className="bg-surface-ghost dark:text-ink text-fg inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-transform duration-200 ease-out hover:scale-[1.02] active:scale-[0.97] dark:bg-[#2a2d40]"
         >
           <Home size={17} /> वापस घर
         </button>

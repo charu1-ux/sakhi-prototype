@@ -2,12 +2,13 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import Lottie from "lottie-react";
-import { ChevronLeft, SquarePen } from "lucide-react";
+import { PenLine } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { cn } from "@intelligence/ui";
 
 import { HubChatInput } from "../../jobs/design-prototype/HubChatInput";
+import { HubHeader } from "../../jobs/design-prototype/HubHeader";
 import spinLoaderData from "../../jobs/design-prototype/microlearning/creator/spin-loader.json";
 import { DeliveryAddressMenu, type DeliveryAddressMenuHandle } from "./DeliveryAddressMenu";
 import { CURRENT_LOCATION_SAVED, type StoryAction, TIMING } from "./story-data";
@@ -238,21 +239,14 @@ export function JioMartStory() {
 
   return (
     <div className="bg-surface relative flex h-dvh flex-col overflow-hidden">
-      {/* Header — gradient overlay */}
-      <header className="pointer-events-none absolute inset-x-0 top-0 z-30 h-[68px]">
-        <div className="absolute inset-0 bg-gradient-to-b from-white from-[73%] to-transparent" />
-        <div className="pointer-events-auto relative flex items-center gap-3 px-4 pt-3.5">
-          <button
-            type="button"
-            aria-label="Back"
-            onClick={() => {
-              window.location.href = "/";
-            }}
-            className="bg-surface-minimal text-fg flex size-10 shrink-0 items-center justify-center rounded-full transition-transform duration-200 hover:scale-105 active:scale-95"
-          >
-            <ChevronLeft size={22} strokeWidth={2.4} />
-          </button>
-          <DeliveryAddressMenu ref={addressMenuRef} />
+      <HubHeader
+        title=""
+        pageBg="white"
+        onBack={() => {
+          window.location.href = "/";
+        }}
+        titleSlot={<DeliveryAddressMenu ref={addressMenuRef} />}
+        rightSlot={
           <button
             type="button"
             aria-label="New chat"
@@ -261,15 +255,19 @@ export function JioMartStory() {
               setBlocks([]);
               setPhase(0);
             }}
-            className="bg-surface-minimal text-fg flex size-10 shrink-0 items-center justify-center rounded-full transition-transform duration-200 hover:scale-105 active:scale-95"
+            className="focus-visible:ring-primary-60 dark:bg-bg-elev dark:text-ink flex size-10 shrink-0 items-center justify-center rounded-full bg-[#f5f5f5] text-[#0c0d10] transition-transform duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
           >
-            <SquarePen size={19} strokeWidth={2} />
+            <PenLine size={19} strokeWidth={2} />
           </button>
-        </div>
-      </header>
+        }
+      />
 
       {/* Chat thread */}
-      <main ref={scrollRef} className="flex flex-1 flex-col overflow-y-auto px-4 pt-[80px] pb-5">
+      <main
+        ref={scrollRef}
+        className="isolate flex flex-1 flex-col overflow-y-auto px-4 pb-5"
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 80px)" }}
+      >
         {blocks.map((b, i) => {
           const prev = i > 0 ? blocks[i - 1] : null;
           // 32px before a new user prompt · 24px from a user prompt to the reply
@@ -318,7 +316,7 @@ function BlockView({ block, onAction }: { block: Block; onAction: (a: StoryActio
       return (
         <div
           className={cn(
-            "bg-surface-minimal text-fg max-w-[80%] rounded-[18px_18px_4px_18px] px-3.5 py-2.5 text-[15px] leading-relaxed font-medium",
+            "bg-surface-ghost text-fg max-w-[80%] rounded-[18px_18px_4px_18px] px-3.5 py-2.5 text-[15px] leading-relaxed font-medium dark:bg-[#2a2d40]",
             block.mono && "font-mono text-[13px] break-all",
           )}
         >

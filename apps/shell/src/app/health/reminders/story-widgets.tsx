@@ -37,7 +37,7 @@ export function SecondaryButton({
     <button
       type="button"
       onClick={onClick}
-      className="bg-primary-30 text-primary-60 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-transform duration-200 ease-out hover:scale-[1.02] active:scale-[0.97]"
+      className="bg-primary-30 text-primary-60 dark:bg-primary-50/40 dark:text-primary-20 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-transform duration-200 ease-out hover:scale-[1.02] active:scale-[0.97]"
     >
       {children}
     </button>
@@ -48,7 +48,7 @@ function Widget({ children, className }: { children: React.ReactNode; className?
   return (
     <div
       className={cn(
-        "bg-surface self-stretch overflow-hidden rounded-2xl border border-black/10",
+        "bg-surface self-stretch overflow-hidden rounded-2xl border border-black/10 dark:border-white/10",
         className,
       )}
     >
@@ -82,7 +82,7 @@ export function ClarifyChips({
           key={o.id}
           type="button"
           onClick={() => onAction(action)}
-          className="bg-surface-ghost text-fg rounded-full px-3.5 py-2 text-[13px] font-medium transition-transform duration-200 hover:scale-[1.03] active:scale-95"
+          className="bg-surface-ghost dark:text-ink text-fg rounded-full px-3.5 py-2 text-[13px] font-medium transition-transform duration-200 hover:scale-[1.03] active:scale-95 dark:bg-[#2a2d40]"
         >
           {o.label}
         </button>
@@ -109,7 +109,7 @@ function Stepper({
   incDisabled?: boolean;
 }) {
   const btn =
-    "flex size-9 shrink-0 items-center justify-center rounded-full bg-surface text-primary-50 border border-black/10 transition-transform duration-150 hover:scale-105 active:scale-90 disabled:opacity-30 disabled:hover:scale-100";
+    "flex size-9 shrink-0 items-center justify-center rounded-full bg-surface dark:bg-bg-elev text-primary-50 border border-black/10 dark:border-white/10 transition-transform duration-150 hover:scale-105 active:scale-90 disabled:opacity-30 disabled:hover:scale-100";
   return (
     <div className="mt-2.5 flex items-center gap-2">
       <button
@@ -124,7 +124,7 @@ function Stepper({
       <button
         type="button"
         onClick={onPick}
-        className="bg-surface text-fg flex-1 rounded-full border border-black/10 py-2 text-center text-[15px] font-bold transition-transform duration-150 active:scale-[0.98]"
+        className="bg-surface dark:bg-bg-elev text-fg flex-1 rounded-full border border-black/10 py-2 text-center text-[15px] font-bold transition-transform duration-150 active:scale-[0.98] dark:border-white/10"
       >
         {value}
       </button>
@@ -169,7 +169,7 @@ export function ReminderSetupWidget({ onAction }: { onAction: (a: StoryAction) =
   return (
     <Widget className="p-4">
       <div className="mb-3 flex items-center gap-2">
-        <span className="bg-primary-20 text-primary-50 flex size-9 shrink-0 items-center justify-center rounded-full">
+        <span className="bg-primary-20 text-primary-50 dark:bg-primary-60/40 dark:text-primary-20 flex size-9 shrink-0 items-center justify-center rounded-full">
           <BellRing size={18} strokeWidth={2} />
         </span>
         <div className="min-w-0 flex-1">
@@ -186,11 +186,18 @@ export function ReminderSetupWidget({ onAction }: { onAction: (a: StoryAction) =
               key={r.id}
               className={cn(
                 "rounded-xl border px-3 py-2.5 transition-colors",
-                active ? "bg-surface border-black/10" : "bg-surface-minimal border-transparent",
+                active
+                  ? "bg-surface dark:bg-bg-elev border-black/10 dark:border-white/10"
+                  : "bg-surface-minimal border-transparent dark:bg-white/5",
               )}
             >
               <div className="flex items-center gap-3">
-                <span className={cn("shrink-0", active ? "text-primary-50" : "text-black/30")}>
+                <span
+                  className={cn(
+                    "shrink-0",
+                    active ? "text-primary-50" : "text-black/30 dark:text-white/30",
+                  )}
+                >
                   <ReminderGlyph icon={r.icon} />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -209,7 +216,7 @@ export function ReminderSetupWidget({ onAction }: { onAction: (a: StoryAction) =
                   onClick={() => toggle(r.id)}
                   className={cn(
                     "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full px-0.5 transition-colors duration-200",
-                    active ? "bg-primary-50" : "bg-black/15",
+                    active ? "bg-primary-50" : "bg-black/15 dark:bg-white/15",
                   )}
                 >
                   <span
@@ -295,12 +302,12 @@ export function FinishWidget({ goHome }: { goHome: () => void }) {
       </div>
 
       {/* Sample notification preview */}
-      <div className="bg-surface mt-5 rounded-2xl border border-black/10 p-3.5">
+      <div className="bg-surface mt-5 rounded-2xl border border-black/10 p-3.5 dark:border-white/10">
         <div className="text-fg-muted mb-2 text-[11px] font-bold tracking-wide uppercase">
           ऐसे याद दिलाऊँगी
         </div>
-        <div className="bg-surface flex items-start gap-3 rounded-xl border border-black/10 p-3">
-          <span className="bg-primary-20 text-primary-50 flex size-9 shrink-0 items-center justify-center rounded-full">
+        <div className="bg-surface flex items-start gap-3 rounded-xl border border-black/10 p-3 dark:border-white/10">
+          <span className="bg-primary-20 text-primary-50 dark:bg-primary-60/40 dark:text-primary-20 flex size-9 shrink-0 items-center justify-center rounded-full">
             <Droplet size={18} />
           </span>
           <div className="min-w-0 flex-1">
@@ -316,7 +323,7 @@ export function FinishWidget({ goHome }: { goHome: () => void }) {
         <button
           type="button"
           onClick={goHome}
-          className="bg-surface-ghost text-fg inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-transform duration-200 ease-out hover:scale-[1.02] active:scale-[0.97]"
+          className="bg-surface-ghost dark:text-ink text-fg inline-flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-transform duration-200 ease-out hover:scale-[1.02] active:scale-[0.97] dark:bg-[#2a2d40]"
         >
           <Home size={17} /> वापस घर
         </button>

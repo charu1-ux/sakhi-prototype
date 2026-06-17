@@ -62,7 +62,7 @@ export default function HealthPage() {
             <Link
               key={e.href}
               href={e.href}
-              className="bg-surface flex items-center gap-3.5 rounded-2xl border border-black/10 p-3.5 shadow-sm transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99]"
+              className="bg-surface dark:bg-bg-elev flex items-center gap-3.5 rounded-2xl border border-black/10 p-3.5 shadow-sm transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99] dark:border-white/10"
             >
               <span
                 className="flex size-12 shrink-0 items-center justify-center rounded-full"
