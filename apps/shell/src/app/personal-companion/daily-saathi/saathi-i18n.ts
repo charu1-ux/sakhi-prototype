@@ -23,6 +23,14 @@ export type Strings = {
   back: string;
   greeting: (name: string) => string;
   greetingSub: string;
+  // Companion-greeting landing (PM Design): warm two-line greeting + the
+  // "Talk to me" primary CTA (opens Dil Ki Baat).
+  home: {
+    hi: (name: string) => string;
+    how: string;
+    talk: string;
+    opensDil: string;
+  };
   modes: {
     dil: { label: string; sub: string };
     kaam: { label: string; sub: string };
@@ -151,6 +159,12 @@ export const STRINGS: Record<Lang, Strings> = {
     back: "Back",
     greeting: (name) => (name ? `Namaste, ${name}` : "Namaste"),
     greetingSub: "What would you like to do?",
+    home: {
+      hi: (name) => (name ? `Hi ${name},` : "Hi,"),
+      how: "how are you doing today?",
+      talk: "Talk to me",
+      opensDil: "Opens Dil Ki Baat",
+    },
     modes: {
       dil: { label: "Dil Ki Baat", sub: "About your feelings, day, or life" },
       kaam: { label: "Kaam Ki Baat", sub: "Your daily assistant to get work done" },
@@ -392,6 +406,12 @@ export const STRINGS: Record<Lang, Strings> = {
     back: "वापस",
     greeting: (name) => (name ? `नमस्ते, ${name}` : "नमस्ते"),
     greetingSub: "आज क्या करें?",
+    home: {
+      hi: (name) => (name ? `नमस्ते ${name},` : "नमस्ते,"),
+      how: "आज आप कैसा महसूस कर रहे हैं?",
+      talk: "मुझसे बात करें",
+      opensDil: "दिल की बात खोलें",
+    },
     modes: {
       dil: { label: "दिल की बात", sub: "अपनी भावनाओं, दिन या ज़िंदगी के बारे में" },
       kaam: { label: "काम की बात", sub: "काम निपटाने के लिए आपका डेली असिस्टेंट" },
