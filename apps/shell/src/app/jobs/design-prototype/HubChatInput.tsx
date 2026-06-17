@@ -19,6 +19,8 @@ type Props = {
   onSpeak?: () => void;
   /** Hide the leading "+" Add button (e.g. when no attach use-case exists). */
   hideAdd?: boolean;
+  /** Render the leading button as a paperclip (attach a document) instead of "+". */
+  attachMode?: boolean;
   /** Show a mic (dictation → speech-to-text) button left of Speak. */
   onDictate?: () => void;
   /** "sleek" — icon-only Speak button (48×48 circle), fixed 48px input height, no multiline */
@@ -274,6 +276,22 @@ function CloseIcon({ className }: { className?: string }) {
   );
 }
 
+// ─── PaperclipGlyph ───────────────────────────────────────────────────────────
+
+function PaperclipGlyph({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M18.4 11.8 12 18.2a4.2 4.2 0 0 1-5.94-5.94l6.9-6.9a2.8 2.8 0 0 1 3.96 3.96l-6.9 6.9a1.4 1.4 0 0 1-1.98-1.98l6.18-6.18"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 // ─── MicGlyph ─────────────────────────────────────────────────────────────────
 
 function MicGlyph({ className }: { className?: string }) {
@@ -375,6 +393,7 @@ export function HubChatInput({
   onAdd,
   onSpeak,
   hideAdd = false,
+  attachMode = false,
   onDictate,
   variant = "default",
   voiceMode = false,
@@ -572,7 +591,7 @@ export function HubChatInput({
             <motion.button
               ref={addRef}
               type="button"
-              aria-label="Add"
+              aria-label={attachMode ? "Attach a document" : "Add"}
               onClick={onAdd}
               className="flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center justify-center overflow-hidden rounded-full outline-none"
               animate={{
@@ -580,16 +599,20 @@ export function HubChatInput({
                 height: isTyping ? SEND_SIZE : BTN_SIZE,
               }}
               transition={{ duration: DUR, ease: EASE }}
-              style={{ backgroundColor: "#f0e8fa", flexShrink: 0 }}
+              style={{ backgroundColor: "#f0e8fa", flexShrink: 0, color: "#6d17ce" }}
             >
-              <Image
-                src={`${HOME_ASSETS}/add.svg`}
-                alt=""
-                width={20}
-                height={20}
-                className="pointer-events-none size-5"
-                unoptimized
-              />
+              {attachMode ? (
+                <PaperclipGlyph className="pointer-events-none size-5" />
+              ) : (
+                <Image
+                  src={`${HOME_ASSETS}/add.svg`}
+                  alt=""
+                  width={20}
+                  height={20}
+                  className="pointer-events-none size-5"
+                  unoptimized
+                />
+              )}
             </motion.button>
           )}
 

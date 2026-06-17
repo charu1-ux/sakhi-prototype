@@ -1,12 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useRef, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
+import { AttachSheet } from "../daily-saathi/_components/AttachSheet";
 import { VoiceChat } from "../daily-saathi/_components/VoiceChat";
 import { SAATHI } from "../daily-saathi/saathi-data";
+import { useLang } from "../daily-saathi/saathi-i18n";
 import { PrivacyIcon } from "../chat/icons";
 
 const AVATAR = "/assets/personal-companion/avatar-welcome.mp4";
@@ -49,7 +51,11 @@ interface Msg {
   role: "user" | "companion" | "private";
   text: string;
   chipId?: string; // when seeded from an intent chip → shared-layout morph
+  node?: ReactNode; // result card (e.g. a document summary) instead of a text bubble
 }
+
+// Hinglish acknowledgement for an attached document (before the summary card).
+const DOC_ACK = ["Theek hai — main ise padh raha hoon.", "Yeh raha summary 👇"];
 
 const COMPANION_REPLIES = [
   "Sun rahi hoon... bata, kya chal raha hai?",
@@ -73,12 +79,14 @@ const DICTATION_STUBS = [
 
 // Shared Dil Ki Baat experience.
 export function DilKiBaatExperience() {
+  const { t } = useLang();
   const [view, setView] = useState<"home" | "chat">("home");
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Msg[]>([]);
   const [typing, setTyping] = useState(false);
   const [voiceChatOpen, setVoiceChatOpen] = useState(false);
   const [dictating, setDictating] = useState(false); // composer mic → speech-to-text
+  const [attachOpen, setAttachOpen] = useState(false); // attach (upload-doc) sheet
   const idRef = useRef(0);
   const replyRef = useRef(0);
   const talkRef = useRef(false); // in the "Just here to talk" scripted opener
@@ -193,6 +201,60 @@ export function DilKiBaatExperience() {
   function endDictation() {
     setDictating(false);
     sendText(DICTATION_STUBS[dictRef.current++ % DICTATION_STUBS.length]);
+  }
+
+  // Attach (paperclip) → upload-doc sheet, same as Kaam Ki Baat. Picking any
+  // option drops the file into the chat and the companion summarises it.
+  function openAttach() {
+    setView("chat");
+    setAttachOpen(true);
+  }
+
+  // A document summary card (mirrors the Kaam Ki Baat explain-a-doc result).
+  const docSummaryCard = (
+    <div className="bg-surface w-full rounded-xl border border-[rgba(12,13,16,0.08)] p-3.5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+      <span className="text-primary-60 mb-2 block text-[10px] font-bold tracking-wide uppercase">
+        {t.doc.summaryTag}
+      </span>
+      <ul className="flex flex-col gap-2">
+        {t.doc.summary.map((point, i) => (
+          <li
+            key={i}
+            className="font-jio flex items-start gap-2 text-[13px] leading-snug text-[#0c0d10]"
+          >
+            <span className="bg-primary-50 mt-1.5 size-1.5 shrink-0 rounded-full" />
+            {point}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+
+  function handleAttachPick() {
+    setAttachOpen(false);
+    talkRef.current = false;
+    // Drop the document into the chat, then stream a warm ack + the summary card.
+    setMessages((m) => [...m, { id: idRef.current++, role: "user", text: "Rent agreement.pdf" }]);
+    let i = 0;
+    const step = () => {
+      if (i < DOC_ACK.length) {
+        setTyping(true);
+        setTimeout(() => {
+          setTyping(false);
+          setMessages((m) => [
+            ...m,
+            { id: idRef.current++, role: "companion", text: DOC_ACK[i++] },
+          ]);
+          setTimeout(step, 220);
+        }, 650);
+        return;
+      }
+      setMessages((m) => [
+        ...m,
+        { id: idRef.current++, role: "companion", text: "", node: docSummaryCard },
+      ]);
+    };
+    setTimeout(step, 450);
   }
 
   // ── Live voice-chat overlay (shared VoiceChat) — rendered above the current
@@ -319,6 +381,20 @@ export function DilKiBaatExperience() {
                   </motion.div>
                 );
               }
+              // Result card (e.g. document summary) — left-aligned, avatar gutter
+              if (m.node) {
+                return (
+                  <motion.div
+                    key={m.id}
+                    className="flex justify-start pl-9"
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <div className="w-full max-w-[88%]">{m.node}</div>
+                  </motion.div>
+                );
+              }
               // User — light grey pill, dark text, right
               if (m.role === "user") {
                 return (
@@ -403,7 +479,8 @@ export function DilKiBaatExperience() {
             onChange={setInput}
             onSubmit={sendInChat}
             onSpeak={openVoice}
-            hideAdd
+            onAdd={openAttach}
+            attachMode
             onDictate={startDictation}
             voiceMode={dictating}
             onVoiceSend={endDictation}
@@ -411,6 +488,9 @@ export function DilKiBaatExperience() {
             placeholder="Type a message…"
           />
         </div>
+        {attachOpen && (
+          <AttachSheet onPick={handleAttachPick} onClose={() => setAttachOpen(false)} />
+        )}
         {voiceOverlay}
       </div>
     );
@@ -517,7 +597,8 @@ export function DilKiBaatExperience() {
           onChange={setInput}
           onSubmit={(v) => startChat(v)}
           onSpeak={openVoice}
-          hideAdd
+          onAdd={openAttach}
+          attachMode
           onDictate={startDictation}
           voiceMode={dictating}
           onVoiceSend={endDictation}
@@ -525,6 +606,7 @@ export function DilKiBaatExperience() {
           placeholder="Type a message…"
         />
       </div>
+      {attachOpen && <AttachSheet onPick={handleAttachPick} onClose={() => setAttachOpen(false)} />}
       {voiceOverlay}
     </div>
   );
