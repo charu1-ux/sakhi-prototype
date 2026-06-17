@@ -23,6 +23,13 @@ type Props = {
   voiceMode?: boolean;
   onVoiceSend?: () => void;
   onVoiceCancel?: () => void;
+  /**
+   * Accepted for personal-companion compat — the shared bar intentionally
+   * ignores these and renders the standard composer (attach via +/onAdd,
+   * voice via onSpeak), so the chat input stays consistent across hubs.
+   */
+  attachMode?: boolean;
+  onDictate?: () => void;
   /** Quick-reply tag chips shown above input; hidden while typing */
   chips?: TagChipItem[];
   onChipSelect?: (chip: TagChipItem) => void;
