@@ -17,6 +17,12 @@ type Props = {
   onSubmit?: (v: string) => void;
   onAdd?: () => void;
   onSpeak?: () => void;
+  /** Hide the leading "+" Add button (e.g. when no attach use-case exists). */
+  hideAdd?: boolean;
+  /** Render the leading button as a paperclip (attach a document) instead of "+". */
+  attachMode?: boolean;
+  /** Show a mic (dictation → speech-to-text) button left of Speak. */
+  onDictate?: () => void;
   /** "sleek" — icon-only Speak button (48×48 circle), fixed 48px input height, no multiline */
   variant?: "default" | "sleek";
   /** Voice/listening mode — replaces the input + Speak with a live waveform and an arrow-up Send. */
@@ -270,6 +276,39 @@ function CloseIcon({ className }: { className?: string }) {
   );
 }
 
+// ─── PaperclipGlyph ───────────────────────────────────────────────────────────
+
+function PaperclipGlyph({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M18.4 11.8 12 18.2a4.2 4.2 0 0 1-5.94-5.94l6.9-6.9a2.8 2.8 0 0 1 3.96 3.96l-6.9 6.9a1.4 1.4 0 0 1-1.98-1.98l6.18-6.18"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+// ─── MicGlyph ─────────────────────────────────────────────────────────────────
+
+function MicGlyph({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" strokeWidth="1.8" />
+      <path
+        d="M5.5 11a6.5 6.5 0 0 0 13 0"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+      <path d="M12 17.5V21" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 // ─── Waveform ─────────────────────────────────────────────────────────────────
 // A row of neutral-grey dots spanning the box end-to-end. At rest a bright pulse
 // travels right→left; while "speaking" the dots stretch into amplitude lines.
@@ -353,6 +392,9 @@ export function HubChatInput({
   onSubmit,
   onAdd,
   onSpeak,
+  hideAdd = false,
+  attachMode = false,
+  onDictate,
   variant = "default",
   voiceMode = false,
   onVoiceSend,
@@ -384,7 +426,7 @@ export function HubChatInput({
   useEffect(() => {
     const ta = textareaRef.current;
     const add = addRef.current;
-    if (!ta || !add) return;
+    if (!ta) return;
 
     ta.style.height = "auto";
     const scrollH = ta.scrollHeight;
@@ -394,7 +436,7 @@ export function HubChatInput({
 
     const nowMulti = lines > 1;
     setIsMultiLine(nowMulti);
-    add.style.alignSelf = nowMulti ? "flex-end" : "center";
+    if (add) add.style.alignSelf = nowMulti ? "flex-end" : "center";
   }, [text]);
 
   function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
@@ -544,29 +586,35 @@ export function HubChatInput({
         </div>
       ) : (
         <div className="flex items-center gap-[6px] px-4 py-3">
-          {/* Add button — shrinks when typing */}
-          <motion.button
-            ref={addRef}
-            type="button"
-            aria-label="Add"
-            onClick={onAdd}
-            className="flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center justify-center overflow-hidden rounded-full outline-none"
-            animate={{
-              width: isTyping ? SEND_SIZE : BTN_SIZE,
-              height: isTyping ? SEND_SIZE : BTN_SIZE,
-            }}
-            transition={{ duration: DUR, ease: EASE }}
-            style={{ backgroundColor: "#f0e8fa", flexShrink: 0 }}
-          >
-            <Image
-              src={`${HOME_ASSETS}/add.svg`}
-              alt=""
-              width={20}
-              height={20}
-              className="pointer-events-none size-5"
-              unoptimized
-            />
-          </motion.button>
+          {/* Add button — shrinks when typing (hidden when hideAdd) */}
+          {!hideAdd && (
+            <motion.button
+              ref={addRef}
+              type="button"
+              aria-label={attachMode ? "Attach a document" : "Add"}
+              onClick={onAdd}
+              className="flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center justify-center overflow-hidden rounded-full outline-none"
+              animate={{
+                width: isTyping ? SEND_SIZE : BTN_SIZE,
+                height: isTyping ? SEND_SIZE : BTN_SIZE,
+              }}
+              transition={{ duration: DUR, ease: EASE }}
+              style={{ backgroundColor: "#f0e8fa", flexShrink: 0, color: "#6d17ce" }}
+            >
+              {attachMode ? (
+                <PaperclipGlyph className="pointer-events-none size-5" />
+              ) : (
+                <Image
+                  src={`${HOME_ASSETS}/add.svg`}
+                  alt=""
+                  width={20}
+                  height={20}
+                  className="pointer-events-none size-5"
+                  unoptimized
+                />
+              )}
+            </motion.button>
+          )}
 
           {/* Input pill — borderRadius morphs on multi-line; border + bg change on focus (JDS field-focus pattern) */}
           <motion.div
@@ -707,6 +755,29 @@ export function HubChatInput({
               )}
             </AnimatePresence>
           </motion.div>
+
+          {/* Dictation mic — speech-to-text into the chat; left of Speak */}
+          <AnimatePresence>
+            {!isTyping && onDictate && (
+              <motion.button
+                key="dictate"
+                type="button"
+                aria-label="Dictate"
+                onClick={onDictate}
+                className="flex shrink-0 cursor-pointer touch-manipulation appearance-none items-center justify-center overflow-hidden rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#310064] focus-visible:ring-offset-2"
+                style={{
+                  width: BTN_SIZE,
+                  height: BTN_SIZE,
+                  backgroundColor: "#f0e8fa",
+                  color: "#6d17ce",
+                  flexShrink: 0,
+                }}
+                {...btnMotion}
+              >
+                <MicGlyph className="size-5" />
+              </motion.button>
+            )}
+          </AnimatePresence>
 
           {/* Speak button — slides out when typing begins */}
           <AnimatePresence>

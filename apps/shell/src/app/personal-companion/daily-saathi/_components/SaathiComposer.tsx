@@ -3,7 +3,7 @@
 import { type FormEvent, useRef, useState } from "react";
 
 import { MicIcon, SendIcon, VoiceWaveIcon } from "../../chat/icons";
-import { PlusIcon } from "../saathi-icons";
+import { PaperclipIcon } from "../saathi-icons";
 
 // Bottom composer dock. Pill input + Send when text present. When empty it shows
 // either a plain mic (default) or, in `voiceFirst` mode, an animated "Speak"
@@ -56,7 +56,7 @@ export function SaathiComposer({
           aria-label={attachLabel}
           className="bg-primary-20 text-primary-50 focus-visible:ring-primary-60 flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full transition-transform duration-200 ease-[cubic-bezier(0.2,0,0,1)] outline-none hover:scale-[1.05] focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.95]"
         >
-          <PlusIcon className="size-5" />
+          <PaperclipIcon className="size-5" />
         </button>
       )}
 

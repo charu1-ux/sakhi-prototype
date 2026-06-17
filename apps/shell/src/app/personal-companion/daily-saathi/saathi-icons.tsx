@@ -206,6 +206,37 @@ export function ClockIcon({ className }: IconProps) {
   );
 }
 
+// Attach / upload a document — paperclip (composer left button).
+export function PaperclipIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M18.4 11.8 12 18.2a4.2 4.2 0 0 1-5.94-5.94l6.9-6.9a2.8 2.8 0 0 1 3.96 3.96l-6.9 6.9a1.4 1.4 0 0 1-1.98-1.98l6.18-6.18"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+// Talk to me — microphone (opens the companion conversation).
+export function MicIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function ChevronRightIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">

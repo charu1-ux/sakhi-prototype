@@ -1,78 +1,70 @@
 "use client";
 
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 
 import { Avatar } from "../_components/Avatar";
-import {
-  type DateChip,
-  type ReminderDraft,
-  EMPTY_DRAFT,
-  formatHM,
-  isDateFilled,
-  isTimeFilled,
-  isWhatFilled,
-  ReminderWidget,
-  resolveDate,
-} from "../_components/ReminderWidget";
 import { AttachSheet } from "../_components/AttachSheet";
 import { SaathiComposer } from "../_components/SaathiComposer";
 import { StubHeader } from "../_components/StubHeader";
 import { SuggestedReplies } from "../_components/SuggestedReplies";
 import { VoiceChat } from "../_components/VoiceChat";
-import { CheckIcon } from "../../chat/icons";
-import { parseReminder } from "../reminders/parse";
-import { filterForDate, fmtDate } from "../reminders/reminders-data";
-import { addReminder } from "../reminders/reminders-store";
-import { ASSETS, ROUTES } from "../saathi-data";
+import { ASSETS } from "../saathi-data";
 import { useLang } from "../saathi-i18n";
-import { BellIcon, DocIcon, ImageIcon, TasksIcon } from "../saathi-icons";
-import { useNav } from "../use-nav";
+import { DocIcon, ImageIcon, SunIcon, TasksIcon } from "../saathi-icons";
 
-// Each chat item is a text bubble, a reminder success card, or an arbitrary
-// result card node (generated image / doc summary).
-type Msg = {
-  id: number;
-  role: "assistant" | "user";
-  text?: string;
-  card?: ReminderDraft;
-  node?: ReactNode;
-};
+// ─────────────────────────────────────────────────────────────────────────────
+// PARKED: Reminders flow (commented out while "Today's Briefing" is WIP).
+// Reminders are being replaced by the Briefing capability. The full reminder
+// flow is preserved below so it can be restored; the ReminderWidget, parser and
+// store files remain in the repo.
+//
+// import {
+//   type DateChip, type ReminderDraft, EMPTY_DRAFT, formatHM, isDateFilled,
+//   isTimeFilled, isWhatFilled, ReminderWidget, resolveDate,
+// } from "../_components/ReminderWidget";
+// import { CheckIcon } from "../../chat/icons";
+// import { parseReminder } from "../reminders/parse";
+// import { filterForDate, fmtDate } from "../reminders/reminders-data";
+// import { addReminder } from "../reminders/reminders-store";
+// import { ROUTES } from "../saathi-data";
+// import { BellIcon } from "../saathi-icons";
+// import { useNav } from "../use-nav";
+//
+// function dateToChip(date, now = new Date()) { … today/tomorrow/custom … }
+// function mergeParse(base, text) { … parseReminder → patch draft … }
+//
+//   const { go } = useNav();
+//   const w = t.rem.widget;
+//   const [draft, setDraft] = useState<ReminderDraft>(EMPTY_DRAFT);
+//
+//   const enterReminder = () => { pushUser(t.kaam.pills.reminder); setDraft(EMPTY_DRAFT); setMode("reminder-editing"); };
+//   // send(): reminder-intent branch
+//   const p = parseReminder(clean);
+//   const reminderIntent = mode === "reminder-editing" || /\bremind|reminder\b/i.test(clean) || (!!p.title && (!!p.date || !!p.time));
+//   if (reminderIntent) { setDraft(mergeParse(mode === "reminder-editing" ? draft : EMPTY_DRAFT, clean)); setMode("reminder-editing"); }
+//   const onSubmit = () => { addReminder({ title, datetime, list:"Personal", priority:"none" }); push success card; setMode("chat"); };
+//   const onEdit = (cardId, snapshot) => { remove card; setDraft(snapshot); setMode("reminder-editing"); };
+//   const viewInReminders = (d) => go(`${ROUTES.home}?reminders=${filterForDate(dt)}`);
+//   const leadIn = () => …; const summary = (d) => w.success(what, datePhrase, time);
+//   // ?intent=reminder → setMode("reminder-editing")
+//   // Pills: { label: t.kaam.pills.reminder, icon: <BellIcon/>, onClick: enterReminder }
+//   // Render: {mode === "reminder-editing" && (<lead-in/> <ReminderWidget/>)}
+//   // Render: success card (CheckIcon + summary + Edit / View in Reminders)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Each chat item is a text bubble or a result-card node (generated image / doc).
+type Msg = { id: number; role: "assistant" | "user"; text?: string; node?: ReactNode };
 // "image" / "doc" run scripted, inline conversations in the same chat + header.
-type Mode = "chat" | "reminder-editing" | "image" | "doc";
+type Mode = "chat" | "image" | "doc";
 let uid = 0;
-
-function dateToChip(date: Date, now = new Date()): { dateChip: DateChip; customDate: Date | null } {
-  const day = new Date(date).setHours(0, 0, 0, 0);
-  const today = new Date(now).setHours(0, 0, 0, 0);
-  const diff = Math.round((day - today) / 86400000);
-  if (diff === 0) return { dateChip: "today", customDate: null };
-  if (diff === 1) return { dateChip: "tomorrow", customDate: null };
-  return { dateChip: "custom", customDate: new Date(date) };
-}
-
-function mergeParse(base: ReminderDraft, text: string): ReminderDraft {
-  const p = parseReminder(text);
-  const next: ReminderDraft = { ...base };
-  if (p.title) next.what = p.title;
-  if (p.date) {
-    const { dateChip, customDate } = dateToChip(p.date);
-    next.dateChip = dateChip;
-    next.customDate = customDate;
-  }
-  if (p.time) next.time = p.time;
-  return next;
-}
 
 export default function KaamKiBaatChat() {
   const { t } = useLang();
-  const { go } = useNav();
-  const w = t.rem.widget;
 
   const [messages, setMessages] = useState<Msg[]>([
     { id: uid++, role: "assistant", text: t.kaam.greet },
   ]);
   const [mode, setMode] = useState<Mode>("chat");
-  const [draft, setDraft] = useState<ReminderDraft>(EMPTY_DRAFT);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [attachOpen, setAttachOpen] = useState(false);
   const [storyTurn, setStoryTurn] = useState(0); // image / doc scripted-turn cursor
@@ -120,12 +112,6 @@ export default function KaamKiBaatChat() {
     </div>
   );
 
-  const enterReminder = () => {
-    pushUser(t.kaam.pills.reminder);
-    setDraft(EMPTY_DRAFT);
-    setMode("reminder-editing");
-  };
-
   // Inline "Create an image" — companion asks what to create, then a scripted
   // refine loop with a generated-image card. Same chat + header.
   const enterImage = () => {
@@ -142,6 +128,12 @@ export default function KaamKiBaatChat() {
     setMode("doc");
     setStoryTurn(0);
     setTimeout(() => pushAssistant(t.doc.greet), 400);
+  };
+
+  // "Today's Briefing" — placeholder (work in progress).
+  const showBriefingSoon = () => {
+    pushUser(t.briefing.pill);
+    setTimeout(() => pushAssistant(t.briefing.comingSoon), 400);
   };
 
   // Advance the image/doc scripted story by one turn (result card on turn 0).
@@ -167,17 +159,16 @@ export default function KaamKiBaatChat() {
     playReply(t.doc.story[0].reply, docCard());
   };
 
-  // Entry via deep-link: /kaam-ki-baat/?intent=reminder | image | doc
+  // Entry via deep-link: /kaam-ki-baat/?intent=image | doc.
+  // Ref guard so React StrictMode's double-invoked effect (dev) doesn't seed the
+  // intent twice — otherwise the pill + greeting post into the chat two times.
+  const didIntent = useRef(false);
   useEffect(() => {
+    if (didIntent.current) return;
+    didIntent.current = true;
     const intent = new URLSearchParams(window.location.search).get("intent");
-    if (intent === "reminder") {
-      setDraft(EMPTY_DRAFT);
-      setMode("reminder-editing");
-    } else if (intent === "image") {
-      enterImage();
-    } else if (intent === "doc") {
-      enterDoc();
-    }
+    if (intent === "image") enterImage();
+    else if (intent === "doc") enterDoc();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -188,87 +179,16 @@ export default function KaamKiBaatChat() {
     // Inline image/doc stories take precedence while their flow is active.
     if (mode === "image") return advanceStory("image", clean);
     if (mode === "doc") return advanceStory("doc", clean);
-    const p = parseReminder(clean);
-    const reminderIntent =
-      mode === "reminder-editing" ||
-      /\bremind|reminder\b/i.test(clean) ||
-      (!!p.title && (!!p.date || !!p.time));
-    if (reminderIntent) {
-      const base = mode === "reminder-editing" ? draft : EMPTY_DRAFT;
-      setDraft(mergeParse(base, clean));
-      setMode("reminder-editing");
-    } else {
-      setTimeout(
-        () => setMessages((m) => [...m, { id: uid++, role: "assistant", text: t.kaam.fallback }]),
-        400,
-      );
-    }
+    setTimeout(() => pushAssistant(t.kaam.fallback), 400);
   };
 
-  const onSubmit = () => {
-    const date = resolveDate(draft);
-    if (!date || !draft.time) return;
-    const dt = new Date(date);
-    dt.setHours(draft.time.h, draft.time.m, 0, 0);
-    addReminder({
-      title: draft.what.trim(),
-      datetime: dt.toISOString(),
-      list: "Personal",
-      priority: "none",
-    });
-    // Persist a success card into the stream; return to base chat.
-    setMessages((m) => [...m, { id: uid++, role: "assistant", card: draft }]);
-    setMode("chat");
-  };
-
-  const onEdit = (cardId: number, snapshot: ReminderDraft) => {
-    setMessages((m) => m.filter((x) => x.id !== cardId));
-    setDraft(snapshot);
-    setMode("reminder-editing");
-  };
-
-  // Close the loop: jump to the Daily Saathi home, opening the reminders widget
-  // on the bucket where the just-saved reminder landed.
-  const viewInReminders = (d: ReminderDraft) => {
-    const date = resolveDate(d);
-    if (!date) {
-      go(ROUTES.home);
-      return;
-    }
-    const dt = new Date(date);
-    if (d.time) dt.setHours(d.time.h, d.time.m, 0, 0);
-    go(`${ROUTES.home}?reminders=${filterForDate(dt.toISOString())}`);
-  };
-
-  const leadIn = (): string => {
-    const count = [isWhatFilled(draft), isDateFilled(draft), isTimeFilled(draft)].filter(
-      Boolean,
-    ).length;
-    if (count === 0) return w.leadEmpty;
-    if (count === 3) return w.leadAllSet;
-    const missing = [
-      !isWhatFilled(draft) && "what",
-      !isDateFilled(draft) && "date",
-      !isTimeFilled(draft) && "time",
-    ].filter(Boolean) as string[];
-    if (missing.length > 1) return w.needMore;
-    return missing[0] === "what" ? w.needWhat : missing[0] === "date" ? w.needDate : w.needTime;
-  };
-
-  const summary = (d: ReminderDraft): string => {
-    const datePhrase =
-      d.dateChip === "today"
-        ? w.dpToday
-        : d.dateChip === "tomorrow"
-          ? w.dpTomorrow
-          : `${w.dpOn}${d.customDate ? fmtDate(d.customDate.toISOString()) : ""}`.trim();
-    const time = d.time ? formatHM(d.time.h, d.time.m) : "";
-    const what = d.what.trim().replace(/^./, (c) => c.toLowerCase());
-    return w.success(what, datePhrase, time);
-  };
-
-  const pills: { label: string; icon: ReactNode; onClick: () => void }[] = [
-    { label: t.kaam.pills.reminder, icon: <BellIcon className="size-4" />, onClick: enterReminder },
+  const pills: { label: string; icon: ReactNode; onClick: () => void; muted?: boolean }[] = [
+    {
+      label: t.briefing.pill,
+      icon: <SunIcon className="size-4" />,
+      onClick: showBriefingSoon,
+      muted: true,
+    },
     { label: t.kaam.pills.image, icon: <ImageIcon className="size-4" />, onClick: enterImage },
     { label: t.kaam.pills.doc, icon: <DocIcon className="size-4" />, onClick: enterDoc },
   ];
@@ -303,39 +223,6 @@ export default function KaamKiBaatChat() {
                 </div>
               );
             }
-            if (m.card) {
-              return (
-                <div
-                  key={m.id}
-                  className="bg-surface w-full self-start rounded-xl border border-[rgba(12,13,16,0.08)] p-3.5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]"
-                >
-                  <div className="flex items-start gap-2.5">
-                    <span className="bg-secondary-20 text-secondary-50 flex size-7 shrink-0 items-center justify-center rounded-full">
-                      <CheckIcon className="size-4" />
-                    </span>
-                    <p className="flex-1 text-[14px] leading-snug text-[#0c0d10]">
-                      {summary(m.card)}
-                    </p>
-                  </div>
-                  <div className="mt-2.5 flex justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onEdit(m.id, m.card!)}
-                      className="border-primary-50 text-primary-50 focus-visible:ring-primary-60 cursor-pointer rounded-full border px-3 py-1.5 text-[12px] font-bold transition-transform duration-200 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]"
-                    >
-                      {w.edit}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => viewInReminders(m.card!)}
-                      className="bg-primary-50 focus-visible:ring-primary-60 cursor-pointer rounded-full px-3 py-1.5 text-[12px] font-bold text-white transition-transform duration-200 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97]"
-                    >
-                      {w.viewInReminders}
-                    </button>
-                  </div>
-                </div>
-              );
-            }
             return m.role === "assistant" ? (
               <div key={m.id} className="flex items-end gap-2 self-start">
                 {i === 0 && (
@@ -359,20 +246,6 @@ export default function KaamKiBaatChat() {
               </div>
             );
           })}
-
-          {/* Reminder widget (editing) — lead-in + card */}
-          {mode === "reminder-editing" && (
-            <>
-              <div className="bg-surface max-w-[84%] self-start rounded-[4px_18px_18px_18px] border border-[rgba(12,13,16,0.08)] px-3.5 py-2.5 text-[14px] leading-relaxed text-[#0c0d10] shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
-                {leadIn()}
-              </div>
-              <ReminderWidget
-                draft={draft}
-                onChange={(patch) => setDraft((d) => ({ ...d, ...patch }))}
-                onSubmit={onSubmit}
-              />
-            </>
-          )}
         </div>
       </main>
 
@@ -385,7 +258,11 @@ export default function KaamKiBaatChat() {
                 key={p.label}
                 type="button"
                 onClick={p.onClick}
-                className="border-primary-50/30 bg-surface text-primary-50 focus-visible:ring-primary-60 flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 py-2 text-[13px] font-medium transition-transform duration-200 outline-none hover:scale-[1.03] focus-visible:ring-2 focus-visible:ring-offset-1 active:scale-[0.96]"
+                className={
+                  p.muted
+                    ? "bg-surface-ghost flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 py-2 text-[13px] font-medium text-[rgba(12,13,16,0.45)] transition-transform duration-200 outline-none active:scale-[0.96]"
+                    : "border-primary-50/30 bg-surface text-primary-50 focus-visible:ring-primary-60 flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 py-2 text-[13px] font-medium transition-transform duration-200 outline-none hover:scale-[1.03] focus-visible:ring-2 focus-visible:ring-offset-1 active:scale-[0.96]"
+                }
               >
                 {p.icon}
                 <span className="whitespace-nowrap">{p.label}</span>

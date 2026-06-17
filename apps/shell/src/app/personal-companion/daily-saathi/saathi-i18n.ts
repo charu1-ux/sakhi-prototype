@@ -23,6 +23,13 @@ export type Strings = {
   back: string;
   greeting: (name: string) => string;
   greetingSub: string;
+  // Companion-greeting landing (PM Design): warm two-line greeting + the
+  // "Talk to me" primary CTA (opens Dil Ki Baat).
+  home: {
+    hi: (name: string) => string;
+    how: string;
+    talk: string;
+  };
   modes: {
     dil: { label: string; sub: string };
     kaam: { label: string; sub: string };
@@ -30,7 +37,7 @@ export type Strings = {
   recall: { text: string; hint: string };
   forToday: string;
   reminders: { title: string; subtitle: string };
-  briefing: { title: string; subtitle: string };
+  briefing: { title: string; subtitle: string; pill: string; comingSoon: string };
   diary: { title: string; subtitle: string; add: string };
   composer: string;
   speak: string;
@@ -151,14 +158,24 @@ export const STRINGS: Record<Lang, Strings> = {
     back: "Back",
     greeting: (name) => (name ? `Namaste, ${name}` : "Namaste"),
     greetingSub: "What would you like to do?",
+    home: {
+      hi: (name) => (name ? `Hi ${name},` : "Hi,"),
+      how: "how are you doing today?",
+      talk: "Talk to me",
+    },
     modes: {
-      dil: { label: "Dil Ki Baat", sub: "Talk to me" },
-      kaam: { label: "Kaam Ki Baat", sub: "Get things done" },
+      dil: { label: "Dil Ki Baat", sub: "About your feelings, day, or life" },
+      kaam: { label: "Kaam Ki Baat", sub: "Your daily assistant to get work done" },
     },
     recall: { text: "How is your sister feeling now?", hint: "Tap to reply in Dil Ki Baat" },
     forToday: "For today",
     reminders: { title: "Reminders", subtitle: "Bank call · 3:00 PM" },
-    briefing: { title: "Daily briefing", subtitle: "Weather · news · plan" },
+    briefing: {
+      title: "Daily briefing",
+      subtitle: "Weather · news · plan",
+      pill: "Today's Briefing",
+      comingSoon: "Daily Briefing coming soon",
+    },
     diary: { title: "Today's diary", subtitle: "How was your day?", add: "+ Add" },
     composer: "Speak or type…",
     speak: "Speak",
@@ -387,14 +404,24 @@ export const STRINGS: Record<Lang, Strings> = {
     back: "वापस",
     greeting: (name) => (name ? `नमस्ते, ${name}` : "नमस्ते"),
     greetingSub: "आज क्या करें?",
+    home: {
+      hi: (name) => (name ? `नमस्ते ${name},` : "नमस्ते,"),
+      how: "आज आप कैसा महसूस कर रहे हैं?",
+      talk: "मुझसे बात करें",
+    },
     modes: {
-      dil: { label: "दिल की बात", sub: "मुझसे बात करें" },
-      kaam: { label: "काम की बात", sub: "काम करवाना है" },
+      dil: { label: "दिल की बात", sub: "अपनी भावनाओं, दिन या ज़िंदगी के बारे में" },
+      kaam: { label: "काम की बात", sub: "काम निपटाने के लिए आपका डेली असिस्टेंट" },
     },
     recall: { text: "बहन की तबियत कैसी है अब?", hint: "दिल की बात में जवाब दें" },
     forToday: "आज के लिए",
     reminders: { title: "रिमाइंडर", subtitle: "बैंक कॉल · 3 बजे" },
-    briefing: { title: "डेली ब्रीफिंग", subtitle: "मौसम · खबरें · प्लान" },
+    briefing: {
+      title: "डेली ब्रीफिंग",
+      subtitle: "मौसम · खबरें · प्लान",
+      pill: "आज की ब्रीफिंग",
+      comingSoon: "डेली ब्रीफिंग जल्द आ रही है",
+    },
     diary: { title: "आज की डायरी", subtitle: "आज का दिन कैसा था?", add: "+ जोड़ें" },
     composer: "बोलो या लिखो…",
     speak: "बोलें",
