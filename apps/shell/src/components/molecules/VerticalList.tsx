@@ -110,6 +110,13 @@ const verticalPersonalCompanion: Vertical = {
   ],
 };
 
+const verticalWomensHealth: Vertical = {
+  name: "Women's Health",
+  slug: "womens-health",
+  icon: "/assets/shell/ico-womens-health.svg",
+  gradientFrom: "from-vertical-womens-health",
+};
+
 const verticalCricket: Vertical = {
   name: "Cricket",
   slug: "cricket",
@@ -139,6 +146,7 @@ const verticalsFeatured: Vertical[] = [
   verticalFinance,
   verticalNews,
   verticalPersonalCompanion,
+  verticalWomensHealth,
   verticalCricket,
   verticalJokes,
   verticalMusic,
