@@ -148,7 +148,14 @@ function SakhiCard() {
 
 const P0_TILES = [
   {
-    icon: "🩸",
+    icon: "🎥",
+    iconBg: "#F0FDF4",
+    label: "जाँची-परखी जानकारी",
+    desc: "PCOS, पीरियड दर्द, एनीमिया — विशेषज्ञों द्वारा सत्यापित लेख और वीडियो",
+    href: "/womens-health/health-content",
+  },
+  {
+    icon: "🗓️",
     iconBg: "#FFF1F2",
     label: "पीरियड ट्रैकर",
     desc: "पीरियड लॉग करें, अगला पीरियड कब — सखी याद रखती है",
@@ -158,15 +165,8 @@ const P0_TILES = [
     icon: "💜",
     iconBg: "#F5F3FF",
     label: "मूड ट्रैकर",
-    desc: "PMS, चिड़चिड़ापन, थकान — हॉर्मोन से जोड़कर समझें",
+    desc: "मासिक धर्म से पहले मूड खराब, चिड़चिड़ापन — हॉर्मोन से जोड़कर समझें",
     href: "/womens-health/low-mood",
-  },
-  {
-    icon: "📖",
-    iconBg: "#F0FDF4",
-    label: "महिला स्वास्थ्य",
-    desc: "PCOS, दर्द, एनीमिया — सखी से पूछें, Hindi में जवाब",
-    href: "/womens-health/health-content",
   },
 ];
 
