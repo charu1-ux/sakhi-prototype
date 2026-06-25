@@ -148,7 +148,7 @@ function SakhiCard() {
 
 const P0_TILES = [
   {
-    icon: "🎥",
+    icon: "✅",
     iconBg: "#F0FDF4",
     label: "जाँची-परखी जानकारी",
     desc: "PCOS, पीरियड दर्द, एनीमिया — विशेषज्ञों द्वारा सत्यापित लेख और वीडियो",
@@ -289,119 +289,6 @@ function AwarenessTiles() {
   );
 }
 
-// ─── Hindi Input ──────────────────────────────────────────────────────────────
-
-function HindiInput() {
-  const [text, setText] = useState("");
-  const [submitted, setSubmitted] = useState<string | null>(null);
-  const [voiceActive, setVoiceActive] = useState(false);
-
-  const QUICK = ["पीरियड लेट है", "बहुत दर्द है", "मूड खराब है", "कमज़ोरी लग रही है"];
-
-  function handleSubmit() {
-    if (!text.trim()) return;
-    setSubmitted(text.trim());
-    setText("");
-  }
-
-  return (
-    <div className="flex flex-col gap-3">
-      <h2
-        className="text-[15px] font-bold text-zinc-900"
-        style={{ fontFamily: "JioType, sans-serif" }}
-      >
-        सखी को बताएं
-      </h2>
-
-      <div className="flex flex-wrap gap-2">
-        {QUICK.map((q) => (
-          <button
-            key={q}
-            type="button"
-            onClick={() => setText(q)}
-            className="rounded-full px-3 py-1.5 text-[12px] font-medium transition-all duration-150 active:scale-95"
-            style={{
-              fontFamily: "JioType, sans-serif",
-              background: text === q ? "#E11D48" : "#F3F4F6",
-              color: text === q ? "white" : "#374151",
-            }}
-          >
-            {q}
-          </button>
-        ))}
-      </div>
-
-      <div
-        className="flex flex-col gap-2 rounded-2xl bg-white p-3"
-        style={{ border: "1px solid #E5E7EB" }}
-      >
-        <textarea
-          rows={3}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="हिंदी में लिखें — जैसे 'मेरे पीरियड्स अनियमित हैं...'"
-          className="resize-none border-none bg-transparent text-[14px] leading-relaxed outline-none placeholder:text-zinc-300"
-          style={{ fontFamily: "JioType, sans-serif", color: "#111827" }}
-        />
-
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => setVoiceActive((v) => !v)}
-            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-all active:scale-95"
-            style={{
-              fontFamily: "JioType, sans-serif",
-              background: voiceActive ? "#E11D48" : "#F3F4F6",
-              color: voiceActive ? "white" : "#374151",
-            }}
-          >
-            {voiceActive ? "🔴" : "🎙️"} {voiceActive ? "सुन रही हूँ..." : "बोलकर बताएं"}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!text.trim()}
-            className="rounded-full px-4 py-1.5 text-[13px] font-semibold text-white transition-all active:scale-95 disabled:opacity-40"
-            style={{ fontFamily: "JioType, sans-serif", background: "#E11D48" }}
-          >
-            भेजें →
-          </button>
-        </div>
-      </div>
-
-      {submitted && (
-        <div className="flex flex-col gap-2">
-          <div
-            className="self-end rounded-2xl rounded-br-sm px-3 py-2 text-[13px] text-white"
-            style={{ background: "#E11D48", fontFamily: "JioType, sans-serif" }}
-          >
-            {submitted}
-          </div>
-          <div className="flex items-start gap-2">
-            <div
-              className="flex shrink-0 items-center justify-center rounded-full text-[16px]"
-              style={{ width: 32, height: 32, background: "#FFF1F2" }}
-            >
-              🌸
-            </div>
-            <div
-              className="flex-1 rounded-2xl rounded-tl-sm px-3 py-2 text-[13px] leading-relaxed text-zinc-700"
-              style={{
-                background: "#F9FAFB",
-                fontFamily: "JioType, sans-serif",
-                border: "1px solid #F3F4F6",
-              }}
-            >
-              आपकी बात सुनी। सखी जल्द जवाब देगी...
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function WomensHealthPage() {
@@ -427,7 +314,6 @@ export default function WomensHealthPage() {
           <SakhiCard />
           <P0Tiles />
           <AwarenessTiles />
-          <HindiInput />
         </div>
       </main>
 
