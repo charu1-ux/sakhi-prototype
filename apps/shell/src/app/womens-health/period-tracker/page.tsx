@@ -230,7 +230,7 @@ export default function PeriodTrackerPage() {
               className="mb-1 text-[12px] font-bold text-pink-700"
               style={{ fontFamily: "JioType, sans-serif" }}
             >
-              💡 दीदी की सलाह
+              💡 सखी की सलाह
             </p>
             <p
               className="text-[13px] leading-relaxed text-zinc-700"

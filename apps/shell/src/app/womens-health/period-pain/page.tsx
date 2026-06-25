@@ -116,7 +116,7 @@ export default function PeriodPainPage() {
                   className="mb-1 text-[12px] font-bold text-pink-700"
                   style={{ fontFamily: "JioType, sans-serif" }}
                 >
-                  दीदी कह रही हैं:
+                  सखी कह रही हैं:
                 </p>
                 <p
                   className="text-[13px] leading-relaxed text-zinc-700"

@@ -49,7 +49,7 @@ export default function LowMoodPage() {
               className="text-[13px] font-bold text-pink-700"
               style={{ fontFamily: "JioType, sans-serif" }}
             >
-              💜 दीदी आपसे कहना चाहती हैं...
+              💜 सखी आपसे कहना चाहती हैं...
             </p>
             <p
               className="text-[15px] leading-relaxed font-semibold text-zinc-800"
@@ -164,7 +164,7 @@ export default function LowMoodPage() {
       </main>
 
       <HubHeader title="मूड खराब" backHref="/womens-health" scrolled={false} />
-      <HubChatInput variant="sleek" placeholder="मन की बात दीदी को बताएं..." />
+      <HubChatInput variant="sleek" placeholder="मन की बात सखी को बताएं..." />
     </div>
   );
 }

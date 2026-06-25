@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 
-// ─── Didi Avatar ─────────────────────────────────────────────────────────────
+// ─── Sakhi Avatar ────────────────────────────────────────────────────────────
 
 function DidiAvatar({ speaking }: { speaking: boolean }) {
   return (
@@ -53,7 +53,7 @@ function DidiAvatar({ speaking }: { speaking: boolean }) {
   );
 }
 
-// ─── Section 1: Didi Assistant Card ──────────────────────────────────────────
+// ─── Section 1: Sakhi Assistant Card ─────────────────────────────────────────
 
 function DidiCard() {
   const [speaking, setSpeaking] = useState(false);
@@ -68,7 +68,7 @@ function DidiCard() {
           type="button"
           onClick={() => setSpeaking((v) => !v)}
           className="shrink-0 cursor-pointer touch-manipulation border-none bg-transparent p-0 transition-transform duration-150 active:scale-95"
-          aria-label="दीदी से बात करें"
+          aria-label="सखी से बात करें"
         >
           <DidiAvatar speaking={speaking} />
         </button>
@@ -79,7 +79,7 @@ function DidiCard() {
               className="text-[18px] font-bold tracking-tight"
               style={{ fontFamily: "JioType, sans-serif", color: "#880E4F" }}
             >
-              दीदी
+              सखी
             </span>
             <span
               className="rounded-full px-2 py-0.5 text-[10px] font-medium"
@@ -94,7 +94,7 @@ function DidiCard() {
           >
             {speaking
               ? "हाँ बताओ, मैं सुन रही हूँ... 🌸"
-              : "नमस्ते! मैं दीदी हूँ — आपकी महिला स्वास्थ्य सहेली। कोई भी बात बेझिझक पूछें।"}
+              : "नमस्ते! मैं सखी हूँ — आपकी विश्वासपात्र स्वास्थ्य सहेली। कोई भी बात बेझिझक पूछें।"}
           </p>
         </div>
       </div>
@@ -132,66 +132,51 @@ function DidiCard() {
             : "linear-gradient(90deg, #E91E8C 0%, #C2185B 100%)",
         }}
       >
-        {speaking ? "🛑 रोकें" : "🎙️ दीदी से बात करें"}
+        {speaking ? "🛑 रोकें" : "🎙️ सखी से बात करें"}
       </button>
     </div>
   );
 }
 
-// ─── Section 2: Action Tiles ──────────────────────────────────────────────────
+// ─── Section 2: Three P0 Tiles ───────────────────────────────────────────────
 
-const ACTIONS = [
+const P0_TILES = [
   {
     icon: "🩸",
     label: "पीरियड ट्रैकर",
-    desc: "अगला पीरियड कब?",
-    color: "#FEE2E2",
+    desc: "पीरियड लॉग करें, अगला पीरियड कब — सखी याद रखती है",
+    tag: "Foundation",
+    bg: "#FEE2E2",
     accent: "#EF4444",
+    tagBg: "#FCE4EC",
+    tagText: "#C2185B",
     href: "/womens-health/period-tracker",
   },
   {
-    icon: "💊",
-    label: "पीरियड दर्द",
-    desc: "दर्द से राहत के उपाय",
-    color: "#FEF3C7",
-    accent: "#D97706",
-    href: "/womens-health/period-pain",
-  },
-  {
-    icon: "😔",
-    label: "मूड खराब",
-    desc: "मानसिक थकान, चिड़चिड़ापन",
-    color: "#EDE9FE",
+    icon: "💜",
+    label: "मूड ट्रैकर",
+    desc: "PMS, चिड़चिड़ापन, थकान — हॉर्मोन से जोड़कर समझें",
+    tag: "सबसे अलग",
+    bg: "#EDE9FE",
     accent: "#7C3AED",
+    tagBg: "#EDE9FE",
+    tagText: "#5B21B6",
     href: "/womens-health/low-mood",
   },
   {
-    icon: "😴",
-    label: "नींद न आना",
-    desc: "हॉर्मोन और नींद",
-    color: "#DBEAFE",
-    accent: "#2563EB",
-    href: null,
-  },
-  {
-    icon: "⚖️",
-    label: "वजन बढ़ना",
-    desc: "PCOS और वजन",
-    color: "#D1FAE5",
+    icon: "📖",
+    label: "महिला स्वास्थ्य",
+    desc: "PCOS, दर्द, एनीमिया — सखी से पूछें, Hindi में जवाब",
+    tag: "जानकारी",
+    bg: "#E1F5EE",
     accent: "#059669",
-    href: null,
-  },
-  {
-    icon: "🤰",
-    label: "गर्भधारण",
-    desc: "प्रेगनेंसी की तैयारी",
-    color: "#FCE7F3",
-    accent: "#DB2777",
-    href: null,
+    tagBg: "#D1FAE5",
+    tagText: "#065F46",
+    href: "/womens-health/health-content",
   },
 ];
 
-function ActionTiles() {
+function P0Tiles() {
   const router = useRouter();
   return (
     <div className="flex flex-col gap-3">
@@ -199,30 +184,45 @@ function ActionTiles() {
         className="text-[15px] font-bold text-zinc-900"
         style={{ fontFamily: "JioType, sans-serif" }}
       >
-        क्या जानना है आपको?
+        आज क्या करना है?
       </h2>
-      <div className="grid grid-cols-2 gap-2.5">
-        {ACTIONS.map((a) => (
+      <div className="flex flex-col gap-2.5">
+        {P0_TILES.map((t) => (
           <button
-            key={a.label}
+            key={t.label}
             type="button"
-            onClick={() => a.href && router.push(a.href)}
-            className="flex flex-col gap-1.5 rounded-xl p-3 text-left transition-transform duration-100 active:scale-[0.97]"
-            style={{ background: a.color, opacity: a.href ? 1 : 0.6 }}
+            onClick={() => router.push(t.href)}
+            className="flex items-center gap-4 rounded-2xl p-4 text-left transition-transform duration-100 active:scale-[0.98]"
+            style={{ background: t.bg }}
           >
-            <span className="text-[22px]">{a.icon}</span>
-            <span
-              className="text-[13px] leading-tight font-bold"
-              style={{ fontFamily: "JioType, sans-serif", color: a.accent }}
-            >
-              {a.label}
-            </span>
-            <span
-              className="text-[11px] leading-tight"
-              style={{ fontFamily: "JioType, sans-serif", color: "#374151" }}
-            >
-              {a.desc}
-            </span>
+            <span className="shrink-0 text-[36px]">{t.icon}</span>
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span
+                  className="text-[15px] leading-tight font-bold"
+                  style={{ fontFamily: "JioType, sans-serif", color: t.accent }}
+                >
+                  {t.label}
+                </span>
+                <span
+                  className="rounded-full px-2 py-0.5 text-[9px] font-semibold"
+                  style={{
+                    background: t.tagBg,
+                    color: t.tagText,
+                    fontFamily: "JioType, sans-serif",
+                  }}
+                >
+                  {t.tag}
+                </span>
+              </div>
+              <span
+                className="text-[12px] leading-snug text-zinc-600"
+                style={{ fontFamily: "JioType, sans-serif" }}
+              >
+                {t.desc}
+              </span>
+            </div>
+            <span className="shrink-0 text-[18px] text-zinc-400">›</span>
           </button>
         ))}
       </div>
@@ -234,36 +234,36 @@ function ActionTiles() {
 
 const AWARENESS = [
   {
-    stat: "हर 5 में से 1",
-    topic: "महिला को अनियमित पीरियड्स होते हैं",
-    sub: "PCOS सबसे आम कारण है",
+    stat: "57%",
+    topic: "भारतीय महिलाओं को खून की कमी है",
+    sub: "एनीमिया इतना आम है कि सब 'सामान्य' मान लेती हैं",
+    color: "#FEF9C3",
+    accent: "#B45309",
+    icon: "🩺",
+  },
+  {
+    stat: "7 साल",
+    topic: "Endometriosis का औसत diagnosis delay",
+    sub: "'सबको दर्द होता है' — यह सोच बदलनी होगी",
     color: "#FEE2E2",
     accent: "#EF4444",
-    icon: "📅",
+    icon: "⏳",
   },
   {
-    stat: "80%",
-    topic: "महिलाओं को पीरियड दर्द होता है",
-    sub: "पर सिर्फ 30% ही डॉक्टर से मिलती हैं",
-    color: "#FEF3C7",
-    accent: "#D97706",
-    icon: "💛",
-  },
-  {
-    stat: "हर 10 में से 4",
-    topic: "महिलाएं पीरियड के दौरान काम छोड़ती हैं",
-    sub: "पर इसके बारे में बात नहीं होती",
+    stat: "67%",
+    topic: "महिलाएं स्वास्थ्य को taboo मानती हैं",
+    sub: "अपनी तकलीफ किसी को नहीं बता पातीं",
     color: "#EDE9FE",
     accent: "#7C3AED",
     icon: "💜",
   },
   {
-    stat: "60%",
-    topic: "महिलाओं को PMS होता है",
-    sub: "चिड़चिड़ापन, सूजन, थकान — सब सामान्य है",
+    stat: "98%",
+    topic: "महिलाएं अपनी भाषा में जानकारी चाहती हैं",
+    sub: "सखी हिंदी में — आपकी ज़बान में — बात करती है",
     color: "#D1FAE5",
     accent: "#059669",
-    icon: "🌿",
+    icon: "🌸",
   },
 ];
 
@@ -337,7 +337,7 @@ function HindiInput() {
         className="text-[15px] font-bold text-zinc-900"
         style={{ fontFamily: "JioType, sans-serif" }}
       >
-        दीदी को बताएं 💬
+        सखी को बताएं 💬
       </h2>
 
       {/* Quick chips */}
@@ -434,7 +434,7 @@ function HindiInput() {
               className="flex-1 rounded-2xl rounded-tl-sm px-3 py-2 text-[13px] leading-relaxed"
               style={{ background: "#FCE4EC", fontFamily: "JioType, sans-serif", color: "#4A1942" }}
             >
-              आपकी बात सुनी। दीदी जल्द जवाब देगी... 🌸
+              आपकी बात सुनी। सखी जल्द जवाब देगी... 🌸
             </div>
           </div>
         </div>
@@ -466,7 +466,7 @@ export default function WomensHealthPage() {
       >
         <div className="mx-auto flex w-full max-w-md flex-col gap-6">
           <DidiCard />
-          <ActionTiles />
+          <P0Tiles />
           <AwarenessTiles />
           <HindiInput />
         </div>
@@ -474,7 +474,7 @@ export default function WomensHealthPage() {
 
       <HubHeader title="महिला स्वास्थ्य" scrolled={scrolled} />
 
-      <HubChatInput variant="sleek" placeholder="दीदी से पूछें..." />
+      <HubChatInput variant="sleek" placeholder="सखी से पूछें..." />
     </div>
   );
 }
