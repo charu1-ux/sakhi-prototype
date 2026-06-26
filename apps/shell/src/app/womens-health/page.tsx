@@ -131,15 +131,6 @@ function SakhiCard() {
           <style>{`@keyframes bounce{from{transform:scaleY(1)}to{transform:scaleY(2.2)}}`}</style>
         </div>
       )}
-
-      <button
-        type="button"
-        onClick={() => setSpeaking((v) => !v)}
-        className="mt-3 w-full rounded-full py-2.5 text-[14px] font-semibold text-white transition-transform duration-150 active:scale-[0.97]"
-        style={{ fontFamily: "JioType, sans-serif", background: "#E11D48" }}
-      >
-        {speaking ? "रोकें" : "🎙️ सखी से बात करें"}
-      </button>
     </div>
   );
 }
