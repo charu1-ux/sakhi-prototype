@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
 
-type Message = { role: "user" | "sakhi"; text: string };
+type Video = { label: string; channel: string; url: string };
+type Message = { role: "user" | "sakhi"; text: string; video?: Video };
 
 const SUGGESTED = [
   "पीरियड में बहुत दर्द — क्या यह सामान्य है?",
@@ -160,7 +161,11 @@ export default function HealthContentPage() {
       const data = await res.json();
       setMessages((prev) => [
         ...prev,
-        { role: "sakhi", text: data.answer || data.error || "सखी अभी उपलब्ध नहीं है।" },
+        {
+          role: "sakhi",
+          text: data.answer || data.error || "सखी अभी उपलब्ध नहीं है।",
+          video: data.video,
+        },
       ]);
     } catch {
       setMessages((prev) => [
@@ -214,27 +219,69 @@ export default function HealthContentPage() {
 
           {/* Conversation */}
           {messages.map((m, i) => (
-            <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-              {m.role === "sakhi" && (
+            <div
+              key={i}
+              className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
+            >
+              <div className={`flex ${m.role === "user" ? "justify-end" : "justify-start"} w-full`}>
+                {m.role === "sakhi" && (
+                  <div
+                    className="mr-2 flex h-7 w-7 shrink-0 items-center justify-center self-end rounded-full text-[12px]"
+                    style={{ background: "#F0FDF4" }}
+                  >
+                    ✅
+                  </div>
+                )}
                 <div
-                  className="mr-2 flex h-7 w-7 shrink-0 items-center justify-center self-end rounded-full text-[12px]"
-                  style={{ background: "#F0FDF4" }}
+                  className="max-w-[82%] px-3 py-2 text-[13px] leading-relaxed"
+                  style={{
+                    background: m.role === "user" ? "#6d17ce" : "#F9FAFB",
+                    color: m.role === "user" ? "white" : "#1F2937",
+                    borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+                    fontFamily: "JioType, sans-serif",
+                    border: m.role === "sakhi" ? "1px solid #F3F4F6" : "none",
+                  }}
                 >
-                  ✅
+                  {m.text}
                 </div>
-              )}
-              <div
-                className="max-w-[82%] px-3 py-2 text-[13px] leading-relaxed"
-                style={{
-                  background: m.role === "user" ? "#6d17ce" : "#F9FAFB",
-                  color: m.role === "user" ? "white" : "#1F2937",
-                  borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-                  fontFamily: "JioType, sans-serif",
-                  border: m.role === "sakhi" ? "1px solid #F3F4F6" : "none",
-                }}
-              >
-                {m.text}
               </div>
+              {/* Video card — shown below Sakhi bubble when a relevant channel exists */}
+              {m.role === "sakhi" && m.video && (
+                <a
+                  href={m.video.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1.5 ml-9 flex items-center gap-2.5 rounded-xl px-3 py-2.5 transition-opacity active:opacity-70"
+                  style={{
+                    background: "#FEF2F2",
+                    border: "1px solid #FECACA",
+                    textDecoration: "none",
+                    maxWidth: "82%",
+                  }}
+                >
+                  <div
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[14px]"
+                    style={{ background: "#EF4444" }}
+                  >
+                    <span style={{ color: "white" }}>▶</span>
+                  </div>
+                  <div className="flex min-w-0 flex-col gap-0.5">
+                    <span
+                      className="text-[11px] leading-snug font-semibold text-zinc-800"
+                      style={{ fontFamily: "JioType, sans-serif" }}
+                    >
+                      {m.video.label}
+                    </span>
+                    <span
+                      className="text-[10px] text-zinc-400"
+                      style={{ fontFamily: "JioType, sans-serif" }}
+                    >
+                      {m.video.channel} · YouTube
+                    </span>
+                  </div>
+                  <span className="ml-auto shrink-0 text-[12px] text-zinc-300">›</span>
+                </a>
+              )}
             </div>
           ))}
 

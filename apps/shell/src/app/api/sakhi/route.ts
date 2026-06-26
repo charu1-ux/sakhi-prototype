@@ -5,7 +5,9 @@ import { NextRequest } from "next/server";
 const DISCLAIMER =
   "\n\n⚠️ यह जानकारी केवल शैक्षिक उद्देश्य के लिए है। कृपया किसी विशेषज्ञ डॉक्टर से अवश्य मिलें।";
 
-const RESPONSES: { keywords: string[]; answer: string }[] = [
+type Video = { label: string; channel: string; url: string };
+
+const RESPONSES: { keywords: string[]; answer: string; video?: Video }[] = [
   // ── Period pain & cramps ──────────────────────────────────────────────────
   {
     keywords: [
@@ -29,6 +31,11 @@ const RESPONSES: { keywords: string[]; answer: string }[] = [
     ],
     answer:
       "FOGSI और WHO के अनुसार, पीरियड के पहले 1-2 दिन हल्का दर्द सामान्य है। लेकिन यदि दर्द इतना तेज़ हो कि रोज़मर्रा के काम रुक जाएं, तो यह Endometriosis या Adenomyosis का संकेत हो सकता है। ACOG की गाइडलाइन कहती है कि ऐसे दर्द को 'सामान्य' मानकर सहना नहीं चाहिए — इसका उपचार संभव है।",
+    video: {
+      label: "पीरियड दर्द — Dr. Cuterus समझाती हैं",
+      channel: "Dr. Cuterus",
+      url: "https://www.youtube.com/@dr_cuterus",
+    },
   },
 
   // ── Irregular periods ─────────────────────────────────────────────────────
@@ -54,6 +61,11 @@ const RESPONSES: { keywords: string[]; answer: string }[] = [
     ],
     answer:
       "ICMR के अनुसार, 21 से 35 दिनों के बीच का चक्र सामान्य माना जाता है। इससे अधिक अनियमितता थायराइड असंतुलन, PCOS, या अत्यधिक तनाव के कारण हो सकती है। WHO की सिफारिश है कि यदि 3 महीने से अधिक समय से पीरियड अनियमित हो, तो स्त्री रोग विशेषज्ञ से जांच कराएं।",
+    video: {
+      label: "अनियमित पीरियड — Maitri Woman Health",
+      channel: "Maitri Woman Health",
+      url: "https://www.youtube.com/@maitriwomanhealth",
+    },
   },
 
   // ── Heavy/light bleeding ──────────────────────────────────────────────────
@@ -77,6 +89,11 @@ const RESPONSES: { keywords: string[]; answer: string }[] = [
     ],
     answer:
       "FOGSI के अनुसार, यदि पीरियड में हर 2 घंटे में पैड बदलनी पड़े या 7 दिन से अधिक चले, तो यह Heavy Menstrual Bleeding (HMB) है। इसके कारण फाइब्रॉएड, थायराइड, या खून जमाने की समस्या हो सकती है। ACOG की गाइडलाइन है कि CBC और अल्ट्रासाउंड जांच से कारण का पता लगाया जाए।",
+    video: {
+      label: "Heavy bleeding — Fortis Healthcare",
+      channel: "Fortis Healthcare",
+      url: "https://www.youtube.com/fortishealthcare",
+    },
   },
 
   // ── PCOS / hormones ───────────────────────────────────────────────────────
@@ -112,6 +129,11 @@ const RESPONSES: { keywords: string[]; answer: string }[] = [
     ],
     answer:
       "FOGSI और ACOG के अनुसार, PCOS भारत में 10-15% महिलाओं को प्रभावित करता है। इसमें अनियमित पीरियड, वजन बढ़ना, और चेहरे पर अनचाहे बाल आम लक्षण हैं। WHO की गाइडलाइन कहती है कि नियमित व्यायाम, संतुलित आहार, और चिकित्सकीय देखभाल से PCOS को प्रभावी रूप से नियंत्रित किया जा सकता है।",
+    video: {
+      label: "PCOS को समझें — PCOS Society India",
+      channel: "PCOS Society India",
+      url: "https://www.youtube.com/@thepcossocietyindia",
+    },
   },
 
   // ── Appetite / weakness / fatigue / dizziness ─────────────────────────────
@@ -168,6 +190,11 @@ const RESPONSES: { keywords: string[]; answer: string }[] = [
     ],
     answer:
       "WHO के अनुसार, भारत में 57% महिलाओं में एनीमिया है — मुख्य कारण आयरन की कमी है। ICMR की सिफारिश है कि महिलाओं को प्रतिदिन 29mg आयरन की आवश्यकता है। हरी पत्तेदार सब्ज़ियां, दालें, और विटामिन C के साथ सेवन अवशोषण बढ़ाता है। CBC रक्त परीक्षण से निदान की पुष्टि होती है।",
+    video: {
+      label: "खून की कमी — Apollo Hospitals",
+      channel: "Apollo Hospitals",
+      url: "https://www.youtube.com/c/apollohospitalsindia",
+    },
   },
 
   // ── Thyroid ───────────────────────────────────────────────────────────────
@@ -192,6 +219,11 @@ const RESPONSES: { keywords: string[]; answer: string }[] = [
     ],
     answer:
       "WHO और ICMR के अनुसार, थायराइड असंतुलन महिलाओं में पुरुषों की तुलना में 5-8 गुना अधिक पाया जाता है। Hypothyroidism से पीरियड भारी और अनियमित हो सकते हैं, वजन बढ़ सकता है और थकान होती है। सामान्य TSH रेंज 0.4-4.0 mIU/L मानी जाती है। वार्षिक TSH जांच की सलाह दी जाती है।",
+    video: {
+      label: "थायराइड और महिला स्वास्थ्य — Medanta",
+      channel: "Medanta Healthcare",
+      url: "https://www.youtube.com/@MedantaHealthcare",
+    },
   },
 
   // ── Menopause / perimenopause ─────────────────────────────────────────────
@@ -216,6 +248,11 @@ const RESPONSES: { keywords: string[]; answer: string }[] = [
     ],
     answer:
       "WHO के अनुसार, रजोनिवृत्ति आमतौर पर 45-55 वर्ष की उम्र में होती है। ACOG की गाइडलाइन के अनुसार, गर्म लहरें, नींद न आना, और मूड बदलाव Estrogen के घटने से होते हैं। Hormone Replacement Therapy (HRT) सहित कई उपचार विकल्प उपलब्ध हैं — डॉक्टर से परामर्श लें।",
+    video: {
+      label: "रजोनिवृत्ति — Dr. Megha Khanna",
+      channel: "Dr. Megha Khanna",
+      url: "https://www.youtube.com/@DrMeghaKhanna",
+    },
   },
 
   // ── Pregnancy ─────────────────────────────────────────────────────────────
@@ -252,6 +289,11 @@ const RESPONSES: { keywords: string[]; answer: string }[] = [
     ],
     answer:
       "WHO की ANC गाइडलाइन के अनुसार, गर्भावस्था में कम से कम 8 बार प्रसव-पूर्व जांच की सिफारिश की जाती है। FOGSI के अनुसार, फोलिक एसिड, आयरन, और कैल्शियम के नियमित सेवन से माँ और बच्चे दोनों का स्वास्थ्य बेहतर रहता है। गर्भधारण में कठिनाई हो तो स्त्री रोग विशेषज्ञ से जल्द परामर्श लें।",
+    video: {
+      label: "गर्भावस्था देखभाल — Dr. Megha Khanna",
+      channel: "Dr. Megha Khanna",
+      url: "https://www.youtube.com/@DrMeghaKhanna",
+    },
   },
 
   // ── Postpartum ────────────────────────────────────────────────────────────
@@ -750,18 +792,18 @@ const OFF_TOPIC_WORDS = [
   "loan",
 ];
 
-function findResponse(question: string): string {
+function findResponse(question: string): { answer: string; video?: Video } {
   const q = question.toLowerCase();
 
-  if (OFF_TOPIC_WORDS.some((w) => q.includes(w))) return OUT_OF_SCOPE;
+  if (OFF_TOPIC_WORDS.some((w) => q.includes(w))) return { answer: OUT_OF_SCOPE };
 
   for (const r of RESPONSES) {
     if (r.keywords.some((kw) => q.includes(kw.toLowerCase()))) {
-      return r.answer + DISCLAIMER;
+      return { answer: r.answer + DISCLAIMER, video: r.video };
     }
   }
 
-  return DEFAULT;
+  return { answer: DEFAULT };
 }
 
 export async function POST(req: NextRequest) {
@@ -770,7 +812,7 @@ export async function POST(req: NextRequest) {
     if (!question?.trim()) {
       return Response.json({ error: "कोई प्रश्न नहीं मिला।" }, { status: 400 });
     }
-    return Response.json({ answer: findResponse(question) });
+    return Response.json(findResponse(question));
   } catch {
     return Response.json(
       { error: "सखी अभी उपलब्ध नहीं है। कृपया थोड़ी देर बाद पुनः प्रयास करें।" },
