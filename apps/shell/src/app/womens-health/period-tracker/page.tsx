@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
 
@@ -21,6 +22,45 @@ function buildCalendar(year: number, month: number) {
 const PERIOD_DAYS = new Set([3, 4, 5, 6, 7]);
 const FERTILE_DAYS = new Set([12, 13, 14, 15, 16]);
 const PREDICTED_DAYS = new Set([31, 32, 33, 34, 35]);
+
+function ContextCard() {
+  const searchParams = useSearchParams();
+  const [dismissed, setDismissed] = useState(false);
+
+  if (dismissed) return null;
+
+  const from = searchParams.get("from");
+  if (from !== "content") return null;
+
+  return (
+    <div
+      className="flex items-start gap-3 rounded-2xl p-4"
+      style={{ background: "#F9FAFB", border: "1px solid #EDE9FE" }}
+    >
+      <div
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[14px]"
+        style={{ background: "#F0FDF4" }}
+      >
+        ✅
+      </div>
+      <p
+        className="flex-1 text-[13px] leading-relaxed"
+        style={{ fontFamily: "JioType, sans-serif", color: "#6d17ce" }}
+      >
+        आपने cycle के बारे में पढ़ा — क्या मैं आपका cycle track करके रखूँ? पहले बताइए — आखिरी पीरियड
+        कब था?
+      </p>
+      <button
+        type="button"
+        onClick={() => setDismissed(true)}
+        className="shrink-0 text-[14px] text-zinc-400 transition-all active:scale-90"
+        aria-label="बंद करें"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
 
 export default function PeriodTrackerPage() {
   const today = new Date();
@@ -59,6 +99,11 @@ export default function PeriodTrackerPage() {
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 76px)" }}
       >
         <div className="mx-auto flex w-full max-w-md flex-col gap-4">
+          {/* Context carry card from health-content */}
+          <Suspense>
+            <ContextCard />
+          </Suspense>
+
           {/* Status cards */}
           <div className="grid grid-cols-3 gap-2">
             {[

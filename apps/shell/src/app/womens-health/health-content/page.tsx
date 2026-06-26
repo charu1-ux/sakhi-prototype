@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
 
@@ -13,23 +14,148 @@ const SUGGESTED = [
   "थायराइड और पीरियड का क्या संबंध है?",
 ];
 
+// Personal signals — first-person pronouns
+const PERSONAL_WORDS = [
+  "mujhe",
+  "mera",
+  "meri",
+  "mere",
+  "main",
+  "मुझे",
+  "मेरा",
+  "मेरी",
+  "मेरे",
+  "मैं",
+  "mujhe bhi",
+  "mere saath",
+  "main feel",
+  "मेरे साथ",
+  "मुझको",
+  "महसूस",
+];
+
+// Mood words
+const MOOD_WORDS = [
+  "mood",
+  "feel",
+  "sad",
+  "udaas",
+  "उदास",
+  "irritable",
+  "chidchid",
+  "चिड़चिड़",
+  "anxious",
+  "घबराहट",
+  "gussa",
+  "गुस्सा",
+  "rone",
+  "cry",
+  "रोना",
+  "tanav",
+  "तनाव",
+  "stress",
+  "thaka",
+  "थका",
+  "uthne ka mann",
+  "मन नहीं",
+];
+
+// Period words
+const PERIOD_WORDS = [
+  "cycle",
+  "period",
+  "mahavari",
+  "माहवारी",
+  "मासिक",
+  "late",
+  "miss",
+  "irregular",
+  "lmp",
+  "flow",
+  "bleeding",
+  "spotting",
+  "पीरियड",
+  "अनियमित",
+];
+
+// Pain words
+const PAIN_WORDS = ["dard", "दर्द", "cramp", "ऐंठन", "taklif", "तकलीफ", "period pain"];
+
+// Clarification signals
+const CLARIFICATION_WORDS = [
+  "kya hai",
+  "क्या है",
+  "matlab",
+  "मतलब",
+  "kaise hota",
+  "कैसे होता",
+  "difference",
+  "अंतर",
+  "explain",
+  "samjhao",
+  "समझाओ",
+  "iska matlab",
+  "yeh kya",
+  "यह क्या",
+  "what is",
+  "how does",
+  "kyun hota",
+  "kya fark",
+  "kya hota hai",
+  "बताओ",
+];
+
+function containsAny(text: string, words: string[]): boolean {
+  const lower = text.toLowerCase();
+  return words.some((w) => lower.includes(w.toLowerCase()));
+}
+
+type Outcome = "personal" | "clarification" | "ambiguous";
+
+function classify(query: string): Outcome {
+  const isPersonal = containsAny(query, PERSONAL_WORDS);
+  const isClarification = containsAny(query, CLARIFICATION_WORDS);
+  if (isPersonal) return "personal";
+  if (isClarification) return "clarification";
+  return "ambiguous";
+}
+
+function subRoute(query: string): { path: string; params: Record<string, string> } {
+  const params: Record<string, string> = { from: "content", query: encodeURIComponent(query) };
+  if (containsAny(query, PAIN_WORDS)) {
+    return { path: "/womens-health/low-mood", params: { ...params, pain: "1" } };
+  }
+  if (containsAny(query, PERIOD_WORDS)) {
+    return { path: "/womens-health/period-tracker", params };
+  }
+  if (containsAny(query, MOOD_WORDS)) {
+    return { path: "/womens-health/low-mood", params };
+  }
+  return { path: "/womens-health/low-mood", params };
+}
+
 export default function HealthContentPage() {
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
+  const [ambiguousPending, setAmbiguousPending] = useState<{ query: string } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  async function ask(question: string) {
-    if (!question.trim() || loading) return;
-    const q = question.trim();
-    setMessages((prev) => [...prev, { role: "user", text: q }]);
+  function routePersonal(query: string) {
+    const { path, params } = subRoute(query);
+    const qs = new URLSearchParams(params).toString();
+    router.push(`${path}?${qs}`);
+  }
+
+  async function callSakhi(query: string) {
+    setMessages((prev) => [...prev, { role: "user", text: query }]);
     setLoading(true);
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
-
     try {
       const res = await fetch("/api/sakhi", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: q }),
+        body: JSON.stringify({ question: query }),
       });
       const data = await res.json();
       setMessages((prev) => [
@@ -47,22 +173,36 @@ export default function HealthContentPage() {
     }
   }
 
+  function handleSubmit(question: string) {
+    if (!question.trim() || loading) return;
+    const q = question.trim();
+    setAmbiguousPending(null);
+    const outcome = classify(q);
+    if (outcome === "personal") {
+      routePersonal(q);
+    } else if (outcome === "clarification") {
+      callSakhi(q);
+    } else {
+      // ambiguous
+      setAmbiguousPending({ query: q });
+    }
+  }
+
   return (
     <div className="bg-canvas-grey relative flex h-full flex-col">
-      {/* Messages area */}
       <main
         className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 76px)" }}
       >
         <div className="mx-auto flex w-full max-w-md flex-col gap-3">
           {/* Suggested chips — shown before first message */}
-          {messages.length === 0 && (
+          {messages.length === 0 && !ambiguousPending && (
             <div className="flex flex-wrap gap-2 pt-2">
               {SUGGESTED.map((s) => (
                 <button
                   key={s}
                   type="button"
-                  onClick={() => ask(s)}
+                  onClick={() => handleSubmit(s)}
                   className="rounded-full px-3 py-2 text-left text-[12px] font-medium text-zinc-600 transition-all active:scale-95"
                   style={{ background: "#F3F4F6", fontFamily: "JioType, sans-serif" }}
                 >
@@ -123,12 +263,65 @@ export default function HealthContentPage() {
             </div>
           )}
 
+          {/* Ambiguous routing card */}
+          {ambiguousPending && (
+            <div
+              className="flex items-start gap-3 rounded-2xl p-4"
+              style={{ background: "#F9FAFB", border: "1px solid #EDE9FE" }}
+            >
+              <div
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[14px]"
+                style={{ background: "#F0FDF4" }}
+              >
+                ✅
+              </div>
+              <div className="flex flex-1 flex-col gap-3">
+                <p
+                  className="text-[13px] leading-relaxed text-zinc-800"
+                  style={{ fontFamily: "JioType, sans-serif" }}
+                >
+                  क्या यह सवाल आप अपने बारे में पूछ रही हैं?
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const q = ambiguousPending.query;
+                      setAmbiguousPending(null);
+                      routePersonal(q);
+                    }}
+                    className="flex-1 rounded-full py-2 text-[12px] font-semibold text-white transition-all active:scale-95"
+                    style={{ background: "#6d17ce", fontFamily: "JioType, sans-serif" }}
+                  >
+                    हाँ, अपने बारे में
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const q = ambiguousPending.query;
+                      setAmbiguousPending(null);
+                      callSakhi(q);
+                    }}
+                    className="flex-1 rounded-full py-2 text-[12px] font-semibold transition-all active:scale-95"
+                    style={{
+                      background: "#EDE9FE",
+                      color: "#6d17ce",
+                      fontFamily: "JioType, sans-serif",
+                    }}
+                  >
+                    नहीं, जानकारी चाहिए
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div ref={bottomRef} />
         </div>
       </main>
 
       <HubHeader title="जाँची-परखी जानकारी" backHref="/womens-health" scrolled={false} />
-      <HubChatInput variant="sleek" placeholder="सखी से पूछें..." onSubmit={ask} />
+      <HubChatInput variant="sleek" placeholder="सखी से पूछें..." onSubmit={handleSubmit} />
     </div>
   );
 }
