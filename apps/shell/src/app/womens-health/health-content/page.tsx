@@ -63,6 +63,67 @@ const SUGGESTED = [
   "थायराइड और पीरियड का क्या संबंध है?",
 ];
 
+// ─── Video channels ───────────────────────────────────────────────────────────
+
+const VIDEO_CHANNELS = [
+  {
+    name: "Maitri Woman Health",
+    desc: "हिंदी में महिला स्वास्थ्य — PCOS, थायराइड, हॉर्मोन",
+    tag: "हिंदी",
+    tagBg: "#D1FAE5",
+    tagColor: "#065F46",
+    url: "https://www.youtube.com/@maitriwomanhealth",
+  },
+  {
+    name: "Dr. Cuterus",
+    desc: "Dr. Tanaya Narendra — बेझिझक, सरल भाषा में स्त्री स्वास्थ्य",
+    tag: "लोकप्रिय",
+    tagBg: "#FEE2E2",
+    tagColor: "#991B1B",
+    url: "https://www.youtube.com/@dr_cuterus",
+  },
+  {
+    name: "PCOS Society India",
+    desc: "PCOS विशेषज्ञ — लक्षण, आहार, उपचार की पूरी जानकारी",
+    tag: "PCOS",
+    tagBg: "#EDE9FE",
+    tagColor: "#5B21B6",
+    url: "https://www.youtube.com/@thepcossocietyindia",
+  },
+  {
+    name: "Dr. Megha Khanna",
+    desc: "स्त्री रोग विशेषज्ञ — प्रसूति, हॉर्मोन, गर्भावस्था",
+    tag: "विशेषज्ञ",
+    tagBg: "#FEF3C7",
+    tagColor: "#92400E",
+    url: "https://www.youtube.com/@DrMeghaKhanna",
+  },
+  {
+    name: "Fortis Healthcare",
+    desc: "Fortis अस्पताल के विशेषज्ञों द्वारा स्वास्थ्य जानकारी",
+    tag: "अस्पताल",
+    tagBg: "#DBEAFE",
+    tagColor: "#1E40AF",
+    url: "https://www.youtube.com/fortishealthcare",
+  },
+  {
+    name: "Medanta Healthcare",
+    desc: "Medanta के डॉक्टरों की सलाह — महिला और सामान्य स्वास्थ्य",
+    tag: "अस्पताल",
+    tagBg: "#DBEAFE",
+    tagColor: "#1E40AF",
+    url: "https://www.youtube.com/@MedantaHealthcare",
+  },
+  {
+    name: "Apollo Hospitals",
+    desc: "Apollo के विशेषज्ञ डॉक्टरों द्वारा स्वास्थ्य शिक्षा",
+    tag: "अस्पताल",
+    tagBg: "#DBEAFE",
+    tagColor: "#1E40AF",
+    url: "https://www.youtube.com/c/apollohospitalsindia",
+  },
+];
+
 // ─── Chat component ────────────────────────────────────────────────────────────
 
 function SakhiChat() {
@@ -314,6 +375,62 @@ export default function HealthContentPage() {
                     </span>
                   )}
                 </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Video channels */}
+          <div className="flex flex-col gap-3">
+            <p
+              className="text-[15px] font-bold text-zinc-900"
+              style={{ fontFamily: "JioType, sans-serif" }}
+            >
+              ▶ विशेषज्ञों के वीडियो देखें
+            </p>
+            <div className="flex flex-col gap-2">
+              {VIDEO_CHANNELS.map((ch) => (
+                <a
+                  key={ch.name}
+                  href={ch.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 rounded-xl bg-white p-3 transition-opacity active:opacity-70"
+                  style={{ border: "1px solid #F3F4F6", textDecoration: "none" }}
+                >
+                  <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[18px]"
+                    style={{ background: "#FEF2F2" }}
+                  >
+                    ▶
+                  </div>
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="text-[13px] font-semibold text-zinc-900"
+                        style={{ fontFamily: "JioType, sans-serif" }}
+                      >
+                        {ch.name}
+                      </span>
+                      <span
+                        className="rounded-full px-2 py-0.5 text-[9px] font-semibold"
+                        style={{
+                          background: ch.tagBg,
+                          color: ch.tagColor,
+                          fontFamily: "JioType, sans-serif",
+                        }}
+                      >
+                        {ch.tag}
+                      </span>
+                    </div>
+                    <span
+                      className="text-[11px] leading-snug text-zinc-500"
+                      style={{ fontFamily: "JioType, sans-serif" }}
+                    >
+                      {ch.desc}
+                    </span>
+                  </div>
+                  <span className="shrink-0 text-zinc-300">›</span>
+                </a>
               ))}
             </div>
           </div>
