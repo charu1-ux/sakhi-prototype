@@ -218,7 +218,7 @@ function ConfirmSheet({
             />
           </div>
           <p className="text-[13px] font-medium text-black/60">
-            {prediction.probability}% chance based on Bumrah's last 6 death overs
+            {prediction.probability}% chance based on Bumrah&apos;s last 6 death overs
           </p>
         </div>
 

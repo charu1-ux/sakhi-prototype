@@ -558,7 +558,7 @@ export default function NewsBriefingPage() {
             <div className="flex size-8 items-center justify-center rounded-full bg-[#f6f3ff] text-base">
               ✓
             </div>
-            <p className="text-[13px] font-medium text-black/40">You're caught up for today</p>
+            <p className="text-[13px] font-medium text-black/40">You&apos;re caught up for today</p>
           </div>
         </div>
       </main>

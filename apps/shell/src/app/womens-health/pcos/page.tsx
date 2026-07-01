@@ -261,8 +261,9 @@ export default function PCOSPage() {
               className="text-[13px] leading-relaxed text-zinc-700"
               style={{ fontFamily: "JioType, sans-serif" }}
             >
-              PCOS का कोई permanent "cure" नहीं है — पर lifestyle से <strong>80% लक्षण</strong> कम
-              हो सकते हैं। आप इसे manage कर सकती हैं। यह आपकी ताकत है, कमज़ोरी नहीं।
+              PCOS का कोई permanent &quot;cure&quot; नहीं है — पर lifestyle से{" "}
+              <strong>80% लक्षण</strong> कम हो सकते हैं। आप इसे manage कर सकती हैं। यह आपकी ताकत है,
+              कमज़ोरी नहीं।
             </p>
           </div>
         </div>
