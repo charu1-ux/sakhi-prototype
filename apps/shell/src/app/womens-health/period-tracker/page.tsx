@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
+import { askSakhi } from "@/lib/sakhi";
 
 // ── Design tokens (from sakhi_cycle_tracker_ui.html) ─────────────────────────
 const C = {
@@ -72,6 +73,46 @@ function getPhase(day: number, len: number) {
   if (day <= len - 15) return "Follicular";
   if (day <= len - 14) return "Ovulation";
   return "Luteal";
+}
+function parseForWhom(text: string): ForWhom {
+  const t = text.trim().toLowerCase();
+  const self = [
+    "मेरे लिए",
+    "मेरे",
+    "खुद",
+    "for me",
+    "myself",
+    "self",
+    "mere liye",
+    "mujhe",
+    "main",
+  ];
+  const other = [
+    "किसी और",
+    "उनके लिए",
+    "for someone",
+    "other",
+    "kisi aur",
+    "unke liye",
+    "wife",
+    "sister",
+    "husband",
+    "friend",
+    "maa",
+    "mummy",
+    "beti",
+    "didi",
+    "behen",
+  ];
+  if (self.some((k) => t.includes(k))) return "self";
+  if (other.some((k) => t.includes(k))) return "other";
+  return null;
+}
+function parseCycleLength(text: string): number | null {
+  const match = text.match(/\d{2}/);
+  if (!match) return null;
+  const n = parseInt(match[0], 10);
+  return n >= 15 && n <= 45 ? n : null;
 }
 
 // ── Phase arc ─────────────────────────────────────────────────────────────────
@@ -984,6 +1025,7 @@ type MessageKind =
 export default function PeriodTrackerPage() {
   const router = useRouter();
   const [lastPeriodDate, setLastPeriodDate] = useState<Date | null>(null);
+  const [step, setStep] = useState<"forWhom" | "date" | "cycleLength" | "chat">("forWhom");
   const bottomRef = useRef<HTMLDivElement>(null);
   const scroll = () =>
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
@@ -1014,6 +1056,7 @@ export default function PeriodTrackerPage() {
       { type: "prediction", lastPeriod: lp, cycleLength: days },
       { type: "symptoms", onDone: onSymptomsDone },
     ]);
+    setStep("chat");
     scroll();
   }
 
@@ -1032,13 +1075,14 @@ export default function PeriodTrackerPage() {
           },
           { type: "cycleLength", onPick: onCyclePick },
         ]);
+        setStep("cycleLength");
         scroll();
       },
     };
   }
 
-  function handleForWhom(v: ForWhom) {
-    const userText = v === "self" ? "मेरे लिए" : "किसी और के लिए";
+  function handleForWhom(v: ForWhom, displayText?: string) {
+    const userText = displayText ?? (v === "self" ? "मेरे लिए" : "किसी और के लिए");
     const sakhiText =
       v === "self"
         ? "ठीक है! 📅 पहले बताइए — आखिरी पीरियड कब शुरू हुआ था?"
@@ -1049,6 +1093,7 @@ export default function PeriodTrackerPage() {
       { type: "text", role: "sakhi", text: sakhiText },
       makeCalendarMsg(),
     ]);
+    setStep("date");
     scroll();
   }
 
@@ -1066,16 +1111,60 @@ export default function PeriodTrackerPage() {
   async function handleSubmit(text: string) {
     if (!text.trim() || loading) return;
     const q = text.trim();
+
+    if (step === "forWhom") {
+      const parsed = parseForWhom(q);
+      if (parsed) {
+        handleForWhom(parsed, q);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          { type: "text", role: "user", text: q },
+          {
+            type: "text",
+            role: "sakhi",
+            text: "माफ़ कीजिए, ठीक से समझ नहीं आया 🙏 कृपया ऊपर बटन दबाएँ, या लिखें — 'मेरे लिए' या 'किसी और के लिए'।",
+          },
+        ]);
+        scroll();
+      }
+      return;
+    }
+
+    if (step === "date") {
+      setMessages((prev) => [
+        ...prev,
+        { type: "text", role: "user", text: q },
+        { type: "text", role: "sakhi", text: "कृपया ऊपर दिए गए कैलेंडर में तारीख पर टैप करें 📅" },
+      ]);
+      scroll();
+      return;
+    }
+
+    if (step === "cycleLength") {
+      const days = parseCycleLength(q);
+      if (days) {
+        onCyclePick(days);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          { type: "text", role: "user", text: q },
+          {
+            type: "text",
+            role: "sakhi",
+            text: "कृपया 21-35 के बीच एक नंबर बताएं, या ऊपर दिए विकल्पों में से कोई एक चुनें।",
+          },
+        ]);
+        scroll();
+      }
+      return;
+    }
+
     setMessages((prev) => [...prev, { type: "text", role: "user", text: q }]);
     setLoading(true);
     scroll();
     try {
-      const res = await fetch("/api/sakhi", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: q }),
-      });
-      const data = await res.json();
+      const data = await askSakhi(q);
       // If Sakhi matched a health topic (has video/article), redirect to content section
       if (data.video || data.article) {
         setMessages((prev) => [
@@ -1093,7 +1182,7 @@ export default function PeriodTrackerPage() {
           {
             type: "text",
             role: "sakhi",
-            text: data.answer || data.error || "सखी अभी उपलब्ध नहीं है।",
+            text: data.answer || "सखी अभी उपलब्ध नहीं है।",
           },
         ]);
       }

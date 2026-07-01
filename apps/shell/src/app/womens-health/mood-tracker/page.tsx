@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
+import { askSakhi } from "@/lib/sakhi";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
@@ -553,12 +554,7 @@ export default function MoodTrackerPage() {
     setLoading(true);
     scroll();
     try {
-      const res = await fetch("/api/sakhi", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: q }),
-      });
-      const data = await res.json();
+      const data = await askSakhi(q);
       if (data.video || data.article) {
         push({
           type: "text",

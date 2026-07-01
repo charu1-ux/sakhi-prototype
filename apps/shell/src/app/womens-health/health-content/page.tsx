@@ -4,9 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
+import { askSakhi } from "@/lib/sakhi";
 
 type Video = { label: string; channel: string; url: string; embedId?: string };
-type Article = { title: string; source: string; url: string; summary: string };
+type Article = { title: string; source: string; url: string; summary?: string };
 type Message = { role: "user" | "sakhi"; text: string; video?: Video; article?: Article };
 
 // ── Video card — expandable inline player ─────────────────────────────────────
@@ -189,17 +190,12 @@ export default function HealthContentPage() {
     setLoading(true);
     scroll();
     try {
-      const res = await fetch("/api/sakhi", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: q }),
-      });
-      const data = await res.json();
+      const data = await askSakhi(q);
       setMessages((prev) => [
         ...prev,
         {
           role: "sakhi",
-          text: data.answer || data.error || "सखी अभी उपलब्ध नहीं है।",
+          text: data.answer || "सखी अभी उपलब्ध नहीं है।",
           video: data.video,
           article: data.article,
         },
