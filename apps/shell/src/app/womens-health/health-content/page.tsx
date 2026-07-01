@@ -1,162 +1,198 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
 
-type Video = { label: string; channel: string; url: string };
-type Message = { role: "user" | "sakhi"; text: string; video?: Video };
+type Video = { label: string; channel: string; url: string; embedId?: string };
+type Article = { title: string; source: string; url: string; summary: string };
+type Message = { role: "user" | "sakhi"; text: string; video?: Video; article?: Article };
+
+// ── Video card — expandable inline player ─────────────────────────────────────
+
+function VideoCard({ video }: { video: Video }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div
+      className="mt-1.5 ml-9 overflow-hidden rounded-xl"
+      style={{ maxWidth: "82%", border: "1px solid #FECACA", background: "#FEF2F2" }}
+    >
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-opacity active:opacity-70"
+      >
+        <div
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+          style={{ background: "#EF4444" }}
+        >
+          <span style={{ color: "white", fontSize: 14 }}>{expanded ? "▼" : "▶"}</span>
+        </div>
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <span
+            className="text-[11px] leading-snug font-semibold text-zinc-800"
+            style={{ fontFamily: "JioType, sans-serif" }}
+          >
+            {video.label}
+          </span>
+          <span className="text-[10px] text-zinc-400" style={{ fontFamily: "JioType, sans-serif" }}>
+            {video.channel} · YouTube
+          </span>
+        </div>
+        <span className="ml-auto shrink-0 text-[12px] text-zinc-400">
+          {expanded ? "बंद करें" : "देखें"}
+        </span>
+      </button>
+      {expanded && video.embedId && (
+        <div className="w-full" style={{ aspectRatio: "16/9" }}>
+          <iframe
+            src={`https://www.youtube.com/embed/${video.embedId}?rel=0`}
+            title={video.label}
+            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+            allowFullScreen
+            className="h-full w-full border-0"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Article card — expandable in-app iframe ───────────────────────────────────
+
+function ArticleCard({ article }: { article: Article }) {
+  const [expanded, setExpanded] = useState(false);
+  const BADGE_COLORS: Record<string, string> = {
+    WHO: "#2563EB",
+    ACOG: "#7C3AED",
+    FOGSI: "#059669",
+    ICMR: "#B45309",
+    "Mayo Clinic": "#DC2626",
+    NHS: "#0891B2",
+    MoHFW: "#EA580C",
+    NCBI: "#475569",
+  };
+  const BADGE_LABELS: Record<string, string> = {
+    WHO: "WHO",
+    ACOG: "ACOG",
+    FOGSI: "FOG",
+    ICMR: "ICM",
+    "Mayo Clinic": "MCL",
+    NHS: "NHS",
+    MoHFW: "MoH",
+    NCBI: "NCBI",
+  };
+  const badge = BADGE_LABELS[article.source] ?? "📄";
+  const badgeBg = BADGE_COLORS[article.source] ?? "#6B7280";
+  return (
+    <div
+      className="mt-1.5 ml-9 overflow-hidden rounded-xl"
+      style={{ maxWidth: "82%", border: "1px solid #BFDBFE", background: "#EFF6FF" }}
+    >
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-opacity active:opacity-70"
+      >
+        <div
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold"
+          style={{ background: badgeBg, color: "white" }}
+        >
+          {badge}
+        </div>
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <span
+            className="text-[11px] leading-snug font-semibold text-zinc-800"
+            style={{ fontFamily: "JioType, sans-serif" }}
+          >
+            {article.title}
+          </span>
+          <span className="text-[10px] text-zinc-400" style={{ fontFamily: "JioType, sans-serif" }}>
+            {article.source} · सत्यापित स्रोत
+          </span>
+        </div>
+        <span className="ml-auto shrink-0 text-[12px] text-zinc-400">
+          {expanded ? "बंद करें" : "पढ़ें"}
+        </span>
+      </button>
+      {expanded && (
+        <div className="px-3 pb-3">
+          <p
+            className="mb-2 text-[12px] leading-relaxed text-zinc-700"
+            style={{ fontFamily: "JioType, sans-serif" }}
+          >
+            {article.summary}
+          </p>
+          <div
+            className="flex items-center gap-1.5 pt-2"
+            style={{ borderTop: "1px solid #BFDBFE" }}
+          >
+            <div
+              className="flex h-4 w-4 items-center justify-center rounded text-[8px] font-bold"
+              style={{ background: badgeBg, color: "white" }}
+            >
+              {badge}
+            </div>
+            <span
+              className="text-[10px] text-zinc-400"
+              style={{ fontFamily: "JioType, sans-serif" }}
+            >
+              स्रोत: {article.source} — {article.title}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Suggested prompts ─────────────────────────────────────────────────────────
 
 const SUGGESTED = [
   "पीरियड में बहुत दर्द — क्या यह सामान्य है?",
   "अनियमित पीरियड क्यों होते हैं?",
   "खून की कमी के लक्षण क्या हैं?",
-  "थायराइड और पीरियड का क्या संबंध है?",
+  "PCOS क्या होता है?",
 ];
 
-// Personal signals — first-person pronouns
-const PERSONAL_WORDS = [
-  "mujhe",
-  "mera",
-  "meri",
-  "mere",
-  "main",
-  "मुझे",
-  "मेरा",
-  "मेरी",
-  "मेरे",
-  "मैं",
-  "mujhe bhi",
-  "mere saath",
-  "main feel",
-  "मेरे साथ",
-  "मुझको",
-  "महसूस",
-];
-
-// Mood words
-const MOOD_WORDS = [
-  "mood",
-  "feel",
-  "sad",
-  "udaas",
-  "उदास",
-  "irritable",
-  "chidchid",
-  "चिड़चिड़",
-  "anxious",
-  "घबराहट",
-  "gussa",
-  "गुस्सा",
-  "rone",
-  "cry",
-  "रोना",
-  "tanav",
-  "तनाव",
-  "stress",
-  "thaka",
-  "थका",
-  "uthne ka mann",
-  "मन नहीं",
-];
-
-// Period words
-const PERIOD_WORDS = [
-  "cycle",
-  "period",
-  "mahavari",
-  "माहवारी",
-  "मासिक",
-  "late",
-  "miss",
-  "irregular",
-  "lmp",
-  "flow",
-  "bleeding",
-  "spotting",
-  "पीरियड",
-  "अनियमित",
-];
-
-// Pain words
-const PAIN_WORDS = ["dard", "दर्द", "cramp", "ऐंठन", "taklif", "तकलीफ", "period pain"];
-
-// Clarification signals
-const CLARIFICATION_WORDS = [
-  "kya hai",
-  "क्या है",
-  "matlab",
-  "मतलब",
-  "kaise hota",
-  "कैसे होता",
-  "difference",
-  "अंतर",
-  "explain",
-  "samjhao",
-  "समझाओ",
-  "iska matlab",
-  "yeh kya",
-  "यह क्या",
-  "what is",
-  "how does",
-  "kyun hota",
-  "kya fark",
-  "kya hota hai",
-  "बताओ",
-];
-
-function containsAny(text: string, words: string[]): boolean {
-  const lower = text.toLowerCase();
-  return words.some((w) => lower.includes(w.toLowerCase()));
-}
-
-type Outcome = "personal" | "clarification" | "ambiguous";
-
-function classify(query: string): Outcome {
-  const isPersonal = containsAny(query, PERSONAL_WORDS);
-  const isClarification = containsAny(query, CLARIFICATION_WORDS);
-  if (isPersonal) return "personal";
-  if (isClarification) return "clarification";
-  return "ambiguous";
-}
-
-function subRoute(query: string): { path: string; params: Record<string, string> } {
-  const params: Record<string, string> = { from: "content", query: encodeURIComponent(query) };
-  if (containsAny(query, PAIN_WORDS)) {
-    return { path: "/womens-health/low-mood", params: { ...params, pain: "1" } };
-  }
-  if (containsAny(query, PERIOD_WORDS)) {
-    return { path: "/womens-health/period-tracker", params };
-  }
-  if (containsAny(query, MOOD_WORDS)) {
-    return { path: "/womens-health/low-mood", params };
-  }
-  return { path: "/womens-health/low-mood", params };
-}
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function HealthContentPage() {
-  const router = useRouter();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const searchParams = useSearchParams();
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      role: "sakhi",
+      text: "नमस्ते! मैं सखी हूँ — आपकी स्वास्थ्य सहेली। 💜\n\nआपका राज़ मेरा राज़ है। जो भी आप मुझसे पूछेंगी — वो सिर्फ हमारे बीच रहेगा। कोई विज्ञापन नहीं, कोई जानकारी किसी के साथ साझा नहीं।\n\nकोई भी सवाल पूछिए — बिना झिझक।",
+    },
+  ]);
   const [loading, setLoading] = useState(false);
-  const [ambiguousPending, setAmbiguousPending] = useState<{ query: string } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const autoSubmittedRef = useRef(false);
 
-  function routePersonal(query: string) {
-    const { path, params } = subRoute(query);
-    const qs = new URLSearchParams(params).toString();
-    router.push(`${path}?${qs}`);
-  }
-
-  async function callSakhi(query: string) {
-    setMessages((prev) => [...prev, { role: "user", text: query }]);
-    setLoading(true);
+  const scroll = () =>
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q && !autoSubmittedRef.current) {
+      autoSubmittedRef.current = true;
+      handleSubmit(decodeURIComponent(q));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleSubmit(question: string) {
+    if (!question.trim() || loading) return;
+    const q = question.trim();
+    setMessages((prev) => [...prev, { role: "user", text: q }]);
+    setLoading(true);
+    scroll();
     try {
       const res = await fetch("/api/sakhi", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: query }),
+        body: JSON.stringify({ question: q }),
       });
       const data = await res.json();
       setMessages((prev) => [
@@ -165,6 +201,7 @@ export default function HealthContentPage() {
           role: "sakhi",
           text: data.answer || data.error || "सखी अभी उपलब्ध नहीं है।",
           video: data.video,
+          article: data.article,
         },
       ]);
     } catch {
@@ -174,22 +211,7 @@ export default function HealthContentPage() {
       ]);
     } finally {
       setLoading(false);
-      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
-    }
-  }
-
-  function handleSubmit(question: string) {
-    if (!question.trim() || loading) return;
-    const q = question.trim();
-    setAmbiguousPending(null);
-    const outcome = classify(q);
-    if (outcome === "personal") {
-      routePersonal(q);
-    } else if (outcome === "clarification") {
-      callSakhi(q);
-    } else {
-      // ambiguous
-      setAmbiguousPending({ query: q });
+      scroll();
     }
   }
 
@@ -200,23 +222,6 @@ export default function HealthContentPage() {
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 76px)" }}
       >
         <div className="mx-auto flex w-full max-w-md flex-col gap-3">
-          {/* Suggested chips — shown before first message */}
-          {messages.length === 0 && !ambiguousPending && (
-            <div className="flex flex-wrap gap-2 pt-2">
-              {SUGGESTED.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => handleSubmit(s)}
-                  className="rounded-full px-3 py-2 text-left text-[12px] font-medium text-zinc-600 transition-all active:scale-95"
-                  style={{ background: "#F3F4F6", fontFamily: "JioType, sans-serif" }}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          )}
-
           {/* Conversation */}
           {messages.map((m, i) => (
             <div
@@ -245,45 +250,32 @@ export default function HealthContentPage() {
                   {m.text}
                 </div>
               </div>
-              {/* Video card — shown below Sakhi bubble when a relevant channel exists */}
-              {m.role === "sakhi" && m.video && (
-                <a
-                  href={m.video.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-1.5 ml-9 flex items-center gap-2.5 rounded-xl px-3 py-2.5 transition-opacity active:opacity-70"
-                  style={{
-                    background: "#FEF2F2",
-                    border: "1px solid #FECACA",
-                    textDecoration: "none",
-                    maxWidth: "82%",
-                  }}
-                >
-                  <div
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[14px]"
-                    style={{ background: "#EF4444" }}
-                  >
-                    <span style={{ color: "white" }}>▶</span>
-                  </div>
-                  <div className="flex min-w-0 flex-col gap-0.5">
-                    <span
-                      className="text-[11px] leading-snug font-semibold text-zinc-800"
-                      style={{ fontFamily: "JioType, sans-serif" }}
-                    >
-                      {m.video.label}
-                    </span>
-                    <span
-                      className="text-[10px] text-zinc-400"
-                      style={{ fontFamily: "JioType, sans-serif" }}
-                    >
-                      {m.video.channel} · YouTube
-                    </span>
-                  </div>
-                  <span className="ml-auto shrink-0 text-[12px] text-zinc-300">›</span>
-                </a>
-              )}
+              {m.role === "sakhi" && m.video && <VideoCard video={m.video} />}
+              {m.role === "sakhi" && !m.video && m.article && <ArticleCard article={m.article} />}
             </div>
           ))}
+
+          {/* Suggested pills — shown after disclaimer, until user asks something */}
+          {!messages.some((m) => m.role === "user") && (
+            <div className="flex flex-wrap gap-2 px-1 pb-1">
+              {SUGGESTED.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => handleSubmit(s)}
+                  className="rounded-full border px-3 py-1.5 text-left text-[12px] font-medium transition-all active:scale-95"
+                  style={{
+                    background: "#FDF2F4",
+                    borderColor: "#F4B8C1",
+                    color: "#C0415A",
+                    fontFamily: "JioType, sans-serif",
+                  }}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Loading dots */}
           {loading && (
@@ -306,59 +298,6 @@ export default function HealthContentPage() {
                   />
                 ))}
                 <style>{`@keyframes pulse{0%,100%{opacity:0.3}50%{opacity:1}}`}</style>
-              </div>
-            </div>
-          )}
-
-          {/* Ambiguous routing card */}
-          {ambiguousPending && (
-            <div
-              className="flex items-start gap-3 rounded-2xl p-4"
-              style={{ background: "#F9FAFB", border: "1px solid #EDE9FE" }}
-            >
-              <div
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[14px]"
-                style={{ background: "#F0FDF4" }}
-              >
-                ✅
-              </div>
-              <div className="flex flex-1 flex-col gap-3">
-                <p
-                  className="text-[13px] leading-relaxed text-zinc-800"
-                  style={{ fontFamily: "JioType, sans-serif" }}
-                >
-                  क्या यह सवाल आप अपने बारे में पूछ रही हैं?
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const q = ambiguousPending.query;
-                      setAmbiguousPending(null);
-                      routePersonal(q);
-                    }}
-                    className="flex-1 rounded-full py-2 text-[12px] font-semibold text-white transition-all active:scale-95"
-                    style={{ background: "#6d17ce", fontFamily: "JioType, sans-serif" }}
-                  >
-                    हाँ, अपने बारे में
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const q = ambiguousPending.query;
-                      setAmbiguousPending(null);
-                      callSakhi(q);
-                    }}
-                    className="flex-1 rounded-full py-2 text-[12px] font-semibold transition-all active:scale-95"
-                    style={{
-                      background: "#EDE9FE",
-                      color: "#6d17ce",
-                      fontFamily: "JioType, sans-serif",
-                    }}
-                  >
-                    नहीं, जानकारी चाहिए
-                  </button>
-                </div>
               </div>
             </div>
           )}

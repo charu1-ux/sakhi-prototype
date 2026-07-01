@@ -157,7 +157,7 @@ const P0_TILES = [
     iconBg: "#F5F3FF",
     label: "मूड ट्रैकर",
     desc: "मासिक धर्म से पहले मूड खराब, चिड़चिड़ापन — हॉर्मोन से जोड़कर समझें",
-    href: "/womens-health/low-mood",
+    href: "/womens-health/mood-tracker",
   },
 ];
 
