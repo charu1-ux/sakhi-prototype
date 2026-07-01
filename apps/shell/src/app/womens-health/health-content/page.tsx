@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
-import { askSakhi } from "@/lib/sakhi";
+import { askSakhi, type SakhiTurn } from "@/lib/sakhi";
 
 type Video = { label: string; channel: string; url: string; embedId?: string };
 type Article = { title: string; source: string; url: string; summary?: string };
@@ -160,6 +160,14 @@ const SUGGESTED = [
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function HealthContentPage() {
+  return (
+    <Suspense>
+      <HealthContentInner />
+    </Suspense>
+  );
+}
+
+function HealthContentInner() {
   const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -186,11 +194,15 @@ export default function HealthContentPage() {
   async function handleSubmit(question: string) {
     if (!question.trim() || loading) return;
     const q = question.trim();
+    const history: SakhiTurn[] = messages.map((m) => ({
+      role: m.role === "user" ? "user" : "assistant",
+      content: m.text,
+    }));
     setMessages((prev) => [...prev, { role: "user", text: q }]);
     setLoading(true);
     scroll();
     try {
-      const data = await askSakhi(q);
+      const data = await askSakhi(q, history);
       setMessages((prev) => [
         ...prev,
         {
