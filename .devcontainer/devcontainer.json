@@ -1,0 +1,20 @@
+{
+  "name": "Intelligence Prototype",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  "postCreateCommand": "npm install",
+  "postStartCommand": "cd apps/shell && npm run dev",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Sakhi App",
+      "onAutoForward": "openPreview",
+      "visibility": "public"
+    }
+  },
+  "secrets": {
+    "GROQ_API_KEY": {
+      "description": "Groq API key for LLM responses",
+      "documentationUrl": "https://console.groq.com"
+    }
+  }
+}
