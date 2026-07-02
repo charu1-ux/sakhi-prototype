@@ -35,26 +35,26 @@ const C = {
 
 // ─── Phase data (mock — would come from period tracker in real app) ────────────
 const PHASE = {
-  name: "Luteal Phase",
+  name: "ल्यूटियल फ़ेज़",
   day: 18,
   cycleLength: 28,
-  hint: "Mood thoda heavy ho sakta hai — yeh normal hai",
+  hint: "मूड थोड़ा भारी हो सकता है — यह सामान्य है",
 };
 
 // ─── Mood options ─────────────────────────────────────────────────────────────
 const MOODS = [
-  { face: "😄", label: "Bahut achha", score: 5 },
-  { face: "🙂", label: "Achha", score: 4 },
-  { face: "😐", label: "Theek hai", score: 3 },
-  { face: "😔", label: "Tanav", score: 2 },
-  { face: "😞", label: "Bura", score: 1 },
+  { face: "😄", label: "बहुत अच्छा", score: 5 },
+  { face: "🙂", label: "अच्छा", score: 4 },
+  { face: "😐", label: "ठीक है", score: 3 },
+  { face: "😔", label: "तनाव", score: 2 },
+  { face: "😞", label: "बुरा", score: 1 },
 ];
 
 // ─── Energy options ───────────────────────────────────────────────────────────
 const ENERGIES = [
-  { icon: "🪫", label: "Bahut kam", score: 1 },
-  { icon: "⚡", label: "Theek hai", score: 2 },
-  { icon: "🔋", label: "Zyada", score: 3 },
+  { icon: "🪫", label: "बहुत कम", score: 1 },
+  { icon: "⚡", label: "ठीक है", score: 2 },
+  { icon: "🔋", label: "ज़्यादा", score: 3 },
 ];
 
 // ─── For whom ─────────────────────────────────────────────────────────────────
@@ -95,7 +95,7 @@ function ForWhomCard({
                 fontFamily: "JioType, sans-serif",
               }}
             >
-              {v === "self" ? "Mere liye" : "Kisi aur ke liye"}
+              {v === "self" ? "मेरे लिए" : "किसी और के लिए"}
             </button>
           );
         })}
@@ -174,7 +174,7 @@ function PhaseBanner() {
       />
       <div className="flex-1">
         <div className="text-[11px] font-bold" style={{ color: "rgba(255,255,255,0.85)" }}>
-          {PHASE.name} · Din {PHASE.day}
+          {PHASE.name} · दिन {PHASE.day}
         </div>
         <div className="mt-0.5 text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>
           {PHASE.hint}
@@ -385,7 +385,7 @@ function ConfirmationCard({
             className="text-[9px] font-bold tracking-wide uppercase"
             style={{ color: "rgba(139,92,246,0.9)" }}
           >
-            {PHASE.name} · Din {PHASE.day} of {PHASE.cycleLength}
+            {PHASE.name} · दिन {PHASE.day} of {PHASE.cycleLength}
           </span>
         </div>
       </div>
@@ -484,7 +484,7 @@ export default function MoodTrackerPage() {
     {
       type: "text",
       role: "sakhi",
-      text: "Namaste! Main Sakhi hoon — aapki swasthya saheli. 💜\n\nAapka raaz mera raaz hai. Jo bhi aap mujhse kehein — woh sirf hamare beech rehta hai. Koi vigyapan nahi, koi jaankari kisi ke saath saajha nahi.",
+      text: "नमस्ते! मैं सखी हूँ — आपकी स्वास्थ्य सहेली। 💜\n\nआपका राज़ मेरा राज़ है। जो भी आप मुझसे कहें — वो सिर्फ हमारे बीच रहेगा। कोई विज्ञापन नहीं, कोई जानकारी किसी के साथ साझा नहीं।",
     },
     { type: "forWhomPicker", locked: false },
   ]);
@@ -498,13 +498,13 @@ export default function MoodTrackerPage() {
     if (forWhomLocked) return;
     setForWhomLocked(true);
     setSelectedForWhom(v);
-    push({ type: "text", role: "user", text: v === "self" ? "Mere liye" : "Kisi aur ke liye" });
+    push({ type: "text", role: "user", text: v === "self" ? "मेरे लिए" : "किसी और के लिए" });
     setFlowLoading(true);
     scroll();
     setTimeout(() => {
       setFlowLoading(false);
       const opening =
-        v === "other" ? "Zaroor! Unka mood kaisa hai aaj?" : "Achha! Aaj kaisa feel ho raha hai?";
+        v === "other" ? "ज़रूर! उनका मूड कैसा है आज?" : "अच्छा! आज कैसा महसूस हो रहा है?";
       push({ type: "text", role: "sakhi", text: opening });
       push({ type: "moodPicker", locked: false });
       scroll();
@@ -543,7 +543,7 @@ export default function MoodTrackerPage() {
       push({
         type: "text",
         role: "sakhi",
-        text: "Kal bhi log karo — pattern samajhna helpful hoga. Koi aur baat karni hai? 🌸",
+        text: "कल भी लॉग करें — पैटर्न समझना फायदेमंद होगा। कोई और बात करनी है? 🌸",
       });
       scroll();
     }, 900);
@@ -608,7 +608,7 @@ export default function MoodTrackerPage() {
       push({
         type: "text",
         role: "sakhi",
-        text: "Zaroor! Is baare mein verified jankari yahan hai:",
+        text: "ज़रूर! इस बारे में verified जानकारी यहाँ है:",
       });
       const lastSakhiText = [...messages]
         .reverse()
@@ -631,7 +631,7 @@ export default function MoodTrackerPage() {
       push({
         type: "text",
         role: "sakhi",
-        text: "Aaj aap kaisa feel kar rahi hain? Khushi, udaasi, thakaan, gussa — jo bhi ho, bata sakti hain. 💜",
+        text: "आज आप कैसा महसूस कर रही हैं? खुशी, उदासी, थकान, गुस्सा — जो भी हो, बता सकती हैं। 💜",
       });
       return;
     }
@@ -648,7 +648,7 @@ export default function MoodTrackerPage() {
         push({
           type: "text",
           role: "sakhi",
-          text: "Samajh gayi. Is baare mein kuch verified jankari hai — yahan dekho:",
+          text: "समझ गई। इस बारे में कुछ verified जानकारी है — यहाँ देखें:",
         });
         push({ type: "contentLink", query: q });
       } else if (!isBlockerResponse(data.answer)) {
@@ -658,7 +658,7 @@ export default function MoodTrackerPage() {
         push({
           type: "text",
           role: "sakhi",
-          text: "Samajh gayi. Mood aur mental health ke baare mein yahan kuch verified jankari hai:",
+          text: "समझ गई। मूड और मानसिक स्वास्थ्य के बारे में यहाँ कुछ verified जानकारी है:",
         });
         push({ type: "contentLink", query: "low mood mann udaas kyun hota hai" });
       }
@@ -770,7 +770,7 @@ export default function MoodTrackerPage() {
             className="py-1 text-center text-[10px] font-semibold tracking-wide"
             style={{ color: C.textTertiary }}
           >
-            Aaj · {new Date().toLocaleDateString("hi-IN", { day: "numeric", month: "long" })}
+            आज · {new Date().toLocaleDateString("hi-IN", { day: "numeric", month: "long" })}
           </div>
 
           {messages.map((m, i) => renderMessage(m, i))}
@@ -792,7 +792,7 @@ export default function MoodTrackerPage() {
       <HubHeader title="मूड ट्रैकर" backHref="/womens-health" scrolled={false} />
       <HubChatInput
         variant="sleek"
-        placeholder="Kuch aur batana chahti ho..."
+        placeholder="कुछ और बताना चाहती हैं..."
         onSubmit={handleSubmit}
       />
     </div>
