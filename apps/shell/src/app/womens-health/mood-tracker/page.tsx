@@ -598,9 +598,90 @@ export default function MoodTrackerPage() {
     return VAGUE_OPENERS.some((p) => ql === p || ql === p + "?") || ql.length < 4;
   }
 
+  const VAGUE_FOLLOWUP_TRIGGERS = [
+    "aisa kyun",
+    "aisa kyu",
+    "ऐसा क्यों",
+    "ऐसा क्यूँ",
+    "kyun hota",
+    "kyun hoti",
+    "kyu hota",
+    "क्यों होता",
+    "क्यों होती",
+    "aur batao",
+    "aur samjhao",
+    "aur kuch",
+    "kya kare",
+    "kya karun",
+    "kya karna",
+    "kaise theek",
+    "kaise better",
+    "kaise kam",
+    "kitna time",
+    "kitne din",
+  ];
+
+  function isVagueFollowup(q: string): boolean {
+    const ql = q.toLowerCase().trim();
+    return ql.length < 35 && VAGUE_FOLLOWUP_TRIGGERS.some((p) => ql.includes(p));
+  }
+
+  // Find the health topic from prior user messages in the conversation
+  function getTopicQueryFromHistory(): string {
+    const userMessages = messages
+      .filter(
+        (m): m is Extract<MessageKind, { type: "text" }> => m.type === "text" && m.role === "user",
+      )
+      .map((m) => m.text.toLowerCase());
+    const combined = userMessages.join(" ");
+    if (
+      combined.includes("तनाव") ||
+      combined.includes("tanav") ||
+      combined.includes("stress") ||
+      combined.includes("anxiety")
+    )
+      return "tanav stress anxiety kyun hota hai";
+    if (
+      combined.includes("बुरा") ||
+      combined.includes("उदास") ||
+      combined.includes("sad") ||
+      combined.includes("udas") ||
+      combined.includes("dukh")
+    )
+      return "low mood mann udaas kyun hota hai";
+    if (
+      combined.includes("थकान") ||
+      combined.includes("thakaan") ||
+      combined.includes("tired") ||
+      combined.includes("थका")
+    )
+      return "thakaan fatigue kyun hoti hai";
+    if (
+      combined.includes("गुस्सा") ||
+      combined.includes("gussa") ||
+      combined.includes("angry") ||
+      combined.includes("irritable")
+    )
+      return "gussa irritable mood swing kyun hota hai";
+    // Default to stress/mood content
+    return "low mood mann udaas kyun hota hai";
+  }
+
   async function handleSubmit(text: string) {
     if (!text.trim() || loading) return;
     const q = text.trim();
+
+    // Vague contextual follow-up after mood is logged — route directly to relevant content
+    if (hasSakhiHistory && isVagueFollowup(q)) {
+      push({ type: "text", role: "user", text: q });
+      push({
+        type: "text",
+        role: "sakhi",
+        text: "ज़रूर! इस बारे में verified जानकारी यहाँ है:",
+      });
+      push({ type: "contentLink", query: getTopicQueryFromHistory() });
+      return;
+    }
 
     // After mood logged + Sakhi replied: affirmative = "show me more content"
     if (hasSakhiHistory && isAffirmative(q)) {
@@ -615,12 +696,7 @@ export default function MoodTrackerPage() {
         .find((m) => m.type === "text" && m.role === "sakhi") as
         | { type: "text"; role: "sakhi"; text: string }
         | undefined;
-      const contentQuery =
-        lastSakhiText?.text.toLowerCase().includes("tanav") ||
-        lastSakhiText?.text.toLowerCase().includes("stress") ||
-        lastSakhiText?.text.toLowerCase().includes("anxiety")
-          ? "tanav stress anxiety kyun hota hai"
-          : "low mood mann udaas kyun hota hai";
+      const contentQuery = getTopicQueryFromHistory();
       push({ type: "contentLink", query: contentQuery });
       return;
     }
