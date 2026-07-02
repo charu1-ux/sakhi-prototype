@@ -272,7 +272,7 @@ function HealthContentInner() {
                   className="mt-1 ml-9 flex items-center gap-1 text-[10px]"
                   style={{ color: "#9CA3AF" }}
                 >
-                  <span>🤖</span>
+                  <span>⚠️</span>
                   <span style={{ fontFamily: "JioType, sans-serif" }}>
                     यह जवाब AI द्वारा उत्पन्न है। यह जानकारी सामान्य शिक्षा के लिए है और किसी योग्य
                     डॉक्टर की व्यक्तिगत सलाह का विकल्प नहीं है। स्वास्थ्य संबंधी कोई भी निर्णय लेने
