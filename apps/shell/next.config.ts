@@ -9,10 +9,14 @@ const withSerwist = withSerwistInit({
   disable: process.env.NODE_ENV === "development" || !!process.env.CAPACITOR,
 });
 
+const isPagesDeployment = process.env.GITHUB_PAGES === "true";
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: "export",
   turbopack: {},
+  basePath: isPagesDeployment ? "/sakhi-prototype" : "",
+  assetPrefix: isPagesDeployment ? "/sakhi-prototype/" : "",
   trailingSlash: true,
   images: { unoptimized: true },
   experimental: {
