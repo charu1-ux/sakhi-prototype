@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
-import { askSakhi, isBlockerResponse } from "@/lib/sakhi";
+import { askSakhi } from "@/lib/sakhi";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -560,20 +560,20 @@ export default function MoodTrackerPage() {
     scroll();
     try {
       const data = await askSakhi(q, history);
-      const isBlocked = isBlockerResponse(data.answer);
-      if (data.video || data.article || isBlocked) {
+      if (data.video || data.article) {
         push({
           type: "text",
           role: "sakhi",
           text: "Samajh gayi. Is baare mein kuch verified jankari hai — yahan dekho:",
         });
-        push({ type: "contentLink", query: isBlocked ? "low mood mann udaas kyun hota hai" : q });
+        push({ type: "contentLink", query: q });
       } else {
         push({
           type: "text",
           role: "sakhi",
-          text: data.answer,
+          text: "Samajh gayi. Mood aur mental health ke baare mein yahan kuch verified jankari hai:",
         });
+        push({ type: "contentLink", query: "low mood mann udaas kyun hota hai" });
       }
     } catch {
       push({
