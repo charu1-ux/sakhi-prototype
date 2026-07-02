@@ -1578,9 +1578,7 @@ const VAGUE_FOLLOWUP_PHRASES = [
 
 function isVagueFollowup(q: string): boolean {
   const ql = q.toLowerCase().trim();
-  // Only match short queries (no specific health topic) that contain vague followup phrases
   if (ql.length < 30 && VAGUE_FOLLOWUP_PHRASES.some((p) => ql.includes(p))) {
-    // Don't intercept if the query already contains a health keyword
     const hasHealthKeyword = [
       "period",
       "pcos",
@@ -1598,6 +1596,15 @@ function isVagueFollowup(q: string): boolean {
     return !hasHealthKeyword;
   }
   return false;
+}
+
+// Build a combined string from recent history to use as a context-aware proxy query
+function buildContextQuery(history: SakhiTurn[]): string {
+  return history
+    .slice(-8)
+    .map((t) => t.content)
+    .join(" ")
+    .toLowerCase();
 }
 
 export async function askSakhi(
@@ -1638,12 +1645,12 @@ export async function askSakhi(
     }
   }
 
-  // Vague contextual follow-up with no specific health keyword → ask clarifying question
+  // Vague contextual follow-up — look up topic from conversation history and serve matching content
   if (isVagueFollowup(question) && history.length > 0) {
-    return {
-      answer:
-        "आप किस बारे में और जानना चाहती हैं? जैसे — पीरियड दर्द, PCOS, एनीमिया, थकान, मूड, या कोई और विषय?",
-    };
+    const contextQuery = buildContextQuery(history);
+    const contextResult = findResponse(contextQuery);
+    if (contextResult.answer !== DEFAULT) return contextResult;
+    // History didn't match any known topic — fall through to LLM with history context
   }
 
   const result = findResponse(question);
