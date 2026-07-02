@@ -1338,7 +1338,7 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
   },
 ];
 
-const OUT_OF_SCOPE =
+export const OUT_OF_SCOPE =
   "मैं केवल महिला स्वास्थ्य विषयों पर WHO, FOGSI, ICMR, और ACOG द्वारा सत्यापित जानकारी दे सकती हूँ। कृपया महिला स्वास्थ्य से संबंधित प्रश्न पूछें।" +
   DISCLAIMER;
 
