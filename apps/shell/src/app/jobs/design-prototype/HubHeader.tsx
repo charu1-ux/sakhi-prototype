@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { ChevronLeftIcon } from "./hub-icons";
@@ -44,6 +45,7 @@ export function HubHeader({
   onBack,
   rightSlot,
 }: Props) {
+  const router = useRouter();
   const isTransparent = pageBg === "transparent";
   const btnBg = isTransparent
     ? "bg-white/15 text-white backdrop-blur-sm"
@@ -85,7 +87,7 @@ export function HubHeader({
             } else if (backHref === "/" && window.parent !== window) {
               window.parent.postMessage({ type: "jobs:navigate", href: "/" }, "*");
             } else {
-              window.location.href = backHref;
+              router.push(backHref);
             }
           }}
           className={`focus-visible:ring-dock-accent flex size-10 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full ring-0 outline-none focus-visible:ring-2 ${btnBg}`}
