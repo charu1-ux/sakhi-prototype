@@ -63,8 +63,36 @@ function SakhiAvatar({ speaking }: { speaking: boolean }) {
             fill="none"
             strokeLinecap="round"
           />
-          {/* Dupatta suggestion at bottom */}
-          <path d="M13 41 Q26 38 39 41 L39 52 L13 52Z" fill="#E11D48" opacity="0.7" />
+          {/* White coat */}
+          <path
+            d="M13 41 Q26 38 39 41 L39 52 L13 52Z"
+            fill="#FFFFFF"
+            stroke="#E2E8F0"
+            strokeWidth="1"
+          />
+          {/* Coat lapels (V-neck) */}
+          <path d="M20 40 L26 49 L24 40Z" fill="#EEF2F6" />
+          <path d="M32 40 L26 49 L28 40Z" fill="#EEF2F6" />
+          {/* Shirt collar peeking through */}
+          <path d="M24 40 L26 44 L28 40Z" fill="#BFDBFE" />
+          {/* Stethoscope tube */}
+          <path
+            d="M20 40 Q16 44 19 48 Q21 50 24 49"
+            stroke="#64748B"
+            strokeWidth="1.5"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <path
+            d="M32 40 Q36 44 33 48 Q31 50 28 49"
+            stroke="#64748B"
+            strokeWidth="1.5"
+            fill="none"
+            strokeLinecap="round"
+          />
+          {/* Stethoscope chestpiece */}
+          <circle cx="26" cy="49" r="2" fill="#64748B" />
+          <circle cx="26" cy="49" r="1" fill="#94A3B8" />
         </svg>
       </div>
     </div>

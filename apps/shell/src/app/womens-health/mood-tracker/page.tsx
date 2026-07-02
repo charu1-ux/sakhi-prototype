@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
-import { askSakhi } from "@/lib/sakhi";
+import { askSakhi, type SakhiTurn } from "@/lib/sakhi";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
@@ -550,11 +550,14 @@ export default function MoodTrackerPage() {
   async function handleSubmit(text: string) {
     if (!text.trim() || loading) return;
     const q = text.trim();
+    const history: SakhiTurn[] = messages
+      .filter((m): m is Extract<MessageKind, { type: "text" }> => m.type === "text")
+      .map((m) => ({ role: m.role === "user" ? "user" : "assistant", content: m.text }));
     push({ type: "text", role: "user", text: q });
     setLoading(true);
     scroll();
     try {
-      const data = await askSakhi(q);
+      const data = await askSakhi(q, history);
       if (data.video || data.article) {
         push({
           type: "text",
