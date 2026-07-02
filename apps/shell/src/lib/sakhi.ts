@@ -1546,6 +1546,60 @@ function isClarificationQuery(q: string): boolean {
   return CLARIFICATION_PHRASES.some((p) => ql.includes(p));
 }
 
+const VAGUE_FOLLOWUP_PHRASES = [
+  "aisa kyun",
+  "aisa kyu",
+  "ऐसा क्यों",
+  "ऐसा क्यूँ",
+  "kyun hota hai",
+  "kyun hoti hai",
+  "kyu hota hai",
+  "क्यों होता है",
+  "क्यों होती है",
+  "aur kya",
+  "aur kuch",
+  "aur batao",
+  "aur samjhao",
+  "theek hoga",
+  "theek hogi",
+  "kab theek",
+  "kab better",
+  "kya kare",
+  "kya karun",
+  "kya karengi",
+  "kya karna chahiye",
+  "kaise theek",
+  "kaise better",
+  "kaise kam hoga",
+  "kitna time",
+  "kitne din",
+  "kitne time mein",
+];
+
+function isVagueFollowup(q: string): boolean {
+  const ql = q.toLowerCase().trim();
+  // Only match short queries (no specific health topic) that contain vague followup phrases
+  if (ql.length < 30 && VAGUE_FOLLOWUP_PHRASES.some((p) => ql.includes(p))) {
+    // Don't intercept if the query already contains a health keyword
+    const hasHealthKeyword = [
+      "period",
+      "pcos",
+      "thyroid",
+      "anemia",
+      "pregnancy",
+      "baccha",
+      "garbh",
+      "पीरियड",
+      "पीसीओएस",
+      "थायरॉइड",
+      "एनीमिया",
+      "गर्भ",
+    ].some((k) => ql.includes(k));
+    return !hasHealthKeyword;
+  }
+  return false;
+}
+
 export async function askSakhi(
   question: string,
   history: SakhiTurn[] = [],
@@ -1582,6 +1636,14 @@ export async function askSakhi(
     } catch {
       return { answer: SERVICE_ERROR };
     }
+  }
+
+  // Vague contextual follow-up with no specific health keyword → ask clarifying question
+  if (isVagueFollowup(question) && history.length > 0) {
+    return {
+      answer:
+        "आप किस बारे में और जानना चाहती हैं? जैसे — पीरियड दर्द, PCOS, एनीमिया, थकान, मूड, या कोई और विषय?",
+    };
   }
 
   const result = findResponse(question);
