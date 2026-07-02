@@ -1598,10 +1598,11 @@ function isVagueFollowup(q: string): boolean {
   return false;
 }
 
-// Build a combined string from recent history to use as a context-aware proxy query
+// Build a query string from recent USER turns only — avoids noise from Sakhi's long responses
 function buildContextQuery(history: SakhiTurn[]): string {
   return history
-    .slice(-8)
+    .slice(-10)
+    .filter((t) => t.role === "user")
     .map((t) => t.content)
     .join(" ")
     .toLowerCase();
@@ -1645,12 +1646,16 @@ export async function askSakhi(
     }
   }
 
-  // Vague contextual follow-up — look up topic from conversation history and serve matching content
+  // Vague contextual follow-up — look up topic from user's prior messages and serve matched content
   if (isVagueFollowup(question) && history.length > 0) {
     const contextQuery = buildContextQuery(history);
     const contextResult = findResponse(contextQuery);
     if (contextResult.answer !== DEFAULT) return contextResult;
-    // History didn't match any known topic — fall through to LLM with history context
+    // No topic found in history — ask user to be more specific; never send vague query to LLM
+    return {
+      answer:
+        "आप किस विषय के बारे में और जानना चाहती हैं? जैसे — पीरियड दर्द, PCOS, तनाव, एनीमिया, थायराइड, या नींद?",
+    };
   }
 
   const result = findResponse(question);
