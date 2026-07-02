@@ -666,7 +666,7 @@ export default function MoodTrackerPage() {
       push({
         type: "text",
         role: "sakhi",
-        text: "Network mein thodi problem hai. Dobara try karo. 💜",
+        text: "नेटवर्क में थोड़ी समस्या है। दोबारा कोशिश करें। 💜",
       });
     } finally {
       setLoading(false);
@@ -713,7 +713,7 @@ export default function MoodTrackerPage() {
     if (msg.type === "forWhomPicker") {
       return (
         <SakhiRow key={i}>
-          <Bubble text="Namaste! Yeh mood log aapke liye hai ya kisi aur ke liye?" />
+          <Bubble text="नमस्ते! यह मूड लॉग आपके लिए है या किसी और के लिए?" />
           <ForWhomCard
             locked={forWhomLocked}
             selected={selectedForWhom}
