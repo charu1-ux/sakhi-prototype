@@ -82,6 +82,10 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     keywords: [
       "ऐंठन",
       "मरोड़",
+      "पीरियड दर्द",
+      "पीरियड में दर्द",
+      "पीरियड मे दर्द",
+      "पीरियड में बहुत दर्द",
       "period pain",
       "period dard",
       "period me dard",
