@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
-import { askSakhi, isBlockerResponse } from "@/lib/sakhi";
+import { askSakhi, isBlockerResponse, isMaleIdentifier, MALE_RESPONSE } from "@/lib/sakhi";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -670,6 +670,12 @@ export default function MoodTrackerPage() {
   async function handleSubmit(text: string) {
     if (!text.trim() || loading) return;
     const q = text.trim();
+
+    if (isMaleIdentifier(q)) {
+      push({ type: "text", role: "user", text: q });
+      push({ type: "text", role: "sakhi", text: MALE_RESPONSE });
+      return;
+    }
 
     // Vague contextual follow-up after mood is logged — route directly to relevant content
     if (hasSakhiHistory && isVagueFollowup(q)) {

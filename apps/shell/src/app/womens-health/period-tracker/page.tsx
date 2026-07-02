@@ -4,7 +4,7 @@ import React, { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
-import { askSakhi } from "@/lib/sakhi";
+import { askSakhi, isMaleIdentifier, MALE_RESPONSE } from "@/lib/sakhi";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -1113,6 +1113,16 @@ export default function PeriodTrackerPage() {
   async function handleSubmit(text: string) {
     if (!text.trim() || loading) return;
     const q = text.trim();
+
+    if (isMaleIdentifier(q)) {
+      setMessages((prev) => [
+        ...prev,
+        { type: "text", role: "user", text: q },
+        { type: "text", role: "sakhi", text: MALE_RESPONSE },
+      ]);
+      scroll();
+      return;
+    }
 
     if (step === "forWhom") {
       const parsed = parseForWhom(q);
