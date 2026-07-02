@@ -78,17 +78,7 @@ function getPhase(day: number, len: number) {
 }
 function parseForWhom(text: string): ForWhom {
   const t = text.trim().toLowerCase();
-  const self = [
-    "मेरे लिए",
-    "मेरे",
-    "खुद",
-    "for me",
-    "myself",
-    "self",
-    "mere liye",
-    "mujhe",
-    "main",
-  ];
+  const self = ["मेरे लिए", "मेरे", "खुद", "for me", "myself", "self", "mere liye", "mujhe"];
   const other = [
     "किसी और",
     "उनके लिए",
