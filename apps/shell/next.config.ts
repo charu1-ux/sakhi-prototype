@@ -12,6 +12,7 @@ const withSerwist = withSerwistInit({
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: "export",
+  turbopack: {},
   trailingSlash: true,
   images: { unoptimized: true },
   experimental: {
