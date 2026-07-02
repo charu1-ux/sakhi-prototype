@@ -1110,50 +1110,9 @@ export default function PeriodTrackerPage() {
 
   const [loading, setLoading] = useState(false);
 
-  const MALE_IDS = [
-    "main mard hoon",
-    "main ladka hoon",
-    "main purush hoon",
-    "main male hoon",
-    "main boy hoon",
-    "i am male",
-    "i am a man",
-    "i am a boy",
-    "i'm male",
-    "i'm a man",
-    "मैं पुरुष हूँ",
-    "मैं लड़का हूँ",
-    "मैं मर्द हूँ",
-    "main purush hun",
-    "main mard hun",
-    "mujhe period nahi",
-    "hum mard hain",
-    "main bhai hoon",
-    "main uncle hoon",
-    "main baap hoon",
-    "main papa hoon",
-    "main husband hoon",
-    "main pati hoon",
-    "मैं पति हूँ",
-    "मैं पापा हूँ",
-    "मैं भाई हूँ",
-  ];
-  const MALE_RESPONSE =
-    "सखी विशेष रूप से महिलाओं के स्वास्थ्य के लिए बनाई गई है — पीरियड, PMOS, हॉर्मोन, और स्त्री स्वास्थ्य से जुड़े विषयों पर। अगर आपके जीवन में कोई महिला है जिन्हें इन विषयों पर जानकारी चाहिए, तो आप उनके लिए सखी का उपयोग कर सकते हैं।";
-
   async function handleSubmit(text: string) {
     if (!text.trim() || loading) return;
     const q = text.trim();
-
-    if (MALE_IDS.some((p) => q.toLowerCase().includes(p))) {
-      setMessages((prev) => [
-        ...prev,
-        { type: "text", role: "user", text: q },
-        { type: "text", role: "sakhi", text: MALE_RESPONSE },
-      ]);
-      scroll();
-      return;
-    }
 
     if (step === "forWhom") {
       const parsed = parseForWhom(q);
