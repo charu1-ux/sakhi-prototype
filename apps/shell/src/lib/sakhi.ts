@@ -1499,11 +1499,76 @@ async function llmAnswer(question: string): Promise<string> {
 export type SakhiResponse = { answer: string; video?: Video; article?: Article };
 export type SakhiTurn = { role: "user" | "assistant"; content: string };
 
+const CLARIFICATION_PHRASES = [
+  "samjhi nahi",
+  "samjha nahi",
+  "samajh nahi",
+  "samajh nahi aaya",
+  "samajh nahi aayi",
+  "dobara batao",
+  "phir se batao",
+  "phir se samjhao",
+  "dobara samjhao",
+  "simple mein batao",
+  "aasaan bhasha mein",
+  "easy mein batao",
+  "kya matlab",
+  "matlab kya",
+  "iska matlab",
+  "ye kya hai",
+  "aur batao",
+  "thoda aur",
+  "explain karo",
+  "explain karo please",
+  "समझी नहीं",
+  "समझा नहीं",
+  "दोबारा बताओ",
+  "आसान भाषा में",
+];
+
+function isClarificationQuery(q: string): boolean {
+  const ql = q.toLowerCase();
+  return CLARIFICATION_PHRASES.some((p) => ql.includes(p));
+}
+
 export async function askSakhi(
   question: string,
   history: SakhiTurn[] = [],
 ): Promise<SakhiResponse> {
   if (!question.trim()) return { answer: "कोई प्रश्न नहीं मिला।" };
+
+  // If user asks for re-explanation and there's history, go straight to LLM
+  if (isClarificationQuery(question) && history.length > 0) {
+    try {
+      const apiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
+      if (!apiKey) return { answer: OUT_OF_SCOPE };
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: "llama-3.1-8b-instant",
+          max_tokens: 300,
+          messages: [
+            {
+              role: "system",
+              content:
+                SAKHI_SYSTEM +
+                "\n\nUser ne pichla jawab nahi samjha. Wahi baat dobara aur simple, short Hindi mein samjhao. 2-3 sentences mein. Koi naya topic mat shuru karo.",
+            },
+            ...history.slice(-6),
+            { role: "user", content: question },
+          ],
+        }),
+      });
+      if (!res.ok) return { answer: SERVICE_ERROR };
+      const data = await res.json();
+      const text = data.choices?.[0]?.message?.content;
+      return { answer: text ? text + DISCLAIMER : SERVICE_ERROR };
+    } catch {
+      return { answer: SERVICE_ERROR };
+    }
+  }
+
   const result = findResponse(question);
   if (result.answer !== DEFAULT) return result;
   try {

@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
-import { askSakhi } from "@/lib/sakhi";
+import { askSakhi, isBlockerResponse } from "@/lib/sakhi";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -567,6 +567,9 @@ export default function MoodTrackerPage() {
           text: "Samajh gayi. Is baare mein kuch verified jankari hai — yahan dekho:",
         });
         push({ type: "contentLink", query: q });
+      } else if (!isBlockerResponse(data.answer)) {
+        // LLM gave a meaningful response (e.g. clarification) — show it
+        push({ type: "text", role: "sakhi", text: data.answer });
       } else {
         push({
           type: "text",
