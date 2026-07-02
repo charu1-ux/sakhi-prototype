@@ -8,6 +8,9 @@ const DISCLAIMER =
 type Video = { label: string; channel: string; url: string; embedId?: string };
 type Article = { title: string; source: string; url: string; summary?: string };
 
+export const BREATHING_EXERCISE =
+  "अभी एक काम करें — डीप बेली ब्रीदिंग। यह सबसे आसान और असरदार तरीका है:\n\n🫁 साँस लें — 4 तक गिनें\nपेट बाहर की तरफ जाए, छाती नहीं — यह ज़रूरी है\n\n🫁 साँस छोड़ें — 4 तक गिनें\nपेट अंदर की तरफ आए\n\nबीच में साँस बिल्कुल न रोकें — सीधे लें और छोड़ें। 5-6 बार करें — आप फर्क महसूस करेंगी। 💜";
+
 const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: Article }[] = [
   // ── About FOGSI ───────────────────────────────────────────────────────────
   {
@@ -793,8 +796,7 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
       "तनाव कम kaise",
       "stress relief",
     ],
-    answer:
-      "अभी एक काम करें — डीप बेली ब्रीदिंग। यह सबसे आसान और असरदार तरीका है:\n\n🫁 साँस लें — 4 तक गिनें\nपेट बाहर की तरफ जाए (छाती नहीं)\n\n🫁 साँस छोड़ें — 4 तक गिनें\nपेट अंदर की तरफ आए\n\nबीच में साँस न रोकें। बस लें और छोड़ें। 5-6 बार करें — आप फर्क महसूस करेंगी। 💜",
+    answer: BREATHING_EXERCISE,
   },
 
   // ── Mental health / mood / stress ─────────────────────────────────────────
