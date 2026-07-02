@@ -549,24 +549,15 @@ export default function MoodTrackerPage() {
     }, 900);
   }
 
-  const MOOD_PROMPT_PHRASES = [
+  const VAGUE_OPENERS = [
     "mere liye",
     "mujhe",
     "mujhko",
     "main",
     "meri",
     "mera",
-    "help",
-    "batao",
-    "kya karu",
-    "kya karun",
-    "kya karoon",
     "hi",
     "hello",
-    "haan",
-    "ha",
-    "ok",
-    "okay",
     "hmm",
     "hm",
     "मेरे लिए",
@@ -576,16 +567,66 @@ export default function MoodTrackerPage() {
     "मेरा",
   ];
 
-  function isMoodPromptNeeded(q: string): boolean {
+  const AFFIRMATIVES = [
+    "yes",
+    "haan",
+    "ha",
+    "ok",
+    "okay",
+    "theek hai",
+    "batao",
+    "help",
+    "aur batao",
+    "chahti hoon",
+    "learn more",
+    "aur",
+    "kya karu",
+    "हाँ",
+    "हां",
+    "ठीक है",
+  ];
+
+  const hasSakhiHistory = messages.some((m) => m.type === "text" && m.role === "sakhi");
+
+  function isAffirmative(q: string): boolean {
     const ql = q.toLowerCase().trim();
-    return MOOD_PROMPT_PHRASES.some((p) => ql === p || ql === p + "?") || ql.length < 6;
+    return AFFIRMATIVES.some((p) => ql === p || ql === p + "?" || ql === p + ".");
+  }
+
+  function isVagueOpener(q: string): boolean {
+    const ql = q.toLowerCase().trim();
+    return VAGUE_OPENERS.some((p) => ql === p || ql === p + "?") || ql.length < 4;
   }
 
   async function handleSubmit(text: string) {
     if (!text.trim() || loading) return;
     const q = text.trim();
 
-    if (isMoodPromptNeeded(q)) {
+    // After mood logged + Sakhi replied: affirmative = "show me more content"
+    if (hasSakhiHistory && isAffirmative(q)) {
+      push({ type: "text", role: "user", text: q });
+      push({
+        type: "text",
+        role: "sakhi",
+        text: "Zaroor! Is baare mein verified jankari yahan hai:",
+      });
+      const lastSakhiText = [...messages]
+        .reverse()
+        .find((m) => m.type === "text" && m.role === "sakhi") as
+        | { type: "text"; role: "sakhi"; text: string }
+        | undefined;
+      const contentQuery =
+        lastSakhiText?.text.toLowerCase().includes("tanav") ||
+        lastSakhiText?.text.toLowerCase().includes("stress") ||
+        lastSakhiText?.text.toLowerCase().includes("anxiety")
+          ? "tanav stress anxiety kyun hota hai"
+          : "low mood mann udaas kyun hota hai";
+      push({ type: "contentLink", query: contentQuery });
+      return;
+    }
+
+    // No history yet: vague opener = ask mood
+    if (!hasSakhiHistory && isVagueOpener(q)) {
       push({ type: "text", role: "user", text: q });
       push({
         type: "text",
