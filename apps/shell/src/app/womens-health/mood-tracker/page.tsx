@@ -549,9 +549,52 @@ export default function MoodTrackerPage() {
     }, 900);
   }
 
+  const MOOD_PROMPT_PHRASES = [
+    "mere liye",
+    "mujhe",
+    "mujhko",
+    "main",
+    "meri",
+    "mera",
+    "help",
+    "batao",
+    "kya karu",
+    "kya karun",
+    "kya karoon",
+    "hi",
+    "hello",
+    "haan",
+    "ha",
+    "ok",
+    "okay",
+    "hmm",
+    "hm",
+    "मेरे लिए",
+    "मुझे",
+    "मैं",
+    "मेरी",
+    "मेरा",
+  ];
+
+  function isMoodPromptNeeded(q: string): boolean {
+    const ql = q.toLowerCase().trim();
+    return MOOD_PROMPT_PHRASES.some((p) => ql === p || ql === p + "?") || ql.length < 6;
+  }
+
   async function handleSubmit(text: string) {
     if (!text.trim() || loading) return;
     const q = text.trim();
+
+    if (isMoodPromptNeeded(q)) {
+      push({ type: "text", role: "user", text: q });
+      push({
+        type: "text",
+        role: "sakhi",
+        text: "Aaj aap kaisa feel kar rahi hain? Khushi, udaasi, thakaan, gussa — jo bhi ho, bata sakti hain. 💜",
+      });
+      return;
+    }
+
     const history: SakhiTurn[] = messages
       .filter((m): m is Extract<MessageKind, { type: "text" }> => m.type === "text")
       .map((m) => ({ role: m.role === "user" ? "user" : "assistant", content: m.text }));
