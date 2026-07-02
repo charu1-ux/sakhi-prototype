@@ -677,6 +677,40 @@ export default function MoodTrackerPage() {
       return;
     }
 
+    // Help request with low/stress mood — offer breathing exercise
+    if (hasSakhiHistory) {
+      const ql = q.toLowerCase();
+      const isHelpRequest = [
+        "help",
+        "kya karu",
+        "kya karun",
+        "batao",
+        "kuch batao",
+        "madad",
+        "मदद",
+        "बताओ",
+        "feel better",
+        "theek kaise",
+        "saans",
+        "breathing",
+        "relax",
+        "calm",
+        "शांत",
+      ].some((p) => ql.includes(p));
+      const hasLowMood =
+        getTopicQueryFromHistory().includes("low mood") ||
+        getTopicQueryFromHistory().includes("tanav");
+      if (isHelpRequest && hasLowMood) {
+        push({ type: "text", role: "user", text: q });
+        push({
+          type: "text",
+          role: "sakhi",
+          text: "अभी एक काम करें — डीप बेली ब्रीदिंग। यह सबसे आसान और असरदार तरीका है:\n\n🫁 साँस लें — 4 तक गिनें\nपेट बाहर की तरफ जाए (छाती नहीं)\n\n🫁 साँस छोड़ें — 4 तक गिनें\nपेट अंदर की तरफ आए\n\nबीच में साँस न रोकें। बस लें और छोड़ें। 5-6 बार करें — आप फर्क महसूस करेंगी। 💜",
+        });
+        return;
+      }
+    }
+
     // Vague contextual follow-up after mood is logged — route directly to relevant content
     if (hasSakhiHistory && isVagueFollowup(q)) {
       push({ type: "text", role: "user", text: q });

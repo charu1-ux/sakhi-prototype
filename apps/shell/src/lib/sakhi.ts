@@ -768,6 +768,35 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     },
   },
 
+  // ── Breathing exercise / low mood help ───────────────────────────────────
+  {
+    keywords: [
+      "breathing exercise",
+      "deep breathing",
+      "breath",
+      "saans",
+      "साँस",
+      "relax kaise",
+      "calm kaise",
+      "shant kaise",
+      "anxiety breathing",
+      "kya karu abhi",
+      "abhi kya karu",
+      "help me now",
+      "feel better kaise",
+      "low mood help",
+      "sad help",
+      "udasi se kaise",
+      "man theek kaise",
+      "मन शांत",
+      "घबराहट कम",
+      "तनाव कम kaise",
+      "stress relief",
+    ],
+    answer:
+      "अभी एक काम करें — डीप बेली ब्रीदिंग। यह सबसे आसान और असरदार तरीका है:\n\n🫁 साँस लें — 4 तक गिनें\nपेट बाहर की तरफ जाए (छाती नहीं)\n\n🫁 साँस छोड़ें — 4 तक गिनें\nपेट अंदर की तरफ आए\n\nबीच में साँस न रोकें। बस लें और छोड़ें। 5-6 बार करें — आप फर्क महसूस करेंगी। 💜",
+  },
+
   // ── Mental health / mood / stress ─────────────────────────────────────────
   {
     keywords: [
