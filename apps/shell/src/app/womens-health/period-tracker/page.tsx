@@ -4,7 +4,9 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
-import { askSakhi, type SakhiTurn } from "@/lib/sakhi";
+import { askSakhi } from "@/lib/sakhi";
+
+type SakhiTurn = { role: "user" | "assistant"; content: string };
 
 // ── Design tokens (from sakhi_cycle_tracker_ui.html) ─────────────────────────
 const C = {
