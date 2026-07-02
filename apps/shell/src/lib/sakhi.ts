@@ -1432,7 +1432,8 @@ function matchesKeyword(q: string, kw: string): boolean {
 
 function findResponse(question: string): { answer: string; video?: Video; article?: Article } {
   const q = question.toLowerCase();
-  if (OFF_TOPIC_WORDS.some((w) => q.includes(w))) return { answer: OUT_OF_SCOPE };
+  if (OFF_TOPIC_WORDS.some((w) => new RegExp(`(?<![a-z])${w}(?![a-z])`, "i").test(q)))
+    return { answer: OUT_OF_SCOPE };
   for (const r of RESPONSES) {
     if (r.keywords.some((kw) => matchesKeyword(q, kw))) {
       return sourcedResult(r);
