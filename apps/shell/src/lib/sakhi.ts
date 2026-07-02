@@ -8,16 +8,9 @@ const DISCLAIMER =
 type Video = { label: string; channel: string; url: string; embedId?: string };
 type Article = { title: string; source: string; url: string; summary?: string };
 
-const RESPONSES: {
-  topic: string;
-  keywords: string[];
-  answer: string;
-  video?: Video;
-  article?: Article;
-}[] = [
+const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: Article }[] = [
   // ── About FOGSI ───────────────────────────────────────────────────────────
   {
-    topic: "About FOGSI",
     keywords: ["fogsi", "fogsi kya hai", "fogsi kya hota"],
     answer:
       "FOGSI यानी Federation of Obstetric & Gynaecological Societies of India — भारत की सबसे बड़ी स्त्री रोग विशेषज्ञों की संस्था है जिसमें 35,000+ डॉक्टर हैं। सखी की सारी जानकारी FOGSI की गाइडलाइन्स से सत्यापित है। ये गाइडलाइन्स भारतीय महिलाओं की ज़रूरतों को ध्यान में रखकर बनाई गई हैं।",
@@ -30,7 +23,6 @@ const RESPONSES: {
 
   // ── About ICMR ────────────────────────────────────────────────────────────
   {
-    topic: "About ICMR",
     keywords: ["icmr", "icmr kya hai", "icmr kya hota"],
     answer:
       "ICMR यानी Indian Council of Medical Research — भारत की सर्वोच्च चिकित्सा अनुसंधान संस्था है जो केंद्र सरकार के अधीन काम करती है। ICMR भारतीय महिलाओं के लिए पोषण, एनीमिया, और प्रजनन स्वास्थ्य पर राष्ट्रीय दिशानिर्देश जारी करती है। सखी की डाइट और जांच संबंधी सलाह ICMR की गाइडलाइन्स पर आधारित है।",
@@ -43,7 +35,6 @@ const RESPONSES: {
 
   // ── About WHO ─────────────────────────────────────────────────────────────
   {
-    topic: "About WHO",
     keywords: ["who kya hai", "who kya hota", "world health organization", "who guidelines"],
     answer:
       "WHO यानी World Health Organization — संयुक्त राष्ट्र की वैश्विक स्वास्थ्य संस्था है। WHO महिला स्वास्थ्य, मातृ स्वास्थ्य, और प्रजनन अधिकारों पर अंतरराष्ट्रीय मानक तय करती है। सखी WHO की गाइडलाइन्स को भारतीय संदर्भ में लागू करती है।",
@@ -56,7 +47,6 @@ const RESPONSES: {
 
   // ── About ACOG ────────────────────────────────────────────────────────────
   {
-    topic: "About ACOG",
     keywords: ["acog", "acog kya hai", "acog kya hota"],
     answer:
       "ACOG यानी American College of Obstetricians & Gynecologists — अमेरिका की प्रमुख स्त्री रोग विशेषज्ञों की संस्था है। ACOG की गाइडलाइन्स पीरियड दर्द, PMDD, गर्भावस्था, और रजोनिवृत्ति पर विश्व स्तर पर मानक मानी जाती हैं। सखी ACOG की सिफारिशों का उपयोग उन विषयों पर करती है जहाँ भारतीय दिशानिर्देश अधूरे हैं।",
@@ -69,7 +59,6 @@ const RESPONSES: {
 
   // ── About sources generally ───────────────────────────────────────────────
   {
-    topic: "About sources generally",
     keywords: [
       "verified source",
       "sach hai",
@@ -90,7 +79,6 @@ const RESPONSES: {
 
   // ── Period pain & cramps ──────────────────────────────────────────────────
   {
-    topic: "Period pain & cramps",
     keywords: [
       "ऐंठन",
       "मरोड़",
@@ -114,6 +102,11 @@ const RESPONSES: {
       "fibroid",
       "फाइब्रॉएड",
       "गर्भाशय में दर्द",
+      "pet mein bahut dard",
+      "pait dukh raha",
+      "niche pet mein dard",
+      "pet dukhta hai",
+      "pait dukhta hai",
     ],
     answer:
       "यह दर्द बहुत real है — और आपको इसे सहते रहने की ज़रूरत नहीं है। FOGSI और WHO के अनुसार, पीरियड के पहले 1-2 दिन हल्का दर्द सामान्य है। लेकिन यदि दर्द इतना तेज़ हो कि रोज़मर्रा के काम रुक जाएं, तो यह Endometriosis या Adenomyosis का संकेत हो सकता है। ACOG की गाइडलाइन कहती है कि ऐसे दर्द को 'सामान्य' मानकर सहना नहीं चाहिए — इसका उपचार संभव है।",
@@ -127,7 +120,6 @@ const RESPONSES: {
 
   // ── Irregular periods ─────────────────────────────────────────────────────
   {
-    topic: "Irregular periods",
     keywords: [
       "अनियमित",
       "irregular",
@@ -159,6 +151,8 @@ const RESPONSES: {
       "period band ho gaya",
       "period skip ho gaya",
       "masik nahi aaya",
+      "period time pe nahi aata",
+      "mahavari time par nahi aata",
     ],
     answer:
       "यह बहुत आम है और इसका समाधान है — घबराइए नहीं। ICMR के अनुसार, 21 से 35 दिनों के बीच का चक्र सामान्य माना जाता है। इससे अधिक अनियमितता थायराइड असंतुलन, PMOS, या अत्यधिक तनाव के कारण हो सकती है। WHO की सिफारिश है कि यदि 3 महीने से अधिक समय से पीरियड अनियमित हो, तो स्त्री रोग विशेषज्ञ से जांच कराएं।",
@@ -172,7 +166,6 @@ const RESPONSES: {
 
   // ── Heavy/light bleeding ──────────────────────────────────────────────────
   {
-    topic: "Heavy/light bleeding",
     keywords: [
       "ज़्यादा खून",
       "zyada khoon",
@@ -200,6 +193,8 @@ const RESPONSES: {
       "thoda sa khoon",
       "bura rang khoon",
       "kaala khoon aana",
+      "bahut zyada bleeding ho rahi",
+      "kam bleeding ho rahi",
     ],
     answer:
       "यह सुनकर चिंता होना बिल्कुल स्वाभाविक है — और आपने सही किया बताकर। FOGSI के अनुसार, यदि पीरियड में हर 2 घंटे में पैड बदलनी पड़े या 7 दिन से अधिक चले, तो यह Heavy Menstrual Bleeding (HMB) है। इसके कारण फाइब्रॉएड, थायराइड, या खून जमाने की समस्या हो सकती है। ACOG की गाइडलाइन है कि CBC और अल्ट्रासाउंड जांच से कारण का पता लगाया जाए।",
@@ -213,7 +208,6 @@ const RESPONSES: {
 
   // ── PMOS / hormones ───────────────────────────────────────────────────────
   {
-    topic: "PMOS / hormones",
     keywords: [
       "pcos",
       "pcod",
@@ -277,6 +271,8 @@ const RESPONSES: {
       "hormone imbalance",
       "ovary mein cyst",
       "andaashay mein ganth",
+      "chehre par baal ugna",
+      "periods irregular aur weight badhna",
     ],
     answer:
       "यह जानकर परेशान होना बिल्कुल स्वाभाविक है — आप अकेली नहीं हैं। FOGSI और ACOG के अनुसार, भारत में हर पाँच में से एक महिला को PMOS (Polycystic Morphology of Ovaries — जिसे पहले PCOS कहते थे) होता है, जो दुनिया में सबसे अधिक है। इसमें अनियमित पीरियड, वजन बढ़ना, और चेहरे पर अनचाहे बाल आम लक्षण हैं। नियमित व्यायाम, संतुलित आहार, और सही चिकित्सकीय देखभाल से PMOS को बहुत प्रभावी ढंग से नियंत्रित किया जा सकता है।",
@@ -290,7 +286,6 @@ const RESPONSES: {
 
   // ── Appetite / weakness / fatigue / dizziness ─────────────────────────────
   {
-    topic: "Appetite / weakness / fatigue / dizziness",
     keywords: [
       "भूख",
       "appetite",
@@ -330,6 +325,10 @@ const RESPONSES: {
       "energy nahi hai",
       "bahut kamzori",
       "uthne ka mann nahi",
+      "chakkar",
+      "chakkar aa rahe",
+      "bhook bilkul nahi lagti",
+      "kamzori mehsoos ho rahi",
     ],
     answer:
       "इन लक्षणों के साथ दिन गुज़ारना सच में बहुत थका देने वाला होता है — आप अकेली नहीं हैं जो यह महसूस करती हैं। भूख न लगना, थकान, और चक्कर आना — ये एनीमिया (खून की कमी) या थायराइड असंतुलन के सबसे आम संकेत हैं। WHO के अनुसार, भारत में 57% महिलाओं में आयरन की कमी है। ICMR की सिफारिश है कि CBC (Complete Blood Count) और TSH जांच से कारण का पता लगाया जा सकता है। इन लक्षणों को नज़रअंदाज़ न करें।",
@@ -342,7 +341,6 @@ const RESPONSES: {
 
   // ── Anaemia / iron ────────────────────────────────────────────────────────
   {
-    topic: "Anaemia / iron",
     keywords: [
       "खून की कमी",
       "एनीमिया",
@@ -367,6 +365,8 @@ const RESPONSES: {
       "iron nahi hai",
       "blood test karna",
       "anaemia hai mujhe",
+      "khoon kam ho gaya",
+      "anemic hoon",
     ],
     answer:
       "WHO के अनुसार, भारत में 57% महिलाओं में एनीमिया है — मुख्य कारण आयरन की कमी है। ICMR की सिफारिश है कि महिलाओं को प्रतिदिन 29mg आयरन की आवश्यकता है। हरी पत्तेदार सब्ज़ियां, दालें, और विटामिन C के साथ सेवन अवशोषण बढ़ाता है। CBC रक्त परीक्षण से निदान की पुष्टि होती है।",
@@ -380,7 +380,6 @@ const RESPONSES: {
 
   // ── Thyroid ───────────────────────────────────────────────────────────────
   {
-    topic: "Thyroid",
     keywords: [
       "थायराइड",
       "thyroid",
@@ -405,6 +404,8 @@ const RESPONSES: {
       "thyroid test",
       "metabolism slow ho gaya",
       "wajan bina wajah badh raha",
+      "gala sujaa hua",
+      "thyroid ki dawai",
     ],
     answer:
       "WHO और ICMR के अनुसार, थायराइड असंतुलन महिलाओं में पुरुषों की तुलना में 5-8 गुना अधिक पाया जाता है। Hypothyroidism से पीरियड भारी और अनियमित हो सकते हैं, वजन बढ़ सकता है और थकान होती है। सामान्य TSH रेंज 0.4-4.0 mIU/L मानी जाती है। वार्षिक TSH जांच की सलाह दी जाती है।",
@@ -418,7 +419,6 @@ const RESPONSES: {
 
   // ── Menopause / perimenopause ─────────────────────────────────────────────
   {
-    topic: "Menopause / perimenopause",
     keywords: [
       "रजोनिवृत्ति",
       "menopause",
@@ -444,6 +444,10 @@ const RESPONSES: {
       "haddi kamzor ho gayi",
       "bone kamzor",
       "umar ke saath period",
+      "garmi lagna",
+      "achanak garmi lagti",
+      "raat ko garmi lagti",
+      "period aana band ho gaya",
     ],
     answer:
       "यह जीवन का एक नया अध्याय है — और इसे समझना आपका अधिकार है। WHO के अनुसार, रजोनिवृत्ति आमतौर पर 45-55 वर्ष की उम्र में होती है। ACOG की गाइडलाइन के अनुसार, गर्म लहरें, नींद न आना, और मूड बदलाव Estrogen के घटने से होते हैं। Hormone Replacement Therapy (HRT) सहित कई उपचार विकल्प उपलब्ध हैं — डॉक्टर से परामर्श लें।",
@@ -457,7 +461,6 @@ const RESPONSES: {
 
   // ── Infertility / difficulty conceiving ──────────────────────────────────
   {
-    topic: "Infertility / difficulty conceiving",
     keywords: [
       "cant get pregnant",
       "can't get pregnant",
@@ -495,6 +498,8 @@ const RESPONSES: {
       "iui",
       "ivf kya hai",
       "test tube baby",
+      "pregnant nahi ho pa rahi",
+      "baccha plan kar rahe hain",
     ],
     answer:
       "यह बहुत कठिन समय होता है — और आपकी तकलीफ़ बिल्कुल समझ में आती है। WHO के अनुसार, 12 महीने नियमित कोशिश के बाद भी गर्भधारण न होना Infertility कहलाता है। FOGSI की गाइडलाइन है कि पहले TSH, AMH, और Pelvic Ultrasound जांच करें — इनसे अक्सर कारण सामने आ जाता है। PMOS, थायराइड असंतुलन, और Fallopian Tube blockage भारत में सबसे आम कारण हैं — और इनका उपचार संभव है।",
@@ -507,7 +512,6 @@ const RESPONSES: {
 
   // ── Pregnancy ─────────────────────────────────────────────────────────────
   {
-    topic: "Pregnancy",
     keywords: [
       "गर्भावस्था",
       "pregnancy",
@@ -544,6 +548,8 @@ const RESPONSES: {
       "prasav kab hoga",
       "normal delivery hogi",
       "c section kab",
+      "pregnant hoon kya karu",
+      "garbhwati hoon",
     ],
     answer:
       "WHO की ANC गाइडलाइन के अनुसार, गर्भावस्था में कम से कम 8 बार प्रसव-पूर्व जांच की सिफारिश की जाती है। FOGSI के अनुसार, फोलिक एसिड, आयरन, और कैल्शियम के नियमित सेवन से माँ और बच्चे दोनों का स्वास्थ्य बेहतर रहता है। गर्भधारण में कठिनाई हो तो स्त्री रोग विशेषज्ञ से जल्द परामर्श लें।",
@@ -557,7 +563,6 @@ const RESPONSES: {
 
   // ── Postpartum ────────────────────────────────────────────────────────────
   {
-    topic: "Postpartum",
     keywords: [
       "प्रसव के बाद",
       "postpartum",
@@ -590,6 +595,7 @@ const RESPONSES: {
       "naye bacche ki maa",
       "delivery ke baad udaasi",
       "bacche ke baad thakan",
+      "delivery ke baad thakan bahut",
     ],
     answer:
       "यह बहुत साहस की बात है कि आपने यह share किया — नई माँ के लिए यह समय बहुत कठिन हो सकता है। FOGSI और WHO के अनुसार, प्रसव के बाद 4-6 हफ्ते तक हल्का मूड बदलाव (baby blues) सामान्य है। लेकिन यदि उदासी, रोना, या बच्चे से दूरी 2 हफ्ते से अधिक रहे, तो यह Postpartum Depression हो सकता है — जो इलाज योग्य है। ACOG की सिफारिश है कि स्तनपान कराने वाली माँ को प्रतिदिन अतिरिक्त 500 कैलोरी और आयरन की ज़रूरत होती है।",
@@ -608,7 +614,6 @@ const RESPONSES: {
 
   // ── Vaginal discharge / infection ─────────────────────────────────────────
   {
-    topic: "Vaginal discharge / infection",
     keywords: [
       "discharge",
       "सफेद पानी",
@@ -644,6 +649,7 @@ const RESPONSES: {
       "peshab bar bar aana",
       "yoni mein khujali",
       "neeche se smell",
+      "neeche se pani aana",
     ],
     answer:
       "WHO और FOGSI के अनुसार, हल्का पारदर्शी या सफेद स्राव सामान्य है। लेकिन यदि स्राव पीला, हरा, या बदबूदार हो, या खुजली और जलन हो, तो यह Bacterial Vaginosis या Yeast Infection हो सकता है। UTI (पेशाब में संक्रमण) में जलन और बार-बार पेशाब आना आम लक्षण हैं। दोनों का इलाज सरल है — स्त्री रोग विशेषज्ञ से परामर्श लें।",
@@ -657,7 +663,6 @@ const RESPONSES: {
 
   // ── Breast health ─────────────────────────────────────────────────────────
   {
-    topic: "Breast health",
     keywords: [
       "स्तन",
       "breast",
@@ -682,6 +687,7 @@ const RESPONSES: {
       "stan ki janch",
       "breast ki check",
       "chhati mein kuch mehsoos",
+      "chest mein ganth",
     ],
     answer:
       "WHO और ACOG के अनुसार, 40 वर्ष की आयु के बाद प्रतिवर्ष मैमोग्राफी की सलाह दी जाती है। FOGSI की गाइडलाइन कहती है कि मासिक स्व-परीक्षण महत्वपूर्ण है — कोई भी नई गांठ, त्वचा में बदलाव, या असामान्य स्राव की तुरंत जांच करानी चाहिए। स्तन दर्द अक्सर हॉर्मोनल होता है और सामान्य हो सकता है।",
@@ -694,7 +700,6 @@ const RESPONSES: {
 
   // ── Contraception ─────────────────────────────────────────────────────────
   {
-    topic: "Contraception",
     keywords: [
       "गर्भनिरोधक",
       "contraceptive",
@@ -724,6 +729,7 @@ const RESPONSES: {
       "pregnancy nahi chahiye",
       "nalsabandi",
       "parivar niyojan",
+      "pregnancy se bachne ka tarika",
     ],
     answer:
       "WHO की Medical Eligibility Criteria के अनुसार, गर्भनिरोधक के कई सुरक्षित विकल्प हैं — गोलियां, कॉपर-T, हॉर्मोनल IUD, और कंडोम। FOGSI का सुझाव है कि सही विकल्प आपकी उम्र, स्वास्थ्य स्थिति, और भविष्य की योजनाओं पर निर्भर करता है। Emergency contraception (I-Pill) असुरक्षित संबंध के 72 घंटे के भीतर ली जा सकती है।",
@@ -736,7 +742,6 @@ const RESPONSES: {
 
   // ── Mental health / mood / stress ─────────────────────────────────────────
   {
-    topic: "Mental health / mood / stress",
     keywords: [
       "मूड",
       "mood",
@@ -771,6 +776,8 @@ const RESPONSES: {
       "akela feel",
       "अकेलापन",
       "loneliness",
+      "mood bahut kharab rehta",
+      "chidchidapan bahut hota",
     ],
     answer:
       "यह feeling बहुत real है — और इसका एक नाम भी है। ACOG और WHO के अनुसार, पीरियड से 1-2 हफ्ते पहले मूड बदलाव, चिड़चिड़ापन, और उदासी PMS (Premenstrual Syndrome) के लक्षण हैं — यह Estrogen और Progesterone के उतार-चढ़ाव से होता है। यदि ये लक्षण बहुत गंभीर हों तो यह PMDD हो सकता है जिसका इलाज संभव है। नियमित व्यायाम, पर्याप्त नींद, और काउंसलिंग से राहत मिलती है।",
@@ -783,7 +790,6 @@ const RESPONSES: {
 
   // ── Skin / hair related to hormones ───────────────────────────────────────
   {
-    topic: "Skin / hair related to hormones",
     keywords: [
       "बाल झड़ना",
       "hair loss",
@@ -810,6 +816,8 @@ const RESPONSES: {
       "stretch marks aa gaye",
       "nakhun toote",
       "baal girna",
+      "baal jhad rahe bahut",
+      "skin par kale dhabbe",
     ],
     answer:
       "FOGSI के अनुसार, महिलाओं में बाल झड़ने के पीछे अक्सर आयरन की कमी, थायराइड असंतुलन, या PMOS होता है। WHO की गाइडलाइन कहती है कि अत्यधिक बाल झड़ने पर CBC, TSH, और हॉर्मोन पैनल जांच करानी चाहिए। गर्दन और बगल पर काले धब्बे (Acanthosis Nigricans) इंसुलिन प्रतिरोध का संकेत हो सकते हैं — यह PMOS में आम है।",
@@ -822,7 +830,6 @@ const RESPONSES: {
 
   // ── Pelvic pain / ovarian cyst / uterus ──────────────────────────────────
   {
-    topic: "Pelvic pain / ovarian cyst / uterus",
     keywords: [
       "pelvic pain",
       "पेल्विक दर्द",
@@ -849,6 +856,7 @@ const RESPONSES: {
       "cervical check",
       "hpv vaccine",
       "cancer ki janch",
+      "pet ke niche dabav mehsoos",
     ],
     answer:
       "WHO और FOGSI के अनुसार, पेल्विक दर्द, सूजन, या दबाव महसूस होना Ovarian Cyst, Fibroid, या Endometriosis का संकेत हो सकता है। ACOG की सिफारिश है कि 21 वर्ष की आयु से नियमित Pap Smear कराएं — यह सर्वाइकल कैंसर की रोकथाम का सबसे प्रभावी तरीका है। HPV वैक्सीन 9-26 वर्ष की उम्र में सबसे प्रभावी होती है।",
@@ -862,7 +870,6 @@ const RESPONSES: {
 
   // ── Nutrition / bone health ───────────────────────────────────────────────
   {
-    topic: "Nutrition / bone health",
     keywords: [
       "पोषण",
       "nutrition",
@@ -893,6 +900,7 @@ const RESPONSES: {
       "supplement lena chahiye",
       "iron rich food",
       "poshan ki kami",
+      "kya khana chahiye periods mein",
     ],
     answer:
       "ICMR की डाइटरी गाइडलाइन के अनुसार, महिलाओं को प्रतिदिन 600mg कैल्शियम, 29mg आयरन, 400mcg फोलिक एसिड, और पर्याप्त विटामिन D की आवश्यकता है। WHO सिफारिश करता है कि रंगीन सब्ज़ियां, दालें, और डेयरी उत्पाद महिलाओं के हॉर्मोन संतुलन में सहायक हैं। विटामिन D की कमी भारत में बहुत आम है — धूप और जांच दोनों ज़रूरी हैं।",
@@ -905,7 +913,6 @@ const RESPONSES: {
 
   // ── Sexual health ─────────────────────────────────────────────────────────
   {
-    topic: "Sexual health",
     keywords: [
       "यौन स्वास्थ्य",
       "sexual health",
@@ -928,6 +935,7 @@ const RESPONSES: {
       "yoni mein sukhapan",
       "intimacy mein problem",
       "shareerik sambandh",
+      "sambandh banate waqt dard",
     ],
     answer:
       "WHO के अनुसार, यौन स्वास्थ्य समग्र स्वास्थ्य का अभिन्न हिस्सा है। संभोग के दौरान दर्द (Dyspareunia) के कारण रजोनिवृत्ति से योनि सूखापन, Vaginismus, या Endometriosis हो सकते हैं — ये सभी इलाज योग्य हैं। FOGSI कहती है कि यौन स्वास्थ्य से जुड़ी किसी भी चिंता को डॉक्टर से बेझिझक साझा करें।",
@@ -940,7 +948,6 @@ const RESPONSES: {
 
   // ── Puberty / first period / adolescent health ────────────────────────────
   {
-    topic: "Puberty / first period / adolescent health",
     keywords: [
       "पहली बार पीरियड",
       "first period",
@@ -970,6 +977,7 @@ const RESPONSES: {
       "umar mein period",
       "beti ka period",
       "period ki umar",
+      "beti ko period nahi aaya abhi tak",
     ],
     answer:
       "WHO के अनुसार, लड़कियों में पहला पीरियड (Menarche) आमतौर पर 11-15 वर्ष की उम्र में आता है। FOGSI की गाइडलाइन कहती है कि पहले 1-2 साल अनियमित पीरियड सामान्य है — शरीर हॉर्मोन संतुलन बना रहा होता है। यदि 15 वर्ष तक पीरियड न आए या बहुत तेज़ दर्द हो, तो स्त्री रोग विशेषज्ञ से मिलें।",
@@ -982,7 +990,6 @@ const RESPONSES: {
 
   // ── Hormonal migraine / headache ──────────────────────────────────────────
   {
-    topic: "Hormonal migraine / headache",
     keywords: [
       "सिरदर्द",
       "headache",
@@ -1004,6 +1011,7 @@ const RESPONSES: {
       "sar mein dard",
       "aankhon mein dard",
       "sir bhaari lagta",
+      "sir mein dard period se pehle",
     ],
     answer:
       "ACOG के अनुसार, पीरियड से पहले या दौरान सिरदर्द Estrogen के अचानक घटने से होता है — इसे Menstrual Migraine कहते हैं। WHO की गाइडलाइन कहती है कि यह 20-30% महिलाओं को प्रभावित करता है। पर्याप्त पानी, नियमित नींद, और तनाव कम करने से राहत मिलती है। बार-बार गंभीर माइग्रेन हो तो न्यूरोलॉजिस्ट से परामर्श लें।",
@@ -1016,7 +1024,6 @@ const RESPONSES: {
 
   // ── Bloating / gas / digestive issues ────────────────────────────────────
   {
-    topic: "Bloating / gas / digestive issues",
     keywords: [
       "bloating",
       "सूजन",
@@ -1043,6 +1050,7 @@ const RESPONSES: {
       "khana hazam nahi",
       "paacan theek nahi",
       "period mein pet fulta",
+      "pet phoola hua lagta",
     ],
     answer:
       "FOGSI के अनुसार, पीरियड से पहले पेट फूलना और गैस Progesterone के कारण होती है — यह बहुत आम है। WHO की गाइडलाइन कहती है कि महिलाओं में IBS (Irritable Bowel Syndrome) पुरुषों की तुलना में दोगुना पाया जाता है और यह हॉर्मोन से जुड़ा है। नमक कम करें, पानी अधिक पिएं, और प्रोसेस्ड फ़ूड से बचें।",
@@ -1055,7 +1063,6 @@ const RESPONSES: {
 
   // ── Vitamin B12 deficiency ────────────────────────────────────────────────
   {
-    topic: "Vitamin B12 deficiency",
     keywords: [
       "b12",
       "विटामिन बी12",
@@ -1079,6 +1086,7 @@ const RESPONSES: {
       "shakahari hoon",
       "veg khana khati hoon",
       "nerve problem",
+      "haath pair sunn ho jaate",
     ],
     answer:
       "ICMR के अनुसार, भारत में शाकाहारी महिलाओं में Vitamin B12 की कमी बहुत आम है क्योंकि B12 मुख्यतः पशु उत्पादों में पाया जाता है। WHO की गाइडलाइन कहती है कि B12 की कमी से थकान, हाथ-पैरों में झनझनाहट, और याददाश्त कमज़ोर होना हो सकता है। गर्भावस्था में B12 की कमी बच्चे के नर्वस सिस्टम को प्रभावित कर सकती है — नियमित जांच ज़रूरी है।",
@@ -1091,7 +1099,6 @@ const RESPONSES: {
 
   // ── Gestational diabetes / diabetes in women ──────────────────────────────
   {
-    topic: "Gestational diabetes / diabetes in women",
     keywords: [
       "gestational diabetes",
       "गर्भावस्था में शुगर",
@@ -1114,6 +1121,7 @@ const RESPONSES: {
       "sugar control",
       "madhumeh",
       "insulin leni padti",
+      "sugar ki jaanch karani hai",
     ],
     answer:
       "WHO के अनुसार, Gestational Diabetes (गर्भावस्था में मधुमेह) 5-10% गर्भवती महिलाओं में होती है और बच्चे के जन्म के बाद अक्सर ठीक हो जाती है। FOGSI की सिफारिश है कि 24-28 सप्ताह पर GTT (Glucose Tolerance Test) ज़रूर कराएं। PMOS वाली महिलाओं में Type 2 Diabetes का खतरा अधिक होता है — वार्षिक HbA1c जांच करें।",
@@ -1126,7 +1134,6 @@ const RESPONSES: {
 
   // ── Urinary incontinence / pelvic floor ──────────────────────────────────
   {
-    topic: "Urinary incontinence / pelvic floor",
     keywords: [
       "urinary incontinence",
       "पेशाब लीकेज",
@@ -1147,6 +1154,7 @@ const RESPONSES: {
       "kegel exercise kaise",
       "neeche pressure lagta",
       "bacchedaani neeche",
+      "hasne par peshab nikal jata",
     ],
     answer:
       "ACOG और FOGSI के अनुसार, प्रसव के बाद या रजोनिवृत्ति में Pelvic Floor कमज़ोर होने से हँसने, खाँसने पर पेशाब लीक हो सकता है — यह बहुत आम है पर इसके बारे में बात नहीं होती। Kegel exercises से 70% महिलाओं को राहत मिलती है। गंभीर मामलों में Physiotherapy या सर्जरी का विकल्प उपलब्ध है।",
@@ -1159,7 +1167,6 @@ const RESPONSES: {
 
   // ── Menstrual hygiene / products ──────────────────────────────────────────
   {
-    topic: "Menstrual hygiene / products",
     keywords: [
       "pad",
       "पैड",
@@ -1185,6 +1192,7 @@ const RESPONSES: {
       "sanitary pad nahi hai",
       "pad se infection",
       "saaf safai period mein",
+      "pad kitni der use karein",
     ],
     answer:
       "WHO और UNICEF की गाइडलाइन कहती है कि Sanitary Pad, Tampon, और Menstrual Cup — सभी सुरक्षित विकल्प हैं। Pad हर 4-6 घंटे में बदलें — ज़्यादा देर रखने से संक्रमण और रैश हो सकता है। Menstrual Cup 8-12 घंटे तक उपयोग किया जा सकता है और पर्यावरण के लिए बेहतर है। साफ, सूती अंडरवियर पहनें।",
@@ -1197,7 +1205,6 @@ const RESPONSES: {
 
   // ── Sleep / insomnia ──────────────────────────────────────────────────────
   {
-    topic: "Sleep / insomnia",
     keywords: [
       "नींद नहीं",
       "neend nahi",
@@ -1220,6 +1227,7 @@ const RESPONSES: {
       "der se neend aati",
       "neend poori nahi hoti",
       "uthke nahi so paati",
+      "raat ko neend nahi aati",
     ],
     answer:
       "ACOG के अनुसार, महिलाओं में नींद की समस्या पुरुषों की तुलना में 40% अधिक होती है — इसका मुख्य कारण हॉर्मोन उतार-चढ़ाव, PMS, गर्भावस्था, और रजोनिवृत्ति है। WHO की सिफारिश है कि महिलाओं को प्रतिदिन 7-9 घंटे की नींद ज़रूरी है। सोने से 1 घंटे पहले स्क्रीन बंद करें, एक निश्चित समय पर सोएं, और कैफीन से बचें।",
@@ -1232,7 +1240,6 @@ const RESPONSES: {
 
   // ── Exercise / physical activity ──────────────────────────────────────────
   {
-    topic: "Exercise / physical activity",
     keywords: [
       "exercise",
       "व्यायाम",
@@ -1256,6 +1263,7 @@ const RESPONSES: {
       "period mein chalna",
       "exercise safe hai",
       "workout period time",
+      "gym jaana chahiye periods mein",
     ],
     answer:
       "WHO की गाइडलाइन के अनुसार, पीरियड के दौरान हल्का व्यायाम — जैसे चलना, योग, और स्ट्रेचिंग — दर्द और थकान में राहत देता है। ACOG कहती है कि महिलाओं को प्रति सप्ताह कम से कम 150 मिनट मध्यम तीव्रता का व्यायाम करना चाहिए। PMOS और PMS दोनों में नियमित व्यायाम हॉर्मोन संतुलन में सबसे प्रभावी गैर-दवा उपाय है।",
@@ -1268,7 +1276,6 @@ const RESPONSES: {
 
   // ── Stress & periods / lifestyle ─────────────────────────────────────────
   {
-    topic: "Stress & periods / lifestyle",
     keywords: [
       "तनाव से पीरियड",
       "stress period",
@@ -1287,6 +1294,7 @@ const RESPONSES: {
       "wajan ghataane se period",
       "stress mein period miss",
       "jeevanshaili",
+      "tension mein period late ho jata",
     ],
     answer:
       "WHO और ACOG के अनुसार, अत्यधिक तनाव, अचानक वजन घटना, लंबी यात्रा, या नींद न आना — ये सब Cortisol बढ़ाते हैं जो Estrogen और Progesterone को प्रभावित करता है और पीरियड में देरी ला सकता है। यह शरीर की सामान्य प्रतिक्रिया है। यदि 2-3 महीने से अधिक हो तो जांच ज़रूरी है।",
@@ -1299,7 +1307,6 @@ const RESPONSES: {
 
   // ── Autoimmune / thyroid / lupus ──────────────────────────────────────────
   {
-    topic: "Autoimmune / thyroid / lupus",
     keywords: [
       "autoimmune",
       "lupus",
@@ -1319,6 +1326,7 @@ const RESPONSES: {
       "immune system problem",
       "jodon mein dard sujan",
       "hashimoto thyroid",
+      "joint mein sujan rehti",
     ],
     answer:
       "WHO के अनुसार, Autoimmune बीमारियाँ पुरुषों की तुलना में महिलाओं में 3 गुना अधिक होती हैं — इसका कारण Estrogen का प्रतिरक्षा तंत्र पर प्रभाव माना जाता है। Hashimoto's Thyroiditis (थायराइड की सूजन), Rheumatoid Arthritis, और Lupus महिलाओं में सबसे आम हैं। नियमित जांच और स्त्री रोग विशेषज्ञ व रुमेटोलॉजिस्ट की टीम से देखभाल ज़रूरी है।",
@@ -1421,10 +1429,6 @@ function sourcedResult(r: (typeof RESPONSES)[number]): {
   return { answer: r.answer + DISCLAIMER, video, article };
 }
 
-// Used as a routing hint so the LLM can point back to sourced content (video/article)
-// for topics it recognizes, even when the phrasing doesn't hit a keyword match.
-const TOPIC_LIST = RESPONSES.map((r, i) => `${i}: ${r.topic}`).join("\n");
-
 const SAKHI_SYSTEM = `Tum Sakhi ho — ek samajhdaar, empathetic mahila health companion jo JioBharatIQ par kaam karti hai.
 
 SCOPE — tum SIRF in topics par jawab deti ho:
@@ -1445,14 +1449,6 @@ ANSWER RULES (sirf women's health questions ke liye):
 - India-specific context rakho — Indian diet, FOGSI/ICMR/WHO guidelines
 - Answers concise aur warm rakhna — 3-5 sentences
 - Kabhi disclaimer mat lagao — woh system se aata hai`;
-
-const ROUTING_RULE = `SOURCING RULE — bahut zaroori:
-Sakhi ke paas neeche diye gaye topics par pehle se verified video/article content hai. Agar user ka sawaal in mein se kisi ek topic se genuinely related hai, to tum apna khud ka jawab MAT likhna — sirf yeh likhna: "TOPIC:<number>" (jaise "TOPIC:5"), kuch aur text nahi, koi explanation nahi.
-Agar sawaal in topics se match nahi karta lekin genuinely women's health SCOPE ke andar hai, to normal jawab do (ANSWER RULES follow karke).
-Agar sawaal SCOPE se bahar hai, to GUARDRAILS wali ek line bolo.
-
-TOPICS:
-${TOPIC_LIST}`;
 
 async function llmAnswer(question: string): Promise<string> {
   const apiKey = process.env.GROQ_API_KEY;
@@ -1499,7 +1495,6 @@ export async function askSakhi(
         max_tokens: 400,
         messages: [
           { role: "system", content: SAKHI_SYSTEM },
-          { role: "system", content: ROUTING_RULE },
           ...history.slice(-8),
           { role: "user", content: question },
         ],
@@ -1507,12 +1502,8 @@ export async function askSakhi(
     });
     if (!res.ok) return { answer: SERVICE_ERROR };
     const data = await res.json();
-    const text: string | undefined = data.choices?.[0]?.message?.content;
-    if (!text) return { answer: SERVICE_ERROR };
-    const topicMatch = text.trim().match(/^TOPIC:\s*(\d+)/i);
-    const topicEntry = topicMatch ? RESPONSES[parseInt(topicMatch[1], 10)] : undefined;
-    if (topicEntry) return sourcedResult(topicEntry);
-    return { answer: text + DISCLAIMER };
+    const text = data.choices?.[0]?.message?.content;
+    return { answer: text ? text + DISCLAIMER : SERVICE_ERROR };
   } catch {
     return { answer: SERVICE_ERROR };
   }
