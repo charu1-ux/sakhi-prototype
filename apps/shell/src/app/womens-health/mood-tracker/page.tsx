@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
-import { askSakhi, OUT_OF_SCOPE } from "@/lib/sakhi";
+import { askSakhi, isBlockerResponse } from "@/lib/sakhi";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -560,7 +560,7 @@ export default function MoodTrackerPage() {
     scroll();
     try {
       const data = await askSakhi(q, history);
-      const isBlocked = data.answer === OUT_OF_SCOPE || !data.answer;
+      const isBlocked = isBlockerResponse(data.answer);
       if (data.video || data.article || isBlocked) {
         push({
           type: "text",
