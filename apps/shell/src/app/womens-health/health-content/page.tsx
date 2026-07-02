@@ -10,7 +10,13 @@ type SakhiTurn = { role: "user" | "assistant"; content: string };
 
 type Video = { label: string; channel: string; url: string; embedId?: string };
 type Article = { title: string; source: string; url: string; summary?: string };
-type Message = { role: "user" | "sakhi"; text: string; video?: Video; article?: Article };
+type Message = {
+  role: "user" | "sakhi";
+  text: string;
+  video?: Video;
+  article?: Article;
+  isLlm?: boolean;
+};
 
 // ── Video card — expandable inline player ─────────────────────────────────────
 
@@ -212,6 +218,7 @@ function HealthContentInner() {
           text: data.answer || "सखी अभी उपलब्ध नहीं है।",
           video: data.video,
           article: data.article,
+          isLlm: data.isLlm,
         },
       ]);
     } catch {
@@ -260,6 +267,17 @@ function HealthContentInner() {
                   {m.text}
                 </div>
               </div>
+              {m.role === "sakhi" && m.isLlm && (
+                <div
+                  className="mt-1 ml-9 flex items-center gap-1 text-[10px]"
+                  style={{ color: "#9CA3AF" }}
+                >
+                  <span>🤖</span>
+                  <span style={{ fontFamily: "JioType, sans-serif" }}>
+                    AI द्वारा उत्पन्न — डॉक्टर की सलाह का विकल्प नहीं
+                  </span>
+                </div>
+              )}
               {m.role === "sakhi" && m.video && <VideoCard video={m.video} />}
               {m.role === "sakhi" && !m.video && m.article && <ArticleCard article={m.article} />}
             </div>

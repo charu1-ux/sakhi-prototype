@@ -107,7 +107,7 @@ function ForWhomCard({
 // ─── Message kinds ────────────────────────────────────────────────────────────
 
 type MessageKind =
-  | { type: "text"; role: "user" | "sakhi"; text: string }
+  | { type: "text"; role: "user" | "sakhi"; text: string; isLlm?: boolean }
   | { type: "forWhomPicker"; locked: boolean; selected?: ForWhom }
   | { type: "moodPicker"; locked: boolean; selected?: (typeof MOODS)[0] }
   | { type: "energyPicker"; locked: boolean; selected?: (typeof ENERGIES)[0] }
@@ -653,7 +653,7 @@ export default function MoodTrackerPage() {
         push({ type: "contentLink", query: q });
       } else if (!isBlockerResponse(data.answer)) {
         // LLM gave a meaningful response (e.g. clarification) — show it
-        push({ type: "text", role: "sakhi", text: data.answer });
+        push({ type: "text", role: "sakhi", text: data.answer, isLlm: data.isLlm });
       } else {
         push({
           type: "text",
@@ -693,6 +693,15 @@ export default function MoodTrackerPage() {
       return (
         <SakhiRow key={i}>
           <Bubble text={msg.text} />
+          {msg.isLlm && (
+            <div
+              className="mt-1 flex items-center gap-1 text-[10px]"
+              style={{ color: "#9CA3AF", fontFamily: "JioType, sans-serif" }}
+            >
+              <span>🤖</span>
+              <span>AI द्वारा उत्पन्न — डॉक्टर की सलाह का विकल्प नहीं</span>
+            </div>
+          )}
         </SakhiRow>
       );
     }

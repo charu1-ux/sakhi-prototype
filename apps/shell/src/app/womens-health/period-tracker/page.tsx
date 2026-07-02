@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
@@ -1015,7 +1015,7 @@ function ContentLinkCard({ onTap }: { onTap: () => void }) {
 
 // ── MessageKind union ─────────────────────────────────────────────────────────
 type MessageKind =
-  | { type: "text"; role: "user" | "sakhi"; text: string }
+  | { type: "text"; role: "user" | "sakhi"; text: string; isLlm?: boolean }
   | { type: "forWhomPicker" }
   | { type: "calendar"; onDatePick: (label: string, date: Date) => void }
   | { type: "cycleLength"; onPick: (days: number) => void }
@@ -1188,6 +1188,7 @@ export default function PeriodTrackerPage() {
             type: "text",
             role: "sakhi",
             text: data.answer || "सखी अभी उपलब्ध नहीं है।",
+            isLlm: data.isLlm,
           },
         ]);
       }
@@ -1349,31 +1350,49 @@ export default function PeriodTrackerPage() {
               );
 
             return (
-              <div
-                key={i}
-                style={{
-                  display: "flex",
-                  justifyContent: m.role === "user" ? "flex-end" : "flex-start",
-                  width: "100%",
-                }}
-              >
-                {m.role === "sakhi" && avatar}
+              <React.Fragment key={i}>
                 <div
                   style={{
-                    maxWidth: "82%",
-                    padding: "8px 12px",
-                    fontSize: 13,
-                    lineHeight: 1.6,
-                    background: m.role === "user" ? C.raat : C.surface,
-                    color: m.role === "user" ? "#fff" : C.textPrimary,
-                    borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-                    fontFamily: "JioType, sans-serif",
-                    boxShadow: m.role === "sakhi" ? `0 1px 4px ${C.border}` : "none",
+                    display: "flex",
+                    justifyContent: m.role === "user" ? "flex-end" : "flex-start",
+                    width: "100%",
                   }}
                 >
-                  {m.text}
+                  {m.role === "sakhi" && avatar}
+                  <div
+                    style={{
+                      maxWidth: "82%",
+                      padding: "8px 12px",
+                      fontSize: 13,
+                      lineHeight: 1.6,
+                      background: m.role === "user" ? C.raat : C.surface,
+                      color: m.role === "user" ? "#fff" : C.textPrimary,
+                      borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+                      fontFamily: "JioType, sans-serif",
+                      boxShadow: m.role === "sakhi" ? `0 1px 4px ${C.border}` : "none",
+                    }}
+                  >
+                    {m.text}
+                  </div>
                 </div>
-              </div>
+                {m.role === "sakhi" && m.isLlm && (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      fontSize: 10,
+                      color: "#9CA3AF",
+                      fontFamily: "JioType, sans-serif",
+                      paddingLeft: 36,
+                      marginTop: 2,
+                    }}
+                  >
+                    <span>🤖</span>
+                    <span>AI द्वारा उत्पन्न — डॉक्टर की सलाह का विकल्प नहीं</span>
+                  </div>
+                )}
+              </React.Fragment>
             );
           })}
           {loading && (

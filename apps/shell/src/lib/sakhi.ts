@@ -1511,7 +1511,7 @@ async function llmAnswer(question: string): Promise<string> {
   return text ? text + DISCLAIMER : OUT_OF_SCOPE;
 }
 
-export type SakhiResponse = { answer: string; video?: Video; article?: Article };
+export type SakhiResponse = { answer: string; video?: Video; article?: Article; isLlm?: boolean };
 export type SakhiTurn = { role: "user" | "assistant"; content: string };
 
 const CLARIFICATION_PHRASES = [
@@ -1578,7 +1578,7 @@ export async function askSakhi(
       if (!res.ok) return { answer: SERVICE_ERROR };
       const data = await res.json();
       const text = data.choices?.[0]?.message?.content;
-      return { answer: text ? text + DISCLAIMER : SERVICE_ERROR };
+      return { answer: text ? text + DISCLAIMER : SERVICE_ERROR, isLlm: !!text };
     } catch {
       return { answer: SERVICE_ERROR };
     }
@@ -1605,7 +1605,7 @@ export async function askSakhi(
     if (!res.ok) return { answer: SERVICE_ERROR };
     const data = await res.json();
     const text = data.choices?.[0]?.message?.content;
-    return { answer: text ? text + DISCLAIMER : SERVICE_ERROR };
+    return { answer: text ? text + DISCLAIMER : SERVICE_ERROR, isLlm: !!text };
   } catch {
     return { answer: SERVICE_ERROR };
   }
