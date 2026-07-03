@@ -1041,10 +1041,33 @@ export default function PeriodTrackerPage() {
 
   function onCyclePick(days: number) {
     const lp = lastPeriodDate ?? new Date();
+    const nextPeriod = addDays(lp, days);
+    const daysUntil = Math.ceil((nextPeriod.getTime() - Date.now()) / 86400000);
+
+    // Reward-on-log: personalised cycle reflection
+    const cycleReflection =
+      days < 24
+        ? `आपका cycle ${days} दिन का है — यह थोड़ा छोटा है, पर कुछ महिलाओं में ऐसा होता है।`
+        : days <= 35
+          ? `आपका cycle ${days} दिन का है — यह बिल्कुल normal range में है। 👍`
+          : `आपका cycle ${days} दिन का है — यह थोड़ा लंबा है, पर घबराएं नहीं, डॉक्टर से एक बार ज़रूर बात करें।`;
+
+    // Countdown anticipation message
+    const countdownMsg =
+      daysUntil <= 0
+        ? `आपका period आज या कल आ सकता है — तैयार रहें! 🩸`
+        : daysUntil === 1
+          ? `कल period आ सकता है — पैड या cup तैयार रख लें। 🩸`
+          : daysUntil <= 5
+            ? `बस ${daysUntil} दिन बाद period आ सकता है — कल दोबारा check करें। 🗓️`
+            : `अगला period लगभग ${daysUntil} दिन बाद आएगा।`;
+
     setMessages((prev) => [
       ...prev.filter((m) => m.type !== "cycleLength"),
       { type: "text", role: "user", text: `${days} दिन` },
-      { type: "text", role: "sakhi", text: "बढ़िया! 🗓️ यहाँ देखें आपकी पूरी cycle:" },
+      { type: "text", role: "sakhi", text: cycleReflection },
+      { type: "text", role: "sakhi", text: countdownMsg },
+      { type: "text", role: "sakhi", text: "🗓️ यहाँ देखें आपकी पूरी cycle:" },
       { type: "prediction", lastPeriod: lp, cycleLength: days },
       { type: "symptoms", onDone: onSymptomsDone },
     ]);
