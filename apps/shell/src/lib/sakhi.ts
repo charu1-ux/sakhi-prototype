@@ -1422,10 +1422,17 @@ const MALE_IDENTIFIER_RESPONSE =
 
 const MALE_IDENTIFIERS = [
   "main mard hoon",
+  "main admi hoon",
+  "main admi hun",
+  "main aadmi hoon",
+  "main aadmi hun",
   "main ladka hoon",
   "main purush hoon",
   "main boy hoon",
   "main male hoon",
+  "मैं आदमी हूँ",
+  "mein admi hun",
+  "mein aadmi hun",
   "i am male",
   "i am a man",
   "i am a boy",
