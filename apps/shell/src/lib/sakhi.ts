@@ -2,9 +2,10 @@
 
 // ─── Prototype mock — WHO/FOGSI/ICMR/ACOG verified content ───────────────────
 
-const DISCLAIMER =
+const DISCLAIMER_HI =
   "\n\nमैं आपकी सहेली हूँ, डॉक्टर नहीं। जो मैं बताती हूँ वो जानकारी है — कोई भी ज़रूरी निर्णय अपनी डॉक्टर से ज़रूर पक्का करें। 💜";
-
+const DISCLAIMER_EN =
+  "\n\nI'm your health companion, not a doctor. What I share is information — always confirm important decisions with your doctor. 💜";
 type Video = { label: string; channel: string; url: string; embedId?: string };
 type Article = { title: string; source: string; url: string; summary?: string };
 
@@ -1399,7 +1400,7 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
 
 export const OUT_OF_SCOPE =
   "मैं केवल महिला स्वास्थ्य विषयों पर WHO, FOGSI, ICMR, और ACOG द्वारा सत्यापित जानकारी दे सकती हूँ। कृपया महिला स्वास्थ्य से संबंधित प्रश्न पूछें।" +
-  DISCLAIMER;
+  DISCLAIMER_HI;
 
 export function isBlockerResponse(answer: string): boolean {
   return (
@@ -1411,11 +1412,11 @@ export function isBlockerResponse(answer: string): boolean {
 
 const DEFAULT =
   "इस बारे में मेरे पास अभी सत्यापित जानकारी नहीं है — लेकिन आप पूछती रहिए। आप पीरियड दर्द, PMOS, एनीमिया, थायराइड, रजोनिवृत्ति, गर्भावस्था, या यौन स्वास्थ्य से जुड़े सवाल पूछ सकती हैं — इन पर सखी के पास WHO और FOGSI से सत्यापित जानकारी है।" +
-  DISCLAIMER;
+  DISCLAIMER_HI;
 
 const SERVICE_ERROR =
   "अभी सखी को जवाब देने में थोड़ी दिक्कत हो रही है। कृपया कुछ सेकंड बाद फिर कोशिश करें।" +
-  DISCLAIMER;
+  DISCLAIMER_HI;
 
 const MALE_IDENTIFIER_RESPONSE =
   "सखी विशेष रूप से महिलाओं के स्वास्थ्य के लिए बनाई गई है — पीरियड, PMOS, हॉर्मोन, और स्त्री स्वास्थ्य से जुड़े विषयों पर। अगर आपके जीवन में कोई महिला है जिन्हें इन विषयों पर जानकारी चाहिए, तो आप उनके लिए सखी का उपयोग कर सकते हैं।";
@@ -1620,26 +1621,33 @@ function matchesKeyword(q: string, kw: string): boolean {
     .every((word) => q.includes(word));
 }
 
-function findResponse(question: string): { answer: string; video?: Video; article?: Article } {
+function findResponse(
+  question: string,
+  lang: "hi" | "en" = "hi",
+): { answer: string; video?: Video; article?: Article } {
   const q = question.toLowerCase();
   if (OFF_TOPIC_WORDS.some((w) => new RegExp(`(?<![a-z])${w}(?![a-z])`, "i").test(q)))
     return { answer: OUT_OF_SCOPE };
   for (const r of RESPONSES) {
     if (r.keywords.some((kw) => matchesKeyword(q, kw))) {
-      return sourcedResult(r);
+      return sourcedResult(r, lang);
     }
   }
   return { answer: DEFAULT };
 }
 
-function sourcedResult(r: (typeof RESPONSES)[number]): {
+function sourcedResult(
+  r: (typeof RESPONSES)[number],
+  lang: "hi" | "en" = "hi",
+): {
   answer: string;
   video?: Video;
   article?: Article;
 } {
   const video = r.video?.embedId ? r.video : undefined;
   const article = !video && r.article ? { ...r.article, summary: r.answer } : undefined;
-  return { answer: r.answer + DISCLAIMER, video, article };
+  const disclaimer = lang === "en" ? DISCLAIMER_EN : DISCLAIMER_HI;
+  return { answer: r.answer + disclaimer, video, article };
 }
 
 const SAKHI_SYSTEM_EN = `You are Doctor Friend — a warm, empathetic women's health companion on JioBharatIQ. You speak like a knowledgeable elder sister — supportive, non-judgmental, never preachy.
@@ -1706,7 +1714,7 @@ async function llmAnswer(question: string): Promise<string> {
   if (!res.ok) throw new Error("Groq error");
   const data = await res.json();
   const text = data.choices?.[0]?.message?.content;
-  return text ? text + DISCLAIMER : OUT_OF_SCOPE;
+  return text ? text + DISCLAIMER_HI : OUT_OF_SCOPE;
 }
 
 export type SakhiResponse = { answer: string; video?: Video; article?: Article; isLlm?: boolean };
@@ -1852,7 +1860,10 @@ export async function askSakhi(
       if (!res.ok) return { answer: SERVICE_ERROR };
       const data = await res.json();
       const text = data.choices?.[0]?.message?.content;
-      return { answer: text ? text + DISCLAIMER : SERVICE_ERROR, isLlm: !!text };
+      return {
+        answer: text ? text + (lang === "en" ? DISCLAIMER_EN : DISCLAIMER_HI) : SERVICE_ERROR,
+        isLlm: !!text,
+      };
     } catch {
       return { answer: SERVICE_ERROR };
     }
@@ -1861,7 +1872,7 @@ export async function askSakhi(
   // Vague contextual follow-up — look up topic from user's prior messages and serve matched content
   if (isVagueFollowup(question) && history.length > 0) {
     const contextQuery = buildContextQuery(history);
-    const contextResult = findResponse(contextQuery);
+    const contextResult = findResponse(contextQuery, lang);
     if (contextResult.answer !== DEFAULT) return contextResult;
     // No topic found in history — ask user to be more specific; never send vague query to LLM
     return {
@@ -1872,7 +1883,7 @@ export async function askSakhi(
     };
   }
 
-  const result = findResponse(question);
+  const result = findResponse(question, lang);
   if (result.answer !== DEFAULT) return result;
   try {
     const apiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
@@ -1893,7 +1904,10 @@ export async function askSakhi(
     if (!res.ok) return { answer: SERVICE_ERROR };
     const data = await res.json();
     const text = data.choices?.[0]?.message?.content;
-    return { answer: text ? text + DISCLAIMER : SERVICE_ERROR, isLlm: !!text };
+    return {
+      answer: text ? text + (lang === "en" ? DISCLAIMER_EN : DISCLAIMER_HI) : SERVICE_ERROR,
+      isLlm: !!text,
+    };
   } catch {
     return { answer: SERVICE_ERROR };
   }

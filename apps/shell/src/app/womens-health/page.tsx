@@ -249,88 +249,6 @@ function P0Tiles() {
   );
 }
 
-// ─── Awareness ────────────────────────────────────────────────────────────────
-
-const AWARENESS = [
-  {
-    stat: "57%",
-    topic: "भारतीय महिलाओं को खून की कमी है",
-    topicEn: "Indian women have iron deficiency",
-    sub: "एनीमिया इतना आम है कि सब 'सामान्य' मान लेती हैं",
-    subEn: "Anaemia is so common that most women think it's normal",
-    accentColor: "#B45309",
-  },
-  {
-    stat: "7 साल",
-    topic: "Endometriosis का औसत diagnosis delay",
-    topicEn: "Average diagnosis delay for Endometriosis",
-    sub: '"सबको दर्द होता है" — यह सोच बदलनी होगी',
-    subEn: '"Everyone has pain" — this mindset must change',
-    accentColor: "#E11D48",
-  },
-  {
-    stat: "67%",
-    topic: "महिलाएं स्वास्थ्य को taboo मानती हैं",
-    topicEn: "Women treat health as a taboo",
-    sub: "अपनी तकलीफ किसी को नहीं बता पातीं",
-    subEn: "They can't share their struggles with anyone",
-    accentColor: "#7C3AED",
-  },
-  {
-    stat: "98%",
-    topic: "महिलाएं अपनी भाषा में जानकारी चाहती हैं",
-    topicEn: "Women want information in their language",
-    sub: "सखी हिंदी में — आपकी ज़बान में — बात करती है",
-    subEn: "Doctor Friend speaks your language — clear, simple, judgment-free",
-    accentColor: "#059669",
-  },
-];
-
-function AwarenessTiles() {
-  const { lang } = useLang();
-  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
-  return (
-    <div className="flex flex-col gap-3">
-      <h2
-        className="text-[15px] font-bold text-zinc-900"
-        style={{ fontFamily: "JioType, sans-serif" }}
-      >
-        {t("आप अकेली नहीं हैं", "You're not alone")}
-      </h2>
-      <div className="flex flex-col gap-2">
-        {AWARENESS.map((a) => (
-          <div
-            key={a.topic}
-            className="flex items-start gap-3 rounded-xl bg-white p-3"
-            style={{ border: "1px solid #F3F4F6" }}
-          >
-            <span
-              className="shrink-0 text-[20px] leading-tight font-black tabular-nums"
-              style={{ fontFamily: "JioType, sans-serif", color: a.accentColor, minWidth: 52 }}
-            >
-              {a.stat}
-            </span>
-            <div className="flex flex-col gap-0.5">
-              <span
-                className="text-[13px] leading-snug font-semibold text-zinc-800"
-                style={{ fontFamily: "JioType, sans-serif" }}
-              >
-                {t(a.topic, a.topicEn)}
-              </span>
-              <span
-                className="text-[11px] leading-snug text-zinc-400"
-                style={{ fontFamily: "JioType, sans-serif" }}
-              >
-                {t(a.sub, a.subEn)}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function WomensHealthPage() {
@@ -368,7 +286,6 @@ export default function WomensHealthPage() {
         <div className="mx-auto flex w-full max-w-md flex-col gap-6">
           <SakhiCard />
           <P0Tiles />
-          <AwarenessTiles />
         </div>
       </main>
 
