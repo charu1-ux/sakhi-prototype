@@ -929,13 +929,13 @@ function CycleLengthCard({ onPick }: { onPick: (d: number) => void }) {
           fontSize: 12,
           fontWeight: 600,
           background: C.raatLight,
-          color: C.raatMid,
-          border: "none",
+          color: C.textTertiary,
+          border: `1px dashed ${C.border}`,
           cursor: "pointer",
           fontFamily: "JioType, sans-serif",
         }}
       >
-        {t("पता नहीं", "Not sure")}
+        {t("पता नहीं (28 डिफ़ॉल्ट)", "Not sure (28 default)")}
       </button>
     </div>
   );
