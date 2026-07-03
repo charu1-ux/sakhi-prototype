@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
 import { askSakhi } from "@/lib/sakhi";
+import { useLang } from "../LangContext";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -177,12 +178,26 @@ export default function HealthContentPage() {
 
 function HealthContentInner() {
   const searchParams = useSearchParams();
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
+  const assistantName = t("सखी", "Doctor Friend");
+  const disclaimerHi =
+    "नमस्ते! मैं सखी हूँ — आपकी स्वास्थ्य सहेली। 💜\n\nआपका राज़ मेरा राज़ है। जो भी आप मुझसे पूछेंगी — वो सिर्फ हमारे बीच रहेगा। कोई विज्ञापन नहीं, कोई जानकारी किसी के साथ साझा नहीं।\n\nकोई भी सवाल पूछिए — बिना झिझक।";
+  const disclaimerEn =
+    "Hi! I'm Doctor Friend — your women's health companion. 💜\n\nYour privacy is my priority. Everything you share with me stays between us. No ads, no data shared with anyone.\n\nAsk me anything — no hesitation needed.";
   const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "sakhi",
-      text: "नमस्ते! मैं सखी हूँ — आपकी स्वास्थ्य सहेली। 💜\n\nआपका राज़ मेरा राज़ है। जो भी आप मुझसे पूछेंगी — वो सिर्फ हमारे बीच रहेगा। कोई विज्ञापन नहीं, कोई जानकारी किसी के साथ साझा नहीं।\n\nकोई भी सवाल पूछिए — बिना झिझक।",
-    },
+    { role: "sakhi", text: lang === "en" ? disclaimerEn : disclaimerHi },
   ]);
+  // Update disclaimer when lang toggles (only if it's still the only message)
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0].role === "sakhi") {
+        return [{ role: "sakhi", text: lang === "en" ? disclaimerEn : disclaimerHi }];
+      }
+      return prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const autoSubmittedRef = useRef(false);
@@ -210,12 +225,13 @@ function HealthContentInner() {
     setLoading(true);
     scroll();
     try {
-      const data = await askSakhi(q, history);
+      const data = await askSakhi(q, history, lang);
       setMessages((prev) => [
         ...prev,
         {
           role: "sakhi",
-          text: data.answer || "सखी अभी उपलब्ध नहीं है।",
+          text:
+            data.answer || t("सखी अभी उपलब्ध नहीं है।", "Doctor Friend is unavailable right now."),
           video: data.video,
           article: data.article,
           isLlm: data.isLlm,
@@ -224,7 +240,13 @@ function HealthContentInner() {
     } catch {
       setMessages((prev) => [
         ...prev,
-        { role: "sakhi", text: "नेटवर्क में समस्या है। कृपया पुनः प्रयास करें।" },
+        {
+          role: "sakhi",
+          text: t(
+            "नेटवर्क में समस्या है। कृपया पुनः प्रयास करें।",
+            "Network error. Please try again.",
+          ),
+        },
       ]);
     } finally {
       setLoading(false);
@@ -336,8 +358,16 @@ function HealthContentInner() {
         </div>
       </main>
 
-      <HubHeader title="जाँची-परखी जानकारी" backHref="/womens-health" scrolled={false} />
-      <HubChatInput variant="sleek" placeholder="सखी से पूछें..." onSubmit={handleSubmit} />
+      <HubHeader
+        title={t("जाँची-परखी जानकारी", "Verified Health Info")}
+        backHref="/womens-health"
+        scrolled={false}
+      />
+      <HubChatInput
+        variant="sleek"
+        placeholder={t("सखी से पूछें...", `Ask ${assistantName}...`)}
+        onSubmit={handleSubmit}
+      />
     </div>
   );
 }

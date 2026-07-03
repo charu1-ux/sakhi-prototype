@@ -1642,6 +1642,27 @@ function sourcedResult(r: (typeof RESPONSES)[number]): {
   return { answer: r.answer + DISCLAIMER, video, article };
 }
 
+const SAKHI_SYSTEM_EN = `You are Doctor Friend — a warm, empathetic women's health companion on JioBharatIQ. You speak like a knowledgeable elder sister — supportive, non-judgmental, never preachy.
+
+SCOPE — respond ONLY to these topics:
+periods, menstrual health, PMOS, hormones, pregnancy, fertility, postpartum, menopause, anaemia, thyroid, vaginal health, breast health, contraception, nutrition for women, mental health related to hormones/periods, skin/hair related to hormones, pelvic health, sexual health, puberty, women's sleep issues, exercise during periods.
+
+GUARDRAILS — if any other topic comes up (politics, weather, recipes, relationships, career, cricket, finance, general knowledge, tech, entertainment — ANYTHING not in the list above), say ONLY this one line:
+"I can only help with women's health questions — like periods, hormones, pregnancy, or nutrition. Feel free to ask any health question! 💜"
+
+ANSWER RULES:
+- ALWAYS respond in clear, simple English only.
+- Always write PMOS (never PCOS).
+- Always use "you" — warm and direct.
+- Structure every answer: first validate (acknowledge how they feel) → then inform → then one actionable step.
+- Only ONE question per turn — never ask two at once.
+- Keep answers concise and warm — 3-5 sentences.
+- NEVER diagnose ("you have X" — never say this). Use probabilistic language: "this can sometimes indicate…", "many women experience…"
+- NEVER mention drug names, tablet names, or dosages. If asked, refer to a doctor.
+- No fabricated statistics — only FOGSI/ICMR/WHO verified numbers. If unsure, skip the number.
+- Never add a disclaimer — it comes from the system.
+- Never treat periods, sex, or mental health as taboo or shameful.`;
+
 const SAKHI_SYSTEM = `Tum Sakhi ho — ek samajhdaar, empathetic mahila health companion jo JioBharatIQ par kaam karti hai. Tum ek jaankar badi behan ki tarah baat karti ho — warm, non-judgemental, kabhi preachy nahi.
 
 SCOPE — tum SIRF in topics par jawab deti ho:
@@ -1788,8 +1809,11 @@ function buildContextQuery(history: SakhiTurn[]): string {
 export async function askSakhi(
   question: string,
   history: SakhiTurn[] = [],
+  lang: "hi" | "en" = "hi",
 ): Promise<SakhiResponse> {
-  if (!question.trim()) return { answer: "कोई प्रश्न नहीं मिला।" };
+  const systemPrompt = lang === "en" ? SAKHI_SYSTEM_EN : SAKHI_SYSTEM;
+  if (!question.trim())
+    return { answer: lang === "en" ? "No question received." : "कोई प्रश्न नहीं मिला।" };
 
   if (isMaleIdentifier(question)) return { answer: MALE_IDENTIFIER_RESPONSE };
 
@@ -1815,8 +1839,10 @@ export async function askSakhi(
             {
               role: "system",
               content:
-                SAKHI_SYSTEM +
-                "\n\nUser ne pichla jawab nahi samjha. Wahi baat dobara aur simple, short Hindi mein samjhao. 2-3 sentences mein. Koi naya topic mat shuru karo.",
+                systemPrompt +
+                (lang === "en"
+                  ? "\n\nThe user didn't understand the last answer. Explain the same thing again, simpler and shorter in English. 2-3 sentences. Don't start a new topic."
+                  : "\n\nUser ne pichla jawab nahi samjha. Wahi baat dobara aur simple, short Hindi mein samjhao. 2-3 sentences mein. Koi naya topic mat shuru karo."),
             },
             ...history.slice(-6),
             { role: "user", content: question },
@@ -1840,7 +1866,9 @@ export async function askSakhi(
     // No topic found in history — ask user to be more specific; never send vague query to LLM
     return {
       answer:
-        "आप किस विषय के बारे में और जानना चाहती हैं? जैसे — पीरियड दर्द, PMOS, तनाव, एनीमिया, थायराइड, या नींद?",
+        lang === "en"
+          ? "Which topic would you like to know more about? For example — period pain, PMOS, stress, anaemia, thyroid, or sleep?"
+          : "आप किस विषय के बारे में और जानना चाहती हैं? जैसे — पीरियड दर्द, PMOS, तनाव, एनीमिया, थायराइड, या नींद?",
     };
   }
 
@@ -1856,7 +1884,7 @@ export async function askSakhi(
         model: "llama-3.1-8b-instant",
         max_tokens: 400,
         messages: [
-          { role: "system", content: SAKHI_SYSTEM },
+          { role: "system", content: systemPrompt },
           ...history.slice(-8),
           { role: "user", content: question },
         ],

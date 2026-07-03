@@ -1224,11 +1224,14 @@ export default function PeriodTrackerPage() {
     scroll();
   }
 
-  const [messages, setMessages] = useState<MessageKind[]>([
+  const [messages, setMessages] = useState<MessageKind[]>(() => [
     {
       type: "text",
       role: "sakhi",
-      text: "नमस्ते! मैं सखी हूँ — आपकी स्वास्थ्य सहेली। 💜\n\nआपका राज़ मेरा राज़ है। जो भी आप मुझसे कहेंगी — वो सिर्फ हमारे बीच रहेगा। कोई विज्ञापन नहीं, कोई जानकारी किसी के साथ साझा नहीं।\n\nपहले बताइए —",
+      text:
+        lang === "en"
+          ? "Hi! I'm Doctor Friend — your women's health companion. 💜\n\nYour privacy is my priority. Everything you share stays between us. No ads, no data shared with anyone.\n\nFirst, tell me —"
+          : "नमस्ते! मैं सखी हूँ — आपकी स्वास्थ्य सहेली। 💜\n\nआपका राज़ मेरा राज़ है। जो भी आप मुझसे कहेंगी — वो सिर्फ हमारे बीच रहेगा। कोई विज्ञापन नहीं, कोई जानकारी किसी के साथ साझा नहीं।\n\nपहले बताइए —",
     },
     { type: "forWhomPicker" },
   ]);
@@ -1317,7 +1320,7 @@ export default function PeriodTrackerPage() {
     setLoading(true);
     scroll();
     try {
-      const data = await askSakhi(q, history);
+      const data = await askSakhi(q, history, lang);
       if (data.video || data.article) {
         setMessages((prev) => [
           ...prev,
