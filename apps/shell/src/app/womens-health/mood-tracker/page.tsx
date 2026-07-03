@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
 import { askSakhi, isBlockerResponse, isMaleIdentifier, MALE_RESPONSE } from "@/lib/sakhi";
+import { useLang } from "../LangContext";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -36,25 +37,27 @@ const C = {
 // ─── Phase data (mock — would come from period tracker in real app) ────────────
 const PHASE = {
   name: "ल्यूटियल फ़ेज़",
+  nameEn: "Luteal Phase",
   day: 18,
   cycleLength: 28,
   hint: "मूड थोड़ा भारी हो सकता है — यह सामान्य है",
+  hintEn: "Mood may feel heavy — this is normal",
 };
 
 // ─── Mood options ─────────────────────────────────────────────────────────────
 const MOODS = [
-  { face: "😄", label: "बहुत अच्छा", score: 5 },
-  { face: "🙂", label: "अच्छा", score: 4 },
-  { face: "😐", label: "ठीक है", score: 3 },
-  { face: "😔", label: "तनाव", score: 2 },
-  { face: "😞", label: "बुरा", score: 1 },
+  { face: "😄", label: "बहुत अच्छा", labelEn: "Very Good", score: 5 },
+  { face: "🙂", label: "अच्छा", labelEn: "Good", score: 4 },
+  { face: "😐", label: "ठीक है", labelEn: "Okay", score: 3 },
+  { face: "😔", label: "तनाव", labelEn: "Stressed", score: 2 },
+  { face: "😞", label: "बुरा", labelEn: "Bad", score: 1 },
 ];
 
 // ─── Energy options ───────────────────────────────────────────────────────────
 const ENERGIES = [
-  { icon: "🪫", label: "बहुत कम", score: 1 },
-  { icon: "⚡", label: "ठीक है", score: 2 },
-  { icon: "🔋", label: "ज़्यादा", score: 3 },
+  { icon: "🪫", label: "बहुत कम", labelEn: "Very Low", score: 1 },
+  { icon: "⚡", label: "ठीक है", labelEn: "Okay", score: 2 },
+  { icon: "🔋", label: "ज़्यादा", labelEn: "High", score: 3 },
 ];
 
 // ─── For whom ─────────────────────────────────────────────────────────────────
@@ -69,13 +72,15 @@ function ForWhomCard({
   locked: boolean;
   selected?: ForWhom;
 }) {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   return (
     <div
       className="mt-1 rounded-tr-2xl rounded-b-2xl p-3"
       style={{ background: C.surface, boxShadow: "0 1px 6px rgba(45,27,78,0.08)", maxWidth: 252 }}
     >
       <div className="mb-2.5 text-[11px] font-semibold" style={{ color: C.textTertiary }}>
-        Yeh log kiske liye hai? 👇
+        {t("किसके लिए? 👇", "Who is this for? 👇")}
       </div>
       <div className="flex gap-2">
         {(["self", "other"] as ForWhom[]).map((v) => {
@@ -95,7 +100,7 @@ function ForWhomCard({
                 fontFamily: "JioType, sans-serif",
               }}
             >
-              {v === "self" ? "मेरे लिए" : "किसी और के लिए"}
+              {v === "self" ? t("मेरे लिए", "For me") : t("किसी और के लिए", "For someone else")}
             </button>
           );
         })}
@@ -117,22 +122,24 @@ type MessageKind =
 
 // ─── Breathing exercise card ──────────────────────────────────────────────────
 function BreathingCard() {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   const steps = [
     {
       icon: "🫁",
-      label: "साँस लें",
-      count: "4 तक गिनें",
-      note: "पेट बाहर जाए",
-      sub: "छाती नहीं",
+      label: t("साँस लें", "Breathe in"),
+      count: t("4 तक गिनें", "Count to 4"),
+      note: t("पेट बाहर जाए", "Let belly expand"),
+      sub: t("छाती नहीं", "not chest"),
       bg: "#E8F5FF",
       border: "#BFDBFE",
       accent: "#3B82F6",
     },
     {
       icon: "🫁",
-      label: "साँस छोड़ें",
-      count: "4 तक गिनें",
-      note: "पेट अंदर आए",
+      label: t("साँस छोड़ें", "Breathe out"),
+      count: t("4 तक गिनें", "Count to 4"),
+      note: t("पेट अंदर आए", "Let belly fall"),
       sub: "",
       bg: "#F0FDF4",
       border: "#BBF7D0",
@@ -148,7 +155,7 @@ function BreathingCard() {
         className="mb-2.5 text-[12px] font-semibold"
         style={{ color: C.raat, fontFamily: "JioType, sans-serif" }}
       >
-        अभी यह करें — डीप बेली ब्रीदिंग
+        {t("अभी यह करें — डीप बेली ब्रीदिंग", "Do this now — Deep Belly Breathing")}
       </p>
 
       <div className="flex flex-col gap-2">
@@ -195,14 +202,20 @@ function BreathingCard() {
           fontFamily: "JioType, sans-serif",
         }}
       >
-        ⚠️ बीच में साँस बिल्कुल न रोकें — सीधे लें और छोड़ें
+        {t(
+          "⚠️ बीच में साँस बिल्कुल न रोकें — सीधे लें और छोड़ें",
+          "⚠️ Don't hold your breath — breathe in and out continuously",
+        )}
       </div>
 
       <p
         className="mt-2 text-[11px]"
         style={{ color: C.textTertiary, fontFamily: "JioType, sans-serif" }}
       >
-        5-6 बार करें — आप फर्क महसूस करेंगी 💜
+        {t(
+          "5-6 बार करें — आप फर्क महसूस करेंगी 💜",
+          "Do 5-6 times — you'll feel the difference 💜",
+        )}
       </p>
     </div>
   );
@@ -210,6 +223,8 @@ function BreathingCard() {
 
 // ─── Content redirect card ────────────────────────────────────────────────────
 function ContentLinkCard({ onTap }: { onTap: () => void }) {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   return (
     <button
       type="button"
@@ -233,20 +248,23 @@ function ContentLinkCard({ onTap }: { onTap: () => void }) {
           className="text-[12px] font-bold"
           style={{ color: C.raat, fontFamily: "JioType, sans-serif" }}
         >
-          जाँची-परखी जानकारी देखें
+          {t("जाँची-परखी जानकारी देखें", "View Verified Information")}
         </span>
       </div>
       <p
         className="text-[11px] leading-relaxed"
         style={{ color: C.textSecondary, fontFamily: "JioType, sans-serif" }}
       >
-        PMS, तनाव, और हॉर्मोन से जुड़ी जानकारी — WHO और FOGSI द्वारा सत्यापित
+        {t(
+          "PMS, तनाव, और हॉर्मोन से जुड़ी जानकारी — WHO और FOGSI द्वारा सत्यापित",
+          "Information on PMS, stress, and hormones — verified by WHO and FOGSI",
+        )}
       </p>
       <div
         className="mt-2 flex items-center gap-1 text-[11px] font-semibold"
         style={{ color: C.violet }}
       >
-        अभी पढ़ें →
+        {t("अभी पढ़ें →", "Read now →")}
       </div>
     </button>
   );
@@ -254,6 +272,8 @@ function ContentLinkCard({ onTap }: { onTap: () => void }) {
 
 // ─── Phase banner ─────────────────────────────────────────────────────────────
 function PhaseBanner() {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   return (
     <div
       className="flex items-center gap-2 px-4 py-2"
@@ -268,10 +288,10 @@ function PhaseBanner() {
       />
       <div className="flex-1">
         <div className="text-[11px] font-bold" style={{ color: "rgba(255,255,255,0.85)" }}>
-          {PHASE.name} · दिन {PHASE.day}
+          {t(PHASE.name, PHASE.nameEn)} · {t("दिन", "Day")} {PHASE.day}
         </div>
         <div className="mt-0.5 text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>
-          {PHASE.hint}
+          {t(PHASE.hint, PHASE.hintEn)}
         </div>
       </div>
       <div
@@ -298,13 +318,15 @@ function MoodPicker({
   locked: boolean;
   selected?: (typeof MOODS)[0];
 }) {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   return (
     <div
       className="mt-1 rounded-tr-2xl rounded-b-2xl p-3"
       style={{ background: C.surface, boxShadow: "0 1px 6px rgba(45,27,78,0.08)", maxWidth: 252 }}
     >
       <div className="mb-2 text-[11px] font-semibold" style={{ color: C.textTertiary }}>
-        Ek tap karo 👇
+        {t("एक tap करो 👇", "Tap one 👇")}
       </div>
       <div className="flex gap-1.5">
         {MOODS.map((m) => {
@@ -327,7 +349,7 @@ function MoodPicker({
                 className="text-center text-[8px] leading-tight font-bold tracking-wide uppercase"
                 style={{ color: isSelected ? C.sky : C.textTertiary }}
               >
-                {m.label}
+                {t(m.label, m.labelEn)}
               </span>
             </button>
           );
@@ -347,13 +369,15 @@ function EnergyPicker({
   locked: boolean;
   selected?: (typeof ENERGIES)[0];
 }) {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   return (
     <div
       className="mt-1 rounded-tr-2xl rounded-b-2xl p-3"
       style={{ background: C.surface, boxShadow: "0 1px 6px rgba(45,27,78,0.08)", maxWidth: 252 }}
     >
       <div className="mb-2 text-[11px] font-semibold" style={{ color: C.textTertiary }}>
-        Energy level 👇
+        {t("Energy level 👇", "Energy level 👇")}
       </div>
       <div className="flex gap-2">
         {ENERGIES.map((e) => {
@@ -376,7 +400,7 @@ function EnergyPicker({
                 className="text-[9px] font-bold tracking-wide uppercase"
                 style={{ color: isSelected ? C.gulabi : C.textTertiary }}
               >
-                {e.label}
+                {t(e.label, e.labelEn)}
               </span>
             </button>
           );
@@ -394,6 +418,8 @@ function ConfirmationCard({
   mood: (typeof MOODS)[0];
   energy: (typeof ENERGIES)[0];
 }) {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   const dots = Array.from({ length: 5 }, (_, i) => i < energy.score + 1);
   return (
     <div
@@ -427,7 +453,7 @@ function ConfirmationCard({
           </svg>
         </div>
         <span className="text-[12px] font-bold" style={{ color: "rgba(255,255,255,0.9)" }}>
-          Aaj ka mood note ho gaya ✓
+          {t("आज का mood note हो गया ✓", "Today's mood noted ✓")}
         </span>
       </div>
 
@@ -435,10 +461,10 @@ function ConfirmationCard({
       <div className="mb-2.5 flex items-center gap-2.5">
         <span style={{ fontSize: 28, lineHeight: 1 }}>{mood.face}</span>
         <div>
-          <div className="text-[14px] font-extrabold text-white">{mood.label}</div>
+          <div className="text-[14px] font-extrabold text-white">{t(mood.label, mood.labelEn)}</div>
           <div className="mt-1 flex items-center gap-1.5">
             <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.45)" }}>
-              Energy
+              {t("ऊर्जा", "Energy")}
             </span>
             <div className="flex gap-1">
               {dots.map((on, i) => (
@@ -462,9 +488,12 @@ function ConfirmationCard({
           <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>💡</span>
           <p className="text-[11px] leading-relaxed" style={{ color: "rgba(255,255,255,0.70)" }}>
             <strong style={{ color: "rgba(255,255,255,0.90)" }}>
-              {PHASE.name} mein yeh common hai.
+              {t(`${PHASE.name} में यह आम है।`, `This is common in ${PHASE.nameEn}.`)}
             </strong>{" "}
-            Aaj se log karna shuru ho gaya — agli baar Sakhi aapka pattern bata sakegi.
+            {t(
+              "आज से log करना शुरू हो गया — अगली बार सखी आपका pattern बता सकेगी।",
+              "Logging has started from today — next time Sakhi can show you your pattern.",
+            )}
           </p>
         </div>
         <div
@@ -479,7 +508,7 @@ function ConfirmationCard({
             className="text-[9px] font-bold tracking-wide uppercase"
             style={{ color: "rgba(139,92,246,0.9)" }}
           >
-            {PHASE.name} · दिन {PHASE.day} of {PHASE.cycleLength}
+            {t(PHASE.name, PHASE.nameEn)} · {t("दिन", "Day")} {PHASE.day} of {PHASE.cycleLength}
           </span>
         </div>
       </div>
@@ -561,6 +590,8 @@ function LoadingDots() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function MoodTrackerPage() {
   const router = useRouter();
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   const bottomRef = useRef<HTMLDivElement>(null);
   const scroll = () =>
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
@@ -592,13 +623,19 @@ export default function MoodTrackerPage() {
     if (forWhomLocked) return;
     setForWhomLocked(true);
     setSelectedForWhom(v);
-    push({ type: "text", role: "user", text: v === "self" ? "मेरे लिए" : "किसी और के लिए" });
+    push({
+      type: "text",
+      role: "user",
+      text: v === "self" ? t("मेरे लिए", "For me") : t("किसी और के लिए", "For someone else"),
+    });
     setFlowLoading(true);
     scroll();
     setTimeout(() => {
       setFlowLoading(false);
       const opening =
-        v === "other" ? "ज़रूर! उनका मूड कैसा है आज?" : "अच्छा! आज कैसा महसूस हो रहा है?";
+        v === "other"
+          ? t("ज़रूर! उनका मूड कैसा है आज?", "Of course! How is their mood today?")
+          : t("अच्छा! आज कैसा महसूस हो रहा है?", "Great! How are you feeling today?");
       push({ type: "text", role: "sakhi", text: opening });
       push({ type: "moodPicker", locked: false });
       scroll();
@@ -609,7 +646,7 @@ export default function MoodTrackerPage() {
     if (moodLocked) return;
     setMoodLocked(true);
     setSelectedMood(m);
-    push({ type: "text", role: "user", text: `${m.face} ${m.label}` });
+    push({ type: "text", role: "user", text: `${m.face} ${t(m.label, m.labelEn)}` });
     setFlowLoading(true);
     scroll();
     setTimeout(() => {
@@ -617,7 +654,10 @@ export default function MoodTrackerPage() {
       push({
         type: "text",
         role: "sakhi",
-        text: `${m.label} — samajh gayi. Energy kaisi hai aaj?`,
+        text: t(
+          `${m.label} — समझ गई। ऊर्जा कैसी है आज?`,
+          `${m.labelEn} — understood. How's your energy today?`,
+        ),
       });
       push({ type: "energyPicker", locked: false });
       scroll();
@@ -628,7 +668,7 @@ export default function MoodTrackerPage() {
     if (energyLocked) return;
     setEnergyLocked(true);
     setSelectedEnergy(e);
-    push({ type: "text", role: "user", text: `${e.icon} ${e.label}` });
+    push({ type: "text", role: "user", text: `${e.icon} ${t(e.label, e.labelEn)}` });
     setFlowLoading(true);
     scroll();
     setTimeout(() => {
@@ -639,15 +679,24 @@ export default function MoodTrackerPage() {
         type: "text",
         role: "sakhi",
         text: isLowMood
-          ? "यह महसूस करना मुश्किल हो सकता है। अभी एक छोटी सी चीज़ try करें जो तुरंत थोड़ा better feel कराएगी:"
-          : "कल भी लॉग करें — पैटर्न समझना फायदेमंद होगा। कोई और बात करनी है? 🌸",
+          ? t(
+              "यह महसूस करना मुश्किल हो सकता है। अभी एक छोटी सी चीज़ try करें जो तुरंत थोड़ा better feel कराएगी:",
+              "It can be hard to feel this way. Try one small thing right now that will help you feel a little better:",
+            )
+          : t(
+              "कल भी लॉग करें — पैटर्न समझना फायदेमंद होगा। कोई और बात करनी है? 🌸",
+              "Log again tomorrow — understanding patterns is helpful. Anything else you'd like to talk about? 🌸",
+            ),
       });
       if (isLowMood) {
         push({ type: "breathingCard" });
         push({
           type: "text",
           role: "sakhi",
-          text: "कल भी लॉग करें — पैटर्न समझना फायदेमंद होगा। 🌸",
+          text: t(
+            "कल भी लॉग करें — पैटर्न समझना फायदेमंद होगा। 🌸",
+            "Log again tomorrow — understanding patterns is helpful. 🌸",
+          ),
         });
       }
       scroll();
@@ -818,7 +867,10 @@ export default function MoodTrackerPage() {
       push({
         type: "text",
         role: "sakhi",
-        text: "ज़रूर! इस बारे में verified जानकारी यहाँ है:",
+        text: t(
+          "ज़रूर! इस बारे में verified जानकारी यहाँ है:",
+          "Of course! Here is verified information on this:",
+        ),
       });
       push({ type: "contentLink", query: getTopicQueryFromHistory() });
       return;
@@ -830,13 +882,11 @@ export default function MoodTrackerPage() {
       push({
         type: "text",
         role: "sakhi",
-        text: "ज़रूर! इस बारे में verified जानकारी यहाँ है:",
+        text: t(
+          "ज़रूर! इस बारे में verified जानकारी यहाँ है:",
+          "Of course! Here is verified information on this:",
+        ),
       });
-      const lastSakhiText = [...messages]
-        .reverse()
-        .find((m) => m.type === "text" && m.role === "sakhi") as
-        | { type: "text"; role: "sakhi"; text: string }
-        | undefined;
       const contentQuery = getTopicQueryFromHistory();
       push({ type: "contentLink", query: contentQuery });
       return;
@@ -848,7 +898,10 @@ export default function MoodTrackerPage() {
       push({
         type: "text",
         role: "sakhi",
-        text: "आज आप कैसा महसूस कर रही हैं? खुशी, उदासी, थकान, गुस्सा — जो भी हो, बता सकती हैं। 💜",
+        text: t(
+          "आज आप कैसा महसूस कर रही हैं? खुशी, उदासी, थकान, गुस्सा — जो भी हो, बता सकती हैं। 💜",
+          "How are you feeling today? Happiness, sadness, fatigue, anger — whatever it is, you can tell me. 💜",
+        ),
       });
       return;
     }
@@ -865,7 +918,10 @@ export default function MoodTrackerPage() {
         push({
           type: "text",
           role: "sakhi",
-          text: "समझ गई। इस बारे में कुछ verified जानकारी है — यहाँ देखें:",
+          text: t(
+            "समझ गई। इस बारे में कुछ verified जानकारी है — यहाँ देखें:",
+            "Understood. There is some verified information on this — see here:",
+          ),
         });
         push({ type: "contentLink", query: q });
       } else if (!isBlockerResponse(data.answer)) {
@@ -875,7 +931,10 @@ export default function MoodTrackerPage() {
         push({
           type: "text",
           role: "sakhi",
-          text: "समझ गई। मूड और मानसिक स्वास्थ्य के बारे में यहाँ कुछ verified जानकारी है:",
+          text: t(
+            "समझ गई। मूड और मानसिक स्वास्थ्य के बारे में यहाँ कुछ verified जानकारी है:",
+            "Understood. Here is some verified information on mood and mental health:",
+          ),
         });
         push({ type: "contentLink", query: "low mood mann udaas kyun hota hai" });
       }
@@ -883,7 +942,10 @@ export default function MoodTrackerPage() {
       push({
         type: "text",
         role: "sakhi",
-        text: "नेटवर्क में थोड़ी समस्या है। दोबारा कोशिश करें। 💜",
+        text: t(
+          "नेटवर्क में थोड़ी समस्या है। दोबारा कोशिश करें। 💜",
+          "There's a small network issue. Please try again. 💜",
+        ),
       });
     } finally {
       setLoading(false);
@@ -917,9 +979,10 @@ export default function MoodTrackerPage() {
             >
               <span>⚠️</span>
               <span>
-                यह जवाब AI द्वारा उत्पन्न है। यह जानकारी सामान्य शिक्षा के लिए है और किसी योग्य
-                डॉक्टर की व्यक्तिगत सलाह का विकल्प नहीं है। स्वास्थ्य संबंधी कोई भी निर्णय लेने से
-                पहले अपनी डॉक्टर से अवश्य परामर्श करें।
+                {t(
+                  "यह जवाब AI द्वारा उत्पन्न है। यह जानकारी सामान्य शिक्षा के लिए है और किसी योग्य डॉक्टर की व्यक्तिगत सलाह का विकल्प नहीं है। स्वास्थ्य संबंधी कोई भी निर्णय लेने से पहले अपनी डॉक्टर से अवश्य परामर्श करें।",
+                  "This answer is AI-generated. This information is for general education only and is not a substitute for personalized advice from a qualified doctor. Please consult your doctor before making any health-related decisions.",
+                )}
               </span>
             </div>
           )}
@@ -938,7 +1001,12 @@ export default function MoodTrackerPage() {
     if (msg.type === "forWhomPicker") {
       return (
         <SakhiRow key={i}>
-          <Bubble text="नमस्ते! यह मूड लॉग आपके लिए है या किसी और के लिए?" />
+          <Bubble
+            text={t(
+              "नमस्ते! यह मूड लॉग आपके लिए है या किसी और के लिए?",
+              "Hello! Is this mood log for you or for someone else?",
+            )}
+          />
           <ForWhomCard
             locked={forWhomLocked}
             selected={selectedForWhom}
@@ -999,7 +1067,11 @@ export default function MoodTrackerPage() {
             className="py-1 text-center text-[10px] font-semibold tracking-wide"
             style={{ color: C.textTertiary }}
           >
-            आज · {new Date().toLocaleDateString("hi-IN", { day: "numeric", month: "long" })}
+            {t("आज", "Today")} ·{" "}
+            {new Date().toLocaleDateString(lang === "hi" ? "hi-IN" : "en-IN", {
+              day: "numeric",
+              month: "long",
+            })}
           </div>
 
           {messages.map((m, i) => renderMessage(m, i))}
@@ -1018,10 +1090,14 @@ export default function MoodTrackerPage() {
         <PhaseBanner />
       </div>
 
-      <HubHeader title="मूड ट्रैकर" backHref="/womens-health" scrolled={false} />
+      <HubHeader
+        title={t("मूड ट्रैकर", "Mood Tracker")}
+        backHref="/womens-health"
+        scrolled={false}
+      />
       <HubChatInput
         variant="sleek"
-        placeholder="कुछ और बताना चाहती हैं..."
+        placeholder={t("कुछ और बताना चाहती हैं...", "Anything else you'd like to share...")}
         onSubmit={handleSubmit}
       />
     </div>

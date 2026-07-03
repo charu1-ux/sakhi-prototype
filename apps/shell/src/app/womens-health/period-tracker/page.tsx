@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
 import { askSakhi, isMaleIdentifier, MALE_RESPONSE } from "@/lib/sakhi";
+import { useLang } from "../LangContext";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -45,7 +46,22 @@ const MONTHS_HI = [
   "नवंबर",
   "दिसंबर",
 ];
+const MONTHS_EN = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
 const DAYS_SHORT = ["र", "सो", "मं", "बु", "गु", "शु", "श"];
+const DAYS_SHORT_EN = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 function buildCells(year: number, month: number) {
   const first = new Date(year, month, 1).getDay();
@@ -109,6 +125,8 @@ function parseCycleLength(text: string): number | null {
 
 // ── Phase arc ─────────────────────────────────────────────────────────────────
 function PhaseArc({ day, len }: { day: number; len: number }) {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   const pct = Math.min((day - 1) / Math.max(len - 1, 1), 1);
   const cx = 110,
     cy = 108,
@@ -118,10 +136,10 @@ function PhaseArc({ day, len }: { day: number; len: number }) {
   const dotY = cy - r * Math.sin(angle);
   const phase = getPhase(day, len);
   const phaseLabels: Record<string, string> = {
-    Menstrual: "मासिक चरण",
-    Follicular: "फॉलिकुलर चरण",
-    Ovulation: "ओव्यूलेशन",
-    Luteal: "लुटियल चरण",
+    Menstrual: t("मासिक चरण", "Menstrual"),
+    Follicular: t("फॉलिकुलर चरण", "Follicular"),
+    Ovulation: t("ओव्यूलेशन", "Ovulation"),
+    Luteal: t("लुटियल चरण", "Luteal"),
   };
   const daysLeft = len - day;
   return (
@@ -174,7 +192,7 @@ function PhaseArc({ day, len }: { day: number; len: number }) {
             fontFamily="-apple-system,sans-serif"
             fontWeight="600"
           >
-            मासिक
+            {t("मासिक", "Men.")}
           </text>
           <text
             x="54"
@@ -184,7 +202,7 @@ function PhaseArc({ day, len }: { day: number; len: number }) {
             fontFamily="-apple-system,sans-serif"
             fontWeight="600"
           >
-            फॉलि.
+            {t("फॉलि.", "Foll.")}
           </text>
           <text
             x="100"
@@ -194,7 +212,7 @@ function PhaseArc({ day, len }: { day: number; len: number }) {
             fontFamily="-apple-system,sans-serif"
             fontWeight="600"
           >
-            ओव्यु.
+            {t("ओव्यु.", "Ovu.")}
           </text>
           <text
             x="152"
@@ -204,7 +222,7 @@ function PhaseArc({ day, len }: { day: number; len: number }) {
             fontFamily="-apple-system,sans-serif"
             fontWeight="700"
           >
-            लुटियल
+            {t("लुटियल", "Lut.")}
           </text>
         </svg>
         <div style={{ position: "absolute", bottom: 10, textAlign: "center" }}>
@@ -228,7 +246,7 @@ function PhaseArc({ day, len }: { day: number; len: number }) {
               fontFamily: "JioType, sans-serif",
             }}
           >
-            Cycle दिन
+            {t("Cycle दिन", "Cycle Day")}
           </div>
         </div>
       </div>
@@ -253,7 +271,7 @@ function PhaseArc({ day, len }: { day: number; len: number }) {
             }}
           >
             {phaseLabels[phase]}
-            {daysLeft > 0 ? ` · ${daysLeft} दिन बाकी` : ""}
+            {daysLeft > 0 ? ` · ${daysLeft} ${t("दिन बाकी", "days left")}` : ""}
           </span>
         </div>
       </div>
@@ -263,12 +281,18 @@ function PhaseArc({ day, len }: { day: number; len: number }) {
 
 // ── Stats strip ───────────────────────────────────────────────────────────────
 function StatsStrip({ len, nextPeriod }: { len: number; nextPeriod: Date }) {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   const daysLeft = Math.ceil((nextPeriod.getTime() - Date.now()) / 86400000);
-  const fmt = (d: Date) => d.toLocaleDateString("hi-IN", { day: "numeric", month: "short" });
+  const fmt = (d: Date) =>
+    d.toLocaleDateString(lang === "hi" ? "hi-IN" : "en-IN", { day: "numeric", month: "short" });
   const stats = [
     { val: `${len}`, lbl: "Cycle" },
-    { val: daysLeft > 0 ? `${daysLeft} दिन` : "जल्द", lbl: "अगला पीरियड" },
-    { val: fmt(nextPeriod), lbl: "तारीख" },
+    {
+      val: daysLeft > 0 ? `${daysLeft} ${t("दिन", "days")}` : t("जल्द", "Soon"),
+      lbl: t("अगला पीरियड", "Next Period"),
+    },
+    { val: fmt(nextPeriod), lbl: t("तारीख", "Date") },
   ];
   return (
     <div style={{ background: C.raat, borderRadius: "0 0 16px 16px", padding: "0 14px 14px" }}>
@@ -322,6 +346,10 @@ function StatsStrip({ len, nextPeriod }: { len: number; nextPeriod: Date }) {
 
 // ── Color-coded prediction calendar ──────────────────────────────────────────
 function PredictionCalendar({ lastPeriod, len }: { lastPeriod: Date; len: number }) {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
+  const MONTHS = lang === "hi" ? MONTHS_HI : MONTHS_EN;
+  const DAYS = lang === "hi" ? DAYS_SHORT : DAYS_SHORT_EN;
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
@@ -402,7 +430,7 @@ function PredictionCalendar({ lastPeriod, len }: { lastPeriod: Date; len: number
             fontFamily: "JioType, sans-serif",
           }}
         >
-          {MONTHS_HI[month]} {year}
+          {MONTHS[month]} {year}
         </span>
         <div style={{ display: "flex", gap: 4 }}>
           {(["‹", "›"] as const).map((ch, i) => (
@@ -430,7 +458,7 @@ function PredictionCalendar({ lastPeriod, len }: { lastPeriod: Date; len: number
         </div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: 3 }}>
-        {DAYS_SHORT.map((d) => (
+        {DAYS.map((d) => (
           <div
             key={d}
             style={{
@@ -479,11 +507,11 @@ function PredictionCalendar({ lastPeriod, len }: { lastPeriod: Date; len: number
         }}
       >
         {[
-          { color: C.gulabi, label: "पीरियड" },
-          { color: C.mint, label: "फर्टाइल" },
-          { color: C.amber, label: "ओव्यूलेशन" },
-          { color: C.raat, label: "आज" },
-          { color: C.gulabiPale, label: "अनुमानित", dashed: true },
+          { color: C.gulabi, label: t("पीरियड", "Period") },
+          { color: C.mint, label: t("फर्टाइल", "Fertile") },
+          { color: C.amber, label: t("ओव्यूलेशन", "Ovulation") },
+          { color: C.raat, label: t("आज", "Today") },
+          { color: C.gulabiPale, label: t("अनुमानित", "Predicted"), dashed: true },
         ].map((l) => (
           <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 3 }}>
             <div
@@ -515,28 +543,44 @@ function PredictionCalendar({ lastPeriod, len }: { lastPeriod: Date; len: number
 }
 
 // ── Phase insight card ────────────────────────────────────────────────────────
-const PHASE_INFO: Record<string, { body: string; tip: string }> = {
+const PHASE_INFO: Record<string, { body: string; bodyEn: string; tip: string; tipEn: string }> = {
   Menstrual: {
     body: "इस चरण में गर्भाशय की परत निकल रही है — थकान और ऐंठन होना स्वाभाविक है। यह आराम का समय है।",
+    bodyEn:
+      "The uterine lining is shedding — fatigue and cramps are natural. This is a time to rest.",
     tip: "💡 गर्म पानी की बोतल, हल्का योग, और पालक-दालें जैसे आयरन-रिच खाने से सबसे ज़्यादा राहत मिलती है।",
+    tipEn:
+      "💡 A hot water bottle, gentle yoga, and iron-rich foods like spinach and lentils provide the most relief.",
   },
   Follicular: {
     body: "Estrogen बढ़ रहा है — ऊर्जा और मूड दोनों बेहतर होते हैं। नए काम शुरू करने का यह अच्छा समय है।",
+    bodyEn:
+      "Estrogen is rising — energy and mood both improve. This is a great time to start new things.",
     tip: "💡 इस phase में exercise और नई चुनौतियाँ लेना आसान लगता है — हॉर्मोन आपके साथ हैं!",
+    tipEn:
+      "💡 Exercise and new challenges feel easier in this phase — your hormones are on your side!",
   },
   Ovulation: {
     body: "आज के आसपास ओव्यूलेशन होता है — यह सबसे उपजाऊ समय है। Estrogen peak पर है।",
+    bodyEn:
+      "Ovulation occurs around today — this is your most fertile time. Estrogen is at its peak.",
     tip: "💡 आज आप सबसे अधिक ऊर्जावान और मिलनसार महसूस कर सकती हैं — यह LH surge का असर है।",
+    tipEn: "💡 You may feel most energetic and social today — this is the effect of the LH surge.",
   },
   Luteal: {
     body: "Progesterone बढ़ रहा है — हल्की थकान और मूड बदलाव सामान्य हैं। यह आपका आराम करने का संकेत है।",
+    bodyEn:
+      "Progesterone is rising — mild fatigue and mood changes are normal. This is your cue to rest.",
     tip: "💡 हल्की walk, गर्म chai, और आयरन-रिच खाना इस phase में सबसे ज़्यादा मदद करता है।",
+    tipEn: "💡 A light walk, warm chai, and iron-rich food help the most in this phase.",
   },
 };
 
 function PhaseInsightCard({ day, len }: { day: number; len: number }) {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   const phase = getPhase(day, len);
-  const { body, tip } = PHASE_INFO[phase];
+  const info = PHASE_INFO[phase];
   return (
     <div
       style={{
@@ -592,7 +636,7 @@ function PhaseInsightCard({ day, len }: { day: number; len: number }) {
           fontFamily: "JioType, sans-serif",
         }}
       >
-        {body}
+        {t(info.body, info.bodyEn)}
       </p>
       <div
         style={{
@@ -607,7 +651,7 @@ function PhaseInsightCard({ day, len }: { day: number; len: number }) {
           fontFamily: "JioType, sans-serif",
         }}
       >
-        {tip}
+        {t(info.tip, info.tipEn)}
       </div>
     </div>
   );
@@ -615,19 +659,21 @@ function PhaseInsightCard({ day, len }: { day: number; len: number }) {
 
 // ── Symptom chips ─────────────────────────────────────────────────────────────
 const SYMPTOMS = [
-  "थकान",
-  "मूड बदलाव",
-  "Bloating",
-  "दर्द",
-  "Nausea",
-  "सिरदर्द",
-  "Pimples",
-  "नींद कम",
-  "भूख कम",
-  "पीठ दर्द",
+  { hi: "थकान", en: "Fatigue" },
+  { hi: "मूड बदलाव", en: "Mood swings" },
+  { hi: "Bloating", en: "Bloating" },
+  { hi: "दर्द", en: "Pain" },
+  { hi: "Nausea", en: "Nausea" },
+  { hi: "सिरदर्द", en: "Headache" },
+  { hi: "Pimples", en: "Pimples" },
+  { hi: "नींद कम", en: "Poor sleep" },
+  { hi: "भूख कम", en: "Low appetite" },
+  { hi: "पीठ दर्द", en: "Back pain" },
 ];
 
 function SymptomChipsCard({ onDone }: { onDone: (s: string[]) => void }) {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   const [sel, setSel] = useState<string[]>([]);
   const toggle = (s: string) =>
     setSel((p) => (p.includes(s) ? p.filter((x) => x !== s) : [...p, s]));
@@ -656,7 +702,7 @@ function SymptomChipsCard({ onDone }: { onDone: (s: string[]) => void }) {
             fontFamily: "JioType, sans-serif",
           }}
         >
-          आज के symptoms
+          {t("आज के symptoms", "Today's symptoms")}
         </span>
         <button
           onClick={() => onDone(sel)}
@@ -670,29 +716,32 @@ function SymptomChipsCard({ onDone }: { onDone: (s: string[]) => void }) {
             fontFamily: "JioType, sans-serif",
           }}
         >
-          {sel.length > 0 ? "Save करें ✓" : "Skip"}
+          {sel.length > 0 ? t("Save करें ✓", "Save ✓") : t("Skip", "Skip")}
         </button>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6 }}>
-        {SYMPTOMS.map((s) => (
-          <button
-            key={s}
-            onClick={() => toggle(s)}
-            style={{
-              padding: "5px 11px",
-              borderRadius: 20,
-              fontSize: 11,
-              fontWeight: 600,
-              cursor: "pointer",
-              background: sel.includes(s) ? C.raat : C.surface,
-              color: sel.includes(s) ? "#fff" : C.textSecondary,
-              border: `1.5px solid ${sel.includes(s) ? C.raat : C.border}`,
-              fontFamily: "JioType, sans-serif",
-            }}
-          >
-            {s}
-          </button>
-        ))}
+        {SYMPTOMS.map((s) => {
+          const label = t(s.hi, s.en);
+          return (
+            <button
+              key={s.hi}
+              onClick={() => toggle(s.hi)}
+              style={{
+                padding: "5px 11px",
+                borderRadius: 20,
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: "pointer",
+                background: sel.includes(s.hi) ? C.raat : C.surface,
+                color: sel.includes(s.hi) ? "#fff" : C.textSecondary,
+                border: `1.5px solid ${sel.includes(s.hi) ? C.raat : C.border}`,
+                fontFamily: "JioType, sans-serif",
+              }}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -700,6 +749,10 @@ function SymptomChipsCard({ onDone }: { onDone: (s: string[]) => void }) {
 
 // ── Date picker calendar ──────────────────────────────────────────────────────
 function DatePickerCalendar({ onDatePick }: { onDatePick: (label: string, date: Date) => void }) {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
+  const MONTHS = lang === "hi" ? MONTHS_HI : MONTHS_EN;
+  const DAYS = lang === "hi" ? DAYS_SHORT : DAYS_SHORT_EN;
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
@@ -708,7 +761,7 @@ function DatePickerCalendar({ onDatePick }: { onDatePick: (label: string, date: 
 
   function pickDay(day: number) {
     setPicked(day);
-    onDatePick(`${day} ${MONTHS_HI[month]}`, new Date(year, month, day));
+    onDatePick(`${day} ${MONTHS[month]}`, new Date(year, month, day));
   }
   function prev() {
     if (month === 0) {
@@ -740,7 +793,7 @@ function DatePickerCalendar({ onDatePick }: { onDatePick: (label: string, date: 
           fontFamily: "JioType, sans-serif",
         }}
       >
-        आखिरी पीरियड की तारीख चुनें
+        {t("आखिरी पीरियड की तारीख चुनें", "Select date of last period")}
       </p>
       <div
         style={{
@@ -758,7 +811,7 @@ function DatePickerCalendar({ onDatePick }: { onDatePick: (label: string, date: 
             fontFamily: "JioType, sans-serif",
           }}
         >
-          {MONTHS_HI[month]} {year}
+          {MONTHS[month]} {year}
         </span>
         <div style={{ display: "flex", gap: 4 }}>
           {(["‹", "›"] as const).map((ch, i) => (
@@ -786,7 +839,7 @@ function DatePickerCalendar({ onDatePick }: { onDatePick: (label: string, date: 
         </div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: 3 }}>
-        {DAYS_SHORT.map((d) => (
+        {DAYS.map((d) => (
           <div
             key={d}
             style={{
@@ -845,6 +898,8 @@ function DatePickerCalendar({ onDatePick }: { onDatePick: (label: string, date: 
 
 // ── Cycle length picker ───────────────────────────────────────────────────────
 function CycleLengthCard({ onPick }: { onPick: (d: number) => void }) {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   return (
     <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6 }}>
       {[21, 24, 28, 30, 32, 35].map((d) => (
@@ -863,7 +918,7 @@ function CycleLengthCard({ onPick }: { onPick: (d: number) => void }) {
             fontFamily: "JioType, sans-serif",
           }}
         >
-          {d} दिन
+          {d} {t("दिन", "days")}
         </button>
       ))}
       <button
@@ -880,7 +935,7 @@ function CycleLengthCard({ onPick }: { onPick: (d: number) => void }) {
           fontFamily: "JioType, sans-serif",
         }}
       >
-        पता नहीं
+        {t("पता नहीं", "Not sure")}
       </button>
     </div>
   );
@@ -890,6 +945,8 @@ function CycleLengthCard({ onPick }: { onPick: (d: number) => void }) {
 type ForWhom = "self" | "other" | null;
 
 function ForWhomCard({ onPick }: { onPick: (v: ForWhom) => void }) {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   return (
     <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
       <button
@@ -907,7 +964,7 @@ function ForWhomCard({ onPick }: { onPick: (v: ForWhom) => void }) {
           fontFamily: "JioType, sans-serif",
         }}
       >
-        मेरे लिए
+        {t("मेरे लिए", "For me")}
       </button>
       <button
         onClick={() => onPick("other")}
@@ -924,7 +981,7 @@ function ForWhomCard({ onPick }: { onPick: (v: ForWhom) => void }) {
           fontFamily: "JioType, sans-serif",
         }}
       >
-        किसी और के लिए
+        {t("किसी और के लिए", "For someone else")}
       </button>
     </div>
   );
@@ -932,6 +989,8 @@ function ForWhomCard({ onPick }: { onPick: (v: ForWhom) => void }) {
 
 // ── Content redirect card ─────────────────────────────────────────────────────
 function ContentLinkCard({ onTap }: { onTap: () => void }) {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   return (
     <button
       type="button"
@@ -975,7 +1034,7 @@ function ContentLinkCard({ onTap }: { onTap: () => void }) {
             fontFamily: "JioType, sans-serif",
           }}
         >
-          जाँची-परखी जानकारी देखें
+          {t("जाँची-परखी जानकारी देखें", "View Verified Information")}
         </span>
       </div>
       <p
@@ -987,7 +1046,10 @@ function ContentLinkCard({ onTap }: { onTap: () => void }) {
           margin: 0,
         }}
       >
-        इस विषय पर WHO और FOGSI द्वारा सत्यापित वीडियो और लेख उपलब्ध हैं
+        {t(
+          "इस विषय पर WHO और FOGSI द्वारा सत्यापित वीडियो और लेख उपलब्ध हैं",
+          "Videos and articles on this topic verified by WHO and FOGSI are available",
+        )}
       </p>
       <span
         style={{
@@ -997,7 +1059,7 @@ function ContentLinkCard({ onTap }: { onTap: () => void }) {
           fontFamily: "JioType, sans-serif",
         }}
       >
-        अभी देखें →
+        {t("अभी देखें →", "View now →")}
       </span>
     </button>
   );
@@ -1016,6 +1078,8 @@ type MessageKind =
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function PeriodTrackerPage() {
   const router = useRouter();
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   const [lastPeriodDate, setLastPeriodDate] = useState<Date | null>(null);
   const [step, setStep] = useState<"forWhom" | "date" | "cycleLength" | "chat">("forWhom");
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -1025,15 +1089,21 @@ export default function PeriodTrackerPage() {
   function onSymptomsDone(selected: string[]) {
     const reply =
       selected.length > 0
-        ? `Noted! 💜 आज के symptoms: ${selected.join(", ")}। इन्हें track करते रहना बहुत helpful होगा।`
-        : "कोई symptoms नहीं — अच्छा है! 💜";
+        ? t(
+            `Noted! 💜 आज के symptoms: ${selected.join(", ")}। इन्हें track करते रहना बहुत helpful होगा।`,
+            `Noted! 💜 Today's symptoms: ${selected.join(", ")}. Keeping track of these will be very helpful.`,
+          )
+        : t("कोई symptoms नहीं — अच्छा है! 💜", "No symptoms — great! 💜");
     setMessages((prev) => [
       ...prev.filter((m) => m.type !== "symptoms"),
       { type: "text", role: "sakhi", text: reply },
       {
         type: "text",
         role: "sakhi",
-        text: "कोई और सवाल? जैसे — देरी क्यों होती है, दर्द कम कैसे करें, या कुछ और।",
+        text: t(
+          "कोई और सवाल? जैसे — देरी क्यों होती है, दर्द कम कैसे करें, या कुछ और।",
+          "Any other questions? Like — why is there a delay, how to reduce pain, or anything else.",
+        ),
       },
     ]);
     scroll();
@@ -1044,30 +1114,53 @@ export default function PeriodTrackerPage() {
     const nextPeriod = addDays(lp, days);
     const daysUntil = Math.ceil((nextPeriod.getTime() - Date.now()) / 86400000);
 
-    // Reward-on-log: personalised cycle reflection
     const cycleReflection =
       days < 24
-        ? `आपका cycle ${days} दिन का है — यह थोड़ा छोटा है, पर कुछ महिलाओं में ऐसा होता है।`
+        ? t(
+            `आपका cycle ${days} दिन का है — यह थोड़ा छोटा है, पर कुछ महिलाओं में ऐसा होता है।`,
+            `Your cycle is ${days} days — that's a bit short, but it happens in some women.`,
+          )
         : days <= 35
-          ? `आपका cycle ${days} दिन का है — यह बिल्कुल normal range में है। 👍`
-          : `आपका cycle ${days} दिन का है — यह थोड़ा लंबा है, पर घबराएं नहीं, डॉक्टर से एक बार ज़रूर बात करें।`;
+          ? t(
+              `आपका cycle ${days} दिन का है — यह बिल्कुल normal range में है। 👍`,
+              `Your cycle is ${days} days — that's perfectly in the normal range. 👍`,
+            )
+          : t(
+              `आपका cycle ${days} दिन का है — यह थोड़ा लंबा है, पर घबराएं नहीं, डॉक्टर से एक बार ज़रूर बात करें।`,
+              `Your cycle is ${days} days — that's a bit long, but don't worry, do consult a doctor once.`,
+            );
 
-    // Countdown anticipation message
     const countdownMsg =
       daysUntil <= 0
-        ? `आपका period आज या कल आ सकता है — तैयार रहें! 🩸`
+        ? t(
+            "आपका period आज या कल आ सकता है — तैयार रहें! 🩸",
+            "Your period may arrive today or tomorrow — be prepared! 🩸",
+          )
         : daysUntil === 1
-          ? `कल period आ सकता है — पैड या cup तैयार रख लें। 🩸`
+          ? t(
+              "कल period आ सकता है — पैड या cup तैयार रख लें। 🩸",
+              "Period may come tomorrow — keep a pad or cup ready. 🩸",
+            )
           : daysUntil <= 5
-            ? `बस ${daysUntil} दिन बाद period आ सकता है — कल दोबारा check करें। 🗓️`
-            : `अगला period लगभग ${daysUntil} दिन बाद आएगा।`;
+            ? t(
+                `बस ${daysUntil} दिन बाद period आ सकता है — कल दोबारा check करें। 🗓️`,
+                `Period may come in just ${daysUntil} days — check again tomorrow. 🗓️`,
+              )
+            : t(
+                `अगला period लगभग ${daysUntil} दिन बाद आएगा।`,
+                `Next period will come in approximately ${daysUntil} days.`,
+              );
 
     setMessages((prev) => [
       ...prev.filter((m) => m.type !== "cycleLength"),
-      { type: "text", role: "user", text: `${days} दिन` },
+      { type: "text", role: "user", text: `${days} ${t("दिन", "days")}` },
       { type: "text", role: "sakhi", text: cycleReflection },
       { type: "text", role: "sakhi", text: countdownMsg },
-      { type: "text", role: "sakhi", text: "🗓️ यहाँ देखें आपकी पूरी cycle:" },
+      {
+        type: "text",
+        role: "sakhi",
+        text: t("🗓️ यहाँ देखें आपकी पूरी cycle:", "🗓️ See your full cycle here:"),
+      },
       { type: "prediction", lastPeriod: lp, cycleLength: days },
       { type: "symptoms", onDone: onSymptomsDone },
     ]);
@@ -1082,11 +1175,18 @@ export default function PeriodTrackerPage() {
         setLastPeriodDate(date);
         setMessages((prev) => [
           ...prev.filter((m) => m.type !== "calendar"),
-          { type: "text", role: "user", text: `आखिरी पीरियड: ${label}` },
+          {
+            type: "text",
+            role: "user",
+            text: t(`आखिरी पीरियड: ${label}`, `Last period: ${label}`),
+          },
           {
             type: "text",
             role: "sakhi",
-            text: `${label} — नोट हो गया! आपकी cycle आमतौर पर कितने दिनों की होती है?`,
+            text: t(
+              `${label} — नोट हो गया! आपकी cycle आमतौर पर कितने दिनों की होती है?`,
+              `${label} — noted! How many days is your cycle usually?`,
+            ),
           },
           { type: "cycleLength", onPick: onCyclePick },
         ]);
@@ -1097,11 +1197,19 @@ export default function PeriodTrackerPage() {
   }
 
   function handleForWhom(v: ForWhom, displayText?: string) {
-    const userText = displayText ?? (v === "self" ? "मेरे लिए" : "किसी और के लिए");
+    const userText =
+      displayText ??
+      (v === "self" ? t("मेरे लिए", "For me") : t("किसी और के लिए", "For someone else"));
     const sakhiText =
       v === "self"
-        ? "ठीक है! 📅 पहले बताइए — आखिरी पीरियड कब शुरू हुआ था?"
-        : "ठीक है! 📅 उनका आखिरी पीरियड कब शुरू हुआ था?";
+        ? t(
+            "ठीक है! 📅 पहले बताइए — आखिरी पीरियड कब शुरू हुआ था?",
+            "Okay! 📅 First tell me — when did the last period start?",
+          )
+        : t(
+            "ठीक है! 📅 उनका आखिरी पीरियड कब शुरू हुआ था?",
+            "Okay! 📅 When did their last period start?",
+          );
     setMessages((prev) => [
       ...prev.filter((m) => m.type !== "forWhomPicker"),
       { type: "text", role: "user", text: userText },
@@ -1148,7 +1256,10 @@ export default function PeriodTrackerPage() {
           {
             type: "text",
             role: "sakhi",
-            text: "माफ़ कीजिए, ठीक से समझ नहीं आया 🙏 कृपया ऊपर बटन दबाएँ, या लिखें — 'मेरे लिए' या 'किसी और के लिए'।",
+            text: t(
+              "माफ़ कीजिए, ठीक से समझ नहीं आया 🙏 कृपया ऊपर बटन दबाएँ, या लिखें — 'मेरे लिए' या 'किसी और के लिए'।",
+              "Sorry, I didn't quite understand 🙏 Please tap the button above, or write — 'For me' or 'For someone else'.",
+            ),
           },
         ]);
         scroll();
@@ -1160,7 +1271,14 @@ export default function PeriodTrackerPage() {
       setMessages((prev) => [
         ...prev,
         { type: "text", role: "user", text: q },
-        { type: "text", role: "sakhi", text: "कृपया ऊपर दिए गए कैलेंडर में तारीख पर टैप करें 📅" },
+        {
+          type: "text",
+          role: "sakhi",
+          text: t(
+            "कृपया ऊपर दिए गए कैलेंडर में तारीख पर टैप करें 📅",
+            "Please tap a date in the calendar above 📅",
+          ),
+        },
       ]);
       scroll();
       return;
@@ -1177,7 +1295,10 @@ export default function PeriodTrackerPage() {
           {
             type: "text",
             role: "sakhi",
-            text: "कृपया 21-35 के बीच एक नंबर बताएं, या ऊपर दिए विकल्पों में से कोई एक चुनें।",
+            text: t(
+              "कृपया 21-35 के बीच एक नंबर बताएं, या ऊपर दिए विकल्पों में से कोई एक चुनें।",
+              "Please enter a number between 21-35, or choose one of the options above.",
+            ),
           },
         ]);
         scroll();
@@ -1193,14 +1314,16 @@ export default function PeriodTrackerPage() {
     scroll();
     try {
       const data = await askSakhi(q, history);
-      // If Sakhi matched a health topic (has video/article), redirect to content section
       if (data.video || data.article) {
         setMessages((prev) => [
           ...prev,
           {
             type: "text",
             role: "sakhi",
-            text: "इस विषय पर मेरे पास verified जानकारी है — वीडियो और लेख दोनों उपलब्ध हैं:",
+            text: t(
+              "इस विषय पर मेरे पास verified जानकारी है — वीडियो और लेख दोनों उपलब्ध हैं:",
+              "I have verified information on this topic — both videos and articles are available:",
+            ),
           },
           { type: "contentLink", query: q },
         ]);
@@ -1210,7 +1333,7 @@ export default function PeriodTrackerPage() {
           {
             type: "text",
             role: "sakhi",
-            text: data.answer || "सखी अभी उपलब्ध नहीं है।",
+            text: data.answer || t("सखी अभी उपलब्ध नहीं है।", "Sakhi is not available right now."),
             isLlm: data.isLlm,
           },
         ]);
@@ -1218,7 +1341,14 @@ export default function PeriodTrackerPage() {
     } catch {
       setMessages((prev) => [
         ...prev,
-        { type: "text", role: "sakhi", text: "नेटवर्क में समस्या है। कृपया पुनः प्रयास करें।" },
+        {
+          type: "text",
+          role: "sakhi",
+          text: t(
+            "नेटवर्क में समस्या है। कृपया पुनः प्रयास करें।",
+            "There is a network issue. Please try again.",
+          ),
+        },
       ]);
     } finally {
       setLoading(false);
@@ -1247,7 +1377,11 @@ export default function PeriodTrackerPage() {
 
   return (
     <div style={{ background: "#EAE3F4" }} className="relative flex h-full flex-col">
-      <HubHeader title="पीरियड ट्रैकर" backHref="/womens-health" scrolled={false} />
+      <HubHeader
+        title={t("पीरियड ट्रैकर", "Period Tracker")}
+        backHref="/womens-health"
+        scrolled={false}
+      />
       <main
         className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 76px)" }}
@@ -1276,7 +1410,10 @@ export default function PeriodTrackerPage() {
                         fontFamily: "JioType, sans-serif",
                       }}
                     >
-                      क्या यह आपके लिए है या किसी और के लिए?
+                      {t(
+                        "क्या यह आपके लिए है या किसी और के लिए?",
+                        "Is this for you or for someone else?",
+                      )}
                     </p>
                     <ForWhomCard onPick={handleForWhom} />
                   </div>
@@ -1315,7 +1452,7 @@ export default function PeriodTrackerPage() {
                         fontFamily: "JioType, sans-serif",
                       }}
                     >
-                      Cycle की लंबाई चुनें
+                      {t("Cycle की लंबाई चुनें", "Choose cycle length")}
                     </p>
                     <CycleLengthCard onPick={m.onPick} />
                   </div>
@@ -1413,9 +1550,10 @@ export default function PeriodTrackerPage() {
                   >
                     <span>⚠️</span>
                     <span>
-                      यह जवाब AI द्वारा उत्पन्न है। यह जानकारी सामान्य शिक्षा के लिए है और किसी
-                      योग्य डॉक्टर की व्यक्तिगत सलाह का विकल्प नहीं है। स्वास्थ्य संबंधी कोई भी
-                      निर्णय लेने से पहले अपनी डॉक्टर से अवश्य परामर्श करें।
+                      {t(
+                        "यह जवाब AI द्वारा उत्पन्न है। यह जानकारी सामान्य शिक्षा के लिए है और किसी योग्य डॉक्टर की व्यक्तिगत सलाह का विकल्प नहीं है। स्वास्थ्य संबंधी कोई भी निर्णय लेने से पहले अपनी डॉक्टर से अवश्य परामर्श करें।",
+                        "This answer is AI-generated. This information is for general education only and is not a substitute for personalized advice from a qualified doctor. Please consult your doctor before making any health-related decisions.",
+                      )}
                     </span>
                   </div>
                 )}
@@ -1458,7 +1596,7 @@ export default function PeriodTrackerPage() {
       </main>
       <HubChatInput
         variant="sleek"
-        placeholder="पीरियड के बारे में पूछें..."
+        placeholder={t("पीरियड के बारे में पूछें...", "Ask about your period...")}
         onSubmit={handleSubmit}
       />
     </div>

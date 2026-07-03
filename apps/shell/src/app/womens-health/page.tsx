@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
+import { useLang } from "./LangContext";
 
 // ─── Sakhi Avatar (simple illustrated, relatable) ────────────────────────────
 
@@ -102,7 +103,9 @@ function SakhiAvatar({ speaking }: { speaking: boolean }) {
 // ─── Sakhi Card ───────────────────────────────────────────────────────────────
 
 function SakhiCard() {
+  const { lang } = useLang();
   const [speaking, setSpeaking] = useState(false);
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
 
   return (
     <div className="rounded-2xl bg-white p-4" style={{ border: "1px solid #F3F4F6" }}>
@@ -128,14 +131,16 @@ function SakhiCard() {
               className="rounded-full px-2 py-0.5 text-[10px] font-medium"
               style={{ background: "#FFF1F2", color: "#BE123C", fontFamily: "JioType, sans-serif" }}
             >
-              AI सहेली
+              {t("AI सहेली", "AI Companion")}
             </span>
           </div>
           <p
             className="text-[13px] leading-snug text-zinc-500"
             style={{ fontFamily: "JioType, sans-serif" }}
           >
-            {speaking ? "हाँ बताओ, मैं सुन रही हूँ..." : "नमस्ते! कोई भी सवाल पूछें — बेझिझक।"}
+            {speaking
+              ? t("हाँ बताओ, मैं सुन रही हूँ...", "Yes, tell me, I'm listening...")
+              : t("नमस्ते! कोई भी सवाल पूछें — बेझिझक।", "Hello! Ask me anything — feel free.")}
           </p>
         </div>
       </div>
@@ -170,62 +175,70 @@ const P0_TILES = [
     icon: "✅",
     iconBg: "#F0FDF4",
     label: "जाँची-परखी जानकारी",
+    labelEn: "Verified Health Info",
     desc: "PCOS, पीरियड दर्द, एनीमिया — विशेषज्ञों द्वारा सत्यापित लेख और वीडियो",
+    descEn: "PCOS, period pain, anaemia — articles & videos verified by experts",
     href: "/womens-health/health-content",
   },
   {
     icon: "🗓️",
     iconBg: "#FFF1F2",
     label: "पीरियड ट्रैकर",
+    labelEn: "Period Tracker",
     desc: "पीरियड लॉग करें, अगला पीरियड कब — सखी याद रखती है",
+    descEn: "Log your period, know when next — Sakhi remembers",
     href: "/womens-health/period-tracker",
   },
   {
     icon: "💜",
     iconBg: "#F5F3FF",
     label: "मूड ट्रैकर",
+    labelEn: "Mood Tracker",
     desc: "मासिक धर्म से पहले मूड खराब, चिड़चिड़ापन — हॉर्मोन से जोड़कर समझें",
+    descEn: "Low mood, irritability before periods — understand the hormone link",
     href: "/womens-health/mood-tracker",
   },
 ];
 
 function P0Tiles() {
+  const { lang } = useLang();
   const router = useRouter();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   return (
     <div className="flex flex-col gap-3">
       <h2
         className="text-[15px] font-bold text-zinc-900"
         style={{ fontFamily: "JioType, sans-serif" }}
       >
-        आज क्या करना है?
+        {t("आज क्या करना है?", "What do you want to do today?")}
       </h2>
       <div className="flex flex-col gap-2">
-        {P0_TILES.map((t) => (
+        {P0_TILES.map((tile) => (
           <button
-            key={t.label}
+            key={tile.label}
             type="button"
-            onClick={() => router.push(t.href)}
+            onClick={() => router.push(tile.href)}
             className="flex items-center gap-3 rounded-2xl bg-white p-3.5 text-left transition-opacity active:opacity-70"
             style={{ border: "1px solid #F3F4F6" }}
           >
             <div
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[22px]"
-              style={{ background: t.iconBg }}
+              style={{ background: tile.iconBg }}
             >
-              {t.icon}
+              {tile.icon}
             </div>
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span
                 className="text-[14px] font-semibold text-zinc-900"
                 style={{ fontFamily: "JioType, sans-serif" }}
               >
-                {t.label}
+                {t(tile.label, tile.labelEn)}
               </span>
               <span
                 className="text-[12px] leading-snug text-zinc-500"
                 style={{ fontFamily: "JioType, sans-serif" }}
               >
-                {t.desc}
+                {t(tile.desc, tile.descEn)}
               </span>
             </div>
             <span className="shrink-0 text-[18px] text-zinc-300">›</span>
@@ -242,37 +255,47 @@ const AWARENESS = [
   {
     stat: "57%",
     topic: "भारतीय महिलाओं को खून की कमी है",
+    topicEn: "Indian women have iron deficiency",
     sub: "एनीमिया इतना आम है कि सब 'सामान्य' मान लेती हैं",
+    subEn: "Anaemia is so common that most women think it's normal",
     accentColor: "#B45309",
   },
   {
     stat: "7 साल",
     topic: "Endometriosis का औसत diagnosis delay",
+    topicEn: "Average diagnosis delay for Endometriosis",
     sub: '"सबको दर्द होता है" — यह सोच बदलनी होगी',
+    subEn: '"Everyone has pain" — this mindset must change',
     accentColor: "#E11D48",
   },
   {
     stat: "67%",
     topic: "महिलाएं स्वास्थ्य को taboo मानती हैं",
+    topicEn: "Women treat health as a taboo",
     sub: "अपनी तकलीफ किसी को नहीं बता पातीं",
+    subEn: "They can't share their struggles with anyone",
     accentColor: "#7C3AED",
   },
   {
     stat: "98%",
     topic: "महिलाएं अपनी भाषा में जानकारी चाहती हैं",
+    topicEn: "Women want information in their language",
     sub: "सखी हिंदी में — आपकी ज़बान में — बात करती है",
+    subEn: "Sakhi speaks in Hindi — your own language",
     accentColor: "#059669",
   },
 ];
 
 function AwarenessTiles() {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   return (
     <div className="flex flex-col gap-3">
       <h2
         className="text-[15px] font-bold text-zinc-900"
         style={{ fontFamily: "JioType, sans-serif" }}
       >
-        आप अकेली नहीं हैं
+        {t("आप अकेली नहीं हैं", "You're not alone")}
       </h2>
       <div className="flex flex-col gap-2">
         {AWARENESS.map((a) => (
@@ -292,13 +315,13 @@ function AwarenessTiles() {
                 className="text-[13px] leading-snug font-semibold text-zinc-800"
                 style={{ fontFamily: "JioType, sans-serif" }}
               >
-                {a.topic}
+                {t(a.topic, a.topicEn)}
               </span>
               <span
                 className="text-[11px] leading-snug text-zinc-400"
                 style={{ fontFamily: "JioType, sans-serif" }}
               >
-                {a.sub}
+                {t(a.sub, a.subEn)}
               </span>
             </div>
           </div>
@@ -311,8 +334,10 @@ function AwarenessTiles() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function WomensHealthPage() {
+  const { lang, setLang } = useLang();
   const [scrolled, setScrolled] = useState(false);
   const scrollRef = useRef(false);
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
     const past = e.currentTarget.scrollTop > 8;
@@ -321,6 +346,17 @@ export default function WomensHealthPage() {
       setScrolled(past);
     }
   }, []);
+
+  const langToggle = (
+    <button
+      type="button"
+      onClick={() => setLang(lang === "hi" ? "en" : "hi")}
+      className="flex h-9 items-center rounded-full px-3 text-[13px] font-semibold"
+      style={{ background: "#FFF1F2", color: "#BE123C", fontFamily: "JioType, sans-serif" }}
+    >
+      {lang === "hi" ? "EN" : "हिं"}
+    </button>
+  );
 
   return (
     <div className="bg-canvas-grey text-fg relative flex h-full flex-col">
@@ -336,8 +372,13 @@ export default function WomensHealthPage() {
         </div>
       </main>
 
-      <HubHeader title="महिला स्वास्थ्य" scrolled={scrolled} />
-      <HubChatInput variant="sleek" placeholder="सखी से पूछें..." />
+      <HubHeader
+        title={t("महिला स्वास्थ्य", "Women's Health")}
+        scrolled={scrolled}
+        onBack={() => {}}
+        rightSlot={langToggle}
+      />
+      <HubChatInput variant="sleek" placeholder={t("सखी से पूछें...", "Ask Sakhi...")} />
     </div>
   );
 }
