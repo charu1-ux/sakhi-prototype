@@ -159,11 +159,17 @@ function ArticleCard({ article }: { article: Article }) {
 
 // ── Suggested prompts ─────────────────────────────────────────────────────────
 
-const SUGGESTED = [
+const SUGGESTED_HI = [
   "पीरियड में बहुत दर्द — क्या यह सामान्य है?",
   "अनियमित पीरियड क्यों होते हैं?",
   "खून की कमी के लक्षण क्या हैं?",
   "PCOS क्या होता है?",
+];
+const SUGGESTED_EN = [
+  "Very painful periods — is this normal?",
+  "Why do irregular periods happen?",
+  "What are the symptoms of anaemia?",
+  "What is PCOS?",
 ];
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -310,7 +316,7 @@ function HealthContentInner() {
           {/* Suggested pills — shown after disclaimer, until user asks something */}
           {!messages.some((m) => m.role === "user") && (
             <div className="flex flex-wrap gap-2 px-1 pb-1">
-              {SUGGESTED.map((s) => (
+              {(lang === "en" ? SUGGESTED_EN : SUGGESTED_HI).map((s) => (
                 <button
                   key={s}
                   type="button"

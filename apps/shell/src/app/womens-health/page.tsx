@@ -114,7 +114,7 @@ function SakhiCard() {
           type="button"
           onClick={() => setSpeaking((v) => !v)}
           className="shrink-0 cursor-pointer touch-manipulation border-none bg-transparent p-0 transition-transform duration-150 active:scale-95"
-          aria-label="सखी से बात करें"
+          aria-label={t("सखी से बात करें", "Talk to Doctor Friend")}
         >
           <SakhiAvatar speaking={speaking} />
         </button>
@@ -125,7 +125,7 @@ function SakhiCard() {
               className="text-[17px] font-bold tracking-tight text-zinc-900"
               style={{ fontFamily: "JioType, sans-serif" }}
             >
-              सखी
+              {t("सखी", "Doctor Friend")}
             </span>
             <span
               className="rounded-full px-2 py-0.5 text-[10px] font-medium"
@@ -186,7 +186,7 @@ const P0_TILES = [
     label: "पीरियड ट्रैकर",
     labelEn: "Period Tracker",
     desc: "पीरियड लॉग करें, अगला पीरियड कब — सखी याद रखती है",
-    descEn: "Log your period, know when next — Sakhi remembers",
+    descEn: "Log your period, know when next — Doctor Friend remembers",
     href: "/womens-health/period-tracker",
   },
   {
@@ -281,7 +281,7 @@ const AWARENESS = [
     topic: "महिलाएं अपनी भाषा में जानकारी चाहती हैं",
     topicEn: "Women want information in their language",
     sub: "सखी हिंदी में — आपकी ज़बान में — बात करती है",
-    subEn: "Sakhi speaks in Hindi — your own language",
+    subEn: "Doctor Friend speaks your language — clear, simple, judgment-free",
     accentColor: "#059669",
   },
 ];
