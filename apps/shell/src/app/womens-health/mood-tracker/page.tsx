@@ -4,13 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
-import {
-  askSakhi,
-  isBlockerResponse,
-  isMaleIdentifier,
-  MALE_RESPONSE,
-  BREATHING_EXERCISE,
-} from "@/lib/sakhi";
+import { askSakhi, isBlockerResponse, isMaleIdentifier, MALE_RESPONSE } from "@/lib/sakhi";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -118,7 +112,101 @@ type MessageKind =
   | { type: "moodPicker"; locked: boolean; selected?: (typeof MOODS)[0] }
   | { type: "energyPicker"; locked: boolean; selected?: (typeof ENERGIES)[0] }
   | { type: "confirmation"; mood: (typeof MOODS)[0]; energy: (typeof ENERGIES)[0] }
-  | { type: "contentLink"; query: string };
+  | { type: "contentLink"; query: string }
+  | { type: "breathingCard" };
+
+// ─── Breathing exercise card ──────────────────────────────────────────────────
+function BreathingCard() {
+  const steps = [
+    {
+      icon: "🫁",
+      label: "साँस लें",
+      count: "4 तक गिनें",
+      note: "पेट बाहर जाए",
+      sub: "छाती नहीं",
+      bg: "#E8F5FF",
+      border: "#BFDBFE",
+      accent: "#3B82F6",
+    },
+    {
+      icon: "🫁",
+      label: "साँस छोड़ें",
+      count: "4 तक गिनें",
+      note: "पेट अंदर आए",
+      sub: "",
+      bg: "#F0FDF4",
+      border: "#BBF7D0",
+      accent: "#22C55E",
+    },
+  ];
+  return (
+    <div
+      className="mt-1 rounded-tr-2xl rounded-b-2xl p-3"
+      style={{ background: "#fff", boxShadow: "0 1px 6px rgba(45,27,78,0.08)", maxWidth: 272 }}
+    >
+      <p
+        className="mb-2.5 text-[12px] font-semibold"
+        style={{ color: C.raat, fontFamily: "JioType, sans-serif" }}
+      >
+        अभी यह करें — डीप बेली ब्रीदिंग
+      </p>
+
+      <div className="flex flex-col gap-2">
+        {steps.map((s) => (
+          <div
+            key={s.label}
+            className="flex items-center gap-2.5 rounded-xl px-3 py-2.5"
+            style={{ background: s.bg, border: `1.5px solid ${s.border}` }}
+          >
+            <span className="text-[20px]">{s.icon}</span>
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-2">
+                <span
+                  className="text-[13px] font-bold"
+                  style={{ color: s.accent, fontFamily: "JioType, sans-serif" }}
+                >
+                  {s.label}
+                </span>
+                <span
+                  className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                  style={{ background: s.accent, color: "#fff", fontFamily: "JioType, sans-serif" }}
+                >
+                  {s.count}
+                </span>
+              </div>
+              <span
+                className="text-[11px]"
+                style={{ color: C.textSecondary, fontFamily: "JioType, sans-serif" }}
+              >
+                {s.note}
+                {s.sub && <span style={{ color: C.textTertiary }}> ({s.sub})</span>}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div
+        className="mt-2.5 rounded-xl px-3 py-2 text-[11px]"
+        style={{
+          background: "#FFF7ED",
+          border: "1.5px solid #FED7AA",
+          color: "#92400E",
+          fontFamily: "JioType, sans-serif",
+        }}
+      >
+        ⚠️ बीच में साँस बिल्कुल न रोकें — सीधे लें और छोड़ें
+      </div>
+
+      <p
+        className="mt-2 text-[11px]"
+        style={{ color: C.textTertiary, fontFamily: "JioType, sans-serif" }}
+      >
+        5-6 बार करें — आप फर्क महसूस करेंगी 💜
+      </p>
+    </div>
+  );
+}
 
 // ─── Content redirect card ────────────────────────────────────────────────────
 function ContentLinkCard({ onTap }: { onTap: () => void }) {
@@ -708,11 +796,7 @@ export default function MoodTrackerPage() {
         getTopicQueryFromHistory().includes("tanav");
       if (isHelpRequest && hasLowMood) {
         push({ type: "text", role: "user", text: q });
-        push({
-          type: "text",
-          role: "sakhi",
-          text: BREATHING_EXERCISE,
-        });
+        push({ type: "breathingCard" });
         return;
       }
     }
@@ -828,6 +912,14 @@ export default function MoodTrackerPage() {
               </span>
             </div>
           )}
+        </SakhiRow>
+      );
+    }
+
+    if (msg.type === "breathingCard") {
+      return (
+        <SakhiRow key={i}>
+          <BreathingCard />
         </SakhiRow>
       );
     }
