@@ -634,11 +634,22 @@ export default function MoodTrackerPage() {
     setTimeout(() => {
       setFlowLoading(false);
       push({ type: "confirmation", mood: selectedMood!, energy: e });
+      const isLowMood = (selectedMood?.score ?? 5) <= 2;
       push({
         type: "text",
         role: "sakhi",
-        text: "कल भी लॉग करें — पैटर्न समझना फायदेमंद होगा। कोई और बात करनी है? 🌸",
+        text: isLowMood
+          ? "यह महसूस करना मुश्किल हो सकता है। अभी एक छोटी सी चीज़ try करें जो तुरंत थोड़ा better feel कराएगी:"
+          : "कल भी लॉग करें — पैटर्न समझना फायदेमंद होगा। कोई और बात करनी है? 🌸",
       });
+      if (isLowMood) {
+        push({ type: "breathingCard" });
+        push({
+          type: "text",
+          role: "sakhi",
+          text: "कल भी लॉग करें — पैटर्न समझना फायदेमंद होगा। 🌸",
+        });
+      }
       scroll();
     }, 900);
   }
