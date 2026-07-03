@@ -1070,7 +1070,7 @@ type MessageKind =
   | { type: "text"; role: "user" | "sakhi"; text: string; isLlm?: boolean }
   | { type: "forWhomPicker" }
   | { type: "calendar"; onDatePick: (label: string, date: Date) => void }
-  | { type: "cycleLength"; onPick: (days: number) => void }
+  | { type: "cycleLength"; lastPeriod: Date; onPick: (days: number) => void }
   | { type: "prediction"; lastPeriod: Date; cycleLength: number }
   | { type: "symptoms"; onDone: (s: string[]) => void }
   | { type: "contentLink"; query: string };
@@ -1109,8 +1109,12 @@ export default function PeriodTrackerPage() {
     scroll();
   }
 
-  function onCyclePick(days: number) {
-    const lp = lastPeriodDate ?? new Date();
+  function onCyclePick(days: number, lp: Date) {
+    // Save to localStorage so mood tracker can read real cycle data
+    localStorage.setItem(
+      "sakhi_period",
+      JSON.stringify({ lastPeriod: lp.toISOString(), cycleLength: days }),
+    );
     const nextPeriod = addDays(lp, days);
     const daysUntil = Math.ceil((nextPeriod.getTime() - Date.now()) / 86400000);
 
@@ -1188,7 +1192,7 @@ export default function PeriodTrackerPage() {
               `${label} — noted! How many days is your cycle usually?`,
             ),
           },
-          { type: "cycleLength", onPick: onCyclePick },
+          { type: "cycleLength", lastPeriod: date, onPick: (days) => onCyclePick(days, date) },
         ]);
         setStep("cycleLength");
         scroll();
@@ -1287,7 +1291,7 @@ export default function PeriodTrackerPage() {
     if (step === "cycleLength") {
       const days = parseCycleLength(q);
       if (days) {
-        onCyclePick(days);
+        onCyclePick(days, lastPeriodDate ?? new Date());
       } else {
         setMessages((prev) => [
           ...prev,

@@ -34,14 +34,48 @@ const C = {
   border: "rgba(45,27,78,0.09)",
 };
 
-// ─── Phase data (mock — would come from period tracker in real app) ────────────
-const PHASE = {
-  name: "ल्यूटियल फ़ेज़",
-  nameEn: "Luteal Phase",
-  day: 18,
+// ─── Phase calculation from period tracker data ───────────────────────────────
+function loadPhase() {
+  try {
+    const raw = typeof window !== "undefined" ? localStorage.getItem("sakhi_period") : null;
+    if (!raw) return null;
+    const { lastPeriod, cycleLength } = JSON.parse(raw);
+    const lp = new Date(lastPeriod);
+    const day = Math.max(1, Math.ceil((Date.now() - lp.getTime()) / 86400000) + 1);
+    const len = cycleLength as number;
+    let name = "ल्यूटियल फ़ेज़",
+      nameEn = "Luteal Phase";
+    let hint = "मूड थोड़ा भारी हो सकता है — यह सामान्य है";
+    let hintEn = "Mood may feel heavy — this is normal";
+    if (day <= 5) {
+      name = "मासिक चरण";
+      nameEn = "Menstrual Phase";
+      hint = "आज आराम करें — आपका शरीर काम कर रहा है";
+      hintEn = "Rest today — your body is working hard";
+    } else if (day <= len - 15) {
+      name = "फॉलिक्युलर फ़ेज़";
+      nameEn = "Follicular Phase";
+      hint = "एनर्जी बढ़ रही है — नई शुरुआत का समय!";
+      hintEn = "Energy is rising — great time for new starts!";
+    } else if (day <= len - 14) {
+      name = "ओव्यूलेशन फ़ेज़";
+      nameEn = "Ovulation Phase";
+      hint = "आज आप सबसे ज़्यादा energetic हो सकती हैं";
+      hintEn = "You may feel at your most energetic today";
+    }
+    return { name, nameEn, day, cycleLength: len, hint, hintEn };
+  } catch {
+    return null;
+  }
+}
+
+const PHASE_DEFAULT = {
+  name: "—",
+  nameEn: "—",
+  day: 0,
   cycleLength: 28,
-  hint: "मूड थोड़ा भारी हो सकता है — यह सामान्य है",
-  hintEn: "Mood may feel heavy — this is normal",
+  hint: "पीरियड ट्रैकर में डेटा डालें तो phase दिखेगा",
+  hintEn: "Add data in Period Tracker to see your phase",
 };
 
 // ─── Mood options ─────────────────────────────────────────────────────────────
@@ -271,7 +305,10 @@ function ContentLinkCard({ onTap }: { onTap: () => void }) {
 }
 
 // ─── Phase banner ─────────────────────────────────────────────────────────────
-function PhaseBanner() {
+type PhaseData = ReturnType<typeof loadPhase>;
+
+function PhaseBanner({ phase }: { phase: NonNullable<PhaseData> }) {
+  const PHASE = phase;
   const { lang } = useLang();
   const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   return (
@@ -414,10 +451,13 @@ function EnergyPicker({
 function ConfirmationCard({
   mood,
   energy,
+  phase,
 }: {
   mood: (typeof MOODS)[0];
   energy: (typeof ENERGIES)[0];
+  phase: NonNullable<PhaseData>;
 }) {
+  const PHASE = phase;
   const { lang } = useLang();
   const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   const dots = Array.from({ length: 5 }, (_, i) => i < energy.score + 1);
@@ -592,6 +632,7 @@ export default function MoodTrackerPage() {
   const router = useRouter();
   const { lang } = useLang();
   const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
+  const [PHASE] = useState(() => loadPhase() ?? PHASE_DEFAULT);
   const bottomRef = useRef<HTMLDivElement>(null);
   const scroll = () =>
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
@@ -1035,7 +1076,7 @@ export default function MoodTrackerPage() {
     if (msg.type === "confirmation") {
       return (
         <SakhiRow key={i}>
-          <ConfirmationCard mood={msg.mood} energy={msg.energy} />
+          <ConfirmationCard mood={msg.mood} energy={msg.energy} phase={PHASE} />
         </SakhiRow>
       );
     }
@@ -1087,7 +1128,7 @@ export default function MoodTrackerPage() {
         className="fixed right-0 left-0 z-10"
         style={{ top: "calc(env(safe-area-inset-top, 0px) + 76px)" }}
       >
-        <PhaseBanner />
+        <PhaseBanner phase={PHASE} />
       </div>
 
       <HubHeader
