@@ -4,7 +4,13 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
-import { askSakhi, isBlockerResponse, isMaleIdentifier, MALE_RESPONSE } from "@/lib/sakhi";
+import {
+  askSakhi,
+  isBlockerResponse,
+  isMaleIdentifier,
+  MALE_RESPONSE,
+  MALE_RESPONSE_EN,
+} from "@/lib/sakhi";
 import { useLang } from "../LangContext";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
@@ -871,7 +877,7 @@ export default function MoodTrackerPage() {
 
     if (isMaleIdentifier(q)) {
       push({ type: "text", role: "user", text: q });
-      push({ type: "text", role: "sakhi", text: MALE_RESPONSE });
+      push({ type: "text", role: "sakhi", text: lang === "en" ? MALE_RESPONSE_EN : MALE_RESPONSE });
       return;
     }
 

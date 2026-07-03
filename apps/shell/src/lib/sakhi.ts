@@ -1430,10 +1430,7 @@ const SERVICE_ERROR_EN =
   "Doctor Friend is having a little trouble responding right now. Please try again in a few seconds." +
   DISCLAIMER_EN;
 
-const MALE_IDENTIFIER_RESPONSE =
-  "सखी विशेष रूप से महिलाओं के स्वास्थ्य के लिए बनाई गई है — पीरियड, PMOS, हॉर्मोन, और स्त्री स्वास्थ्य से जुड़े विषयों पर। अगर आपके जीवन में कोई महिला है जिन्हें इन विषयों पर जानकारी चाहिए, तो आप उनके लिए सखी का उपयोग कर सकते हैं।";
-
-const MALE_IDENTIFIER_RESPONSE_EN =
+export const MALE_RESPONSE_EN =
   "Doctor Friend is designed specifically for women's health — periods, PMOS, hormones, and women's wellbeing. If there's a woman in your life who needs information on these topics, you're welcome to use Doctor Friend for her.";
 
 const MALE_IDENTIFIERS = [
@@ -1454,6 +1451,9 @@ const MALE_IDENTIFIERS = [
   "i am a boy",
   "i'm male",
   "i'm a man",
+  "i am a guy",
+  "i'm a guy",
+  "i am guy",
   "मैं पुरुष हूँ",
   "मैं लड़का हूँ",
   "मैं मर्द हूँ",
@@ -1839,7 +1839,7 @@ export async function askSakhi(
     return { answer: lang === "en" ? "No question received." : "कोई प्रश्न नहीं मिला।" };
 
   if (isMaleIdentifier(question))
-    return { answer: lang === "en" ? MALE_IDENTIFIER_RESPONSE_EN : MALE_IDENTIFIER_RESPONSE };
+    return { answer: lang === "en" ? MALE_RESPONSE_EN : MALE_RESPONSE };
 
   // Escalation checks — these override ALL other routing (Section 6 of guardrails spec)
   const escalation = isEscalation(question);
