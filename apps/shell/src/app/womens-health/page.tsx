@@ -67,49 +67,49 @@ function SakhiAvatar({ speaking }: { speaking: boolean }) {
               strokeLinecap="round"
             />
           </g>
-          {/* White coat — wide shoulders */}
+          {/* White coat — narrowed to match face width */}
           <path
-            d="M3 29 Q26 24.5 49 29 L49 52 L3 52Z"
+            d="M14 29 Q26 24.5 38 29 L38 52 L14 52Z"
             fill="#FFFFFF"
             stroke="#E2E8F0"
             strokeWidth="1"
           />
           {/* Coat lapels (V-neck) */}
-          <path d="M12 28 L26 49 L20.5 28Z" fill="#EEF2F6" stroke="#DCE3EA" strokeWidth="0.5" />
-          <path d="M40 28 L26 49 L31.5 28Z" fill="#EEF2F6" stroke="#DCE3EA" strokeWidth="0.5" />
+          <path d="M18.7 28 L26 49 L23.1 28Z" fill="#EEF2F6" stroke="#DCE3EA" strokeWidth="0.5" />
+          <path d="M33.3 28 L26 49 L28.9 28Z" fill="#EEF2F6" stroke="#DCE3EA" strokeWidth="0.5" />
           {/* Shirt collar peeking through */}
-          <path d="M20.5 28 L26 37 L31.5 28Z" fill="#BFDBFE" />
+          <path d="M23.1 28 L26 37 L28.9 28Z" fill="#BFDBFE" />
           {/* ID badge */}
           <rect
-            x="8"
+            x="15"
             y="32.5"
-            width="8"
-            height="9"
-            rx="1.15"
+            width="6"
+            height="7"
+            rx="1"
             fill="#FFFFFF"
             stroke="#CBD5E1"
             strokeWidth="0.6"
           />
-          <circle cx="12" cy="36" r="1.6" fill="#93C5FD" />
-          <line x1="9" y1="39.65" x2="15.5" y2="39.65" stroke="#CBD5E1" strokeWidth="0.7" />
+          <circle cx="17.5" cy="35.3" r="1.2" fill="#93C5FD" />
+          <line x1="16" y1="38.3" x2="20" y2="38.3" stroke="#CBD5E1" strokeWidth="0.6" />
           {/* Stethoscope tube */}
           <path
-            d="M12 27 Q4.5 34 11 41 Q15.5 45.5 22.5 43.5"
+            d="M18.7 27 Q14.8 34 18.2 41 Q20.5 45.5 24.2 43.5"
             stroke="#64748B"
-            strokeWidth="2.4"
+            strokeWidth="2"
             fill="none"
             strokeLinecap="round"
           />
           <path
-            d="M40 27 Q47.5 34 41 41 Q36.5 45.5 29.5 43.5"
+            d="M33.3 27 Q37.2 34 33.8 41 Q31.5 45.5 27.8 43.5"
             stroke="#64748B"
-            strokeWidth="2.4"
+            strokeWidth="2"
             fill="none"
             strokeLinecap="round"
           />
           {/* Stethoscope chestpiece */}
-          <circle cx="26" cy="44.5" r="3.6" fill="#64748B" />
-          <circle cx="26" cy="44.5" r="1.95" fill="#94A3B8" />
+          <circle cx="26" cy="43.5" r="3" fill="#64748B" />
+          <circle cx="26" cy="43.5" r="1.6" fill="#94A3B8" />
         </svg>
       </div>
     </div>
