@@ -88,7 +88,7 @@ function SakhiCard() {
             {speaking
               ? t("हाँ बताओ, मैं सुन रही हूँ...", "Yes, tell me, I'm listening...")
               : t(
-                  "आपकी निजी जगह। अपनी सेहत के बारे में पूछें, बिना किसी झिझक।",
+                  "नमस्ते! कोई भी सवाल पूछें — बेझिझक।",
                   "Your private space. Ask me about your health, without hesitation.",
                 )}
           </p>
