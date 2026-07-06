@@ -280,14 +280,22 @@ function PhaseArc({ day, len }: { day: number; len: number }) {
 }
 
 // ── Stats strip ───────────────────────────────────────────────────────────────
-function StatsStrip({ len, nextPeriod }: { len: number; nextPeriod: Date }) {
+function StatsStrip({
+  len,
+  nextPeriod,
+  hideLen = false,
+}: {
+  len: number;
+  nextPeriod: Date;
+  hideLen?: boolean;
+}) {
   const { lang } = useLang();
   const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   const daysLeft = Math.ceil((nextPeriod.getTime() - Date.now()) / 86400000);
   const fmt = (d: Date) =>
     d.toLocaleDateString(lang === "hi" ? "hi-IN" : "en-IN", { day: "numeric", month: "short" });
   const stats = [
-    { val: `${len}`, lbl: "Cycle" },
+    { val: hideLen ? "—" : `${len}`, lbl: "Cycle" },
     {
       val: daysLeft > 0 ? `${daysLeft} ${t("दिन", "days")}` : t("जल्द", "Soon"),
       lbl: t("अगला पीरियड", "Next Period"),
@@ -897,14 +905,15 @@ function DatePickerCalendar({ onDatePick }: { onDatePick: (label: string, date: 
 }
 
 // ── Cycle length picker ───────────────────────────────────────────────────────
-function CycleLengthCard({ onPick }: { onPick: (d: number) => void }) {
+function CycleLengthCard({ onPick }: { onPick: (d: number, unsure?: boolean) => void }) {
   const { lang } = useLang();
   const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   return (
     <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6 }}>
-      {/* "Unsure" first — an easy, non-judgmental starting choice */}
+      {/* "Unsure" first — an easy, non-judgmental starting choice.
+          Silently assumes 28 (the number is never shown in chat). */}
       <button
-        onClick={() => onPick(28)}
+        onClick={() => onPick(28, true)}
         style={{
           padding: "6px 14px",
           borderRadius: 20,
@@ -1125,8 +1134,8 @@ type MessageKind =
   | { type: "text"; role: "user" | "sakhi"; text: string; isLlm?: boolean }
   | { type: "forWhomPicker" }
   | { type: "calendar"; onDatePick: (label: string, date: Date) => void }
-  | { type: "cycleLength"; lastPeriod: Date; onPick: (days: number) => void }
-  | { type: "cycleOverview"; lastPeriod: Date; cycleLength: number }
+  | { type: "cycleLength"; lastPeriod: Date; onPick: (days: number, unsure?: boolean) => void }
+  | { type: "cycleOverview"; lastPeriod: Date; cycleLength: number; unsure?: boolean }
   | { type: "phaseInsight"; day: number; cycleLength: number }
   | { type: "continuePrompt"; label: string; buttonLabel: string; onContinue: () => void }
   | { type: "symptoms"; onDone: (s: string[]) => void }
@@ -1166,7 +1175,7 @@ export default function PeriodTrackerPage() {
     scroll();
   }
 
-  function onCyclePick(days: number, lp: Date) {
+  function onCyclePick(days: number, lp: Date, unsure = false) {
     // Save to localStorage so mood tracker can read real cycle data
     localStorage.setItem(
       "sakhi_period",
@@ -1175,8 +1184,14 @@ export default function PeriodTrackerPage() {
     const nextPeriod = addDays(lp, days);
     const daysUntil = Math.ceil((nextPeriod.getTime() - Date.now()) / 86400000);
 
-    const cycleReflection =
-      days < 24
+    // When the user is unsure, silently assume a typical cycle — never surface
+    // the assumed number in the chat.
+    const cycleReflection = unsure
+      ? t(
+          "कोई बात नहीं! 💜 अभी के लिए मैं एक सामान्य cycle मानकर अनुमान लगा रही हूँ — जैसे-जैसे आप पीरियड लॉग करेंगी, यह अनुमान और सटीक होता जाएगा।",
+          "No problem at all! 💜 For now I'll estimate using a typical cycle — and as you log your periods, this will keep getting more accurate.",
+        )
+      : days < 24
         ? t(
             `आपका cycle ${days} दिन का है — यह थोड़ा छोटा है, पर कुछ महिलाओं में ऐसा होता है।`,
             `Your cycle is ${days} days — that's a bit short, but it happens in some women.`,
@@ -1214,27 +1229,15 @@ export default function PeriodTrackerPage() {
 
     setMessages((prev) => [
       ...prev.filter((m) => m.type !== "cycleLength"),
-      { type: "text", role: "user", text: `${days} ${t("दिन", "days")}` },
-      { type: "text", role: "sakhi", text: cycleReflection },
-      { type: "text", role: "sakhi", text: countdownMsg },
       {
-        type: "continuePrompt",
-        label: t(
-          "अपनी पूरी cycle visually देखना चाहेंगी?",
-          "Want to see your full cycle visually?",
-        ),
-        buttonLabel: t("हां, दिखाएं 👀", "Yes, show me 👀"),
-        onContinue: () => showCycleOverview(lp, days),
+        type: "text",
+        role: "user",
+        text: unsure ? t("मुझे पता नहीं", "I'm not sure") : `${days} ${t("दिन", "days")}`,
       },
-    ]);
-    setStep("chat");
-    scroll();
-  }
-
-  function showCycleOverview(lp: Date, days: number) {
-    setMessages((prev) => [
-      ...prev.filter((m) => m.type !== "continuePrompt"),
-      { type: "cycleOverview", lastPeriod: lp, cycleLength: days },
+      { type: "text", role: "sakhi", text: cycleReflection },
+      // Visual first — easier to absorb — then the countdown text below it.
+      { type: "cycleOverview", lastPeriod: lp, cycleLength: days, unsure },
+      { type: "text", role: "sakhi", text: countdownMsg },
       {
         type: "continuePrompt",
         label: t(
@@ -1245,6 +1248,7 @@ export default function PeriodTrackerPage() {
         onContinue: () => showPhaseInsight(lp, days),
       },
     ]);
+    setStep("chat");
     scroll();
   }
 
@@ -1299,7 +1303,11 @@ export default function PeriodTrackerPage() {
               "Usually, how many days from the start of one period to the start of the next? (Count from the first day of one period to the first day of the next — not the days of bleeding.)",
             ),
           },
-          { type: "cycleLength", lastPeriod: date, onPick: (days) => onCyclePick(days, date) },
+          {
+            type: "cycleLength",
+            lastPeriod: date,
+            onPick: (days, unsure) => onCyclePick(days, date, unsure),
+          },
         ]);
         setStep("cycleLength");
         scroll();
@@ -1590,7 +1598,7 @@ export default function PeriodTrackerPage() {
                     {avatar}
                     <div style={{ flex: 1, maxWidth: "92%" }}>
                       <PhaseArc day={day} len={m.cycleLength} />
-                      <StatsStrip len={m.cycleLength} nextPeriod={nextPeriod} />
+                      <StatsStrip len={m.cycleLength} nextPeriod={nextPeriod} hideLen={m.unsure} />
                     </div>
                   </div>
                   <div style={{ display: "flex", alignItems: "flex-start" }}>
