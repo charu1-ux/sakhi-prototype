@@ -197,6 +197,7 @@ function P0Tiles() {
 
 export default function WomensHealthPage() {
   const { lang, setLang } = useLang();
+  const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
   const scrollRef = useRef(false);
   const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
@@ -208,6 +209,17 @@ export default function WomensHealthPage() {
       setScrolled(past);
     }
   }, []);
+
+  // Landing chat box: send the question into the health-content chat page,
+  // which auto-submits the `q` param to the LLM (askSakhi) on load.
+  const handleChatSubmit = useCallback(
+    (q: string) => {
+      const query = q.trim();
+      if (!query) return;
+      router.push(`/womens-health/health-content?q=${encodeURIComponent(query)}`);
+    },
+    [router],
+  );
 
   const langToggle = (
     <button
@@ -239,7 +251,11 @@ export default function WomensHealthPage() {
         onBack={() => {}}
         rightSlot={langToggle}
       />
-      <HubChatInput variant="sleek" placeholder={t("सखी से पूछें...", "Ask Sakhi...")} />
+      <HubChatInput
+        variant="sleek"
+        placeholder={t("सखी से पूछें...", "Ask Sakhi...")}
+        onSubmit={handleChatSubmit}
+      />
     </div>
   );
 }
