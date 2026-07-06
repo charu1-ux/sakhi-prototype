@@ -996,6 +996,78 @@ function CycleLengthCard({ onPick }: { onPick: (d: number, unsure?: boolean) => 
   );
 }
 
+// ── Reminder pickers ──────────────────────────────────────────────────────────
+function ReminderAskCard({ onYes, onNo }: { onYes: () => void; onNo: () => void }) {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
+  return (
+    <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+      <button
+        onClick={onYes}
+        style={{
+          flex: 1,
+          borderRadius: 20,
+          padding: "10px 0",
+          fontSize: 13,
+          fontWeight: 600,
+          color: "#fff",
+          background: C.gulabi,
+          border: "none",
+          cursor: "pointer",
+          fontFamily: "JioType, sans-serif",
+        }}
+      >
+        {t("हां, याद दिलाएं 🔔", "Yes, remind me 🔔")}
+      </button>
+      <button
+        onClick={onNo}
+        style={{
+          flex: 1,
+          borderRadius: 20,
+          padding: "10px 0",
+          fontSize: 13,
+          fontWeight: 600,
+          color: C.raatMid,
+          background: C.raatLight,
+          border: "none",
+          cursor: "pointer",
+          fontFamily: "JioType, sans-serif",
+        }}
+      >
+        {t("नहीं, अभी नहीं", "No, not now")}
+      </button>
+    </div>
+  );
+}
+
+function ReminderDaysCard({ options, onPick }: { options: number[]; onPick: (n: number) => void }) {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6 }}>
+      {options.map((n) => (
+        <button
+          key={n}
+          onClick={() => onPick(n)}
+          style={{
+            padding: "6px 14px",
+            borderRadius: 20,
+            fontSize: 12,
+            fontWeight: 600,
+            background: C.raatLight,
+            color: C.raat,
+            border: `1px solid ${C.border}`,
+            cursor: "pointer",
+            fontFamily: "JioType, sans-serif",
+          }}
+        >
+          {t(`${n} दिन पहले`, `${n} day${n > 1 ? "s" : ""} before`)}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ── For-whom picker ───────────────────────────────────────────────────────────
 type ForWhom = "self" | "other" | null;
 
@@ -1135,20 +1207,20 @@ function ContinuePromptCard({
       style={{
         background: C.surface,
         borderRadius: 16,
-        padding: "10px 12px",
+        padding: "12px 14px",
         boxShadow: `0 1px 4px ${C.border}`,
         display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 8,
+        flexDirection: "column",
+        alignItems: "flex-start",
+        gap: 10,
       }}
     >
       <span
         style={{
-          fontSize: 12,
+          fontSize: 13,
+          lineHeight: 1.5,
           color: C.textSecondary,
           fontFamily: "JioType, sans-serif",
-          flex: 1,
         }}
       >
         {label}
@@ -1156,7 +1228,8 @@ function ContinuePromptCard({
       <button
         onClick={onContinue}
         style={{
-          padding: "6px 14px",
+          alignSelf: "flex-start",
+          padding: "7px 16px",
           borderRadius: 20,
           fontSize: 12,
           fontWeight: 700,
@@ -1181,6 +1254,8 @@ type MessageKind =
   | { type: "calendar"; onDatePick: (label: string, date: Date) => void }
   | { type: "cycleLength"; lastPeriod: Date; onPick: (days: number, unsure?: boolean) => void }
   | { type: "cycleOverview"; lastPeriod: Date; cycleLength: number; unsure?: boolean }
+  | { type: "reminderAsk"; onYes: () => void; onNo: () => void }
+  | { type: "reminderDays"; options: number[]; onPick: (n: number) => void }
   | { type: "phaseInsight"; day: number; cycleLength: number }
   | { type: "continuePrompt"; label: string; buttonLabel: string; onContinue: () => void }
   | { type: "symptoms"; onDone: (s: string[]) => void }
@@ -1314,6 +1389,23 @@ export default function PeriodTrackerPage() {
                 `Your next period is likely to come in approximately ${daysUntil} days.`,
               );
 
+    // If the period is more than a day away, offer a reminder before moving to
+    // symptoms. If it's due today/tomorrow, a reminder is pointless — skip it.
+    const tail: MessageKind[] =
+      daysUntil > 1
+        ? [
+            {
+              type: "text",
+              role: "sakhi",
+              text: t(
+                "क्या आप चाहेंगी कि मैं period से पहले आपको एक notification से याद दिला दूँ?",
+                "Would you like me to remind you with a notification before your period?",
+              ),
+            },
+            { type: "reminderAsk", onYes: () => onReminderYes(daysUntil), onNo: onReminderNo },
+          ]
+        : [symptomsOfferPrompt()];
+
     setMessages((prev) => [
       ...prev.filter((m) => m.type !== "cycleLength"),
       {
@@ -1325,17 +1417,80 @@ export default function PeriodTrackerPage() {
       // Visual first — easier to absorb — then the countdown text below it.
       { type: "cycleOverview", lastPeriod: lp, cycleLength: days, unsure },
       { type: "text", role: "sakhi", text: countdownMsg },
-      {
-        type: "continuePrompt",
-        label: t(
-          "इसी phase में ज़्यादातर महिलाओं को एक जैसे शारीरिक और मानसिक लक्षण महसूस होते हैं। क्या आप अपने symptoms बताना चाहेंगी, ताकि मैं कुछ घरेलू उपाय सुझा सकूँ?",
-          "Most women in the same phase of their cycle go through similar physical and mental symptoms. Would you like to share your symptoms so I can suggest some home remedies?",
-        ),
-        buttonLabel: t("हां, symptoms बताऊँ 📝", "Yes, share my symptoms 📝"),
-        onContinue: () => showSymptomsStage(),
-      },
+      ...tail,
     ]);
     setStep("chat");
+    scroll();
+  }
+
+  // Reusable symptoms offer — shown after the reminder step (or directly when a
+  // reminder isn't offered).
+  function symptomsOfferPrompt(): MessageKind {
+    return {
+      type: "continuePrompt",
+      label: t(
+        "इसी phase में ज़्यादातर महिलाओं को एक जैसे शारीरिक और मानसिक लक्षण महसूस होते हैं। क्या आप अपने symptoms बताना चाहेंगी, ताकि मैं कुछ घरेलू उपाय सुझा सकूँ?",
+        "Most women in the same phase of their cycle go through similar physical and mental symptoms. Would you like to share your symptoms so I can suggest some home remedies?",
+      ),
+      buttonLabel: t("हां, symptoms बताऊँ 📝", "Yes, share my symptoms 📝"),
+      onContinue: () => showSymptomsStage(),
+    };
+  }
+
+  function onReminderYes(daysUntil: number) {
+    // Only offer reminder lead-times that still fall before the next period.
+    const options = [1, 2, 3, 5, 7].filter((n) => n < daysUntil);
+    setMessages((prev) => [
+      ...prev.filter((m) => m.type !== "reminderAsk"),
+      { type: "text", role: "user", text: t("हां, याद दिलाएं", "Yes, remind me") },
+      {
+        type: "text",
+        role: "sakhi",
+        text: t(
+          "बढ़िया! period से कितने दिन पहले आपको याद दिलाऊँ?",
+          "Great! How many days before your period should I remind you?",
+        ),
+      },
+      { type: "reminderDays", options, onPick: onReminderDaysPick },
+    ]);
+    scroll();
+  }
+
+  function onReminderNo() {
+    setMessages((prev) => [
+      ...prev.filter((m) => m.type !== "reminderAsk"),
+      { type: "text", role: "user", text: t("नहीं, अभी नहीं", "No, not now") },
+      {
+        type: "text",
+        role: "sakhi",
+        text: t(
+          "कोई बात नहीं! जब चाहें, याद दिलाने के लिए कह सकती हैं। 💜",
+          "No problem! You can ask me to remind you whenever you like. 💜",
+        ),
+      },
+      symptomsOfferPrompt(),
+    ]);
+    scroll();
+  }
+
+  function onReminderDaysPick(n: number) {
+    setMessages((prev) => [
+      ...prev.filter((m) => m.type !== "reminderDays"),
+      {
+        type: "text",
+        role: "user",
+        text: t(`${n} दिन पहले`, `${n} day${n > 1 ? "s" : ""} before`),
+      },
+      {
+        type: "text",
+        role: "sakhi",
+        text: t(
+          `हो गया! ✅ मैं आपको period से ${n} दिन पहले एक notification भेज दूँगी, ताकि आप पहले से तैयार रह सकें।`,
+          `Done! ✅ I'll send you a notification ${n} day${n > 1 ? "s" : ""} before your period, so you can be prepared in advance.`,
+        ),
+      },
+      symptomsOfferPrompt(),
+    ]);
     scroll();
   }
 
@@ -1657,6 +1812,26 @@ export default function PeriodTrackerPage() {
                       {t("Cycle की लंबाई चुनें", "Choose cycle length")}
                     </p>
                     <CycleLengthCard onPick={m.onPick} />
+                  </div>
+                </div>
+              );
+
+            if (m.type === "reminderAsk")
+              return (
+                <div key={i} style={{ display: "flex", alignItems: "flex-start" }}>
+                  {avatar}
+                  <div style={{ flex: 1, maxWidth: "92%" }}>
+                    <ReminderAskCard onYes={m.onYes} onNo={m.onNo} />
+                  </div>
+                </div>
+              );
+
+            if (m.type === "reminderDays")
+              return (
+                <div key={i} style={{ display: "flex", alignItems: "flex-start" }}>
+                  {avatar}
+                  <div style={{ flex: 1, maxWidth: "92%" }}>
+                    <ReminderDaysCard options={m.options} onPick={m.onPick} />
                   </div>
                 </div>
               );
