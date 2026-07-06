@@ -118,8 +118,8 @@ const P0_TILES = [
   {
     icon: "✅",
     iconBg: "#F0FDF4",
-    label: "अपने शरीर को समझें",
-    labelEn: "Understand your body",
+    label: "अपनी सेहत के सवालों के जवाब पाएं",
+    labelEn: "Get answers to your health questions",
     desc: "PCOS, पीरियड दर्द, एनीमिया — विशेषज्ञों द्वारा सत्यापित लेख और वीडियो",
     descEn: "PCOS, period pain, anaemia — articles & videos verified by experts",
     href: "/womens-health/health-content",
