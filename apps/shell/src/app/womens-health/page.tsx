@@ -74,12 +74,6 @@ function SakhiCard() {
             >
               {t("सखी", "Health Companion")}
             </span>
-            <span
-              className="rounded-full px-2 py-0.5 text-[10px] font-medium"
-              style={{ background: "#FFF1F2", color: "#BE123C", fontFamily: "JioType, sans-serif" }}
-            >
-              {t("AI सहेली", "AI Companion")}
-            </span>
           </div>
           <p
             className="text-[13px] leading-snug text-zinc-500"
