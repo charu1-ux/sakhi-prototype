@@ -366,7 +366,7 @@ function HealthContentInner() {
       </main>
 
       <HubHeader
-        title={t("जाँची-परखी जानकारी", "Verified Health Info")}
+        title={t("सेहत के सवालों के जवाब", "Your health queries, answered")}
         backHref="/womens-health"
         scrolled={false}
       />
