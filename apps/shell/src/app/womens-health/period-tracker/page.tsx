@@ -902,7 +902,24 @@ function CycleLengthCard({ onPick }: { onPick: (d: number) => void }) {
   const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   return (
     <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6 }}>
-      {[21, 24, 28, 30, 32, 35].map((d) => (
+      {/* "Unsure" first — an easy, non-judgmental starting choice */}
+      <button
+        onClick={() => onPick(28)}
+        style={{
+          padding: "6px 14px",
+          borderRadius: 20,
+          fontSize: 12,
+          fontWeight: 600,
+          background: C.gulabiLight,
+          color: C.gulabi,
+          border: `1px dashed ${C.gulabiMid}`,
+          cursor: "pointer",
+          fontFamily: "JioType, sans-serif",
+        }}
+      >
+        {t("मुझे पता नहीं", "I'm not sure")}
+      </button>
+      {[21, 24, 26, 28, 30, 32, 35].map((d) => (
         <button
           key={d}
           onClick={() => onPick(d)}
@@ -911,9 +928,9 @@ function CycleLengthCard({ onPick }: { onPick: (d: number) => void }) {
             borderRadius: 20,
             fontSize: 12,
             fontWeight: 600,
-            background: C.gulabiLight,
-            color: C.gulabi,
-            border: "none",
+            background: C.raatLight,
+            color: C.raat,
+            border: `1px solid ${C.border}`,
             cursor: "pointer",
             fontFamily: "JioType, sans-serif",
           }}
@@ -921,22 +938,6 @@ function CycleLengthCard({ onPick }: { onPick: (d: number) => void }) {
           {d} {t("दिन", "days")}
         </button>
       ))}
-      <button
-        onClick={() => onPick(28)}
-        style={{
-          padding: "6px 14px",
-          borderRadius: 20,
-          fontSize: 12,
-          fontWeight: 600,
-          background: C.raatLight,
-          color: C.textTertiary,
-          border: `1px dashed ${C.border}`,
-          cursor: "pointer",
-          fontFamily: "JioType, sans-serif",
-        }}
-      >
-        {t("पता नहीं (28 डिफ़ॉल्ट)", "Not sure (28 default)")}
-      </button>
     </div>
   );
 }
@@ -1286,8 +1287,16 @@ export default function PeriodTrackerPage() {
             type: "text",
             role: "sakhi",
             text: t(
-              `${label} — नोट हो गया! आपकी cycle आमतौर पर कितने दिनों की होती है?`,
-              `${label} — noted! How many days is your cycle usually?`,
+              `${label} — नोट हो गया! 📝 अब एक और बात बता दें — इससे मैं आपके अगले पीरियड की तारीख सही-सही बता पाऊंगी, ताकि रिमाइंडर बिल्कुल सही दिन आए।`,
+              `${label} — noted! 📝 Just one more thing — this lets me predict your next period date accurately, so your reminder lands on exactly the right day.`,
+            ),
+          },
+          {
+            type: "text",
+            role: "sakhi",
+            text: t(
+              "आमतौर पर एक पीरियड शुरू होने से अगला पीरियड शुरू होने तक कितने दिन होते हैं? (पहले पीरियड के पहले दिन से अगले पीरियड के पहले दिन तक गिनें — खून आने के दिन नहीं।)",
+              "Usually, how many days from the start of one period to the start of the next? (Count from the first day of one period to the first day of the next — not the days of bleeding.)",
             ),
           },
           { type: "cycleLength", lastPeriod: date, onPick: (days) => onCyclePick(days, date) },
@@ -1302,19 +1311,27 @@ export default function PeriodTrackerPage() {
     const userText =
       displayText ??
       (v === "self" ? t("मेरे लिए", "For me") : t("किसी और के लिए", "For someone else"));
-    const sakhiText =
+    const valueText =
       v === "self"
         ? t(
-            "ठीक है! 📅 पहले बताइए — आखिरी पीरियड कब शुरू हुआ था?",
-            "Okay! 📅 First tell me — when did the last period start?",
+            "यह बताने से मैं आपके लिए एक निजी रिमाइंडर सेट कर सकती हूँ — ताकि पीरियड कभी अचानक न आए। आप पहले से पैड या कप तैयार रख सकें, और अपना दिन, काम या कोई ज़रूरी काम उसी हिसाब से प्लान कर सकें। 📅",
+            "Sharing this lets me set a private reminder for you — so your period never catches you off guard. You can keep pads or a cup ready in advance, and plan your day, work, or any important event around it. 📅",
           )
         : t(
-            "ठीक है! 📅 उनका आखिरी पीरियड कब शुरू हुआ था?",
-            "Okay! 📅 When did their last period start?",
+            "यह बताने से मैं एक निजी रिमाइंडर सेट कर सकती हूँ — ताकि पीरियड कभी अचानक न आए, वे पहले से सामान तैयार रख सकें और अपने दिन उसी हिसाब से प्लान कर सकें। 📅",
+            "Sharing this lets me set a private reminder — so her period never catches her off guard. She can keep supplies ready in advance and plan her days around it. 📅",
+          );
+    const sakhiText =
+      v === "self"
+        ? t("तो बताइए — आपका आखिरी पीरियड कब शुरू हुआ था?", "So, when did your last period start?")
+        : t(
+            "तो बताइए — उनका आखिरी पीरियड कब शुरू हुआ था?",
+            "So, when did their last period start?",
           );
     setMessages((prev) => [
       ...prev.filter((m) => m.type !== "forWhomPicker"),
       { type: "text", role: "user", text: userText },
+      { type: "text", role: "sakhi", text: valueText },
       { type: "text", role: "sakhi", text: sakhiText },
       makeCalendarMsg(),
     ]);
