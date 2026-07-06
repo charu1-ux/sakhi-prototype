@@ -1065,13 +1065,69 @@ function ContentLinkCard({ onTap }: { onTap: () => void }) {
   );
 }
 
+// ── Continue touchpoint card ───────────────────────────────────────────────────
+function ContinuePromptCard({
+  label,
+  buttonLabel,
+  onContinue,
+}: {
+  label: string;
+  buttonLabel: string;
+  onContinue: () => void;
+}) {
+  return (
+    <div
+      style={{
+        background: C.surface,
+        borderRadius: 16,
+        padding: "10px 12px",
+        boxShadow: `0 1px 4px ${C.border}`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 8,
+      }}
+    >
+      <span
+        style={{
+          fontSize: 12,
+          color: C.textSecondary,
+          fontFamily: "JioType, sans-serif",
+          flex: 1,
+        }}
+      >
+        {label}
+      </span>
+      <button
+        onClick={onContinue}
+        style={{
+          padding: "6px 14px",
+          borderRadius: 20,
+          fontSize: 12,
+          fontWeight: 700,
+          background: C.gulabi,
+          color: "#fff",
+          border: "none",
+          cursor: "pointer",
+          fontFamily: "JioType, sans-serif",
+          flexShrink: 0,
+        }}
+      >
+        {buttonLabel}
+      </button>
+    </div>
+  );
+}
+
 // ── MessageKind union ─────────────────────────────────────────────────────────
 type MessageKind =
   | { type: "text"; role: "user" | "sakhi"; text: string; isLlm?: boolean }
   | { type: "forWhomPicker" }
   | { type: "calendar"; onDatePick: (label: string, date: Date) => void }
   | { type: "cycleLength"; lastPeriod: Date; onPick: (days: number) => void }
-  | { type: "prediction"; lastPeriod: Date; cycleLength: number }
+  | { type: "cycleOverview"; lastPeriod: Date; cycleLength: number }
+  | { type: "phaseInsight"; day: number; cycleLength: number }
+  | { type: "continuePrompt"; label: string; buttonLabel: string; onContinue: () => void }
   | { type: "symptoms"; onDone: (s: string[]) => void }
   | { type: "contentLink"; query: string };
 
@@ -1161,14 +1217,56 @@ export default function PeriodTrackerPage() {
       { type: "text", role: "sakhi", text: cycleReflection },
       { type: "text", role: "sakhi", text: countdownMsg },
       {
-        type: "text",
-        role: "sakhi",
-        text: t("🗓️ यहाँ देखें आपकी पूरी cycle:", "🗓️ See your full cycle here:"),
+        type: "continuePrompt",
+        label: t(
+          "अपनी पूरी cycle visually देखना चाहेंगी?",
+          "Want to see your full cycle visually?",
+        ),
+        buttonLabel: t("हां, दिखाएं 👀", "Yes, show me 👀"),
+        onContinue: () => showCycleOverview(lp, days),
       },
-      { type: "prediction", lastPeriod: lp, cycleLength: days },
-      { type: "symptoms", onDone: onSymptomsDone },
     ]);
     setStep("chat");
+    scroll();
+  }
+
+  function showCycleOverview(lp: Date, days: number) {
+    setMessages((prev) => [
+      ...prev.filter((m) => m.type !== "continuePrompt"),
+      { type: "cycleOverview", lastPeriod: lp, cycleLength: days },
+      {
+        type: "continuePrompt",
+        label: t(
+          "अपने current phase के बारे में जानना चाहेंगी?",
+          "Want to know about your current phase?",
+        ),
+        buttonLabel: t("हां, बताएं 💜", "Yes, tell me 💜"),
+        onContinue: () => showPhaseInsight(lp, days),
+      },
+    ]);
+    scroll();
+  }
+
+  function showPhaseInsight(lp: Date, days: number) {
+    const day = getCycleDay(lp);
+    setMessages((prev) => [
+      ...prev.filter((m) => m.type !== "continuePrompt"),
+      { type: "phaseInsight", day, cycleLength: days },
+      {
+        type: "continuePrompt",
+        label: t("आज के symptoms log करना चाहेंगी?", "Want to log today's symptoms?"),
+        buttonLabel: t("हां, log करें 📝", "Yes, log them 📝"),
+        onContinue: () => showSymptomsStage(),
+      },
+    ]);
+    scroll();
+  }
+
+  function showSymptomsStage() {
+    setMessages((prev) => [
+      ...prev.filter((m) => m.type !== "continuePrompt"),
+      { type: "symptoms", onDone: onSymptomsDone },
+    ]);
     scroll();
   }
 
@@ -1466,7 +1564,7 @@ export default function PeriodTrackerPage() {
                 </div>
               );
 
-            if (m.type === "prediction") {
+            if (m.type === "cycleOverview") {
               const day = getCycleDay(m.lastPeriod);
               const nextPeriod = addDays(m.lastPeriod, m.cycleLength);
               return (
@@ -1484,15 +1582,33 @@ export default function PeriodTrackerPage() {
                       <PredictionCalendar lastPeriod={m.lastPeriod} len={m.cycleLength} />
                     </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "flex-start" }}>
-                    {avatar}
-                    <div style={{ flex: 1, maxWidth: "92%" }}>
-                      <PhaseInsightCard day={day} len={m.cycleLength} />
-                    </div>
-                  </div>
                 </div>
               );
             }
+
+            if (m.type === "phaseInsight")
+              return (
+                <div key={i} style={{ display: "flex", alignItems: "flex-start" }}>
+                  {avatar}
+                  <div style={{ flex: 1, maxWidth: "92%" }}>
+                    <PhaseInsightCard day={m.day} len={m.cycleLength} />
+                  </div>
+                </div>
+              );
+
+            if (m.type === "continuePrompt")
+              return (
+                <div key={i} style={{ display: "flex", alignItems: "flex-start" }}>
+                  {avatar}
+                  <div style={{ flex: 1, maxWidth: "92%" }}>
+                    <ContinuePromptCard
+                      label={m.label}
+                      buttonLabel={m.buttonLabel}
+                      onContinue={m.onContinue}
+                    />
+                  </div>
+                </div>
+              );
 
             if (m.type === "symptoms")
               return (
