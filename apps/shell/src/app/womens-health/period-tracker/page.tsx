@@ -1310,8 +1310,8 @@ export default function PeriodTrackerPage() {
                 `Period may come in just ${daysUntil} days — check again tomorrow. 🗓️`,
               )
             : t(
-                `अगला period लगभग ${daysUntil} दिन बाद आएगा।`,
-                `Next period will come in approximately ${daysUntil} days.`,
+                `आपका अगला period लगभग ${daysUntil} दिन बाद आने की संभावना है।`,
+                `Your next period is likely to come in approximately ${daysUntil} days.`,
               );
 
     setMessages((prev) => [
