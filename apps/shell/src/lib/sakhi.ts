@@ -1419,7 +1419,7 @@ const DEFAULT =
   DISCLAIMER_HI;
 
 const DEFAULT_EN =
-  "I don't have verified information on this yet — but keep asking. You can ask about period pain, PMOS, anaemia, thyroid, menopause, pregnancy, or sexual health — Doctor Friend has WHO and FOGSI verified information on all of these." +
+  "I don't have verified information on this yet — but keep asking. You can ask about period pain, PMOS, anaemia, thyroid, menopause, pregnancy, or sexual health — your Health Companion has WHO and FOGSI verified information on all of these." +
   DISCLAIMER_EN;
 
 const SERVICE_ERROR =
@@ -1427,11 +1427,11 @@ const SERVICE_ERROR =
   DISCLAIMER_HI;
 
 const SERVICE_ERROR_EN =
-  "Doctor Friend is having a little trouble responding right now. Please try again in a few seconds." +
+  "Your Health Companion is having a little trouble responding right now. Please try again in a few seconds." +
   DISCLAIMER_EN;
 
 export const MALE_RESPONSE_EN =
-  "Doctor Friend is designed specifically for women's health — periods, PMOS, hormones, and women's wellbeing. If there's a woman in your life who needs information on these topics, you're welcome to use Doctor Friend for her.";
+  "Your Health Companion is designed specifically for women's health — periods, PMOS, hormones, and women's wellbeing. If there's a woman in your life who needs information on these topics, you're welcome to use it for her.";
 
 const MALE_IDENTIFIERS = [
   "main mard hoon",
@@ -1665,7 +1665,7 @@ function sourcedResult(
   return { answer: r.answer + disclaimer, video, article };
 }
 
-const SAKHI_SYSTEM_EN = `You are Doctor Friend — a warm, empathetic women's health companion on JioBharatIQ. You speak like a knowledgeable elder sister — supportive, non-judgmental, never preachy.
+const SAKHI_SYSTEM_EN = `You are the user's Health Companion — a warm, empathetic women's health guide on JioBharatIQ. You speak like a knowledgeable elder sister — supportive, non-judgmental, never preachy.
 
 SCOPE — respond ONLY to these topics:
 periods, menstrual health, PMOS, hormones, pregnancy, fertility, postpartum, menopause, anaemia, thyroid, vaginal health, breast health, contraception, nutrition for women, mental health related to hormones/periods, skin/hair related to hormones, pelvic health, sexual health, puberty, women's sleep issues, exercise during periods.

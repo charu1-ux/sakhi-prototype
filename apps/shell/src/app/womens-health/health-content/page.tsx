@@ -186,11 +186,11 @@ function HealthContentInner() {
   const searchParams = useSearchParams();
   const { lang } = useLang();
   const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
-  const assistantName = t("सखी", "Doctor Friend");
+  const assistantName = t("सखी", "Health Companion");
   const disclaimerHi =
     "नमस्ते! मैं सखी हूँ — आपकी स्वास्थ्य सहेली। 💜\n\nआपका राज़ मेरा राज़ है। जो भी आप मुझसे पूछेंगी — वो सिर्फ हमारे बीच रहेगा। कोई विज्ञापन नहीं, कोई जानकारी किसी के साथ साझा नहीं।\n\nकोई भी सवाल पूछिए — बिना झिझक।";
   const disclaimerEn =
-    "Hi! I'm Doctor Friend — your women's health companion. 💜\n\nYour privacy is my priority. Everything you share with me stays between us. No ads, no data shared with anyone.\n\nAsk me anything — no hesitation needed.";
+    "Hi! I'm your Health Companion. 💜\n\nYour privacy is my priority. Everything you share with me stays between us. No ads, no data shared with anyone.\n\nAsk me anything — no hesitation needed.";
   const [messages, setMessages] = useState<Message[]>([
     { role: "sakhi", text: lang === "en" ? disclaimerEn : disclaimerHi },
   ]);
@@ -237,7 +237,8 @@ function HealthContentInner() {
         {
           role: "sakhi",
           text:
-            data.answer || t("सखी अभी उपलब्ध नहीं है।", "Doctor Friend is unavailable right now."),
+            data.answer ||
+            t("सखी अभी उपलब्ध नहीं है।", "Your Health Companion is unavailable right now."),
           video: data.video,
           article: data.article,
           isLlm: data.isLlm,
