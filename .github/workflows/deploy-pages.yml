@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url || steps.deployment_retry.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -43,7 +43,19 @@ jobs:
         with:
           path: apps/shell/out
 
+      # First attempt — non-fatal so a transient Pages backend error
+      # ("Deployment failed, try again later.") doesn't fail the whole run.
       - id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+        with:
+          timeout: 600000
+          error_count: 10
+          reporting_interval: 5000
+
+      # Retry only if the first attempt hit a transient failure.
+      - id: deployment_retry
+        if: steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@v4
         with:
           timeout: 600000
