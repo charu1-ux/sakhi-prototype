@@ -118,8 +118,8 @@ const P0_TILES = [
   {
     icon: "✅",
     iconBg: "#F0FDF4",
-    label: "जाँची-परखी जानकारी",
-    labelEn: "Verified Health Info",
+    label: "अपने शरीर को समझें",
+    labelEn: "Understand your body",
     desc: "PCOS, पीरियड दर्द, एनीमिया — विशेषज्ञों द्वारा सत्यापित लेख और वीडियो",
     descEn: "PCOS, period pain, anaemia — articles & videos verified by experts",
     href: "/womens-health/health-content",
@@ -127,8 +127,8 @@ const P0_TILES = [
   {
     icon: "🗓️",
     iconBg: "#FFF1F2",
-    label: "पीरियड ट्रैकर",
-    labelEn: "Period Tracker",
+    label: "अगले पीरियड की तारीख जानें",
+    labelEn: "Know your next period date",
     desc: "पीरियड लॉग करें, अगला पीरियड कब — सखी याद रखती है",
     descEn: "Log your period, know when next — your Health Companion remembers",
     href: "/womens-health/period-tracker",
@@ -136,8 +136,8 @@ const P0_TILES = [
   {
     icon: "💜",
     iconBg: "#F5F3FF",
-    label: "मूड ट्रैकर",
-    labelEn: "Mood Tracker",
+    label: "मूड के उतार-चढ़ाव समझें",
+    labelEn: "Understand your mood swings",
     desc: "मासिक धर्म से पहले मूड खराब, चिड़चिड़ापन — हॉर्मोन से जोड़कर समझें",
     descEn: "Low mood, irritability before periods — understand the hormone link",
     href: "/womens-health/mood-tracker",
