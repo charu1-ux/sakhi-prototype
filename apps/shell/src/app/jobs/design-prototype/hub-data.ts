@@ -1,8 +1,11 @@
+import { BASE_PATH } from "@/lib/base-path";
 import { JOBS_APP_BASE_PATH } from "@/lib/jobs-app-base-path";
 
 export { JOBS_APP_BASE_PATH };
 
-export const DESIGN_ASSETS_PREFIX = `${JOBS_APP_BASE_PATH}/assets/design-assets`;
+// Asset paths (used as <Image>/img string src) must carry the app basePath —
+// the router prefixes navigation, but not static public/ asset references.
+export const DESIGN_ASSETS_PREFIX = `${BASE_PATH}${JOBS_APP_BASE_PATH}/assets/design-assets`;
 export const HOME_ASSETS = `${DESIGN_ASSETS_PREFIX}/home`;
 export const MICROLEARN_ASSETS = `${DESIGN_ASSETS_PREFIX}/microlearn`;
 

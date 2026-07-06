@@ -10,15 +10,22 @@ const withSerwist = withSerwistInit({
 });
 
 const isPagesDeployment = process.env.GITHUB_PAGES === "true";
+const basePath = isPagesDeployment ? "/sakhi-prototype" : "";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: "export",
   turbopack: {},
-  basePath: isPagesDeployment ? "/sakhi-prototype" : "",
+  basePath,
   assetPrefix: isPagesDeployment ? "/sakhi-prototype/" : "",
   trailingSlash: true,
   images: { unoptimized: true },
+  // Exposes basePath to client code. Needed because Next only auto-prepends
+  // basePath to the router / next/link — NOT to string src paths for public/
+  // assets (images are unoptimized, so next/image doesn't prefix them either).
+  // Use BASE_PATH from "@/lib/base-path" for any public/ asset referenced as a
+  // string. Do NOT use it for navigation paths — the router prefixes those.
+  env: { NEXT_PUBLIC_BASE_PATH: basePath },
   experimental: {
     optimizePackageImports: ["lucide-react", "@radix-ui/react-icons"],
   },

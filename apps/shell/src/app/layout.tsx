@@ -22,6 +22,12 @@ import { ShellJobsMessageBridge } from "@/components/ShellJobsMessageBridge";
 
 import "./globals.css";
 
+// Next.js auto-prepends `basePath` to next/link, next/image and the router, but
+// NOT to string URLs inside the `metadata` export. On GitHub Pages the app is
+// served under /sakhi-prototype, so these must be prefixed manually or they
+// resolve to the domain root and 404. Mirrors the gate in next.config.ts.
+const basePath = process.env.GITHUB_PAGES === "true" ? "/sakhi-prototype" : "";
+
 export const metadata: Metadata = {
   title: {
     default: "intelligence-prototype",
@@ -30,10 +36,10 @@ export const metadata: Metadata = {
   description:
     "Multi-vertical chat assistant. PWA-ready, immersive, accessible — built on Next.js, Tailwind v4 and Radix.",
   applicationName: "intelligence-prototype",
-  manifest: "/manifest.webmanifest",
+  manifest: `${basePath}/manifest.webmanifest`,
   icons: {
-    icon: [{ url: "/icons/icon.svg", type: "image/svg+xml" }],
-    apple: [{ url: "/icons/icon-512.svg", sizes: "512x512", type: "image/svg+xml" }],
+    icon: [{ url: `${basePath}/icons/icon.svg`, type: "image/svg+xml" }],
+    apple: [{ url: `${basePath}/icons/icon-512.svg`, sizes: "512x512", type: "image/svg+xml" }],
   },
   appleWebApp: {
     capable: true,

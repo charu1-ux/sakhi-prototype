@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
+import { withBasePath } from "@/lib/base-path";
 import { useLang } from "./LangContext";
 
 // ─── Sakhi Avatar (simple illustrated, relatable) ────────────────────────────
@@ -21,96 +23,25 @@ function SakhiAvatar({ speaking }: { speaking: boolean }) {
       )}
       {/* Avatar circle */}
       <div
-        className="relative flex items-center justify-center overflow-hidden rounded-full"
+        className="relative overflow-hidden rounded-full"
         style={{
           width: 72,
           height: 72,
-          background: "#FFF1F2",
           border: speaking ? "2.5px solid #E11D48" : "2.5px solid #FECDD3",
         }}
       >
-        {/* Simple illustrated face — relatable, everyday Indian woman */}
-        <svg
-          width="52"
-          height="52"
-          viewBox="0 0 52 52"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          {/* Head group — scaled down to balance against the coat */}
-          <g transform="translate(9.1, -1.5) scale(0.65)">
-            {/* Hair top */}
-            <ellipse cx="26" cy="15" rx="14" ry="12" fill="#1C1917" />
-            {/* Side hair */}
-            <ellipse cx="12" cy="22" rx="4" ry="7" fill="#1C1917" />
-            <ellipse cx="40" cy="22" rx="4" ry="7" fill="#1C1917" />
-            {/* Middle parting line */}
-            <line x1="26" y1="5" x2="26" y2="14" stroke="#292524" strokeWidth="1.5" />
-            {/* Face */}
-            <ellipse cx="26" cy="27" rx="13" ry="14" fill="#C68642" />
-            {/* Forehead bindi */}
-            <circle cx="26" cy="17" r="1.5" fill="#DC2626" />
-            {/* Eyes */}
-            <ellipse cx="21" cy="25" rx="2.5" ry="2" fill="#1C1917" />
-            <ellipse cx="31" cy="25" rx="2.5" ry="2" fill="#1C1917" />
-            {/* Eye shine */}
-            <circle cx="22" cy="24" r="0.7" fill="white" />
-            <circle cx="32" cy="24" r="0.7" fill="white" />
-            {/* Nose */}
-            <path d="M26 27 Q24 30 25 31 Q26 31.5 27 31 Q28 30 26 27Z" fill="#A0673A" />
-            {/* Smile */}
-            <path
-              d="M21 33 Q26 37 31 33"
-              stroke="#7C3C1A"
-              strokeWidth="1.5"
-              fill="none"
-              strokeLinecap="round"
-            />
-          </g>
-          {/* White coat — narrowed to match face width */}
-          <path
-            d="M14 29 Q26 24.5 38 29 L38 52 L14 52Z"
-            fill="#FFFFFF"
-            stroke="#E2E8F0"
-            strokeWidth="1"
-          />
-          {/* Coat lapels (V-neck) */}
-          <path d="M18.7 28 L26 49 L23.1 28Z" fill="#EEF2F6" stroke="#DCE3EA" strokeWidth="0.5" />
-          <path d="M33.3 28 L26 49 L28.9 28Z" fill="#EEF2F6" stroke="#DCE3EA" strokeWidth="0.5" />
-          {/* Shirt collar peeking through */}
-          <path d="M23.1 28 L26 37 L28.9 28Z" fill="#BFDBFE" />
-          {/* ID badge */}
-          <rect
-            x="15"
-            y="32.5"
-            width="6"
-            height="7"
-            rx="1"
-            fill="#FFFFFF"
-            stroke="#CBD5E1"
-            strokeWidth="0.6"
-          />
-          <circle cx="17.5" cy="35.3" r="1.2" fill="#93C5FD" />
-          <line x1="16" y1="38.3" x2="20" y2="38.3" stroke="#CBD5E1" strokeWidth="0.6" />
-          {/* Stethoscope tube */}
-          <path
-            d="M18.7 27 Q14.8 34 18.2 41 Q20.5 45.5 24.2 43.5"
-            stroke="#64748B"
-            strokeWidth="2"
-            fill="none"
-            strokeLinecap="round"
-          />
-          <path
-            d="M33.3 27 Q37.2 34 33.8 41 Q31.5 45.5 27.8 43.5"
-            stroke="#64748B"
-            strokeWidth="2"
-            fill="none"
-            strokeLinecap="round"
-          />
-          {/* Stethoscope chestpiece */}
-          <circle cx="26" cy="43.5" r="3" fill="#64748B" />
-          <circle cx="26" cy="43.5" r="1.6" fill="#94A3B8" />
-        </svg>
+        {/* withBasePath prefixes the app basePath so this resolves to
+            /sakhi-prototype/sakhi-avatar.png on GitHub Pages. Images are
+            unoptimized, so next/image does not add basePath on its own. */}
+        <Image
+          src={withBasePath("/sakhi-avatar.png")}
+          alt="Sakhi"
+          width={72}
+          height={72}
+          unoptimized
+          className="h-full w-full object-cover"
+          style={{ transform: "scale(1.08)" }}
+        />
       </div>
     </div>
   );
