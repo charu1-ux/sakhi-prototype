@@ -157,6 +157,37 @@ function ArticleCard({ article }: { article: Article }) {
   );
 }
 
+// ── Value note — "why this pick is better than a random search" ──────────────
+// A deliberately distinct UI (dashed lavender, sparkle) so it reads as Sakhi's
+// personal framing, NOT as the content itself. Builds perceived value: verified,
+// personalised, time-saving — helping the user decide with confidence.
+
+const VALUE_VIDEO_HI =
+  "आपके सवाल को समझकर मैंने यह डॉक्टर-सत्यापित वीडियो खास आपके लिए चुना है — घंटों स्क्रॉल करने या गलत जानकारी की चिंता नहीं। बस वही जो सच में आपके काम आए। 💜";
+const VALUE_VIDEO_EN =
+  "Going by your question, I've picked this doctor-verified video just for you — no endless scrolling, no misinformation. Only what truly helps you decide. 💜";
+const VALUE_INFO_HI =
+  "यह कोई आम इंटरनेट सर्च नहीं है — यह भरोसेमंद संस्थाओं (WHO, FOGSI) से सत्यापित और आपके सवाल के लिए चुनी गई जानकारी है, ताकि आप पूरे भरोसे के साथ सही फैसला ले सकें। 💜";
+const VALUE_INFO_EN =
+  "This isn't a random internet search — it's verified by trusted bodies like WHO and FOGSI and matched to your question, so you can decide with real confidence. 💜";
+
+function ValueNote({ text }: { text: string }) {
+  return (
+    <div
+      className="mt-2 ml-9 flex items-start gap-2 rounded-xl px-3 py-2"
+      style={{ maxWidth: "82%", background: "#FAF5FF", border: "1px dashed #D8B4FE" }}
+    >
+      <span className="shrink-0 text-[13px] leading-[18px]">✨</span>
+      <span
+        className="text-[11px] leading-snug font-medium"
+        style={{ color: "#7C3AED", fontFamily: "JioType, sans-serif" }}
+      >
+        {text}
+      </span>
+    </div>
+  );
+}
+
 // ── Suggested prompts ─────────────────────────────────────────────────────────
 
 const SUGGESTED_HI = [
@@ -309,8 +340,18 @@ function HealthContentInner() {
                   </span>
                 </div>
               )}
-              {m.role === "sakhi" && m.video && <VideoCard video={m.video} />}
-              {m.role === "sakhi" && !m.video && m.article && <ArticleCard article={m.article} />}
+              {m.role === "sakhi" && m.video && (
+                <>
+                  <ValueNote text={t(VALUE_VIDEO_HI, VALUE_VIDEO_EN)} />
+                  <VideoCard video={m.video} />
+                </>
+              )}
+              {m.role === "sakhi" && !m.video && m.article && (
+                <>
+                  <ValueNote text={t(VALUE_INFO_HI, VALUE_INFO_EN)} />
+                  <ArticleCard article={m.article} />
+                </>
+              )}
             </div>
           ))}
 
