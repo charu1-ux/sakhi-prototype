@@ -4,7 +4,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
-import { askSakhi } from "@/lib/sakhi";
+import { askSakhi, splitDisclaimer } from "@/lib/sakhi";
 import { useLang } from "../LangContext";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
@@ -171,6 +171,25 @@ const VALUE_INFO_HI =
 const VALUE_INFO_EN =
   "This isn't a random internet search — it's verified by trusted bodies like WHO and FOGSI and matched to your question, so you can decide with real confidence. 💜";
 
+// Doctor disclaimer — rendered as a distinct, muted footnote (not blended into
+// the answer text) so it reads clearly as a standing note, not as content.
+function DisclaimerNote({ text }: { text: string }) {
+  return (
+    <div
+      className="mt-1.5 ml-9 flex items-start gap-1.5 rounded-lg px-2.5 py-1.5"
+      style={{ maxWidth: "82%", background: "#FFFBEB", border: "1px solid #FDE68A" }}
+    >
+      <span className="shrink-0 text-[11px] leading-[15px]">ⓘ</span>
+      <span
+        className="text-[10px] leading-snug italic"
+        style={{ color: "#92400E", fontFamily: "JioType, sans-serif" }}
+      >
+        {text}
+      </span>
+    </div>
+  );
+}
+
 function ValueNote({ text }: { text: string }) {
   return (
     <div
@@ -300,60 +319,67 @@ function HealthContentInner() {
       >
         <div className="mx-auto flex w-full max-w-md flex-col gap-3">
           {/* Conversation */}
-          {messages.map((m, i) => (
-            <div
-              key={i}
-              className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
-            >
-              <div className={`flex ${m.role === "user" ? "justify-end" : "justify-start"} w-full`}>
-                {m.role === "sakhi" && (
+          {messages.map((m, i) => {
+            const { body, disclaimer } =
+              m.role === "sakhi" ? splitDisclaimer(m.text) : { body: m.text, disclaimer: null };
+            return (
+              <div
+                key={i}
+                className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
+              >
+                <div
+                  className={`flex ${m.role === "user" ? "justify-end" : "justify-start"} w-full`}
+                >
+                  {m.role === "sakhi" && (
+                    <div
+                      className="mr-2 flex h-7 w-7 shrink-0 items-center justify-center self-end rounded-full text-[12px]"
+                      style={{ background: "#F0FDF4" }}
+                    >
+                      ✅
+                    </div>
+                  )}
                   <div
-                    className="mr-2 flex h-7 w-7 shrink-0 items-center justify-center self-end rounded-full text-[12px]"
-                    style={{ background: "#F0FDF4" }}
+                    className="max-w-[82%] px-3 py-2 text-[13px] leading-relaxed"
+                    style={{
+                      background: m.role === "user" ? "#6d17ce" : "#F9FAFB",
+                      color: m.role === "user" ? "white" : "#1F2937",
+                      borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+                      fontFamily: "JioType, sans-serif",
+                      border: m.role === "sakhi" ? "1px solid #F3F4F6" : "none",
+                    }}
                   >
-                    ✅
+                    {body}
+                  </div>
+                </div>
+                {m.role === "sakhi" && disclaimer && <DisclaimerNote text={disclaimer} />}
+                {m.role === "sakhi" && m.isLlm && (
+                  <div
+                    className="mt-1 ml-9 flex items-center gap-1 text-[10px]"
+                    style={{ color: "#9CA3AF" }}
+                  >
+                    <span>⚠️</span>
+                    <span style={{ fontFamily: "JioType, sans-serif" }}>
+                      यह जवाब AI द्वारा उत्पन्न है। यह जानकारी सामान्य शिक्षा के लिए है और किसी
+                      योग्य डॉक्टर की व्यक्तिगत सलाह का विकल्प नहीं है। स्वास्थ्य संबंधी कोई भी
+                      निर्णय लेने से पहले अपनी डॉक्टर से अवश्य परामर्श करें।
+                    </span>
                   </div>
                 )}
-                <div
-                  className="max-w-[82%] px-3 py-2 text-[13px] leading-relaxed"
-                  style={{
-                    background: m.role === "user" ? "#6d17ce" : "#F9FAFB",
-                    color: m.role === "user" ? "white" : "#1F2937",
-                    borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-                    fontFamily: "JioType, sans-serif",
-                    border: m.role === "sakhi" ? "1px solid #F3F4F6" : "none",
-                  }}
-                >
-                  {m.text}
-                </div>
+                {m.role === "sakhi" && m.video && (
+                  <>
+                    <ValueNote text={t(VALUE_VIDEO_HI, VALUE_VIDEO_EN)} />
+                    <VideoCard video={m.video} />
+                  </>
+                )}
+                {m.role === "sakhi" && !m.video && m.article && (
+                  <>
+                    <ValueNote text={t(VALUE_INFO_HI, VALUE_INFO_EN)} />
+                    <ArticleCard article={m.article} />
+                  </>
+                )}
               </div>
-              {m.role === "sakhi" && m.isLlm && (
-                <div
-                  className="mt-1 ml-9 flex items-center gap-1 text-[10px]"
-                  style={{ color: "#9CA3AF" }}
-                >
-                  <span>⚠️</span>
-                  <span style={{ fontFamily: "JioType, sans-serif" }}>
-                    यह जवाब AI द्वारा उत्पन्न है। यह जानकारी सामान्य शिक्षा के लिए है और किसी योग्य
-                    डॉक्टर की व्यक्तिगत सलाह का विकल्प नहीं है। स्वास्थ्य संबंधी कोई भी निर्णय लेने
-                    से पहले अपनी डॉक्टर से अवश्य परामर्श करें।
-                  </span>
-                </div>
-              )}
-              {m.role === "sakhi" && m.video && (
-                <>
-                  <ValueNote text={t(VALUE_VIDEO_HI, VALUE_VIDEO_EN)} />
-                  <VideoCard video={m.video} />
-                </>
-              )}
-              {m.role === "sakhi" && !m.video && m.article && (
-                <>
-                  <ValueNote text={t(VALUE_INFO_HI, VALUE_INFO_EN)} />
-                  <ArticleCard article={m.article} />
-                </>
-              )}
-            </div>
-          ))}
+            );
+          })}
 
           {/* Suggested pills — shown after disclaimer, until user asks something */}
           {!messages.some((m) => m.role === "user") && (

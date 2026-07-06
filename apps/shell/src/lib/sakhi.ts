@@ -2,10 +2,19 @@
 
 // ─── Prototype mock — WHO/FOGSI/ICMR/ACOG verified content ───────────────────
 
-const DISCLAIMER_HI =
+export const DISCLAIMER_HI =
   "\n\nमैं आपकी सहेली हूँ, डॉक्टर नहीं। जो मैं बताती हूँ वो जानकारी है — कोई भी ज़रूरी निर्णय अपनी डॉक्टर से ज़रूर पक्का करें। 💜";
-const DISCLAIMER_EN =
+export const DISCLAIMER_EN =
   "\n\nI'm your health companion, not a doctor. What I share is information — always confirm important decisions with your doctor. 💜";
+
+// Splits a response into its main body and the trailing doctor-disclaimer, so
+// the UI can render the disclaimer separately (not blended into the answer).
+export function splitDisclaimer(text: string): { body: string; disclaimer: string | null } {
+  for (const d of [DISCLAIMER_EN, DISCLAIMER_HI]) {
+    if (text.endsWith(d)) return { body: text.slice(0, -d.length).trimEnd(), disclaimer: d.trim() };
+  }
+  return { body: text, disclaimer: null };
+}
 type Video = { label: string; channel: string; url: string; embedId?: string };
 type Article = { title: string; source: string; url: string; summary?: string };
 
