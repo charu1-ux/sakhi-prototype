@@ -12,12 +12,20 @@ type Article = { title: string; source: string; url: string; summary?: string };
 export const BREATHING_EXERCISE =
   "अभी एक काम करें — डीप बेली ब्रीदिंग। यह सबसे आसान और असरदार तरीका है:\n\n🫁 साँस लें — 4 तक गिनें\nपेट बाहर की तरफ जाए, छाती नहीं — यह ज़रूरी है\n\n🫁 साँस छोड़ें — 4 तक गिनें\nपेट अंदर की तरफ आए\n\nबीच में साँस बिल्कुल न रोकें — सीधे लें और छोड़ें। 5-6 बार करें — आप फर्क महसूस करेंगी। 💜";
 
-const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: Article }[] = [
+const RESPONSES: {
+  keywords: string[];
+  answer: string;
+  answerEn?: string;
+  video?: Video;
+  article?: Article;
+}[] = [
   // ── About FOGSI ───────────────────────────────────────────────────────────
   {
     keywords: ["fogsi", "fogsi kya hai", "fogsi kya hota"],
     answer:
       "FOGSI यानी Federation of Obstetric & Gynaecological Societies of India — भारत की सबसे बड़ी स्त्री रोग विशेषज्ञों की संस्था है जिसमें 35,000+ डॉक्टर हैं। सखी की सारी जानकारी FOGSI की गाइडलाइन्स से सत्यापित है। ये गाइडलाइन्स भारतीय महिलाओं की ज़रूरतों को ध्यान में रखकर बनाई गई हैं।",
+    answerEn:
+      "FOGSI stands for the Federation of Obstetric & Gynaecological Societies of India — the country's largest body of gynaecologists, with 35,000+ doctors. All of your Health Companion's information is verified against FOGSI's guidelines. These guidelines are made keeping the needs of Indian women in mind.",
     article: {
       title: "FOGSI Patient Information",
       source: "FOGSI",
@@ -30,6 +38,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     keywords: ["icmr", "icmr kya hai", "icmr kya hota"],
     answer:
       "ICMR यानी Indian Council of Medical Research — भारत की सर्वोच्च चिकित्सा अनुसंधान संस्था है जो केंद्र सरकार के अधीन काम करती है। ICMR भारतीय महिलाओं के लिए पोषण, एनीमिया, और प्रजनन स्वास्थ्य पर राष्ट्रीय दिशानिर्देश जारी करती है। सखी की डाइट और जांच संबंधी सलाह ICMR की गाइडलाइन्स पर आधारित है।",
+    answerEn:
+      "ICMR stands for the Indian Council of Medical Research — India's apex medical research body, which works under the central government. ICMR issues national guidelines on nutrition, anaemia, and reproductive health for Indian women. Your Health Companion's advice on diet and tests is based on ICMR's guidelines.",
     article: {
       title: "ICMR Health Guidelines",
       source: "ICMR",
@@ -42,6 +52,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     keywords: ["who kya hai", "who kya hota", "world health organization", "who guidelines"],
     answer:
       "WHO यानी World Health Organization — संयुक्त राष्ट्र की वैश्विक स्वास्थ्य संस्था है। WHO महिला स्वास्थ्य, मातृ स्वास्थ्य, और प्रजनन अधिकारों पर अंतरराष्ट्रीय मानक तय करती है। सखी WHO की गाइडलाइन्स को भारतीय संदर्भ में लागू करती है।",
+    answerEn:
+      "WHO stands for the World Health Organization — the United Nations' global health body. WHO sets international standards on women's health, maternal health, and reproductive rights. Your Health Companion applies WHO's guidelines in the Indian context.",
     article: {
       title: "WHO Women's Health",
       source: "WHO",
@@ -54,6 +66,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     keywords: ["acog", "acog kya hai", "acog kya hota"],
     answer:
       "ACOG यानी American College of Obstetricians & Gynecologists — अमेरिका की प्रमुख स्त्री रोग विशेषज्ञों की संस्था है। ACOG की गाइडलाइन्स पीरियड दर्द, PMDD, गर्भावस्था, और रजोनिवृत्ति पर विश्व स्तर पर मानक मानी जाती हैं। सखी ACOG की सिफारिशों का उपयोग उन विषयों पर करती है जहाँ भारतीय दिशानिर्देश अधूरे हैं।",
+    answerEn:
+      "ACOG stands for the American College of Obstetricians & Gynecologists — America's leading body of gynaecologists. ACOG's guidelines on period pain, PMDD, pregnancy, and menopause are considered the standard worldwide. Your Health Companion uses ACOG's recommendations on topics where Indian guidelines are incomplete.",
     article: {
       title: "ACOG Patient Resources",
       source: "ACOG",
@@ -74,6 +88,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "सखी की सारी जानकारी चार संस्थाओं से सत्यापित है — FOGSI (भारत की स्त्री रोग विशेषज्ञ संस्था), ICMR (भारतीय चिकित्सा अनुसंधान परिषद), WHO (विश्व स्वास्थ्य संगठन), और ACOG (अमेरिकी स्त्री रोग संस्था)। इन सभी की गाइडलाइन्स सार्वजनिक और नियमित रूप से अपडेट होती हैं। सखी जानकारी देती है — अंतिम निर्णय हमेशा आपकी डॉक्टर के साथ लें।",
+    answerEn:
+      "All of your Health Companion's information is verified from four bodies — FOGSI (India's gynaecology body), ICMR (Indian Council of Medical Research), WHO (World Health Organization), and ACOG (America's gynaecology body). All of their guidelines are public and updated regularly. Your Health Companion gives you information — always make the final decision together with your doctor.",
     article: {
       title: "FOGSI Patient Information",
       source: "FOGSI",
@@ -118,6 +134,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "यह दर्द बहुत real है — और आपको इसे सहते रहने की ज़रूरत नहीं है। FOGSI और WHO के अनुसार, पीरियड के पहले 1-2 दिन हल्का दर्द सामान्य है। लेकिन यदि दर्द इतना तेज़ हो कि रोज़मर्रा के काम रुक जाएं, तो यह Endometriosis या Adenomyosis का संकेत हो सकता है। ACOG की गाइडलाइन कहती है कि ऐसे दर्द को 'सामान्य' मानकर सहना नहीं चाहिए — इसका उपचार संभव है।",
+    answerEn:
+      "This pain is very real — and you don't have to keep bearing it. According to FOGSI and WHO, mild pain on the first 1-2 days of your period is normal. But if the pain is so severe that it stops your everyday tasks, it can be a sign of Endometriosis or Adenomyosis. ACOG's guideline says such pain should not be treated as 'normal' and endured — it can be treated.",
     video: {
       label: "पीरियड दर्द — Dr. Cuterus समझाती हैं",
       channel: "Dr. Cuterus",
@@ -164,6 +182,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "यह बहुत आम है और इसका समाधान है — घबराइए नहीं। ICMR के अनुसार, 21 से 35 दिनों के बीच का चक्र सामान्य माना जाता है। इससे अधिक अनियमितता थायराइड असंतुलन, PMOS, या अत्यधिक तनाव के कारण हो सकती है। WHO की सिफारिश है कि यदि 3 महीने से अधिक समय से पीरियड अनियमित हो, तो स्त्री रोग विशेषज्ञ से जांच कराएं।",
+    answerEn:
+      "This is very common and it has a solution — please don't worry. According to ICMR, a cycle between 21 and 35 days is considered normal. Irregularity beyond this can be due to thyroid imbalance, PMOS, or excessive stress. WHO recommends that if your periods have been irregular for more than 3 months, you should get checked by a gynaecologist.",
     video: {
       label: "अनियमित पीरियड — Maitri Woman Health",
       channel: "Maitri Woman Health",
@@ -206,6 +226,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "यह सुनकर चिंता होना बिल्कुल स्वाभाविक है — और आपने सही किया बताकर। FOGSI के अनुसार, यदि पीरियड में हर 2 घंटे में पैड बदलनी पड़े या 7 दिन से अधिक चले, तो यह Heavy Menstrual Bleeding (HMB) है। इसके कारण फाइब्रॉएड, थायराइड, या खून जमाने की समस्या हो सकती है। ACOG की गाइडलाइन है कि CBC और अल्ट्रासाउंड जांच से कारण का पता लगाया जाए।",
+    answerEn:
+      "It's completely natural to feel worried hearing this — and you did the right thing by sharing it. According to FOGSI, if you have to change your pad every 2 hours during your period or it lasts more than 7 days, that is Heavy Menstrual Bleeding (HMB). The cause can be fibroids, thyroid, or a blood-clotting problem. ACOG's guideline is that the cause should be found through a CBC and ultrasound.",
     video: {
       label: "Heavy bleeding — Fortis Healthcare",
       channel: "Fortis Healthcare",
@@ -284,6 +306,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "यह जानकर परेशान होना बिल्कुल स्वाभाविक है — आप अकेली नहीं हैं। FOGSI और ACOG के अनुसार, भारत में हर पाँच में से एक महिला को PMOS (Polycystic Morphology of Ovaries — जिसे पहले PCOS कहते थे) होता है, जो दुनिया में सबसे अधिक है। इसमें अनियमित पीरियड, वजन बढ़ना, और चेहरे पर अनचाहे बाल आम लक्षण हैं। नियमित व्यायाम, संतुलित आहार, और सही चिकित्सकीय देखभाल से PMOS को बहुत प्रभावी ढंग से नियंत्रित किया जा सकता है।",
+    answerEn:
+      "It's completely natural to feel troubled learning this — you are not alone. According to FOGSI and ACOG, one in every five women in India has PMOS (Polycystic Morphology of Ovaries — earlier called PCOS), which is the highest in the world. Irregular periods, weight gain, and unwanted facial hair are common symptoms. With regular exercise, a balanced diet, and the right medical care, PMOS can be managed very effectively.",
     video: {
       label: "PMOS को समझें — PCOS Society India",
       channel: "PCOS Society India",
@@ -340,6 +364,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "इन लक्षणों के साथ दिन गुज़ारना सच में बहुत थका देने वाला होता है — आप अकेली नहीं हैं जो यह महसूस करती हैं। भूख न लगना, थकान, और चक्कर आना — ये एनीमिया (खून की कमी) या थायराइड असंतुलन के सबसे आम संकेत हैं। WHO के अनुसार, भारत में 57% महिलाओं में आयरन की कमी है। ICMR की सिफारिश है कि CBC (Complete Blood Count) और TSH जांच से कारण का पता लगाया जा सकता है। इन लक्षणों को नज़रअंदाज़ न करें।",
+    answerEn:
+      "Getting through the day with these symptoms is truly exhausting — you are not the only one who feels this way. Loss of appetite, fatigue, and dizziness — these are the most common signs of anaemia (low blood) or thyroid imbalance. According to WHO, 57% of women in India have iron deficiency. ICMR recommends that the cause can be found through a CBC (Complete Blood Count) and TSH test. Don't ignore these symptoms.",
     article: {
       title: "Anaemia — WHO Fact Sheet",
       source: "WHO",
@@ -378,6 +404,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "WHO के अनुसार, भारत में 57% महिलाओं में एनीमिया है — मुख्य कारण आयरन की कमी है। ICMR की सिफारिश है कि महिलाओं को प्रतिदिन 29mg आयरन की आवश्यकता है। हरी पत्तेदार सब्ज़ियां, दालें, और विटामिन C के साथ सेवन अवशोषण बढ़ाता है। CBC रक्त परीक्षण से निदान की पुष्टि होती है।",
+    answerEn:
+      "According to WHO, 57% of women in India have anaemia — the main cause is iron deficiency. ICMR recommends that women need 29mg of iron per day. Green leafy vegetables, lentils, and taking iron along with vitamin C increases its absorption. A CBC blood test confirms the diagnosis.",
     video: {
       label: "खून की कमी — Apollo Hospitals",
       channel: "Apollo Hospitals",
@@ -417,6 +445,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "WHO और ICMR के अनुसार, थायराइड असंतुलन महिलाओं में पुरुषों की तुलना में 5-8 गुना अधिक पाया जाता है। Hypothyroidism से पीरियड भारी और अनियमित हो सकते हैं, वजन बढ़ सकता है और थकान होती है। सामान्य TSH रेंज 0.4-4.0 mIU/L मानी जाती है। वार्षिक TSH जांच की सलाह दी जाती है।",
+    answerEn:
+      "According to WHO and ICMR, thyroid imbalance is found 5-8 times more often in women than in men. Hypothyroidism can make periods heavy and irregular, cause weight gain, and lead to fatigue. The normal TSH range is considered to be 0.4-4.0 mIU/L. A yearly TSH test is advised.",
     video: {
       label: "थायराइड और महिला स्वास्थ्य — Medanta",
       channel: "Medanta Healthcare",
@@ -459,6 +489,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "यह जीवन का एक नया अध्याय है — और इसे समझना आपका अधिकार है। WHO के अनुसार, रजोनिवृत्ति आमतौर पर 45-55 वर्ष की उम्र में होती है। ACOG की गाइडलाइन के अनुसार, गर्म लहरें, नींद न आना, और मूड बदलाव Estrogen के घटने से होते हैं। Hormone Replacement Therapy (HRT) सहित कई उपचार विकल्प उपलब्ध हैं — डॉक्टर से परामर्श लें।",
+    answerEn:
+      "This is a new chapter of life — and understanding it is your right. According to WHO, menopause usually happens between the ages of 45-55. According to ACOG's guideline, hot flashes, trouble sleeping, and mood changes happen due to falling Estrogen. Many treatment options are available, including Hormone Replacement Therapy (HRT) — talk to your doctor.",
     video: {
       label: "रजोनिवृत्ति — Dr. Megha Khanna",
       channel: "Dr. Megha Khanna",
@@ -535,6 +567,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "यह बहुत कठिन समय होता है — और आपकी तकलीफ़ बिल्कुल समझ में आती है। WHO के अनुसार, 12 महीने नियमित कोशिश के बाद भी गर्भधारण न होना Infertility कहलाता है। FOGSI की गाइडलाइन है कि पहले TSH, AMH, और Pelvic Ultrasound जांच करें — इनसे अक्सर कारण सामने आ जाता है। PMOS, थायराइड असंतुलन, और Fallopian Tube blockage भारत में सबसे आम कारण हैं — और इनका उपचार संभव है।",
+    answerEn:
+      "This is a very difficult time — and your distress is completely understandable. According to WHO, not conceiving even after 12 months of regular trying is called Infertility. FOGSI's guideline is to first get TSH, AMH, and Pelvic Ultrasound tests — these often reveal the cause. PMOS, thyroid imbalance, and Fallopian Tube blockage are the most common causes in India — and they can be treated.",
     article: {
       title: "Infertility — WHO Fact Sheet",
       source: "WHO",
@@ -585,6 +619,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "WHO की ANC गाइडलाइन के अनुसार, गर्भावस्था में कम से कम 8 बार प्रसव-पूर्व जांच की सिफारिश की जाती है। FOGSI के अनुसार, फोलिक एसिड, आयरन, और कैल्शियम के नियमित सेवन से माँ और बच्चे दोनों का स्वास्थ्य बेहतर रहता है। गर्भधारण में कठिनाई हो तो स्त्री रोग विशेषज्ञ से जल्द परामर्श लें।",
+    answerEn:
+      "According to WHO's ANC guideline, at least 8 antenatal check-ups are recommended during pregnancy. According to FOGSI, regular intake of folic acid, iron, and calcium keeps both mother and baby healthier. If you have difficulty conceiving, consult a gynaecologist early.",
     video: {
       label: "गर्भावस्था देखभाल — Dr. Megha Khanna",
       channel: "Dr. Megha Khanna",
@@ -631,6 +667,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "यह बहुत साहस की बात है कि आपने यह share किया — नई माँ के लिए यह समय बहुत कठिन हो सकता है। FOGSI और WHO के अनुसार, प्रसव के बाद 4-6 हफ्ते तक हल्का मूड बदलाव (baby blues) सामान्य है। लेकिन यदि उदासी, रोना, या बच्चे से दूरी 2 हफ्ते से अधिक रहे, तो यह Postpartum Depression हो सकता है — जो इलाज योग्य है। ACOG की सिफारिश है कि स्तनपान कराने वाली माँ को प्रतिदिन अतिरिक्त 500 कैलोरी और आयरन की ज़रूरत होती है।",
+    answerEn:
+      "It takes a lot of courage that you shared this — this time can be very hard for a new mother. According to FOGSI and WHO, mild mood changes (baby blues) for 4-6 weeks after delivery are normal. But if sadness, crying, or feeling distant from the baby lasts more than 2 weeks, it can be Postpartum Depression — which is treatable. ACOG recommends that a breastfeeding mother needs an extra 500 calories and iron every day.",
     video: {
       label: "Postpartum Depression — Apollo Hospitals",
       channel: "Apollo Hospitals",
@@ -685,6 +723,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "WHO और FOGSI के अनुसार, हल्का पारदर्शी या सफेद स्राव सामान्य है। लेकिन यदि स्राव पीला, हरा, या बदबूदार हो, या खुजली और जलन हो, तो यह Bacterial Vaginosis या Yeast Infection हो सकता है। UTI (पेशाब में संक्रमण) में जलन और बार-बार पेशाब आना आम लक्षण हैं। दोनों का इलाज सरल है — स्त्री रोग विशेषज्ञ से परामर्श लें।",
+    answerEn:
+      "According to WHO and FOGSI, light clear or white discharge is normal. But if the discharge is yellow, green, or foul-smelling, or if there is itching and burning, it can be Bacterial Vaginosis or a Yeast Infection. In a UTI (urinary infection), burning and frequent urination are common symptoms. Both are simple to treat — consult a gynaecologist.",
     video: {
       label: "सफेद पानी — Dr. Neha Gupta, 1mg",
       channel: "1mg",
@@ -723,6 +763,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "WHO और ACOG के अनुसार, 40 वर्ष की आयु के बाद प्रतिवर्ष मैमोग्राफी की सलाह दी जाती है। FOGSI की गाइडलाइन कहती है कि मासिक स्व-परीक्षण महत्वपूर्ण है — कोई भी नई गांठ, त्वचा में बदलाव, या असामान्य स्राव की तुरंत जांच करानी चाहिए। स्तन दर्द अक्सर हॉर्मोनल होता है और सामान्य हो सकता है।",
+    answerEn:
+      "According to WHO and ACOG, a yearly mammography is advised after the age of 40. FOGSI's guideline says monthly self-examination is important — any new lump, change in the skin, or unusual discharge should be checked right away. Breast pain is often hormonal and can be normal.",
     article: {
       title: "Breast Cancer Screening — WHO",
       source: "WHO",
@@ -765,6 +807,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "WHO की Medical Eligibility Criteria के अनुसार, गर्भनिरोधक के कई सुरक्षित विकल्प हैं — गोलियां, कॉपर-T, हॉर्मोनल IUD, और कंडोम। FOGSI का सुझाव है कि सही विकल्प आपकी उम्र, स्वास्थ्य स्थिति, और भविष्य की योजनाओं पर निर्भर करता है। Emergency contraception (I-Pill) असुरक्षित संबंध के 72 घंटे के भीतर ली जा सकती है।",
+    answerEn:
+      "According to WHO's Medical Eligibility Criteria, there are several safe contraceptive options — pills, Copper-T, hormonal IUD, and condoms. FOGSI suggests that the right choice depends on your age, health condition, and future plans. Emergency contraception (I-Pill) can be taken within 72 hours of unprotected sex.",
     article: {
       title: "परिवार नियोजन — MoHFW राष्ट्रीय कार्यक्रम",
       source: "MoHFW",
@@ -798,6 +842,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
       "stress relief",
     ],
     answer: BREATHING_EXERCISE,
+    answerEn:
+      "Let's do one thing right now — deep belly breathing. This is the easiest and most effective way:\n\n🫁 Breathe in — count to 4\nLet your belly move outward, not your chest — this is important\n\n🫁 Breathe out — count to 4\nLet your belly move inward\n\nDon't hold your breath in between at all — just breathe in and out. Do this 5-6 times — you'll feel the difference. 💜",
   },
 
   // ── Mental health / mood / stress ─────────────────────────────────────────
@@ -841,6 +887,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "यह feeling बहुत real है — और इसका एक नाम भी है। ACOG और WHO के अनुसार, पीरियड से 1-2 हफ्ते पहले मूड बदलाव, चिड़चिड़ापन, और उदासी PMS (Premenstrual Syndrome) के लक्षण हैं — यह Estrogen और Progesterone के उतार-चढ़ाव से होता है। यदि ये लक्षण बहुत गंभीर हों तो यह PMDD हो सकता है जिसका इलाज संभव है। नियमित व्यायाम, पर्याप्त नींद, और काउंसलिंग से राहत मिलती है।",
+    answerEn:
+      "This feeling is very real — and it even has a name. According to ACOG and WHO, mood changes, irritability, and sadness in the 1-2 weeks before your period are symptoms of PMS (Premenstrual Syndrome) — this happens due to the ups and downs of Estrogen and Progesterone. If these symptoms are very severe, it can be PMDD, which is treatable. Regular exercise, enough sleep, and counselling bring relief.",
     article: {
       title: "Premenstrual Syndrome (PMS) — ACOG FAQ",
       source: "ACOG",
@@ -881,6 +929,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "FOGSI के अनुसार, महिलाओं में बाल झड़ने के पीछे अक्सर आयरन की कमी, थायराइड असंतुलन, या PMOS होता है। WHO की गाइडलाइन कहती है कि अत्यधिक बाल झड़ने पर CBC, TSH, और हॉर्मोन पैनल जांच करानी चाहिए। गर्दन और बगल पर काले धब्बे (Acanthosis Nigricans) इंसुलिन प्रतिरोध का संकेत हो सकते हैं — यह PMOS में आम है।",
+    answerEn:
+      "According to FOGSI, hair loss in women is often due to iron deficiency, thyroid imbalance, or PMOS. WHO's guideline says that with excessive hair loss you should get a CBC, TSH, and hormone panel done. Dark patches on the neck and underarms (Acanthosis Nigricans) can be a sign of insulin resistance — this is common in PMOS.",
     article: {
       title: "Polycystic Ovary Syndrome — WHO Fact Sheet",
       source: "WHO",
@@ -920,6 +970,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "WHO और FOGSI के अनुसार, पेल्विक दर्द, सूजन, या दबाव महसूस होना Ovarian Cyst, Fibroid, या Endometriosis का संकेत हो सकता है। ACOG की सिफारिश है कि 21 वर्ष की आयु से नियमित Pap Smear कराएं — यह सर्वाइकल कैंसर की रोकथाम का सबसे प्रभावी तरीका है। HPV वैक्सीन 9-26 वर्ष की उम्र में सबसे प्रभावी होती है।",
+    answerEn:
+      "According to WHO and FOGSI, feeling pelvic pain, swelling, or pressure can be a sign of an Ovarian Cyst, Fibroid, or Endometriosis. ACOG recommends getting a regular Pap Smear from the age of 21 — this is the most effective way to prevent cervical cancer. The HPV vaccine is most effective between the ages of 9-26.",
     video: {
       label: "Ovarian Cyst — Dr. Priyamvada Shah, Cloudnine",
       channel: "Cloudnine Hospitals",
@@ -964,6 +1016,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "ICMR की डाइटरी गाइडलाइन के अनुसार, महिलाओं को प्रतिदिन 600mg कैल्शियम, 29mg आयरन, 400mcg फोलिक एसिड, और पर्याप्त विटामिन D की आवश्यकता है। WHO सिफारिश करता है कि रंगीन सब्ज़ियां, दालें, और डेयरी उत्पाद महिलाओं के हॉर्मोन संतुलन में सहायक हैं। विटामिन D की कमी भारत में बहुत आम है — धूप और जांच दोनों ज़रूरी हैं।",
+    answerEn:
+      "According to ICMR's dietary guideline, women need 600mg of calcium, 29mg of iron, 400mcg of folic acid, and enough vitamin D every day. WHO recommends that colourful vegetables, lentils, and dairy products help with women's hormone balance. Vitamin D deficiency is very common in India — both sunlight and getting tested are important.",
     article: {
       title: "Dietary Guidelines for Indians — ICMR-NIN",
       source: "ICMR",
@@ -999,6 +1053,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "WHO के अनुसार, यौन स्वास्थ्य समग्र स्वास्थ्य का अभिन्न हिस्सा है। संभोग के दौरान दर्द (Dyspareunia) के कारण रजोनिवृत्ति से योनि सूखापन, Vaginismus, या Endometriosis हो सकते हैं — ये सभी इलाज योग्य हैं। FOGSI कहती है कि यौन स्वास्थ्य से जुड़ी किसी भी चिंता को डॉक्टर से बेझिझक साझा करें।",
+    answerEn:
+      "According to WHO, sexual health is an integral part of overall health. The causes of pain during sex (Dyspareunia) can be vaginal dryness from menopause, Vaginismus, or Endometriosis — all of these are treatable. FOGSI says you should feel free to share any concern about sexual health with your doctor.",
     article: {
       title: "Sexual & Reproductive Health — FOGSI",
       source: "FOGSI",
@@ -1041,6 +1097,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "WHO के अनुसार, लड़कियों में पहला पीरियड (Menarche) आमतौर पर 11-15 वर्ष की उम्र में आता है। FOGSI की गाइडलाइन कहती है कि पहले 1-2 साल अनियमित पीरियड सामान्य है — शरीर हॉर्मोन संतुलन बना रहा होता है। यदि 15 वर्ष तक पीरियड न आए या बहुत तेज़ दर्द हो, तो स्त्री रोग विशेषज्ञ से मिलें।",
+    answerEn:
+      "According to WHO, a girl's first period (Menarche) usually comes between the ages of 11-15. FOGSI's guideline says irregular periods in the first 1-2 years are normal — the body is still building its hormone balance. If a period hasn't started by age 15 or there is very severe pain, see a gynaecologist.",
     article: {
       title: "Adolescent Menstrual Health — FOGSI",
       source: "FOGSI",
@@ -1075,6 +1133,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "ACOG के अनुसार, पीरियड से पहले या दौरान सिरदर्द Estrogen के अचानक घटने से होता है — इसे Menstrual Migraine कहते हैं। WHO की गाइडलाइन कहती है कि यह 20-30% महिलाओं को प्रभावित करता है। पर्याप्त पानी, नियमित नींद, और तनाव कम करने से राहत मिलती है। बार-बार गंभीर माइग्रेन हो तो न्यूरोलॉजिस्ट से परामर्श लें।",
+    answerEn:
+      "According to ACOG, a headache before or during your period happens due to a sudden drop in Estrogen — this is called Menstrual Migraine. WHO's guideline says it affects 20-30% of women. Enough water, regular sleep, and reducing stress bring relief. If you get severe migraines often, consult a neurologist.",
     article: {
       title: "Migraine — Mayo Clinic",
       source: "Mayo Clinic",
@@ -1114,6 +1174,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "FOGSI के अनुसार, पीरियड से पहले पेट फूलना और गैस Progesterone के कारण होती है — यह बहुत आम है। WHO की गाइडलाइन कहती है कि महिलाओं में IBS (Irritable Bowel Syndrome) पुरुषों की तुलना में दोगुना पाया जाता है और यह हॉर्मोन से जुड़ा है। नमक कम करें, पानी अधिक पिएं, और प्रोसेस्ड फ़ूड से बचें।",
+    answerEn:
+      "According to FOGSI, bloating and gas before your period happen due to Progesterone — this is very common. WHO's guideline says IBS (Irritable Bowel Syndrome) is found twice as often in women as in men, and it is linked to hormones. Reduce salt, drink more water, and avoid processed food.",
     article: {
       title: "Digestive Health & Women — FOGSI",
       source: "FOGSI",
@@ -1150,6 +1212,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "ICMR के अनुसार, भारत में शाकाहारी महिलाओं में Vitamin B12 की कमी बहुत आम है क्योंकि B12 मुख्यतः पशु उत्पादों में पाया जाता है। WHO की गाइडलाइन कहती है कि B12 की कमी से थकान, हाथ-पैरों में झनझनाहट, और याददाश्त कमज़ोर होना हो सकता है। गर्भावस्था में B12 की कमी बच्चे के नर्वस सिस्टम को प्रभावित कर सकती है — नियमित जांच ज़रूरी है।",
+    answerEn:
+      "According to ICMR, Vitamin B12 deficiency is very common in vegetarian women in India because B12 is found mainly in animal products. WHO's guideline says B12 deficiency can cause fatigue, tingling in the hands and feet, and weak memory. B12 deficiency during pregnancy can affect the baby's nervous system — regular testing is important.",
     article: {
       title: "Vitamin B12 Deficiency — ICMR-NIN",
       source: "ICMR",
@@ -1185,6 +1249,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "WHO के अनुसार, Gestational Diabetes (गर्भावस्था में मधुमेह) 5-10% गर्भवती महिलाओं में होती है और बच्चे के जन्म के बाद अक्सर ठीक हो जाती है। FOGSI की सिफारिश है कि 24-28 सप्ताह पर GTT (Glucose Tolerance Test) ज़रूर कराएं। PMOS वाली महिलाओं में Type 2 Diabetes का खतरा अधिक होता है — वार्षिक HbA1c जांच करें।",
+    answerEn:
+      "According to WHO, Gestational Diabetes (diabetes during pregnancy) occurs in 5-10% of pregnant women and often resolves after the baby is born. FOGSI recommends definitely getting a GTT (Glucose Tolerance Test) at 24-28 weeks. Women with PMOS have a higher risk of Type 2 Diabetes — get a yearly HbA1c test.",
     article: {
       title: "Gestational Diabetes Guidelines — ICMR",
       source: "ICMR",
@@ -1218,6 +1284,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "ACOG और FOGSI के अनुसार, प्रसव के बाद या रजोनिवृत्ति में Pelvic Floor कमज़ोर होने से हँसने, खाँसने पर पेशाब लीक हो सकता है — यह बहुत आम है पर इसके बारे में बात नहीं होती। Kegel exercises से 70% महिलाओं को राहत मिलती है। गंभीर मामलों में Physiotherapy या सर्जरी का विकल्प उपलब्ध है।",
+    answerEn:
+      "According to ACOG and FOGSI, a weak Pelvic Floor after delivery or during menopause can cause urine to leak when you laugh or cough — this is very common but not talked about. Kegel exercises bring relief to 70% of women. In severe cases, Physiotherapy or surgery is an option.",
     article: {
       title: "Urinary Incontinence — ACOG Patient FAQ",
       source: "ACOG",
@@ -1256,6 +1324,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "WHO और UNICEF की गाइडलाइन कहती है कि Sanitary Pad, Tampon, और Menstrual Cup — सभी सुरक्षित विकल्प हैं। Pad हर 4-6 घंटे में बदलें — ज़्यादा देर रखने से संक्रमण और रैश हो सकता है। Menstrual Cup 8-12 घंटे तक उपयोग किया जा सकता है और पर्यावरण के लिए बेहतर है। साफ, सूती अंडरवियर पहनें।",
+    answerEn:
+      "The WHO and UNICEF guideline says that Sanitary Pad, Tampon, and Menstrual Cup — all are safe options. Change your pad every 4-6 hours — keeping it on too long can cause infection and rash. A Menstrual Cup can be used for 8-12 hours and is better for the environment. Wear clean, cotton underwear.",
     article: {
       title: "Periods & Menstrual Hygiene — NHS",
       source: "NHS",
@@ -1291,6 +1361,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "ACOG के अनुसार, महिलाओं में नींद की समस्या पुरुषों की तुलना में 40% अधिक होती है — इसका मुख्य कारण हॉर्मोन उतार-चढ़ाव, PMS, गर्भावस्था, और रजोनिवृत्ति है। WHO की सिफारिश है कि महिलाओं को प्रतिदिन 7-9 घंटे की नींद ज़रूरी है। सोने से 1 घंटे पहले स्क्रीन बंद करें, एक निश्चित समय पर सोएं, और कैफीन से बचें।",
+    answerEn:
+      "According to ACOG, sleep problems are 40% more common in women than in men — the main causes are hormone ups and downs, PMS, pregnancy, and menopause. WHO recommends that women need 7-9 hours of sleep every day. Turn off screens 1 hour before bed, sleep at a fixed time, and avoid caffeine.",
     article: {
       title: "Insomnia — Mayo Clinic",
       source: "Mayo Clinic",
@@ -1327,6 +1399,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "WHO की गाइडलाइन के अनुसार, पीरियड के दौरान हल्का व्यायाम — जैसे चलना, योग, और स्ट्रेचिंग — दर्द और थकान में राहत देता है। ACOG कहती है कि महिलाओं को प्रति सप्ताह कम से कम 150 मिनट मध्यम तीव्रता का व्यायाम करना चाहिए। PMOS और PMS दोनों में नियमित व्यायाम हॉर्मोन संतुलन में सबसे प्रभावी गैर-दवा उपाय है।",
+    answerEn:
+      "According to WHO's guideline, light exercise during your period — such as walking, yoga, and stretching — gives relief from pain and fatigue. ACOG says women should do at least 150 minutes of moderate-intensity exercise per week. In both PMOS and PMS, regular exercise is the most effective non-medicine way to balance hormones.",
     article: {
       title: "Exercise in Women — NHS",
       source: "NHS",
@@ -1358,6 +1432,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "WHO और ACOG के अनुसार, अत्यधिक तनाव, अचानक वजन घटना, लंबी यात्रा, या नींद न आना — ये सब Cortisol बढ़ाते हैं जो Estrogen और Progesterone को प्रभावित करता है और पीरियड में देरी ला सकता है। यह शरीर की सामान्य प्रतिक्रिया है। यदि 2-3 महीने से अधिक हो तो जांच ज़रूरी है।",
+    answerEn:
+      "According to WHO and ACOG, excessive stress, sudden weight loss, long travel, or lack of sleep — all of these raise Cortisol, which affects Estrogen and Progesterone and can delay your period. This is a normal response of the body. If it lasts more than 2-3 months, getting checked is important.",
     article: {
       title: "Stress Management — Mayo Clinic",
       source: "Mayo Clinic",
@@ -1390,6 +1466,8 @@ const RESPONSES: { keywords: string[]; answer: string; video?: Video; article?: 
     ],
     answer:
       "WHO के अनुसार, Autoimmune बीमारियाँ पुरुषों की तुलना में महिलाओं में 3 गुना अधिक होती हैं — इसका कारण Estrogen का प्रतिरक्षा तंत्र पर प्रभाव माना जाता है। Hashimoto's Thyroiditis (थायराइड की सूजन), Rheumatoid Arthritis, और Lupus महिलाओं में सबसे आम हैं। नियमित जांच और स्त्री रोग विशेषज्ञ व रुमेटोलॉजिस्ट की टीम से देखभाल ज़रूरी है।",
+    answerEn:
+      "According to WHO, Autoimmune diseases are 3 times more common in women than in men — the cause is thought to be Estrogen's effect on the immune system. Hashimoto's Thyroiditis (thyroid inflammation), Rheumatoid Arthritis, and Lupus are the most common in women. Regular check-ups and care from a team of a gynaecologist and a rheumatologist are important.",
     article: {
       title: "Autoimmune Disease in Women — NCBI",
       source: "NCBI",
@@ -1660,9 +1738,12 @@ function sourcedResult(
   article?: Article;
 } {
   const video = r.video?.embedId ? r.video : undefined;
-  const article = !video && r.article ? { ...r.article, summary: r.answer } : undefined;
+  // Serve the English answer when the user is in English; fall back to Hindi
+  // if a particular entry hasn't been translated yet.
+  const body = lang === "en" ? (r.answerEn ?? r.answer) : r.answer;
+  const article = !video && r.article ? { ...r.article, summary: body } : undefined;
   const disclaimer = lang === "en" ? DISCLAIMER_EN : DISCLAIMER_HI;
-  return { answer: r.answer + disclaimer, video, article };
+  return { answer: body + disclaimer, video, article };
 }
 
 const SAKHI_SYSTEM_EN = `You are the user's Health Companion — a warm, empathetic women's health guide on JioBharatIQ. You speak like a knowledgeable elder sister — supportive, non-judgmental, never preachy.
