@@ -679,6 +679,51 @@ const SYMPTOMS = [
   { hi: "पीठ दर्द", en: "Back pain" },
 ];
 
+// Safe, non-medical home remedies, keyed by the symptom's Hindi label
+// (the stable key SymptomChipsCard emits regardless of UI language).
+const REMEDIES: Record<string, { hi: string; en: string }> = {
+  थकान: {
+    hi: "आराम करें और आयरन से भरपूर खाना लें — पालक, गुड़, खजूर, दालें। खूब पानी पिएँ।",
+    en: "Rest well and eat iron-rich foods — spinach, jaggery, dates, lentils. Drink plenty of water.",
+  },
+  "मूड बदलाव": {
+    hi: "थोड़ी देर टहलें, गहरी साँसें लें, और किसी अपने से बात करें। यह हॉर्मोन की वजह से है — आपकी गलती नहीं।",
+    en: "Take a short walk, breathe deeply, and talk to someone you trust. It's the hormones — not your fault.",
+  },
+  Bloating: {
+    hi: "गुनगुना पानी पिएँ, नमक कम करें, और अजवाइन या जीरे का पानी लें। हल्की walk मदद करती है।",
+    en: "Sip warm water, cut down on salt, and try ajwain or jeera water. A gentle walk helps.",
+  },
+  दर्द: {
+    hi: "पेट के निचले हिस्से पर गर्म पानी की बोतल रखें, गर्म तरल पिएँ, और हल्की stretching करें।",
+    en: "Place a hot water bottle on your lower belly, sip warm fluids, and do light stretching.",
+  },
+  Nausea: {
+    hi: "अदरक की चाय लें, थोड़ा-थोड़ा करके खाएँ, और ताज़ी हवा में बैठें।",
+    en: "Try ginger tea, eat small frequent bites, and get some fresh air.",
+  },
+  सिरदर्द: {
+    hi: "शांत, अँधेरे कमरे में थोड़ा आराम करें, पानी पिएँ, और माथे पर ठंडी पट्टी रखें।",
+    en: "Rest a little in a quiet, dark room, hydrate, and put a cool cloth on your forehead.",
+  },
+  Pimples: {
+    hi: "चेहरा हल्के से धोएँ, तैलीय खाना कम करें, दाने न छेड़ें, और खूब पानी पिएँ।",
+    en: "Cleanse gently, cut back on oily food, don't pick at them, and drink lots of water.",
+  },
+  "नींद कम": {
+    hi: "सोने का समय तय रखें, सोने से पहले फ़ोन न देखें, और गुनगुना दूध लें।",
+    en: "Keep a fixed bedtime, avoid your phone before sleep, and try warm milk.",
+  },
+  "भूख कम": {
+    hi: "थोड़ा-थोड़ा करके हल्का खाना खाएँ — फल, सूप, खिचड़ी। पानी पीती रहें।",
+    en: "Eat small, light meals often — fruit, soup, khichdi. Keep sipping water.",
+  },
+  "पीठ दर्द": {
+    hi: "पीठ पर गर्म सिकाई करें, हल्की stretching (cat-cow) करें, और सही मुद्रा में बैठें।",
+    en: "Use a warm compress on your back, do light stretches (cat-cow), and sit with good posture.",
+  },
+};
+
 function SymptomChipsCard({ onDone }: { onDone: (s: string[]) => void }) {
   const { lang } = useLang();
   const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
@@ -1152,25 +1197,67 @@ export default function PeriodTrackerPage() {
   const scroll = () =>
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
 
+  const anyOtherQuestions = (): MessageKind => ({
+    type: "text",
+    role: "sakhi",
+    text: t(
+      "कोई और सवाल? जैसे — देरी क्यों होती है, दर्द कम कैसे करें, या कुछ और।",
+      "Any other questions? Like — why is there a delay, how to reduce pain, or anything else.",
+    ),
+  });
+
   function onSymptomsDone(selected: string[]) {
-    const reply =
-      selected.length > 0
-        ? t(
-            `Noted! 💜 आज के symptoms: ${selected.join(", ")}। इन्हें track करते रहना बहुत helpful होगा।`,
-            `Noted! 💜 Today's symptoms: ${selected.join(", ")}. Keeping track of these will be very helpful.`,
-          )
-        : t("कोई symptoms नहीं — अच्छा है! 💜", "No symptoms — great! 💜");
+    if (selected.length === 0) {
+      setMessages((prev) => [
+        ...prev.filter((m) => m.type !== "symptoms"),
+        {
+          type: "text",
+          role: "sakhi",
+          text: t(
+            "कोई symptoms नहीं — बहुत अच्छा! 💜 फिर भी कुछ पूछना हो तो मैं यहीं हूँ।",
+            "No symptoms — wonderful! 💜 I'm right here whenever you'd like to ask anything.",
+          ),
+        },
+        anyOtherQuestions(),
+      ]);
+      scroll();
+      return;
+    }
+
+    const names = selected.map((k) => {
+      const s = SYMPTOMS.find((x) => x.hi === k);
+      return s ? t(s.hi, s.en) : k;
+    });
+    const remedyLines = selected
+      .map((k) => {
+        const s = SYMPTOMS.find((x) => x.hi === k);
+        const r = REMEDIES[k];
+        if (!r) return null;
+        return `• ${s ? t(s.hi, s.en) : k} — ${t(r.hi, r.en)}`;
+      })
+      .filter(Boolean)
+      .join("\n");
+
     setMessages((prev) => [
       ...prev.filter((m) => m.type !== "symptoms"),
-      { type: "text", role: "sakhi", text: reply },
       {
         type: "text",
         role: "sakhi",
         text: t(
-          "कोई और सवाल? जैसे — देरी क्यों होती है, दर्द कम कैसे करें, या कुछ और।",
-          "Any other questions? Like — why is there a delay, how to reduce pain, or anything else.",
+          `समझ गई। 💜 आपके बताए लक्षण (${names.join(", ")}) इस phase में कई महिलाओं को होते हैं — आप अकेली नहीं हैं। कुछ आसान घरेलू उपाय जो राहत दे सकते हैं:`,
+          `I understand. 💜 The symptoms you shared (${names.join(", ")}) are common for many women in this phase — you're not alone. Here are some simple home remedies that may help:`,
         ),
       },
+      { type: "text", role: "sakhi", text: remedyLines },
+      {
+        type: "text",
+        role: "sakhi",
+        text: t(
+          "अगर कोई तकलीफ़ बहुत ज़्यादा हो या कई दिन बनी रहे, तो डॉक्टर से ज़रूर मिलें।",
+          "If any symptom feels very severe or lasts several days, please do see a doctor.",
+        ),
+      },
+      anyOtherQuestions(),
     ]);
     scroll();
   }
@@ -1241,29 +1328,14 @@ export default function PeriodTrackerPage() {
       {
         type: "continuePrompt",
         label: t(
-          "अपने current phase के बारे में जानना चाहेंगी?",
-          "Want to know about your current phase?",
+          "इसी phase में ज़्यादातर महिलाओं को एक जैसे शारीरिक और मानसिक लक्षण महसूस होते हैं। क्या आप अपने symptoms बताना चाहेंगी, ताकि मैं कुछ घरेलू उपाय सुझा सकूँ?",
+          "Most women in the same phase of their cycle go through similar physical and mental symptoms. Would you like to share your symptoms so I can suggest some home remedies?",
         ),
-        buttonLabel: t("हां, बताएं 💜", "Yes, tell me 💜"),
-        onContinue: () => showPhaseInsight(lp, days),
-      },
-    ]);
-    setStep("chat");
-    scroll();
-  }
-
-  function showPhaseInsight(lp: Date, days: number) {
-    const day = getCycleDay(lp);
-    setMessages((prev) => [
-      ...prev.filter((m) => m.type !== "continuePrompt"),
-      { type: "phaseInsight", day, cycleLength: days },
-      {
-        type: "continuePrompt",
-        label: t("आज के symptoms log करना चाहेंगी?", "Want to log today's symptoms?"),
-        buttonLabel: t("हां, log करें 📝", "Yes, log them 📝"),
+        buttonLabel: t("हां, symptoms बताऊँ 📝", "Yes, share my symptoms 📝"),
         onContinue: () => showSymptomsStage(),
       },
     ]);
+    setStep("chat");
     scroll();
   }
 
