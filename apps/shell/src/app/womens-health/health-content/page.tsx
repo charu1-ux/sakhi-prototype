@@ -163,9 +163,9 @@ function ArticleCard({ article }: { article: Article }) {
 // personalised, time-saving — helping the user decide with confidence.
 
 const VALUE_VIDEO_HI =
-  "आपके सवाल को समझकर मैंने यह डॉक्टर-सत्यापित वीडियो खास आपके लिए चुना है — घंटों स्क्रॉल करने या गलत जानकारी की चिंता नहीं। बस वही जो सच में आपके काम आए। 💜";
+  "हमने कई वीडियो में से खास आपके लिए यह एक चुना है — आपके सवाल के अनुसार पूरी तरह पर्सनलाइज़्ड, और आपके लिए सबसे प्रासंगिक और उपयोगी। न घंटों स्क्रॉल करना, न गलत जानकारी।";
 const VALUE_VIDEO_EN =
-  "Going by your question, I've picked this doctor-verified video just for you — no endless scrolling, no misinformation. Only what truly helps you decide. 💜";
+  "We searched through many videos and picked this one specially for you — personalised to your question, and the most relevant and useful for you. No endless scrolling, no misinformation.";
 const VALUE_INFO_HI =
   "यह कोई आम इंटरनेट सर्च नहीं है — यह भरोसेमंद संस्थाओं (WHO, FOGSI) से सत्यापित और आपके सवाल के लिए चुनी गई जानकारी है, ताकि आप पूरे भरोसे के साथ सही फैसला ले सकें। 💜";
 const VALUE_INFO_EN =
