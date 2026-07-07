@@ -86,6 +86,20 @@ function sameDay(a: Date, b: Date) {
 function getCycleDay(lastPeriod: Date) {
   return Math.max(1, Math.ceil((Date.now() - lastPeriod.getTime()) / 86400000) + 1);
 }
+// Work out an average cycle length from a set of period start dates. Gaps that
+// look like one cycle (15-45 days) count directly; a ~2-month gap (46-75, when a
+// month in between was skipped) is halved. Returns null if nothing usable.
+function computeCycle(dates: Date[]): number | null {
+  const sorted = [...dates].sort((a, b) => b.getTime() - a.getTime());
+  const gaps: number[] = [];
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const g = Math.round((sorted[i].getTime() - sorted[i + 1].getTime()) / 86400000);
+    if (g >= 15 && g <= 45) gaps.push(g);
+    else if (g > 45 && g <= 75) gaps.push(Math.round(g / 2));
+  }
+  if (!gaps.length) return null;
+  return Math.round(gaps.reduce((a, b) => a + b, 0) / gaps.length);
+}
 function getPhase(day: number, len: number) {
   if (day <= 5) return "Menstrual";
   if (day <= len - 15) return "Follicular";
@@ -807,18 +821,21 @@ function DatePickerCalendar({
   onDatePick,
   title,
   onSkip,
+  initialDate,
 }: {
   onDatePick: (label: string, date: Date) => void;
   title?: string;
   onSkip?: () => void;
+  initialDate?: Date;
 }) {
   const { lang } = useLang();
   const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   const MONTHS = lang === "hi" ? MONTHS_HI : MONTHS_EN;
   const DAYS = lang === "hi" ? DAYS_SHORT : DAYS_SHORT_EN;
   const today = new Date();
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth());
+  const base = initialDate ?? today;
+  const [year, setYear] = useState(base.getFullYear());
+  const [month, setMonth] = useState(base.getMonth());
   const [picked, setPicked] = useState<number | null>(null);
   const cells = buildCells(year, month);
 
@@ -1286,6 +1303,7 @@ type MessageKind =
       onDatePick: (label: string, date: Date) => void;
       title?: string;
       onSkip?: () => void;
+      initialDate?: Date;
     }
   | { type: "cycleLength"; lastPeriod: Date; onPick: (days: number, unsure?: boolean) => void }
   | { type: "cycleOverview"; lastPeriod: Date; cycleLength: number; unsure?: boolean }
@@ -1569,19 +1587,11 @@ export default function PeriodTrackerPage() {
             type: "text",
             role: "sakhi",
             text: t(
-              `${label} — नोट हो गया! 📝 एक और बात से बहुत मदद मिलेगी — आपके पिछले दो पीरियड की तारीख से मैं आपकी अगली तारीख ज़्यादा सही बता पाऊंगी।`,
-              `${label} — got it! 📝 One more thing will help a lot — knowing your last two periods lets me tell your next date more exactly.`,
+              `${label} — नोट हो गया! 📝 एक और बात से बहुत मदद मिलेगी — आपके पिछले पीरियड की तारीख से मैं आपकी अगली तारीख ज़्यादा सही बता पाऊंगी।`,
+              `${label} — got it! 📝 One more thing will help a lot — knowing your earlier periods lets me tell your next date more exactly.`,
             ),
           },
-          {
-            type: "text",
-            role: "sakhi",
-            text: t(
-              `क्या आपको याद है कि इस आखिरी पीरियड से पहले वाला पीरियड किस दिन शुरू हुआ था? आराम से सोचिए। अगर याद न हो तो कोई बात नहीं — बस "मुझे याद नहीं" दबाइए।`,
-              `Can you remember the date your period started the time before this last one? Take your time. If you can't remember, that's okay — just tap "I don't remember".`,
-            ),
-          },
-          makePrevCalendarMsg(date),
+          ...prevMonthMessages(date, [date], 1),
         ]);
         setStep("date");
         scroll();
@@ -1589,67 +1599,82 @@ export default function PeriodTrackerPage() {
     };
   }
 
-  // Second calendar — the period before the last one. From the two dates we work
-  // out the cycle length, which is far easier than asking her to count the gap.
-  function makePrevCalendarMsg(lastDate: Date): MessageKind {
-    return {
-      type: "calendar",
-      title: t("इससे पिछले पीरियड की तारीख चुनें", "Pick the date of the period before that"),
-      onSkip: () => onPrevUnknown(lastDate),
-      onDatePick: (label, prevDate) => {
-        const diff = Math.round((lastDate.getTime() - prevDate.getTime()) / 86400000);
-        const userBubble = t(`इससे पिछला पीरियड: ${label}`, `Period before that: ${label}`);
-        if (diff >= 15 && diff <= 60) {
-          // Valid gap — use it as the cycle length; show the picked date as the
-          // user's answer instead of a number.
-          onCyclePick(diff, lastDate, { userText: userBubble });
-        } else {
-          // Dates don't give a sensible gap — fall back to the rough picker.
-          setMessages((prev) => [
-            ...prev.filter((m) => m.type !== "calendar"),
-            { type: "text", role: "user", text: userBubble },
-            {
-              type: "text",
-              role: "sakhi",
-              text: t(
-                "हम्म, इन दो तारीखों के बीच का अंतर कुछ ठीक नहीं लग रहा। कोई बात नहीं — नीचे से सबसे करीबी विकल्प चुन लीजिए।",
-                "Hmm, the gap between these two dates doesn't look right. No worries — just pick the closest option below.",
-              ),
-            },
-            {
-              type: "cycleLength",
-              lastPeriod: lastDate,
-              onPick: (days, unsure) => onCyclePick(days, lastDate, { unsure }),
-            },
-          ]);
-          setStep("cycleLength");
-          scroll();
-        }
+  // Ask about the period in the month `step` months before the last period —
+  // anchored to that month so it's easy to recall (e.g. "when did it come in
+  // May?"). The calendar opens on that month; "I don't remember" is available.
+  function prevMonthMessages(lmp: Date, collected: Date[], step: 1 | 2): MessageKind[] {
+    const target = new Date(lmp.getFullYear(), lmp.getMonth() - step, 1);
+    const monthName = (lang === "hi" ? MONTHS_HI : MONTHS_EN)[target.getMonth()];
+    const question =
+      step === 1
+        ? t(
+            `अच्छा! और ${monthName} में आपका पीरियड कब आया था?`,
+            `Okay! And when did your period come in ${monthName}?`,
+          )
+        : t(`और ${monthName} में?`, `And in ${monthName}?`);
+    return [
+      { type: "text", role: "sakhi", text: question },
+      {
+        type: "calendar",
+        title: t(`${monthName} में तारीख चुनें`, `Pick the date in ${monthName}`),
+        initialDate: target,
+        onSkip: () => onMonthAnswered(lmp, collected, step, null),
+        onDatePick: (lbl, d) => onMonthAnswered(lmp, collected, step, d, lbl),
       },
-    };
+    ];
   }
 
-  // She can't recall the earlier date — fall back to a gentle rough estimate.
-  function onPrevUnknown(lastDate: Date) {
-    setMessages((prev) => [
-      ...prev.filter((m) => m.type !== "calendar"),
-      { type: "text", role: "user", text: t("मुझे याद नहीं", "I don't remember") },
-      {
-        type: "text",
-        role: "sakhi",
-        text: t(
-          "कोई बात नहीं! 💜 तो बस अंदाज़े से बता दीजिए — आमतौर पर कितने दिन बाद आपका अगला पीरियड आता है? सबसे करीबी विकल्प चुनें।",
-          "No problem at all! 💜 Then just give a rough idea — usually, after about how many days does your next period come? Pick the closest one.",
-        ),
-      },
-      {
-        type: "cycleLength",
-        lastPeriod: lastDate,
-        onPick: (days, unsure) => onCyclePick(days, lastDate, { unsure }),
-      },
-    ]);
-    setStep("cycleLength");
-    scroll();
+  function onMonthAnswered(
+    lmp: Date,
+    collected: Date[],
+    step: 1 | 2,
+    date: Date | null,
+    label?: string,
+  ) {
+    const next = date ? [...collected, date] : collected;
+    const userText = date && label ? label : t("मुझे याद नहीं", "I don't remember");
+
+    if (step === 1) {
+      // Move on to the month before that.
+      setMessages((prev) => [
+        ...prev.filter((m) => m.type !== "calendar"),
+        { type: "text", role: "user", text: userText },
+        ...prevMonthMessages(lmp, next, 2),
+      ]);
+      scroll();
+      return;
+    }
+
+    // Step 2 done — work out the cycle from whichever dates we have.
+    const cycle = computeCycle(next);
+    if (cycle) {
+      setMessages((prev) => [
+        ...prev.filter((m) => m.type !== "calendar"),
+        { type: "text", role: "user", text: userText },
+      ]);
+      onCyclePick(cycle, lmp, { userText: null });
+    } else {
+      // Not enough to compute — fall back to a gentle rough estimate.
+      setMessages((prev) => [
+        ...prev.filter((m) => m.type !== "calendar"),
+        { type: "text", role: "user", text: userText },
+        {
+          type: "text",
+          role: "sakhi",
+          text: t(
+            "कोई बात नहीं! 💜 तो बस अंदाज़े से बता दीजिए — आमतौर पर कितने दिन बाद आपका अगला पीरियड आता है? सबसे करीबी विकल्प चुनें।",
+            "No problem at all! 💜 Then just give a rough idea — usually, after about how many days does your next period come? Pick the closest one.",
+          ),
+        },
+        {
+          type: "cycleLength",
+          lastPeriod: lmp,
+          onPick: (days, unsure) => onCyclePick(days, lmp, { unsure }),
+        },
+      ]);
+      setStep("cycleLength");
+      scroll();
+    }
   }
 
   function handleForWhom(v: ForWhom, displayText?: string) {
@@ -1896,6 +1921,7 @@ export default function PeriodTrackerPage() {
                       onDatePick={m.onDatePick}
                       title={m.title}
                       onSkip={m.onSkip}
+                      initialDate={m.initialDate}
                     />
                   </div>
                 </div>
