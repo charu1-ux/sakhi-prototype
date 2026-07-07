@@ -86,11 +86,49 @@ const PHASE_DEFAULT = {
 
 // ─── Mood options ─────────────────────────────────────────────────────────────
 const MOODS = [
-  { face: "😄", label: "बहुत अच्छा", labelEn: "Very Good", score: 5 },
-  { face: "🙂", label: "अच्छा", labelEn: "Good", score: 4 },
-  { face: "😐", label: "ठीक है", labelEn: "Okay", score: 3 },
-  { face: "😔", label: "तनाव", labelEn: "Stressed", score: 2 },
-  { face: "😞", label: "बुरा", labelEn: "Bad", score: 1 },
+  {
+    face: "😄",
+    label: "बहुत अच्छा",
+    labelEn: "Very Good",
+    score: 5,
+    validate: "बहुत बढ़िया! ऐसे अच्छे दिन को याद रखना ज़रूरी है 💜",
+    validateEn: "That's wonderful! It's good to remember happy days like this 💜",
+  },
+  {
+    face: "🙂",
+    label: "अच्छा",
+    labelEn: "Good",
+    score: 4,
+    validate: "अच्छा लग रहा है — यह सुनकर मुझे खुशी हुई 🌸",
+    validateEn: "Feeling good — I'm glad to hear that 🌸",
+  },
+  {
+    face: "😐",
+    label: "ठीक है",
+    labelEn: "Okay",
+    score: 3,
+    validate: "ठीक-ठाक दिन भी बिलकुल normal हैं — हर दिन एक जैसा नहीं होता।",
+    validateEn: "'Okay' days are completely normal too — not every day feels the same.",
+  },
+  {
+    face: "😔",
+    label: "तनाव",
+    labelEn: "Stressed",
+    score: 2,
+    validate:
+      "तनाव महसूस करना बिलकुल normal है — बहुत सी महिलाएँ ऐसा महसूस करती हैं। तुम अकेली नहीं हो।",
+    validateEn:
+      "Feeling stressed is completely normal — many women feel this way. You are not alone.",
+  },
+  {
+    face: "😞",
+    label: "बुरा",
+    labelEn: "Bad",
+    score: 1,
+    validate: "ऐसा महसूस करना बिलकुल ठीक है — और तुम अकेली नहीं हो। इसे बताना हिम्मत की बात है 💜",
+    validateEn:
+      "Feeling this way is completely okay — and you are not alone. It takes courage to share this 💜",
+  },
 ];
 
 // ─── Energy options ───────────────────────────────────────────────────────────
@@ -678,8 +716,14 @@ export default function MoodTrackerPage() {
       setFlowLoading(false);
       const opening =
         v === "other"
-          ? t("ज़रूर! उनका मूड कैसा है आज?", "Of course! How is their mood today?")
-          : t("अच्छा! आज कैसा महसूस हो रहा है?", "Great! How are you feeling today?");
+          ? t(
+              "कभी-कभी मूड बिना वजह खराब हो जाता है ना? मैं ध्यान रखूँगी — धीरे-धीरे पता चलेगा कि उन्हें कब और क्यों ऐसा लगता है। बस एक शब्द बता दो — आज उनका मूड कैसा है?",
+              "Sometimes mood feels low for no clear reason, right? I'll keep track — slowly you'll start to see when and why they feel this way. Just tell me in one word — how is their mood today?",
+            )
+          : t(
+              "कभी-कभी लगता है मूड बिना वजह खराब हो जाता है ना? मैं ध्यान रखूँगी — धीरे-धीरे पता चलेगा कि तुम्हें कब और क्यों ऐसा लगता है। बस एक शब्द बता दो — आज कैसा महसूस हो रहा है?",
+              "Sometimes your mood feels low for no clear reason, right? I'll keep track — slowly you'll start to see when and why you feel this way. Just tell me in one word — how do you feel today?",
+            );
       push({ type: "text", role: "sakhi", text: opening });
       push({ type: "moodPicker", locked: false });
       scroll();
@@ -695,12 +739,14 @@ export default function MoodTrackerPage() {
     scroll();
     setTimeout(() => {
       setFlowLoading(false);
+      // Validate before asking anything more — value-back even on entry #1
+      push({ type: "text", role: "sakhi", text: t(m.validate, m.validateEn) });
       push({
         type: "text",
         role: "sakhi",
         text: t(
-          `${m.label} — समझ गई। ऊर्जा कैसी है आज?`,
-          `${m.labelEn} — understood. How's your energy today?`,
+          "एक और छोटी बात — आज energy कैसी है?",
+          "One more small thing — how's your energy today?",
         ),
       });
       push({ type: "energyPicker", locked: false });
