@@ -152,6 +152,7 @@ function ForWhomCard({
 // ─── Message kinds ────────────────────────────────────────────────────────────
 
 type MessageKind =
+  | { type: "greeting" }
   | { type: "text"; role: "user" | "sakhi"; text: string; isLlm?: boolean }
   | { type: "forWhomPicker"; locked: boolean; selected?: ForWhom }
   | { type: "moodPicker"; locked: boolean; selected?: (typeof MOODS)[0] }
@@ -653,14 +654,7 @@ export default function MoodTrackerPage() {
   const [flowLoading, setFlowLoading] = useState(false); // between picker steps
 
   const [messages, setMessages] = useState<MessageKind[]>(() => [
-    {
-      type: "text",
-      role: "sakhi",
-      text:
-        lang === "en"
-          ? "Hi! I'm your Health Companion. 💜\n\nYour privacy is my priority. Everything you share stays between us. No ads, no data shared with anyone."
-          : "नमस्ते! मैं सखी हूँ — आपकी स्वास्थ्य सहेली। 💜\n\nआपका राज़ मेरा राज़ है। जो भी आप मुझसे कहें — वो सिर्फ हमारे बीच रहेगा। कोई विज्ञापन नहीं, कोई जानकारी किसी के साथ साझा नहीं।",
-    },
+    { type: "greeting" },
     { type: "forWhomPicker", locked: false },
   ]);
 
@@ -790,7 +784,9 @@ export default function MoodTrackerPage() {
     "ठीक है",
   ];
 
-  const hasSakhiHistory = messages.some((m) => m.type === "text" && m.role === "sakhi");
+  const hasSakhiHistory = messages.some(
+    (m) => m.type === "greeting" || (m.type === "text" && m.role === "sakhi"),
+  );
 
   function isAffirmative(q: string): boolean {
     const ql = q.toLowerCase().trim();
@@ -1005,6 +1001,19 @@ export default function MoodTrackerPage() {
 
   // Render messages
   function renderMessage(msg: MessageKind, i: number) {
+    if (msg.type === "greeting") {
+      return (
+        <SakhiRow key={i}>
+          <Bubble
+            text={t(
+              "नमस्ते! मैं सखी हूँ — आपकी स्वास्थ्य सहेली। 💜\n\nआपका राज़ मेरा राज़ है। जो भी आप मुझसे कहें — वो सिर्फ हमारे बीच रहेगा। कोई विज्ञापन नहीं, कोई जानकारी किसी के साथ साझा नहीं।",
+              "Hi! I'm your Health Companion. 💜\n\nYour privacy is my priority. Everything you share stays between us. No ads, no data shared with anyone.",
+            )}
+          />
+        </SakhiRow>
+      );
+    }
+
     if (msg.type === "text" && msg.role === "user") {
       return (
         <div key={i} className="flex justify-end">
