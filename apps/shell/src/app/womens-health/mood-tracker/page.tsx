@@ -424,111 +424,9 @@ type MessageKind =
   | { type: "contentLink"; query: string }
   | { type: "weekView"; days: MoodLogEntry[] }
   | { type: "comfortMenu" }
-  | { type: "breathingCard" }
   | { type: "breathingAnim" }
   | { type: "musicCard" }
   | { type: "jokeCard" };
-
-// ─── Breathing exercise card ──────────────────────────────────────────────────
-function BreathingCard() {
-  const { lang } = useLang();
-  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
-  const steps = [
-    {
-      icon: "🫁",
-      label: t("साँस लें", "Breathe in"),
-      count: t("4 तक गिनें", "Count to 4"),
-      note: t("पेट बाहर जाए", "Let belly expand"),
-      sub: t("छाती नहीं", "not chest"),
-      bg: "#E8F5FF",
-      border: "#BFDBFE",
-      accent: "#3B82F6",
-    },
-    {
-      icon: "🫁",
-      label: t("साँस छोड़ें", "Breathe out"),
-      count: t("4 तक गिनें", "Count to 4"),
-      note: t("पेट अंदर आए", "Let belly fall"),
-      sub: "",
-      bg: "#F0FDF4",
-      border: "#BBF7D0",
-      accent: "#22C55E",
-    },
-  ];
-  return (
-    <div
-      className="mt-1 rounded-tr-2xl rounded-b-2xl p-3"
-      style={{ background: "#fff", boxShadow: "0 1px 6px rgba(45,27,78,0.08)", maxWidth: 272 }}
-    >
-      <p
-        className="mb-2.5 text-[12px] font-semibold"
-        style={{ color: C.raat, fontFamily: "JioType, sans-serif" }}
-      >
-        {t("अभी यह करें — डीप बेली ब्रीदिंग", "Do this now — Deep Belly Breathing")}
-      </p>
-
-      <div className="flex flex-col gap-2">
-        {steps.map((s) => (
-          <div
-            key={s.label}
-            className="flex items-center gap-2.5 rounded-xl px-3 py-2.5"
-            style={{ background: s.bg, border: `1.5px solid ${s.border}` }}
-          >
-            <span className="text-[20px]">{s.icon}</span>
-            <div className="flex flex-col gap-0.5">
-              <div className="flex items-center gap-2">
-                <span
-                  className="text-[13px] font-bold"
-                  style={{ color: s.accent, fontFamily: "JioType, sans-serif" }}
-                >
-                  {s.label}
-                </span>
-                <span
-                  className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                  style={{ background: s.accent, color: "#fff", fontFamily: "JioType, sans-serif" }}
-                >
-                  {s.count}
-                </span>
-              </div>
-              <span
-                className="text-[11px]"
-                style={{ color: C.textSecondary, fontFamily: "JioType, sans-serif" }}
-              >
-                {s.note}
-                {s.sub && <span style={{ color: C.textTertiary }}> ({s.sub})</span>}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div
-        className="mt-2.5 rounded-xl px-3 py-2 text-[11px]"
-        style={{
-          background: "#FFF7ED",
-          border: "1.5px solid #FED7AA",
-          color: "#92400E",
-          fontFamily: "JioType, sans-serif",
-        }}
-      >
-        {t(
-          "⚠️ बीच में साँस बिल्कुल न रोकें — सीधे लें और छोड़ें",
-          "⚠️ Don't hold your breath — breathe in and out continuously",
-        )}
-      </div>
-
-      <p
-        className="mt-2 text-[11px]"
-        style={{ color: C.textTertiary, fontFamily: "JioType, sans-serif" }}
-      >
-        {t(
-          "5-6 बार करें — आप फर्क महसूस करेंगी 💜",
-          "Do 5-6 times — you'll feel the difference 💜",
-        )}
-      </p>
-    </div>
-  );
-}
 
 // ─── Comfort menu (she chooses what would help) ────────────────────────────────
 function ComfortMenu({ onPick }: { onPick: (id: ComfortId) => void }) {
@@ -571,7 +469,7 @@ function BreathingAnimation() {
   const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   return (
     <div
-      className="mt-1 flex flex-col items-center rounded-tr-2xl rounded-b-2xl px-3 py-5"
+      className="mt-1 flex flex-col items-center rounded-tr-2xl rounded-b-2xl px-3 py-6"
       style={{
         background: "linear-gradient(135deg, #EBF4FC 0%, #E5F7F0 100%)",
         boxShadow: "0 1px 6px rgba(45,27,78,0.08)",
@@ -579,46 +477,74 @@ function BreathingAnimation() {
       }}
     >
       <p
-        className="mb-4 text-center text-[12px] font-semibold"
+        className="mb-5 text-center text-[12px] font-semibold"
         style={{ color: C.raat, fontFamily: "JioType, sans-serif" }}
       >
-        {t("गोले के साथ साँस लो 💜", "Breathe with the circle 💜")}
+        {t("मेरे साथ साँस लो 💜", "Breathe with me 💜")}
       </p>
-      <div className="relative flex h-32 w-32 items-center justify-center">
+
+      {/* Guided orb — grows on the in-breath, shrinks on the out-breath */}
+      <div className="relative flex h-36 w-36 items-center justify-center">
         <div
           className="absolute inset-0 rounded-full"
           style={{
-            background: "rgba(74,144,217,0.18)",
-            animation: "breathe 8s ease-in-out infinite",
+            background: "radial-gradient(circle, rgba(74,144,217,0.28) 0%, rgba(74,144,217,0) 70%)",
+            animation: "breatheGlow 8s ease-in-out infinite",
           }}
         />
         <div
-          className="flex h-16 w-16 items-center justify-center rounded-full text-[22px]"
-          style={{ background: C.sky, color: "#fff", animation: "breathe 8s ease-in-out infinite" }}
+          className="absolute inset-4 rounded-full"
+          style={{
+            background: "rgba(74,144,217,0.22)",
+            animation: "breatheScale 8s ease-in-out infinite",
+          }}
+        />
+        <div
+          className="flex h-16 w-16 items-center justify-center rounded-full text-[24px]"
+          style={{
+            background: C.sky,
+            color: "#fff",
+            animation: "breatheScale 8s ease-in-out infinite",
+          }}
         >
           🫁
         </div>
+      </div>
+
+      {/* Synced label — crossfades with the orb */}
+      <div className="relative mt-5 h-5 w-full">
         <span
-          className="absolute -bottom-1 text-[11px] font-bold"
-          style={{ color: C.sky, animation: "breatheText 8s ease-in-out infinite" }}
+          className="absolute inset-0 text-center text-[13px] font-bold"
+          style={{ color: C.sky, animation: "labelIn 8s ease-in-out infinite" }}
         >
-          {t("साँस लो", "Breathe in")}
+          {t("साँस लो…", "Breathe in…")}
+        </span>
+        <span
+          className="absolute inset-0 text-center text-[13px] font-bold"
+          style={{ color: C.mint, animation: "labelOut 8s ease-in-out infinite" }}
+        >
+          {t("साँस छोड़ो…", "Breathe out…")}
         </span>
       </div>
-      <p
-        className="mt-5 text-center text-[11px]"
-        style={{ color: C.textSecondary, fontFamily: "JioType, sans-serif" }}
-      >
-        {t("बड़ा हो तो साँस लो, छोटा हो तो छोड़ो", "Grows = breathe in, shrinks = breathe out")}
-      </p>
+
       <style>{`
-        @keyframes breathe {
-          0%, 100% { transform: scale(0.6); }
+        @keyframes breatheScale {
+          0%, 100% { transform: scale(0.55); }
           50% { transform: scale(1); }
         }
-        @keyframes breatheText {
-          0%, 45% { opacity: 1; }
-          55%, 95% { opacity: 0.35; }
+        @keyframes breatheGlow {
+          0%, 100% { opacity: 0.3; transform: scale(0.7); }
+          50% { opacity: 0.75; transform: scale(1.05); }
+        }
+        @keyframes labelIn {
+          0% { opacity: 0; }
+          10%, 42% { opacity: 1; }
+          50%, 100% { opacity: 0; }
+        }
+        @keyframes labelOut {
+          0%, 50% { opacity: 0; }
+          60%, 92% { opacity: 1; }
+          100% { opacity: 0; }
         }
       `}</style>
     </div>
@@ -1305,8 +1231,7 @@ export default function MoodTrackerPage() {
     setTimeout(() => {
       setFlowLoading(false);
       if (id === "breathing") {
-        // controlled variety: sometimes the step card, sometimes the live animation
-        push(Math.random() < 0.5 ? { type: "breathingCard" } : { type: "breathingAnim" });
+        push({ type: "breathingAnim" });
       } else if (id === "music") {
         push({
           type: "text",
@@ -1493,7 +1418,7 @@ export default function MoodTrackerPage() {
         getTopicQueryFromHistory().includes("tanav");
       if (isHelpRequest && hasLowMood) {
         push({ type: "text", role: "user", text: q });
-        push({ type: "breathingCard" });
+        push({ type: "breathingAnim" });
         return;
       }
     }
@@ -1644,14 +1569,6 @@ export default function MoodTrackerPage() {
       return (
         <SakhiRow key={i}>
           <ComfortMenu onPick={handleComfortPick} />
-        </SakhiRow>
-      );
-    }
-
-    if (msg.type === "breathingCard") {
-      return (
-        <SakhiRow key={i}>
-          <BreathingCard />
         </SakhiRow>
       );
     }
