@@ -138,6 +138,46 @@ const ENERGIES = [
   { icon: "🔋", label: "ज़्यादा", labelEn: "High", score: 3 },
 ];
 
+// ─── Context chips (Layer 2 — optional, tap-only, never free text) ─────────────
+// Acks stay validated and non-diagnostic — light acknowledgment, no medicalizing.
+const CHIPS = [
+  {
+    id: "sleep",
+    label: "नींद",
+    labelEn: "Sleep",
+    ack: "नींद कम होना मूड पर असर डालता है — यह सच है।",
+    ackEn: "Less sleep does affect mood — that's true.",
+  },
+  {
+    id: "work",
+    label: "काम",
+    labelEn: "Work",
+    ack: "काम का दबाव मन पर असर डालता है — यह आम बात है।",
+    ackEn: "Work pressure weighs on the mind — this is common.",
+  },
+  {
+    id: "home",
+    label: "घर",
+    labelEn: "Home",
+    ack: "घर की बातें मन पर असर डालती हैं — यह स्वाभाविक है।",
+    ackEn: "Things at home weigh on the mind — that's natural.",
+  },
+  {
+    id: "alone",
+    label: "अकेला लग रहा है",
+    labelEn: "Feeling alone",
+    ack: "अकेलापन महसूस होना मुश्किल होता है — और यह भी आम है।",
+    ackEn: "Feeling alone is hard — and it's more common than you think.",
+  },
+  {
+    id: "skip",
+    label: "बताना नहीं चाहती",
+    labelEn: "Prefer not to say",
+    ack: "कोई बात नहीं 💜",
+    ackEn: "That's completely okay 💜",
+  },
+];
+
 // ─── For whom ─────────────────────────────────────────────────────────────────
 type ForWhom = "self" | "other";
 
@@ -194,6 +234,7 @@ type MessageKind =
   | { type: "text"; role: "user" | "sakhi"; text: string; isLlm?: boolean }
   | { type: "forWhomPicker"; locked: boolean; selected?: ForWhom }
   | { type: "moodPicker"; locked: boolean; selected?: (typeof MOODS)[0] }
+  | { type: "chipPicker"; locked: boolean; selected?: string }
   | { type: "energyPicker"; locked: boolean; selected?: (typeof ENERGIES)[0] }
   | { type: "confirmation"; mood: (typeof MOODS)[0]; energy: (typeof ENERGIES)[0] }
   | { type: "contentLink"; query: string }
@@ -492,6 +533,54 @@ function EnergyPicker({
   );
 }
 
+// ─── Context chip picker (Layer 2 — optional, tap-only) ────────────────────────
+function ChipPicker({
+  onPick,
+  locked,
+  selected,
+}: {
+  onPick: (c: (typeof CHIPS)[0]) => void;
+  locked: boolean;
+  selected?: string;
+}) {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
+  return (
+    <div
+      className="mt-1 rounded-tr-2xl rounded-b-2xl p-3"
+      style={{ background: C.surface, boxShadow: "0 1px 6px rgba(45,27,78,0.08)", maxWidth: 252 }}
+    >
+      <div className="mb-2.5 text-[11px] font-semibold" style={{ color: C.textTertiary }}>
+        {t("कोई खास वजह? (चाहो तो) 👇", "Any particular reason? (only if you want) 👇")}
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {CHIPS.map((c) => {
+          const isSelected = selected === c.id;
+          const isSkip = c.id === "skip";
+          return (
+            <button
+              key={c.id}
+              type="button"
+              disabled={locked}
+              onClick={() => !locked && onPick(c)}
+              className="rounded-full px-3 py-2 text-[12px] font-semibold transition-all active:scale-95"
+              style={{
+                border: `1.5px solid ${isSelected ? C.raat : C.border}`,
+                background: isSelected ? C.raat : isSkip ? "transparent" : C.raatLight,
+                color: isSelected ? "#fff" : isSkip ? C.textTertiary : C.raatMid,
+                opacity: locked && !isSelected ? 0.45 : 1,
+                fontFamily: "JioType, sans-serif",
+              }}
+            >
+              {t(c.label, c.labelEn)}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Confirmation card ────────────────────────────────────────────────────────
 function ConfirmationCard({
   mood,
@@ -597,6 +686,17 @@ function ConfirmationCard({
           </span>
         </div>
       </div>
+
+      {/* Privacy — felt at the moment of logging, not just stated once */}
+      <div
+        className="relative z-10 mt-2.5 flex items-center gap-1.5"
+        style={{ color: "rgba(255,255,255,0.5)" }}
+      >
+        <span className="text-[11px]">🔒</span>
+        <span className="text-[10px]" style={{ fontFamily: "JioType, sans-serif" }}>
+          {t("यह सिर्फ तुम्हारे पास रहता है", "This stays only with you")}
+        </span>
+      </div>
     </div>
   );
 }
@@ -685,8 +785,10 @@ export default function MoodTrackerPage() {
   const [forWhomLocked, setForWhomLocked] = useState(false);
   const [selectedForWhom, setSelectedForWhom] = useState<ForWhom | undefined>();
   const [moodLocked, setMoodLocked] = useState(false);
+  const [chipLocked, setChipLocked] = useState(false);
   const [energyLocked, setEnergyLocked] = useState(false);
   const [selectedMood, setSelectedMood] = useState<(typeof MOODS)[0] | undefined>();
+  const [selectedChip, setSelectedChip] = useState<string | undefined>();
   const [selectedEnergy, setSelectedEnergy] = useState<(typeof ENERGIES)[0] | undefined>();
   const [loading, setLoading] = useState(false); // API call only
   const [flowLoading, setFlowLoading] = useState(false); // between picker steps
@@ -741,6 +843,23 @@ export default function MoodTrackerPage() {
       setFlowLoading(false);
       // Validate before asking anything more — value-back even on entry #1
       push({ type: "text", role: "sakhi", text: t(m.validate, m.validateEn) });
+      // Layer 2: optional, tap-only context — never free text as the default
+      push({ type: "chipPicker", locked: false });
+      scroll();
+    }, 900);
+  }
+
+  function handleChipPick(c: (typeof CHIPS)[0]) {
+    if (chipLocked) return;
+    setChipLocked(true);
+    setSelectedChip(c.id);
+    push({ type: "text", role: "user", text: t(c.label, c.labelEn) });
+    setFlowLoading(true);
+    scroll();
+    setTimeout(() => {
+      setFlowLoading(false);
+      // Light, chip-specific acknowledgment — validated, non-diagnostic
+      push({ type: "text", role: "sakhi", text: t(c.ack, c.ackEn) });
       push({
         type: "text",
         role: "sakhi",
@@ -1125,6 +1244,14 @@ export default function MoodTrackerPage() {
       return (
         <SakhiRow key={i}>
           <MoodPicker locked={moodLocked} selected={selectedMood} onPick={handleMoodPick} />
+        </SakhiRow>
+      );
+    }
+
+    if (msg.type === "chipPicker") {
+      return (
+        <SakhiRow key={i}>
+          <ChipPicker locked={chipLocked} selected={selectedChip} onPick={handleChipPick} />
         </SakhiRow>
       );
     }
