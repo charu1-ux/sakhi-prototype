@@ -1550,11 +1550,11 @@ export default function PeriodTrackerPage() {
       v === "self"
         ? t(
             "यह बताने से मैं आपके लिए एक निजी रिमाइंडर सेट कर सकती हूँ — ताकि पीरियड कभी अचानक न आए। आप पहले से पैड या कप तैयार रख सकें, और अपना दिन, काम या कोई ज़रूरी काम उसी हिसाब से प्लान कर सकें। 📅",
-            "Sharing this lets me set a private reminder for you — so your period never catches you off guard. You can keep pads or a cup ready in advance, and plan your day, work, or any important event around it. 📅",
+            "If you tell me this, I can set a private reminder for you — so your period never comes as a surprise. You can keep pads or a cup ready, and plan your day, work, or any big event around it. 📅",
           )
         : t(
             "यह बताने से मैं एक निजी रिमाइंडर सेट कर सकती हूँ — ताकि पीरियड कभी अचानक न आए, वे पहले से सामान तैयार रख सकें और अपने दिन उसी हिसाब से प्लान कर सकें। 📅",
-            "Sharing this lets me set a private reminder — so her period never catches her off guard. She can keep supplies ready in advance and plan her days around it. 📅",
+            "If you tell me this, I can set a private reminder — so her period never comes as a surprise. She can keep things ready and plan her days around it. 📅",
           );
     const sakhiText =
       v === "self"
