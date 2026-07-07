@@ -102,11 +102,19 @@ function loadMoodLog(): MoodLogEntry[] {
 function saveMoodLog(entry: MoodLogEntry) {
   try {
     if (typeof window === "undefined") return;
-    const log = [...loadMoodLog(), entry].slice(-60); // cap history
+    // One entry per day (latest wins) — keeps streaks and weekly counts honest
+    const log = [...loadMoodLog().filter((e) => e.date !== entry.date), entry].slice(-60);
     localStorage.setItem(MOOD_LOG_KEY, JSON.stringify(log));
   } catch {
     // storage unavailable — logging is best-effort, never blocks the flow
   }
+}
+
+// Collapse to one entry per calendar day (latest), sorted oldest → newest
+function dedupeByDay(entries: MoodLogEntry[]): MoodLogEntry[] {
+  const byDay = new Map<string, MoodLogEntry>();
+  for (const e of entries) byDay.set(e.date, e);
+  return [...byDay.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
 // ─── Mood options ─────────────────────────────────────────────────────────────
@@ -203,50 +211,57 @@ const CHIPS = [
   },
 ];
 
-// ─── Pattern reflection (rule-based, no ML) ────────────────────────────────────
-// Turns saved logs into a legible pattern — the Why-#5 payoff for returning users.
-// Day 1 returns null: no pattern yet, validation already carried the value.
+// ─── Pattern reflection (rule-based, no ML, no detection engine) ───────────────
+// We only surface truthful counts and sequences — she does the interpreting.
+// Never diagnoses; a low streak is a caring check-in, not a clinical inference.
+// Takes the deduped daily series (today is the last element). Day 1 → null.
 function buildReflection(
-  history: MoodLogEntry[],
-  today: MoodLogEntry,
+  days: MoodLogEntry[],
   t: (hi: string, en: string) => string,
 ): string | null {
-  if (history.length < 2) return null;
-  const all = [...history, today];
+  if (days.length < 2) return null;
+  const today = days[days.length - 1];
+  const prev = days[days.length - 2];
 
-  // Rule 1 — a low-mood streak she can't see from inside her day-to-day
+  // Rule 1 — consecutive low-mood days: earliest, gentlest self-care check-in.
+  // NOT escalation — crisis routing stays with existing resource triggers.
   let streak = 0;
-  for (let i = all.length - 1; i >= 0 && all[i].mood <= 2; i--) streak++;
+  for (let i = days.length - 1; i >= 0 && days[i].mood <= 2; i--) streak++;
   if (streak >= 3) {
     return t(
-      `पिछले ${streak} बार से मन भारी रहा है। अपने साथ थोड़ी नरमी रखो — यह ध्यान देने वाली बात है 💜`,
-      `Your mood has felt low the last ${streak} times. Be gentle with yourself — this is worth noticing 💜`,
+      `यह लगातार ${streak}वाँ दिन है जब मन उदास लगा — सब ठीक है? अपना ख्याल रखना ज़रूरी है 💜`,
+      `This is the ${streak}th time in a row you've felt low — is everything okay? Taking care of yourself matters 💜`,
     );
   }
 
-  // Rule 2 — the reason she most often names on tough days
-  const lowChips = history
-    .filter((e) => e.mood <= 2 && e.chip && e.chip !== "skip")
-    .map((e) => e.chip as string);
-  if (lowChips.length >= 2) {
-    const counts: Record<string, number> = {};
-    for (const c of lowChips) counts[c] = (counts[c] ?? 0) + 1;
-    const [topId, topCount] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
-    const chip = CHIPS.find((x) => x.id === topId);
-    if (topCount >= 2 && chip) {
+  // Rule 2 — same context tagged repeatedly this week: surface the count plainly.
+  if (today.chip && today.chip !== "skip") {
+    const last7 = days.slice(-7);
+    const count = last7.filter((e) => e.chip === today.chip).length;
+    const chip = CHIPS.find((x) => x.id === today.chip);
+    if (count >= 3 && chip) {
       const label = t(chip.label, chip.labelEn);
       return t(
-        `एक बात दिखी — मुश्किल दिनों में अक्सर तुम "${label}" बताती हो। इसे पहचानना ही पहला कदम है 🌸`,
-        `I noticed something — on tougher days you often mention "${label}". Noticing this is the first step 🌸`,
+        `इस हफ्ते "${label}" ${count} बार तुम्हारे mood से जुड़ा — बस बता रही हूँ 🌸`,
+        `This week "${label}" came up ${count} times with your mood — just sharing 🌸`,
       );
     }
   }
 
-  // Rule 3 — gentle continuity so the value feels like it's compounding
-  return t(
-    `यह तुम्हारा ${all.length}वाँ log है — धीरे-धीरे एक pattern बन रहा है। ऐसे ही चलते रहो 🌸`,
-    `This is log #${all.length} — slowly a pattern is forming. Keep going 🌸`,
-  );
+  // Rule 3 — simple honest comparison to the last log (delivers the day-2 payoff).
+  if (today.mood > prev.mood) {
+    return t(
+      "पिछली बार से आज थोड़ा बेहतर लग रहा है 🌸",
+      "You're feeling a little better than last time 🌸",
+    );
+  }
+  if (today.mood < prev.mood) {
+    return t(
+      "पिछली बार से आज थोड़ा भारी लग रहा है — कोई बात नहीं, ऐसे दिन आते हैं 💜",
+      "Today feels a little heavier than last time — that's okay, such days come 💜",
+    );
+  }
+  return t("पिछली बार जैसा ही महसूस हो रहा है।", "You're feeling about the same as last time.");
 }
 
 // ─── For whom ─────────────────────────────────────────────────────────────────
@@ -314,6 +329,7 @@ type MessageKind =
       isReturning: boolean;
     }
   | { type: "contentLink"; query: string }
+  | { type: "weekView"; days: MoodLogEntry[] }
   | { type: "breathingCard" };
 
 // ─── Breathing exercise card ──────────────────────────────────────────────────
@@ -784,6 +800,60 @@ function ConfirmationCard({
   );
 }
 
+// ─── Week view (D7 reward) ─────────────────────────────────────────────────────
+// A plain row of her last 7 mood faces + colors. No interpretation text — seeing
+// the pattern laid out does the interpretive work. We only show, never claim.
+function WeekView({ days }: { days: MoodLogEntry[] }) {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
+  const moodColor = (score: number) =>
+    score >= 5
+      ? C.mint
+      : score === 4
+        ? "#7CC49B"
+        : score === 3
+          ? C.amber
+          : score === 2
+            ? C.gulabiMid
+            : C.gulabi;
+  const face = (score: number) => MOODS.find((m) => m.score === score)?.face ?? "";
+  return (
+    <div
+      className="mt-1 rounded-tr-2xl rounded-b-2xl p-3"
+      style={{ background: C.surface, boxShadow: "0 1px 6px rgba(45,27,78,0.08)", maxWidth: 272 }}
+    >
+      <div
+        className="mb-0.5 text-[12px] font-bold"
+        style={{ color: C.raat, fontFamily: "JioType, sans-serif" }}
+      >
+        {t("तुम्हारा हफ्ता 🗓️", "Your week 🗓️")}
+      </div>
+      <div className="mb-2.5 text-[10px]" style={{ color: C.textTertiary }}>
+        {t("पिछले 7 log — खुद देखो", "Your last 7 logs — see for yourself")}
+      </div>
+      <div className="flex items-end justify-between gap-1">
+        {days.map((d) => {
+          const wd = new Date(d.date).toLocaleDateString(lang === "hi" ? "hi-IN" : "en-IN", {
+            weekday: "short",
+          });
+          return (
+            <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
+              <span style={{ fontSize: 18, lineHeight: 1 }}>{face(d.mood)}</span>
+              <div
+                className="h-1.5 w-full rounded-full"
+                style={{ background: moodColor(d.mood) }}
+              />
+              <span className="text-[8px] font-semibold" style={{ color: C.textTertiary }}>
+                {wd}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Sakhi bubble wrapper ─────────────────────────────────────────────────────
 function SakhiRow({ children }: { children: React.ReactNode }) {
   return (
@@ -972,17 +1042,19 @@ export default function MoodTrackerPage() {
         energy: e.score,
         chip: selectedChip ?? null,
       };
-      const history = loadMoodLog();
-      const reflection = buildReflection(history, today, t);
+      const days = dedupeByDay([...loadMoodLog(), today]);
+      const reflection = buildReflection(days, t);
       saveMoodLog(today);
 
       push({
         type: "confirmation",
         mood: selectedMood!,
         energy: e,
-        isReturning: history.length > 0,
+        isReturning: days.length > 1,
       });
       if (reflection) push({ type: "text", role: "sakhi", text: reflection });
+      // D7: once she has 7 days logged, the week view is the reward — show it plainly
+      if (days.length >= 7) push({ type: "weekView", days: days.slice(-7) });
       const isLowMood = (selectedMood?.score ?? 5) <= 2;
       push({
         type: "text",
@@ -1318,6 +1390,14 @@ export default function MoodTrackerPage() {
       return (
         <SakhiRow key={i}>
           <BreathingCard />
+        </SakhiRow>
+      );
+    }
+
+    if (msg.type === "weekView") {
+      return (
+        <SakhiRow key={i}>
+          <WeekView days={msg.days} />
         </SakhiRow>
       );
     }
