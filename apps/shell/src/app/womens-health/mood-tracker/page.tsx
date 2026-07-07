@@ -238,6 +238,36 @@ const CHIPS = [
   },
 ];
 
+// ─── Comfort options (she chooses — never auto-pushed at her) ──────────────────
+// Letting her pick respects her feeling; a joke forced on a low day feels dismissive.
+type ComfortId = "breathing" | "music" | "funny" | "talk";
+const COMFORTS: { id: ComfortId; emoji: string; label: string; labelEn: string }[] = [
+  { id: "breathing", emoji: "🫁", label: "साँस लेने का अभ्यास", labelEn: "Breathing" },
+  { id: "music", emoji: "🎵", label: "शांत संगीत", labelEn: "Calming music" },
+  { id: "funny", emoji: "😄", label: "कुछ हँसी-मज़ाक", labelEn: "Something funny" },
+  { id: "talk", emoji: "💬", label: "बस बात करनी है", labelEn: "Just talk" },
+];
+
+// Light, wholesome, culture-safe jokes — simple language, no idioms.
+const JOKES: { hi: string; en: string }[] = [
+  {
+    hi: "टीचर: तुम स्कूल लेट क्यों आए? बच्चा: रास्ते में लिखा था — 'स्कूल आगे है, धीरे चलें'। 🚸",
+    en: "Teacher: Why are you late for school? Student: The sign said 'School Ahead, Go Slow'. 🚸",
+  },
+  {
+    hi: "टमाटर लाल क्यों हो गया? क्योंकि उसने सलाद बनते हुए देख लिया! 🍅",
+    en: "Why did the tomato turn red? Because it saw the salad being made! 🍅",
+  },
+  {
+    hi: "बिना दाँत वाले भालू को क्या कहते हैं? जेली भालू! 🐻",
+    en: "What do you call a bear with no teeth? A gummy bear! 🐻",
+  },
+  {
+    hi: "फ़ोन ने चश्मा क्यों पहना? क्योंकि उसके सारे contacts खो गए! 📱",
+    en: "Why did the phone wear glasses? Because it lost all its contacts! 📱",
+  },
+];
+
 // ─── Pattern reflection (rule-based, no ML, no detection engine) ───────────────
 // We only surface truthful counts and sequences — she does the interpreting.
 // Never diagnoses; a low streak is a caring check-in, not a clinical inference.
@@ -393,7 +423,11 @@ type MessageKind =
   | { type: "confirmation"; mood: (typeof MOODS)[0]; isReturning: boolean }
   | { type: "contentLink"; query: string }
   | { type: "weekView"; days: MoodLogEntry[] }
-  | { type: "breathingCard" };
+  | { type: "comfortMenu" }
+  | { type: "breathingCard" }
+  | { type: "breathingAnim" }
+  | { type: "musicCard" }
+  | { type: "jokeCard" };
 
 // ─── Breathing exercise card ──────────────────────────────────────────────────
 function BreathingCard() {
@@ -492,6 +526,202 @@ function BreathingCard() {
           "Do 5-6 times — you'll feel the difference 💜",
         )}
       </p>
+    </div>
+  );
+}
+
+// ─── Comfort menu (she chooses what would help) ────────────────────────────────
+function ComfortMenu({ onPick }: { onPick: (id: ComfortId) => void }) {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
+  return (
+    <div
+      className="mt-1 rounded-tr-2xl rounded-b-2xl p-3"
+      style={{ background: C.surface, boxShadow: "0 1px 6px rgba(45,27,78,0.08)", maxWidth: 260 }}
+    >
+      <div className="mb-2.5 text-[11px] font-semibold" style={{ color: C.textTertiary }}>
+        {t("अभी क्या अच्छा लगेगा? 👇", "What would feel good right now? 👇")}
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {COMFORTS.map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => onPick(c.id)}
+            className="flex items-center gap-1.5 rounded-2xl px-2.5 py-2.5 text-left text-[12px] font-semibold transition-all active:scale-95"
+            style={{
+              background: C.raatLight,
+              color: C.raatMid,
+              border: "none",
+              fontFamily: "JioType, sans-serif",
+            }}
+          >
+            <span style={{ fontSize: 16, lineHeight: 1 }}>{c.emoji}</span>
+            {t(c.label, c.labelEn)}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Breathing animation (live "breathe with the circle") ──────────────────────
+function BreathingAnimation() {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
+  return (
+    <div
+      className="mt-1 flex flex-col items-center rounded-tr-2xl rounded-b-2xl px-3 py-5"
+      style={{
+        background: "linear-gradient(135deg, #EBF4FC 0%, #E5F7F0 100%)",
+        boxShadow: "0 1px 6px rgba(45,27,78,0.08)",
+        maxWidth: 260,
+      }}
+    >
+      <p
+        className="mb-4 text-center text-[12px] font-semibold"
+        style={{ color: C.raat, fontFamily: "JioType, sans-serif" }}
+      >
+        {t("गोले के साथ साँस लो 💜", "Breathe with the circle 💜")}
+      </p>
+      <div className="relative flex h-32 w-32 items-center justify-center">
+        <div
+          className="absolute inset-0 rounded-full"
+          style={{
+            background: "rgba(74,144,217,0.18)",
+            animation: "breathe 8s ease-in-out infinite",
+          }}
+        />
+        <div
+          className="flex h-16 w-16 items-center justify-center rounded-full text-[22px]"
+          style={{ background: C.sky, color: "#fff", animation: "breathe 8s ease-in-out infinite" }}
+        >
+          🫁
+        </div>
+        <span
+          className="absolute -bottom-1 text-[11px] font-bold"
+          style={{ color: C.sky, animation: "breatheText 8s ease-in-out infinite" }}
+        >
+          {t("साँस लो", "Breathe in")}
+        </span>
+      </div>
+      <p
+        className="mt-5 text-center text-[11px]"
+        style={{ color: C.textSecondary, fontFamily: "JioType, sans-serif" }}
+      >
+        {t("बड़ा हो तो साँस लो, छोटा हो तो छोड़ो", "Grows = breathe in, shrinks = breathe out")}
+      </p>
+      <style>{`
+        @keyframes breathe {
+          0%, 100% { transform: scale(0.6); }
+          50% { transform: scale(1); }
+        }
+        @keyframes breatheText {
+          0%, 45% { opacity: 1; }
+          55%, 95% { opacity: 0.35; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ─── Calming music player (prototype — visual player) ──────────────────────────
+function MusicCard() {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
+  const [playing, setPlaying] = useState(true);
+  return (
+    <div
+      className="mt-1 rounded-tr-2xl rounded-b-2xl p-3"
+      style={{
+        background: "linear-gradient(135deg, #3D2560 0%, #2D1B4E 100%)",
+        boxShadow: "0 2px 10px rgba(45,27,78,0.20)",
+        maxWidth: 260,
+      }}
+    >
+      <div className="flex items-center gap-3">
+        <div
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-[22px]"
+          style={{ background: "rgba(255,255,255,0.12)" }}
+        >
+          🎧
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[13px] font-bold text-white">
+            {t("शांत — हल्का संगीत", "Shaant — Calm sounds")}
+          </div>
+          <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.5)" }}>
+            {t("5 मिनट · धीमा और सुकून भरा", "5 min · slow and soothing")}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setPlaying((p) => !p)}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[14px] transition-all active:scale-90"
+          style={{ background: C.mint, color: "#fff" }}
+          aria-label={playing ? t("रोकें", "Pause") : t("चलाएँ", "Play")}
+        >
+          {playing ? "⏸" : "▶"}
+        </button>
+      </div>
+      {/* Equalizer — animates while playing */}
+      <div className="mt-3 flex h-6 items-end gap-1">
+        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+          <div
+            key={i}
+            className="flex-1 rounded-full"
+            style={{
+              background: "rgba(42,175,122,0.7)",
+              height: playing ? undefined : "20%",
+              animation: playing ? `eq 1s ease-in-out ${i * 0.12}s infinite` : "none",
+            }}
+          />
+        ))}
+      </div>
+      <style>{`
+        @keyframes eq {
+          0%, 100% { height: 20%; }
+          50% { height: 100%; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ─── Joke card (light, wholesome — one more on tap) ────────────────────────────
+function JokeCard() {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
+  const [i, setI] = useState(() => Math.floor(Math.random() * JOKES.length));
+  const joke = JOKES[i];
+  return (
+    <div
+      className="mt-1 rounded-tr-2xl rounded-b-2xl p-3"
+      style={{ background: "#FFF7ED", boxShadow: "0 1px 6px rgba(45,27,78,0.08)", maxWidth: 260 }}
+    >
+      <div className="mb-1.5 flex items-center gap-1.5">
+        <span className="text-[16px]">😄</span>
+        <span
+          className="text-[11px] font-bold"
+          style={{ color: "#B45309", fontFamily: "JioType, sans-serif" }}
+        >
+          {t("एक हल्की सी बात", "A little something")}
+        </span>
+      </div>
+      <p
+        className="text-[13px] leading-relaxed"
+        style={{ color: C.textPrimary, fontFamily: "JioType, sans-serif" }}
+      >
+        {t(joke.hi, joke.en)}
+      </p>
+      <button
+        type="button"
+        onClick={() => setI((prev) => (prev + 1) % JOKES.length)}
+        className="mt-2.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition-all active:scale-95"
+        style={{ background: "#FED7AA", color: "#92400E", fontFamily: "JioType, sans-serif" }}
+      >
+        {t("एक और 😄", "One more 😄")}
+      </button>
     </div>
   );
 }
@@ -1040,32 +1270,72 @@ export default function MoodTrackerPage() {
       // D7: once she has 7 days logged, the week view is the reward — show it plainly
       if (days.length >= 7) push({ type: "weekView", days: days.slice(-7) });
       const isLowMood = (selectedMood?.score ?? 5) <= 2;
-      push({
-        type: "text",
-        role: "sakhi",
-        text: isLowMood
-          ? t(
-              "यह महसूस करना मुश्किल हो सकता है। अभी एक छोटी सी चीज़ try करें जो तुरंत थोड़ा better feel कराएगी:",
-              "It can be hard to feel this way. Try one small thing right now that will help you feel a little better:",
-            )
-          : t(
-              "कल भी लॉग करें — पैटर्न समझना फायदेमंद होगा। कोई और बात करनी है? 🌸",
-              "Log again tomorrow — understanding patterns is helpful. Anything else you'd like to talk about? 🌸",
-            ),
-      });
       if (isLowMood) {
-        push({ type: "breathingCard" });
+        // Offer choices — never push a fix (or a joke) at her unasked
         push({
           type: "text",
           role: "sakhi",
           text: t(
-            "कल भी लॉग करें — पैटर्न समझना फायदेमंद होगा। 🌸",
-            "Log again tomorrow — understanding patterns is helpful. 🌸",
+            "यह महसूस करना मुश्किल हो सकता है। कुछ ऐसा चुनो जो अभी थोड़ा अच्छा महसूस कराए 💜",
+            "It can be hard to feel this way. Pick something that might help you feel a little better right now 💜",
+          ),
+        });
+        push({ type: "comfortMenu" });
+      } else {
+        push({
+          type: "text",
+          role: "sakhi",
+          text: t(
+            "कल भी लॉग करें — पैटर्न समझना फायदेमंद होगा। कोई और बात करनी है? 🌸",
+            "Log again tomorrow — understanding patterns is helpful. Anything else you'd like to talk about? 🌸",
           ),
         });
       }
       scroll();
     }, 900);
+  }
+
+  // She picked a comfort — show it. Menu stays, so she can try another.
+  function handleComfortPick(id: ComfortId) {
+    const opt = COMFORTS.find((o) => o.id === id);
+    if (!opt) return;
+    push({ type: "text", role: "user", text: `${opt.emoji} ${t(opt.label, opt.labelEn)}` });
+    setFlowLoading(true);
+    scroll();
+    setTimeout(() => {
+      setFlowLoading(false);
+      if (id === "breathing") {
+        // controlled variety: sometimes the step card, sometimes the live animation
+        push(Math.random() < 0.5 ? { type: "breathingCard" } : { type: "breathingAnim" });
+      } else if (id === "music") {
+        push({
+          type: "text",
+          role: "sakhi",
+          text: t(
+            "यह सुनो — धीरे-धीरे मन हल्का लगेगा 🎵",
+            "Listen to this — it may ease your mind slowly 🎵",
+          ),
+        });
+        push({ type: "musicCard" });
+      } else if (id === "funny") {
+        push({
+          type: "text",
+          role: "sakhi",
+          text: t("ठीक है, एक हल्की सी बात 😊", "Okay, here's something light 😊"),
+        });
+        push({ type: "jokeCard" });
+      } else {
+        push({
+          type: "text",
+          role: "sakhi",
+          text: t(
+            "मैं यहीं हूँ। जो भी मन में है, बता सकती हो — कोई जल्दी नहीं 💜",
+            "I'm right here. Tell me whatever is on your mind — no rush 💜",
+          ),
+        });
+      }
+      scroll();
+    }, 700);
   }
 
   const VAGUE_OPENERS = [
@@ -1370,10 +1640,42 @@ export default function MoodTrackerPage() {
       );
     }
 
+    if (msg.type === "comfortMenu") {
+      return (
+        <SakhiRow key={i}>
+          <ComfortMenu onPick={handleComfortPick} />
+        </SakhiRow>
+      );
+    }
+
     if (msg.type === "breathingCard") {
       return (
         <SakhiRow key={i}>
           <BreathingCard />
+        </SakhiRow>
+      );
+    }
+
+    if (msg.type === "breathingAnim") {
+      return (
+        <SakhiRow key={i}>
+          <BreathingAnimation />
+        </SakhiRow>
+      );
+    }
+
+    if (msg.type === "musicCard") {
+      return (
+        <SakhiRow key={i}>
+          <MusicCard />
+        </SakhiRow>
+      );
+    }
+
+    if (msg.type === "jokeCard") {
+      return (
+        <SakhiRow key={i}>
+          <JokeCard />
         </SakhiRow>
       );
     }
