@@ -801,7 +801,15 @@ function SymptomChipsCard({ onDone }: { onDone: (s: string[]) => void }) {
 }
 
 // ── Date picker calendar ──────────────────────────────────────────────────────
-function DatePickerCalendar({ onDatePick }: { onDatePick: (label: string, date: Date) => void }) {
+function DatePickerCalendar({
+  onDatePick,
+  title,
+  onSkip,
+}: {
+  onDatePick: (label: string, date: Date) => void;
+  title?: string;
+  onSkip?: () => void;
+}) {
   const { lang } = useLang();
   const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   const MONTHS = lang === "hi" ? MONTHS_HI : MONTHS_EN;
@@ -846,7 +854,7 @@ function DatePickerCalendar({ onDatePick }: { onDatePick: (label: string, date: 
           fontFamily: "JioType, sans-serif",
         }}
       >
-        {t("आखिरी पीरियड की तारीख चुनें", "Select date of last period")}
+        {title ?? t("आखिरी पीरियड की तारीख चुनें", "Select date of your last period")}
       </p>
       <div
         style={{
@@ -945,6 +953,26 @@ function DatePickerCalendar({ onDatePick }: { onDatePick: (label: string, date: 
           );
         })}
       </div>
+      {onSkip && (
+        <button
+          onClick={onSkip}
+          style={{
+            marginTop: 8,
+            width: "100%",
+            padding: "8px 0",
+            borderRadius: 12,
+            fontSize: 12,
+            fontWeight: 600,
+            background: C.raatLight,
+            color: C.raatMid,
+            border: "none",
+            cursor: "pointer",
+            fontFamily: "JioType, sans-serif",
+          }}
+        >
+          {t("मुझे याद नहीं", "I don't remember")}
+        </button>
+      )}
     </div>
   );
 }
@@ -1251,7 +1279,12 @@ function ContinuePromptCard({
 type MessageKind =
   | { type: "text"; role: "user" | "sakhi"; text: string; isLlm?: boolean }
   | { type: "forWhomPicker" }
-  | { type: "calendar"; onDatePick: (label: string, date: Date) => void }
+  | {
+      type: "calendar";
+      onDatePick: (label: string, date: Date) => void;
+      title?: string;
+      onSkip?: () => void;
+    }
   | { type: "cycleLength"; lastPeriod: Date; onPick: (days: number, unsure?: boolean) => void }
   | { type: "cycleOverview"; lastPeriod: Date; cycleLength: number; unsure?: boolean }
   | { type: "reminderAsk"; onYes: () => void; onNo: () => void }
@@ -1337,7 +1370,12 @@ export default function PeriodTrackerPage() {
     scroll();
   }
 
-  function onCyclePick(days: number, lp: Date, unsure = false) {
+  function onCyclePick(
+    days: number,
+    lp: Date,
+    opts: { unsure?: boolean; userText?: string | null } = {},
+  ) {
+    const unsure = opts.unsure ?? false;
     // Save to localStorage so mood tracker can read real cycle data
     localStorage.setItem(
       "sakhi_period",
@@ -1406,13 +1444,24 @@ export default function PeriodTrackerPage() {
           ]
         : [symptomsOfferPrompt()];
 
+    // The user's answer bubble: a caller can override it (e.g. show the date
+    // they picked instead of "N days"), or pass null to suppress it.
+    const userBubble: MessageKind[] =
+      opts.userText === null
+        ? []
+        : [
+            {
+              type: "text",
+              role: "user",
+              text:
+                opts.userText ??
+                (unsure ? t("मुझे पता नहीं", "I'm not sure") : `${days} ${t("दिन", "days")}`),
+            },
+          ];
+
     setMessages((prev) => [
-      ...prev.filter((m) => m.type !== "cycleLength"),
-      {
-        type: "text",
-        role: "user",
-        text: unsure ? t("मुझे पता नहीं", "I'm not sure") : `${days} ${t("दिन", "days")}`,
-      },
+      ...prev.filter((m) => m.type !== "cycleLength" && m.type !== "calendar"),
+      ...userBubble,
       { type: "text", role: "sakhi", text: cycleReflection },
       // Visual first — easier to absorb — then the countdown text below it.
       { type: "cycleOverview", lastPeriod: lp, cycleLength: days, unsure },
@@ -1518,28 +1567,87 @@ export default function PeriodTrackerPage() {
             type: "text",
             role: "sakhi",
             text: t(
-              `${label} — नोट हो गया! 📝 अब एक और बात बता दें — इससे मैं आपके अगले पीरियड की तारीख सही-सही बता पाऊंगी, ताकि रिमाइंडर बिल्कुल सही दिन आए।`,
-              `${label} — noted! 📝 Just one more thing — this helps me work out your next period date more exactly, so your reminder comes on the right day.`,
+              `${label} — नोट हो गया! 📝 एक और बात से बहुत मदद मिलेगी — आपके पिछले दो पीरियड की तारीख से मैं आपकी अगली तारीख ज़्यादा सही बता पाऊंगी।`,
+              `${label} — got it! 📝 One more thing will help a lot — knowing your last two periods lets me tell your next date more exactly.`,
             ),
           },
           {
             type: "text",
             role: "sakhi",
             text: t(
-              "आमतौर पर एक पीरियड शुरू होने से अगला पीरियड शुरू होने तक कितने दिन होते हैं? (पहले पीरियड के पहले दिन से अगले पीरियड के पहले दिन तक गिनें — खून आने के दिन नहीं।)",
-              "Usually, how many days from the start of one period to the start of the next? (Count from the first day of one period to the first day of the next — not the days of bleeding.)",
+              `क्या आपको याद है कि इस आखिरी पीरियड से पहले वाला पीरियड किस दिन शुरू हुआ था? आराम से सोचिए। अगर याद न हो तो कोई बात नहीं — बस "मुझे याद नहीं" दबाइए।`,
+              `Can you remember the date your period started the time before this last one? Take your time. If you can't remember, that's okay — just tap "I don't remember".`,
             ),
           },
-          {
-            type: "cycleLength",
-            lastPeriod: date,
-            onPick: (days, unsure) => onCyclePick(days, date, unsure),
-          },
+          makePrevCalendarMsg(date),
         ]);
-        setStep("cycleLength");
+        setStep("date");
         scroll();
       },
     };
+  }
+
+  // Second calendar — the period before the last one. From the two dates we work
+  // out the cycle length, which is far easier than asking her to count the gap.
+  function makePrevCalendarMsg(lastDate: Date): MessageKind {
+    return {
+      type: "calendar",
+      title: t("इससे पिछले पीरियड की तारीख चुनें", "Pick the date of the period before that"),
+      onSkip: () => onPrevUnknown(lastDate),
+      onDatePick: (label, prevDate) => {
+        const diff = Math.round((lastDate.getTime() - prevDate.getTime()) / 86400000);
+        const userBubble = t(`इससे पिछला पीरियड: ${label}`, `Period before that: ${label}`);
+        if (diff >= 15 && diff <= 60) {
+          // Valid gap — use it as the cycle length; show the picked date as the
+          // user's answer instead of a number.
+          onCyclePick(diff, lastDate, { userText: userBubble });
+        } else {
+          // Dates don't give a sensible gap — fall back to the rough picker.
+          setMessages((prev) => [
+            ...prev.filter((m) => m.type !== "calendar"),
+            { type: "text", role: "user", text: userBubble },
+            {
+              type: "text",
+              role: "sakhi",
+              text: t(
+                "हम्म, इन दो तारीखों के बीच का अंतर कुछ ठीक नहीं लग रहा। कोई बात नहीं — नीचे से सबसे करीबी विकल्प चुन लीजिए।",
+                "Hmm, the gap between these two dates doesn't look right. No worries — just pick the closest option below.",
+              ),
+            },
+            {
+              type: "cycleLength",
+              lastPeriod: lastDate,
+              onPick: (days, unsure) => onCyclePick(days, lastDate, { unsure }),
+            },
+          ]);
+          setStep("cycleLength");
+          scroll();
+        }
+      },
+    };
+  }
+
+  // She can't recall the earlier date — fall back to a gentle rough estimate.
+  function onPrevUnknown(lastDate: Date) {
+    setMessages((prev) => [
+      ...prev.filter((m) => m.type !== "calendar"),
+      { type: "text", role: "user", text: t("मुझे याद नहीं", "I don't remember") },
+      {
+        type: "text",
+        role: "sakhi",
+        text: t(
+          "कोई बात नहीं! 💜 तो बस अंदाज़े से बता दीजिए — आमतौर पर कितने दिन बाद आपका अगला पीरियड आता है? सबसे करीबी विकल्प चुनें।",
+          "No problem at all! 💜 Then just give a rough idea — usually, after about how many days does your next period come? Pick the closest one.",
+        ),
+      },
+      {
+        type: "cycleLength",
+        lastPeriod: lastDate,
+        onPick: (days, unsure) => onCyclePick(days, lastDate, { unsure }),
+      },
+    ]);
+    setStep("cycleLength");
+    scroll();
   }
 
   function handleForWhom(v: ForWhom, displayText?: string) {
@@ -1782,7 +1890,11 @@ export default function PeriodTrackerPage() {
                 <div key={i} style={{ display: "flex", alignItems: "flex-start" }}>
                   {avatar}
                   <div style={{ flex: 1, maxWidth: "92%" }}>
-                    <DatePickerCalendar onDatePick={m.onDatePick} />
+                    <DatePickerCalendar
+                      onDatePick={m.onDatePick}
+                      title={m.title}
+                      onSkip={m.onSkip}
+                    />
                   </div>
                 </div>
               );
