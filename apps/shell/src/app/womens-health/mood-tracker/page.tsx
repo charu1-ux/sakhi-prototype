@@ -41,38 +41,71 @@ const C = {
 };
 
 // ─── Phase calculation from period tracker data ───────────────────────────────
-function loadPhase() {
+type PhaseKey = "menstrual" | "follicular" | "ovulation" | "luteal";
+
+const PHASE_LABELS: Record<
+  PhaseKey,
+  { name: string; nameEn: string; hint: string; hintEn: string }
+> = {
+  menstrual: {
+    name: "मासिक चरण",
+    nameEn: "Menstrual Phase",
+    hint: "आज आराम करें — आपका शरीर काम कर रहा है",
+    hintEn: "Rest today — your body is working hard",
+  },
+  follicular: {
+    name: "फॉलिक्युलर फ़ेज़",
+    nameEn: "Follicular Phase",
+    hint: "एनर्जी बढ़ रही है — नई शुरुआत का समय!",
+    hintEn: "Energy is rising — great time for new starts!",
+  },
+  ovulation: {
+    name: "ओव्यूलेशन फ़ेज़",
+    nameEn: "Ovulation Phase",
+    hint: "आज आप सबसे ज़्यादा energetic हो सकती हैं",
+    hintEn: "You may feel at your most energetic today",
+  },
+  luteal: {
+    name: "ल्यूटियल फ़ेज़",
+    nameEn: "Luteal Phase",
+    hint: "मूड थोड़ा भारी हो सकता है — यह सामान्य है",
+    hintEn: "Mood may feel heavy — this is normal",
+  },
+};
+
+// Which phase a given cycle day falls in (same boundaries the app has always used)
+function phaseKeyForDay(day: number, len: number): PhaseKey {
+  if (day <= 5) return "menstrual";
+  if (day <= len - 15) return "follicular";
+  if (day <= len - 14) return "ovulation";
+  return "luteal";
+}
+
+function loadPeriod(): { lastPeriodMs: number; cycleLength: number } | null {
   try {
     const raw = typeof window !== "undefined" ? localStorage.getItem("sakhi_period") : null;
     if (!raw) return null;
     const { lastPeriod, cycleLength } = JSON.parse(raw);
-    const lp = new Date(lastPeriod);
-    const day = Math.max(1, Math.ceil((Date.now() - lp.getTime()) / 86400000) + 1);
-    const len = cycleLength as number;
-    let name = "ल्यूटियल फ़ेज़",
-      nameEn = "Luteal Phase";
-    let hint = "मूड थोड़ा भारी हो सकता है — यह सामान्य है";
-    let hintEn = "Mood may feel heavy — this is normal";
-    if (day <= 5) {
-      name = "मासिक चरण";
-      nameEn = "Menstrual Phase";
-      hint = "आज आराम करें — आपका शरीर काम कर रहा है";
-      hintEn = "Rest today — your body is working hard";
-    } else if (day <= len - 15) {
-      name = "फॉलिक्युलर फ़ेज़";
-      nameEn = "Follicular Phase";
-      hint = "एनर्जी बढ़ रही है — नई शुरुआत का समय!";
-      hintEn = "Energy is rising — great time for new starts!";
-    } else if (day <= len - 14) {
-      name = "ओव्यूलेशन फ़ेज़";
-      nameEn = "Ovulation Phase";
-      hint = "आज आप सबसे ज़्यादा energetic हो सकती हैं";
-      hintEn = "You may feel at your most energetic today";
-    }
-    return { name, nameEn, day, cycleLength: len, hint, hintEn };
+    const ms = new Date(lastPeriod).getTime();
+    if (Number.isNaN(ms) || !cycleLength) return null;
+    return { lastPeriodMs: ms, cycleLength: cycleLength as number };
   } catch {
     return null;
   }
+}
+
+// Cycle day (1..len) for any date — modulo so past dates map correctly
+function cycleDayForDate(dateMs: number, lastPeriodMs: number, len: number): number {
+  const diff = Math.floor((dateMs - lastPeriodMs) / 86400000);
+  return (((diff % len) + len) % len) + 1;
+}
+
+function loadPhase() {
+  const p = loadPeriod();
+  if (!p) return null;
+  const day = Math.max(1, Math.ceil((Date.now() - p.lastPeriodMs) / 86400000) + 1);
+  const info = PHASE_LABELS[phaseKeyForDay(day, p.cycleLength)];
+  return { ...info, day, cycleLength: p.cycleLength };
 }
 
 const PHASE_DEFAULT = {
@@ -85,7 +118,7 @@ const PHASE_DEFAULT = {
 };
 
 // ─── Mood log persistence (private, on-device only) ────────────────────────────
-type MoodLogEntry = { date: string; mood: number; energy: number; chip: string | null };
+type MoodLogEntry = { date: string; mood: number; chip: string | null };
 const MOOD_LOG_KEY = "sakhi_mood_log";
 
 function loadMoodLog(): MoodLogEntry[] {
@@ -164,13 +197,6 @@ const MOODS = [
   },
 ];
 
-// ─── Energy options ───────────────────────────────────────────────────────────
-const ENERGIES = [
-  { icon: "🪫", label: "बहुत कम", labelEn: "Very Low", score: 1 },
-  { icon: "⚡", label: "ठीक है", labelEn: "Okay", score: 2 },
-  { icon: "🔋", label: "ज़्यादा", labelEn: "High", score: 3 },
-];
-
 // ─── Context chips (Layer 2 — optional, tap-only, never free text) ─────────────
 // Acks stay validated and non-diagnostic — light acknowledgment, no medicalizing.
 const CHIPS = [
@@ -217,6 +243,7 @@ const CHIPS = [
 // Takes the deduped daily series (today is the last element). Day 1 → null.
 function buildReflection(
   days: MoodLogEntry[],
+  period: { lastPeriodMs: number; cycleLength: number } | null,
   t: (hi: string, en: string) => string,
 ): string | null {
   if (days.length < 2) return null;
@@ -234,7 +261,48 @@ function buildReflection(
     );
   }
 
-  // Rule 2 — same context tagged repeatedly this week: surface the count plainly.
+  // Rule 2 — cycle correlation: where her low-mood days actually fall.
+  // We surface the honest count, not a diagnosis; the hormone note is validation.
+  if (period) {
+    const lowDays = days.filter((e) => e.mood <= 2);
+    if (lowDays.length >= 3) {
+      const counts: Record<PhaseKey, number> = {
+        menstrual: 0,
+        follicular: 0,
+        ovulation: 0,
+        luteal: 0,
+      };
+      for (const e of lowDays) {
+        const day = cycleDayForDate(Date.parse(e.date), period.lastPeriodMs, period.cycleLength);
+        counts[phaseKeyForDay(day, period.cycleLength)]++;
+      }
+      const [topKey, topN] = (Object.entries(counts) as [PhaseKey, number][]).sort(
+        (a, b) => b[1] - a[1],
+      )[0];
+      if (topN >= 2 && topN >= Math.ceil(lowDays.length * 0.6)) {
+        const total = lowDays.length;
+        if (topKey === "luteal") {
+          return t(
+            `तुम्हारे ${total} भारी दिनों में से ${topN} period से पहले वाले हफ्ते में थे — यह हार्मोन की वजह से आम है 💜`,
+            `${topN} of your ${total} low days were in the week before your period — this is common with hormones 💜`,
+          );
+        }
+        if (topKey === "menstrual") {
+          return t(
+            `तुम्हारे ${total} भारी दिनों में से ${topN} period के दिनों में थे — तब मन भारी लगना आम है 💜`,
+            `${topN} of your ${total} low days were during your period — feeling low then is common 💜`,
+          );
+        }
+        const label = PHASE_LABELS[topKey];
+        return t(
+          `तुम्हारे ${total} भारी दिनों में से ${topN} ${label.name} में थे।`,
+          `${topN} of your ${total} low days fell in your ${label.nameEn}.`,
+        );
+      }
+    }
+  }
+
+  // Rule 3 — same context tagged repeatedly this week: surface the count plainly.
   if (today.chip && today.chip !== "skip") {
     const last7 = days.slice(-7);
     const count = last7.filter((e) => e.chip === today.chip).length;
@@ -248,7 +316,7 @@ function buildReflection(
     }
   }
 
-  // Rule 3 — simple honest comparison to the last log (delivers the day-2 payoff).
+  // Rule 4 — simple honest comparison to the last log (delivers the day-2 payoff).
   if (today.mood > prev.mood) {
     return t(
       "पिछली बार से आज थोड़ा बेहतर लग रहा है 🌸",
@@ -321,13 +389,7 @@ type MessageKind =
   | { type: "forWhomPicker"; locked: boolean; selected?: ForWhom }
   | { type: "moodPicker"; locked: boolean; selected?: (typeof MOODS)[0] }
   | { type: "chipPicker"; locked: boolean; selected?: string }
-  | { type: "energyPicker"; locked: boolean; selected?: (typeof ENERGIES)[0] }
-  | {
-      type: "confirmation";
-      mood: (typeof MOODS)[0];
-      energy: (typeof ENERGIES)[0];
-      isReturning: boolean;
-    }
+  | { type: "confirmation"; mood: (typeof MOODS)[0]; isReturning: boolean }
   | { type: "contentLink"; query: string }
   | { type: "weekView"; days: MoodLogEntry[] }
   | { type: "breathingCard" };
@@ -574,57 +636,6 @@ function MoodPicker({
   );
 }
 
-// ─── Energy picker ────────────────────────────────────────────────────────────
-function EnergyPicker({
-  onPick,
-  locked,
-  selected,
-}: {
-  onPick: (e: (typeof ENERGIES)[0]) => void;
-  locked: boolean;
-  selected?: (typeof ENERGIES)[0];
-}) {
-  const { lang } = useLang();
-  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
-  return (
-    <div
-      className="mt-1 rounded-tr-2xl rounded-b-2xl p-3"
-      style={{ background: C.surface, boxShadow: "0 1px 6px rgba(45,27,78,0.08)", maxWidth: 252 }}
-    >
-      <div className="mb-2 text-[11px] font-semibold" style={{ color: C.textTertiary }}>
-        {t("Energy level 👇", "Energy level 👇")}
-      </div>
-      <div className="flex gap-2">
-        {ENERGIES.map((e) => {
-          const isSelected = selected?.score === e.score;
-          return (
-            <button
-              key={e.score}
-              type="button"
-              disabled={locked}
-              onClick={() => !locked && onPick(e)}
-              className="flex flex-1 flex-col items-center gap-1.5 rounded-xl py-2 transition-all active:scale-95"
-              style={{
-                border: `1.5px solid ${isSelected ? C.gulabi : C.border}`,
-                background: isSelected ? C.gulabiLight : C.surface,
-                opacity: locked && !isSelected ? 0.45 : 1,
-              }}
-            >
-              <span style={{ fontSize: 18, lineHeight: 1 }}>{e.icon}</span>
-              <span
-                className="text-[9px] font-bold tracking-wide uppercase"
-                style={{ color: isSelected ? C.gulabi : C.textTertiary }}
-              >
-                {t(e.label, e.labelEn)}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 // ─── Context chip picker (Layer 2 — optional, tap-only) ────────────────────────
 function ChipPicker({
   onPick,
@@ -676,19 +687,17 @@ function ChipPicker({
 // ─── Confirmation card ────────────────────────────────────────────────────────
 function ConfirmationCard({
   mood,
-  energy,
   phase,
   isReturning,
 }: {
   mood: (typeof MOODS)[0];
-  energy: (typeof ENERGIES)[0];
   phase: NonNullable<PhaseData>;
   isReturning: boolean;
 }) {
   const PHASE = phase;
   const { lang } = useLang();
   const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
-  const dots = Array.from({ length: 5 }, (_, i) => i < energy.score + 1);
+  const hasPhaseData = PHASE.day > 0;
   return (
     <div
       className="relative mt-1 overflow-hidden rounded-tr-2xl rounded-b-2xl p-3.5"
@@ -728,63 +737,64 @@ function ConfirmationCard({
       {/* Mood row */}
       <div className="mb-2.5 flex items-center gap-2.5">
         <span style={{ fontSize: 28, lineHeight: 1 }}>{mood.face}</span>
-        <div>
-          <div className="text-[14px] font-extrabold text-white">{t(mood.label, mood.labelEn)}</div>
-          <div className="mt-1 flex items-center gap-1.5">
-            <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.45)" }}>
-              {t("ऊर्जा", "Energy")}
-            </span>
-            <div className="flex gap-1">
-              {dots.map((on, i) => (
-                <div
-                  key={i}
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{ background: on ? C.gulabi : "rgba(255,255,255,0.15)" }}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
+        <div className="text-[14px] font-extrabold text-white">{t(mood.label, mood.labelEn)}</div>
       </div>
 
-      {/* Cycle correlation */}
-      <div
-        className="relative z-10 rounded-xl p-2.5"
-        style={{ background: "rgba(255,255,255,0.08)" }}
-      >
-        <div className="flex items-start gap-1.5">
-          <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>💡</span>
-          <p className="text-[11px] leading-relaxed" style={{ color: "rgba(255,255,255,0.70)" }}>
-            <strong style={{ color: "rgba(255,255,255,0.90)" }}>
-              {t(`${PHASE.name} में यह आम है।`, `This is common in ${PHASE.nameEn}.`)}
-            </strong>{" "}
-            {isReturning
-              ? t(
-                  "तुम्हारा pattern साफ़ होता जा रहा है — ऐसे ही log करती रहो।",
-                  "Your pattern is getting clearer — keep logging like this.",
-                )
-              : t(
-                  "आज से log करना शुरू हो गया — अगली बार सखी आपका pattern बता सकेगी।",
-                  "Logging has started from today — next time Sakhi can show you your pattern.",
-                )}
-          </p>
-        </div>
+      {/* Cycle correlation — only claim a phase when we actually have period data */}
+      {hasPhaseData ? (
         <div
-          className="mt-1.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5"
-          style={{
-            background: "rgba(139,92,246,0.25)",
-            border: "1px solid rgba(139,92,246,0.35)",
-          }}
+          className="relative z-10 rounded-xl p-2.5"
+          style={{ background: "rgba(255,255,255,0.08)" }}
         >
-          <div className="h-1.5 w-1.5 rounded-full" style={{ background: C.violet }} />
-          <span
-            className="text-[9px] font-bold tracking-wide uppercase"
-            style={{ color: "rgba(139,92,246,0.9)" }}
+          <div className="flex items-start gap-1.5">
+            <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>💡</span>
+            <p className="text-[11px] leading-relaxed" style={{ color: "rgba(255,255,255,0.70)" }}>
+              <strong style={{ color: "rgba(255,255,255,0.90)" }}>
+                {t(`${PHASE.name} में यह आम है।`, `This is common in ${PHASE.nameEn}.`)}
+              </strong>{" "}
+              {isReturning
+                ? t(
+                    "तुम्हारा pattern साफ़ होता जा रहा है — ऐसे ही log करती रहो।",
+                    "Your pattern is getting clearer — keep logging like this.",
+                  )
+                : t(
+                    "आज से log करना शुरू हो गया — अगली बार सखी आपका pattern बता सकेगी।",
+                    "Logging has started from today — next time Sakhi can show you your pattern.",
+                  )}
+            </p>
+          </div>
+          <div
+            className="mt-1.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5"
+            style={{
+              background: "rgba(139,92,246,0.25)",
+              border: "1px solid rgba(139,92,246,0.35)",
+            }}
           >
-            {t(PHASE.name, PHASE.nameEn)} · {t("दिन", "Day")} {PHASE.day} of {PHASE.cycleLength}
-          </span>
+            <div className="h-1.5 w-1.5 rounded-full" style={{ background: C.violet }} />
+            <span
+              className="text-[9px] font-bold tracking-wide uppercase"
+              style={{ color: "rgba(139,92,246,0.9)" }}
+            >
+              {t(PHASE.name, PHASE.nameEn)} · {t("दिन", "Day")} {PHASE.day} of {PHASE.cycleLength}
+            </span>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div
+          className="relative z-10 rounded-xl p-2.5"
+          style={{ background: "rgba(255,255,255,0.08)" }}
+        >
+          <div className="flex items-start gap-1.5">
+            <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>🩸</span>
+            <p className="text-[11px] leading-relaxed" style={{ color: "rgba(255,255,255,0.70)" }}>
+              {t(
+                "Period Tracker में अपनी dates डालो — फिर मैं तुम्हारे mood को cycle से जोड़ सकूँगी 💜",
+                "Add your dates in Period Tracker — then I can link your mood to your cycle 💜",
+              )}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Privacy — felt at the moment of logging, not just stated once */}
       <div
@@ -939,10 +949,8 @@ export default function MoodTrackerPage() {
   const [selectedForWhom, setSelectedForWhom] = useState<ForWhom | undefined>();
   const [moodLocked, setMoodLocked] = useState(false);
   const [chipLocked, setChipLocked] = useState(false);
-  const [energyLocked, setEnergyLocked] = useState(false);
   const [selectedMood, setSelectedMood] = useState<(typeof MOODS)[0] | undefined>();
   const [selectedChip, setSelectedChip] = useState<string | undefined>();
-  const [selectedEnergy, setSelectedEnergy] = useState<(typeof ENERGIES)[0] | undefined>();
   const [loading, setLoading] = useState(false); // API call only
   const [flowLoading, setFlowLoading] = useState(false); // between picker steps
 
@@ -1002,6 +1010,7 @@ export default function MoodTrackerPage() {
     }, 900);
   }
 
+  // Context chip is the last step — logging completes here (no energy step)
   function handleChipPick(c: (typeof CHIPS)[0]) {
     if (chipLocked) return;
     setChipLocked(true);
@@ -1013,45 +1022,19 @@ export default function MoodTrackerPage() {
       setFlowLoading(false);
       // Light, chip-specific acknowledgment — validated, non-diagnostic
       push({ type: "text", role: "sakhi", text: t(c.ack, c.ackEn) });
-      push({
-        type: "text",
-        role: "sakhi",
-        text: t(
-          "एक और छोटी बात — आज energy कैसी है?",
-          "One more small thing — how's your energy today?",
-        ),
-      });
-      push({ type: "energyPicker", locked: false });
-      scroll();
-    }, 900);
-  }
 
-  function handleEnergyPick(e: (typeof ENERGIES)[0]) {
-    if (energyLocked) return;
-    setEnergyLocked(true);
-    setSelectedEnergy(e);
-    push({ type: "text", role: "user", text: `${e.icon} ${t(e.label, e.labelEn)}` });
-    setFlowLoading(true);
-    scroll();
-    setTimeout(() => {
-      setFlowLoading(false);
       // Persist the completed log (on-device only) and reflect the pattern back
       const today: MoodLogEntry = {
         date: new Date().toISOString().slice(0, 10),
         mood: selectedMood?.score ?? 3,
-        energy: e.score,
-        chip: selectedChip ?? null,
+        chip: c.id === "skip" ? null : c.id,
       };
+      const period = loadPeriod();
       const days = dedupeByDay([...loadMoodLog(), today]);
-      const reflection = buildReflection(days, t);
+      const reflection = buildReflection(days, period, t);
       saveMoodLog(today);
 
-      push({
-        type: "confirmation",
-        mood: selectedMood!,
-        energy: e,
-        isReturning: days.length > 1,
-      });
+      push({ type: "confirmation", mood: selectedMood!, isReturning: days.length > 1 });
       if (reflection) push({ type: "text", role: "sakhi", text: reflection });
       // D7: once she has 7 days logged, the week view is the reward — show it plainly
       if (days.length >= 7) push({ type: "weekView", days: days.slice(-7) });
@@ -1436,23 +1419,10 @@ export default function MoodTrackerPage() {
       );
     }
 
-    if (msg.type === "energyPicker") {
-      return (
-        <SakhiRow key={i}>
-          <EnergyPicker locked={energyLocked} selected={selectedEnergy} onPick={handleEnergyPick} />
-        </SakhiRow>
-      );
-    }
-
     if (msg.type === "confirmation") {
       return (
         <SakhiRow key={i}>
-          <ConfirmationCard
-            mood={msg.mood}
-            energy={msg.energy}
-            phase={PHASE}
-            isReturning={msg.isReturning}
-          />
+          <ConfirmationCard mood={msg.mood} phase={PHASE} isReturning={msg.isReturning} />
         </SakhiRow>
       );
     }
