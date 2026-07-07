@@ -1031,7 +1031,7 @@ export default function MoodTrackerPage() {
               <span>
                 {t(
                   "यह जवाब AI द्वारा उत्पन्न है। यह जानकारी सामान्य शिक्षा के लिए है और किसी योग्य डॉक्टर की व्यक्तिगत सलाह का विकल्प नहीं है। स्वास्थ्य संबंधी कोई भी निर्णय लेने से पहले अपनी डॉक्टर से अवश्य परामर्श करें।",
-                  "This answer is AI-generated. This information is for general education only and is not a substitute for personalized advice from a qualified doctor. Please consult your doctor before making any health-related decisions.",
+                  "This answer is made by AI. It is only for general learning — not a doctor's personal advice. Please talk to your doctor before taking any health decision.",
                 )}
               </span>
             </div>

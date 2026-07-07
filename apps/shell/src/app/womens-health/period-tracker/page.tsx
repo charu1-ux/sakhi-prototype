@@ -1372,7 +1372,7 @@ export default function PeriodTrackerPage() {
       daysUntil <= 0
         ? t(
             "आपका period आज या कल आ सकता है — तैयार रहें! 🩸",
-            "Your period may arrive today or tomorrow — be prepared! 🩸",
+            "Your period may come today or tomorrow — be ready! 🩸",
           )
         : daysUntil === 1
           ? t(
@@ -1386,7 +1386,7 @@ export default function PeriodTrackerPage() {
               )
             : t(
                 `आपका अगला period लगभग ${daysUntil} दिन बाद आने की संभावना है।`,
-                `Your next period is likely to come in approximately ${daysUntil} days.`,
+                `Your next period is likely to come in about ${daysUntil} days.`,
               );
 
     // If the period is more than a day away, offer a reminder before moving to
@@ -1486,7 +1486,7 @@ export default function PeriodTrackerPage() {
         role: "sakhi",
         text: t(
           `हो गया! ✅ मैं आपको period से ${n} दिन पहले एक notification भेज दूँगी, ताकि आप पहले से तैयार रह सकें।`,
-          `Done! ✅ I'll send you a notification ${n} day${n > 1 ? "s" : ""} before your period, so you can be prepared in advance.`,
+          `Done! ✅ I'll send you a notification ${n} day${n > 1 ? "s" : ""} before your period, so you can get ready in time.`,
         ),
       },
       symptomsOfferPrompt(),
@@ -1519,7 +1519,7 @@ export default function PeriodTrackerPage() {
             role: "sakhi",
             text: t(
               `${label} — नोट हो गया! 📝 अब एक और बात बता दें — इससे मैं आपके अगले पीरियड की तारीख सही-सही बता पाऊंगी, ताकि रिमाइंडर बिल्कुल सही दिन आए।`,
-              `${label} — noted! 📝 Just one more thing — this lets me predict your next period date accurately, so your reminder lands on exactly the right day.`,
+              `${label} — noted! 📝 Just one more thing — this helps me work out your next period date more exactly, so your reminder comes on the right day.`,
             ),
           },
           {
@@ -1947,7 +1947,7 @@ export default function PeriodTrackerPage() {
                     <span>
                       {t(
                         "यह जवाब AI द्वारा उत्पन्न है। यह जानकारी सामान्य शिक्षा के लिए है और किसी योग्य डॉक्टर की व्यक्तिगत सलाह का विकल्प नहीं है। स्वास्थ्य संबंधी कोई भी निर्णय लेने से पहले अपनी डॉक्टर से अवश्य परामर्श करें।",
-                        "This answer is AI-generated. This information is for general education only and is not a substitute for personalized advice from a qualified doctor. Please consult your doctor before making any health-related decisions.",
+                        "This answer is made by AI. It is only for general learning — not a doctor's personal advice. Please talk to your doctor before taking any health decision.",
                       )}
                     </span>
                   </div>
