@@ -739,39 +739,21 @@ function SymptomChipsCard({ onDone }: { onDone: (s: string[]) => void }) {
         boxShadow: `0 1px 6px ${C.border}`,
       }}
     >
-      <div
+      <span
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          display: "block",
           marginBottom: 10,
+          fontSize: 13,
+          fontWeight: 800,
+          color: C.raat,
+          fontFamily: "JioType, sans-serif",
         }}
       >
-        <span
-          style={{
-            fontSize: 13,
-            fontWeight: 800,
-            color: C.raat,
-            fontFamily: "JioType, sans-serif",
-          }}
-        >
-          {t("आज के symptoms", "Today's symptoms")}
-        </span>
-        <button
-          onClick={() => onDone(sel)}
-          style={{
-            fontSize: 11,
-            fontWeight: 600,
-            color: C.gulabi,
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            fontFamily: "JioType, sans-serif",
-          }}
-        >
-          {sel.length > 0 ? t("Save करें ✓", "Save ✓") : t("Skip", "Skip")}
-        </button>
-      </div>
+        {t(
+          "आपको क्या महसूस हो रहा है? (जो लागू हो, चुनें)",
+          "What are you feeling? (tap all that apply)",
+        )}
+      </span>
       <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6 }}>
         {SYMPTOMS.map((s) => {
           const label = t(s.hi, s.en);
@@ -796,6 +778,26 @@ function SymptomChipsCard({ onDone }: { onDone: (s: string[]) => void }) {
           );
         })}
       </div>
+      {/* No "save" step — taps are kept automatically. This just moves on;
+          it also works with nothing selected (treated as "no symptoms"). */}
+      <button
+        onClick={() => onDone(sel)}
+        style={{
+          marginTop: 12,
+          width: "100%",
+          padding: "9px 0",
+          borderRadius: 12,
+          fontSize: 12,
+          fontWeight: 700,
+          background: sel.length > 0 ? C.gulabi : C.raatLight,
+          color: sel.length > 0 ? "#fff" : C.raatMid,
+          border: "none",
+          cursor: "pointer",
+          fontFamily: "JioType, sans-serif",
+        }}
+      >
+        {sel.length > 0 ? t("हो गया ✓", "Done ✓") : t("कुछ नहीं / आगे बढ़ें", "Nothing / Continue")}
+      </button>
     </div>
   );
 }
@@ -1478,8 +1480,8 @@ export default function PeriodTrackerPage() {
     return {
       type: "continuePrompt",
       label: t(
-        "इसी phase में ज़्यादातर महिलाओं को एक जैसे शारीरिक और मानसिक लक्षण महसूस होते हैं। क्या आप अपने symptoms बताना चाहेंगी, ताकि मैं कुछ घरेलू उपाय सुझा सकूँ?",
-        "Most women in the same phase of their cycle go through similar physical and mental symptoms. Would you like to share your symptoms so I can suggest some home remedies?",
+        "इस समय के आसपास ज़्यादातर महिलाओं को शरीर और मन में एक जैसे बदलाव महसूस होते हैं। क्या आप बताना चाहेंगी कि आपको क्या महसूस हो रहा है? मैं कुछ आसान घरेलू उपाय बता सकती हूँ।",
+        "Around this time in your cycle, most women feel the same kind of body and mood changes. Would you like to tell me what you feel? I can share some easy home remedies.",
       ),
       buttonLabel: t("हां, symptoms बताऊँ 📝", "Yes, share my symptoms 📝"),
       onContinue: () => showSymptomsStage(),
