@@ -43,33 +43,34 @@ const C = {
 // ─── Phase calculation from period tracker data ───────────────────────────────
 type PhaseKey = "menstrual" | "follicular" | "ovulation" | "luteal";
 
+// Plain-language phase names — no clinical jargon (8th-standard reading level)
 const PHASE_LABELS: Record<
   PhaseKey,
   { name: string; nameEn: string; hint: string; hintEn: string }
 > = {
   menstrual: {
-    name: "मासिक चरण",
-    nameEn: "Menstrual Phase",
+    name: "पीरियड के दिन",
+    nameEn: "your period days",
     hint: "आज आराम करें — आपका शरीर काम कर रहा है",
     hintEn: "Rest today — your body is working hard",
   },
   follicular: {
-    name: "फॉलिक्युलर फ़ेज़",
-    nameEn: "Follicular Phase",
+    name: "पीरियड के बाद वाले दिन",
+    nameEn: "the days after your period",
     hint: "एनर्जी बढ़ रही है — नई शुरुआत का समय!",
-    hintEn: "Energy is rising — great time for new starts!",
+    hintEn: "Energy is rising — a great time for new starts!",
   },
   ovulation: {
-    name: "ओव्यूलेशन फ़ेज़",
-    nameEn: "Ovulation Phase",
+    name: "साइकल के बीच वाले दिन",
+    nameEn: "the middle days of your cycle",
     hint: "आज आप सबसे ज़्यादा energetic हो सकती हैं",
     hintEn: "You may feel at your most energetic today",
   },
   luteal: {
-    name: "ल्यूटियल फ़ेज़",
-    nameEn: "Luteal Phase",
+    name: "पीरियड से पहले वाले दिन",
+    nameEn: "the days before your period",
     hint: "मूड थोड़ा भारी हो सकता है — यह सामान्य है",
-    hintEn: "Mood may feel heavy — this is normal",
+    hintEn: "Mood may feel a little heavy — this is normal",
   },
 };
 
@@ -113,8 +114,8 @@ const PHASE_DEFAULT = {
   nameEn: "—",
   day: 0,
   cycleLength: 28,
-  hint: "पीरियड ट्रैकर में डेटा डालें तो phase दिखेगा",
-  hintEn: "Add data in Period Tracker to see your phase",
+  hint: "पीरियड ट्रैकर में अपनी dates डालें तो cycle दिखेगा",
+  hintEn: "Add your dates in Period Tracker to see your cycle",
 };
 
 // ─── Mood log persistence (private, on-device only) ────────────────────────────
@@ -296,7 +297,7 @@ function buildReflection(
         const label = PHASE_LABELS[topKey];
         return t(
           `तुम्हारे ${total} भारी दिनों में से ${topN} ${label.name} में थे।`,
-          `${topN} of your ${total} low days fell in your ${label.nameEn}.`,
+          `${topN} of your ${total} low days fell in ${label.nameEn}.`,
         );
       }
     }
@@ -775,7 +776,7 @@ function ConfirmationCard({
               className="text-[9px] font-bold tracking-wide uppercase"
               style={{ color: "rgba(139,92,246,0.9)" }}
             >
-              {t(PHASE.name, PHASE.nameEn)} · {t("दिन", "Day")} {PHASE.day} of {PHASE.cycleLength}
+              {t("दिन", "Day")} {PHASE.day} / {PHASE.cycleLength}
             </span>
           </div>
         </div>
