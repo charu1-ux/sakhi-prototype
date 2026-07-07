@@ -84,6 +84,31 @@ const PHASE_DEFAULT = {
   hintEn: "Add data in Period Tracker to see your phase",
 };
 
+// ─── Mood log persistence (private, on-device only) ────────────────────────────
+type MoodLogEntry = { date: string; mood: number; energy: number; chip: string | null };
+const MOOD_LOG_KEY = "sakhi_mood_log";
+
+function loadMoodLog(): MoodLogEntry[] {
+  try {
+    if (typeof window === "undefined") return [];
+    const raw = localStorage.getItem(MOOD_LOG_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveMoodLog(entry: MoodLogEntry) {
+  try {
+    if (typeof window === "undefined") return;
+    const log = [...loadMoodLog(), entry].slice(-60); // cap history
+    localStorage.setItem(MOOD_LOG_KEY, JSON.stringify(log));
+  } catch {
+    // storage unavailable — logging is best-effort, never blocks the flow
+  }
+}
+
 // ─── Mood options ─────────────────────────────────────────────────────────────
 const MOODS = [
   {
@@ -178,6 +203,52 @@ const CHIPS = [
   },
 ];
 
+// ─── Pattern reflection (rule-based, no ML) ────────────────────────────────────
+// Turns saved logs into a legible pattern — the Why-#5 payoff for returning users.
+// Day 1 returns null: no pattern yet, validation already carried the value.
+function buildReflection(
+  history: MoodLogEntry[],
+  today: MoodLogEntry,
+  t: (hi: string, en: string) => string,
+): string | null {
+  if (history.length < 2) return null;
+  const all = [...history, today];
+
+  // Rule 1 — a low-mood streak she can't see from inside her day-to-day
+  let streak = 0;
+  for (let i = all.length - 1; i >= 0 && all[i].mood <= 2; i--) streak++;
+  if (streak >= 3) {
+    return t(
+      `पिछले ${streak} बार से मन भारी रहा है। अपने साथ थोड़ी नरमी रखो — यह ध्यान देने वाली बात है 💜`,
+      `Your mood has felt low the last ${streak} times. Be gentle with yourself — this is worth noticing 💜`,
+    );
+  }
+
+  // Rule 2 — the reason she most often names on tough days
+  const lowChips = history
+    .filter((e) => e.mood <= 2 && e.chip && e.chip !== "skip")
+    .map((e) => e.chip as string);
+  if (lowChips.length >= 2) {
+    const counts: Record<string, number> = {};
+    for (const c of lowChips) counts[c] = (counts[c] ?? 0) + 1;
+    const [topId, topCount] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    const chip = CHIPS.find((x) => x.id === topId);
+    if (topCount >= 2 && chip) {
+      const label = t(chip.label, chip.labelEn);
+      return t(
+        `एक बात दिखी — मुश्किल दिनों में अक्सर तुम "${label}" बताती हो। इसे पहचानना ही पहला कदम है 🌸`,
+        `I noticed something — on tougher days you often mention "${label}". Noticing this is the first step 🌸`,
+      );
+    }
+  }
+
+  // Rule 3 — gentle continuity so the value feels like it's compounding
+  return t(
+    `यह तुम्हारा ${all.length}वाँ log है — धीरे-धीरे एक pattern बन रहा है। ऐसे ही चलते रहो 🌸`,
+    `This is log #${all.length} — slowly a pattern is forming. Keep going 🌸`,
+  );
+}
+
 // ─── For whom ─────────────────────────────────────────────────────────────────
 type ForWhom = "self" | "other";
 
@@ -236,7 +307,12 @@ type MessageKind =
   | { type: "moodPicker"; locked: boolean; selected?: (typeof MOODS)[0] }
   | { type: "chipPicker"; locked: boolean; selected?: string }
   | { type: "energyPicker"; locked: boolean; selected?: (typeof ENERGIES)[0] }
-  | { type: "confirmation"; mood: (typeof MOODS)[0]; energy: (typeof ENERGIES)[0] }
+  | {
+      type: "confirmation";
+      mood: (typeof MOODS)[0];
+      energy: (typeof ENERGIES)[0];
+      isReturning: boolean;
+    }
   | { type: "contentLink"; query: string }
   | { type: "breathingCard" };
 
@@ -586,10 +662,12 @@ function ConfirmationCard({
   mood,
   energy,
   phase,
+  isReturning,
 }: {
   mood: (typeof MOODS)[0];
   energy: (typeof ENERGIES)[0];
   phase: NonNullable<PhaseData>;
+  isReturning: boolean;
 }) {
   const PHASE = phase;
   const { lang } = useLang();
@@ -664,10 +742,15 @@ function ConfirmationCard({
             <strong style={{ color: "rgba(255,255,255,0.90)" }}>
               {t(`${PHASE.name} में यह आम है।`, `This is common in ${PHASE.nameEn}.`)}
             </strong>{" "}
-            {t(
-              "आज से log करना शुरू हो गया — अगली बार सखी आपका pattern बता सकेगी।",
-              "Logging has started from today — next time Sakhi can show you your pattern.",
-            )}
+            {isReturning
+              ? t(
+                  "तुम्हारा pattern साफ़ होता जा रहा है — ऐसे ही log करती रहो।",
+                  "Your pattern is getting clearer — keep logging like this.",
+                )
+              : t(
+                  "आज से log करना शुरू हो गया — अगली बार सखी आपका pattern बता सकेगी।",
+                  "Logging has started from today — next time Sakhi can show you your pattern.",
+                )}
           </p>
         </div>
         <div
@@ -882,7 +965,24 @@ export default function MoodTrackerPage() {
     scroll();
     setTimeout(() => {
       setFlowLoading(false);
-      push({ type: "confirmation", mood: selectedMood!, energy: e });
+      // Persist the completed log (on-device only) and reflect the pattern back
+      const today: MoodLogEntry = {
+        date: new Date().toISOString().slice(0, 10),
+        mood: selectedMood?.score ?? 3,
+        energy: e.score,
+        chip: selectedChip ?? null,
+      };
+      const history = loadMoodLog();
+      const reflection = buildReflection(history, today, t);
+      saveMoodLog(today);
+
+      push({
+        type: "confirmation",
+        mood: selectedMood!,
+        energy: e,
+        isReturning: history.length > 0,
+      });
+      if (reflection) push({ type: "text", role: "sakhi", text: reflection });
       const isLowMood = (selectedMood?.score ?? 5) <= 2;
       push({
         type: "text",
@@ -1267,7 +1367,12 @@ export default function MoodTrackerPage() {
     if (msg.type === "confirmation") {
       return (
         <SakhiRow key={i}>
-          <ConfirmationCard mood={msg.mood} energy={msg.energy} phase={PHASE} />
+          <ConfirmationCard
+            mood={msg.mood}
+            energy={msg.energy}
+            phase={PHASE}
+            isReturning={msg.isReturning}
+          />
         </SakhiRow>
       );
     }
