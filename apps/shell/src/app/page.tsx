@@ -1,8 +1,13 @@
 import Image from "next/image";
 
 import { VerticalList } from "@/components/molecules/VerticalList";
+import { SakhiRedirect } from "@/components/SakhiRedirect";
+import { isIsolated } from "@/lib/sakhi-feature";
 
 export default function HomePage() {
+  // Isolated single-feature build: the root redirects straight into the one
+  // feature instead of showing the multi-vertical list.
+  if (isIsolated) return <SakhiRedirect />;
   return (
     <main className="bg-bg text-fg pt-safe pb-safe flex min-h-dvh flex-col overflow-y-auto">
       {/* Top bar */}

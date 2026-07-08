@@ -1,15 +1,17 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
+import { isBlocked, isIsolated } from "@/lib/sakhi-feature";
 import {
   askSakhi,
   isBlockerResponse,
   isMaleIdentifier,
   MALE_RESPONSE,
   MALE_RESPONSE_EN,
+  splitDisclaimer,
 } from "@/lib/sakhi";
 import { useLang } from "../LangContext";
 
@@ -1044,8 +1046,28 @@ function SakhiRow({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Doctor disclaimer — rendered as a distinct, muted footnote (not blended into
+// the answer text) so it reads clearly as a standing note, not as content.
+function DisclaimerNote({ text }: { text: string }) {
+  return (
+    <div
+      className="mt-1 flex items-start gap-1.5 rounded-lg px-2.5 py-1.5"
+      style={{ maxWidth: 252, background: "#FFFBEB", border: "1px solid #FDE68A" }}
+    >
+      <span className="shrink-0 text-[11px] leading-[15px]">ⓘ</span>
+      <span
+        className="text-[10px] leading-snug italic"
+        style={{ color: "#92400E", fontFamily: "JioType, sans-serif" }}
+      >
+        {text}
+      </span>
+    </div>
+  );
+}
+
 // ─── Text bubble ─────────────────────────────────────────────────────────────
 function Bubble({ text, time }: { text: string; time?: string }) {
+  const { body, disclaimer } = splitDisclaimer(text);
   return (
     <>
       <div
@@ -1057,8 +1079,9 @@ function Bubble({ text, time }: { text: string; time?: string }) {
           fontFamily: "JioType, sans-serif",
         }}
       >
-        {text}
+        {body}
       </div>
+      {disclaimer && <DisclaimerNote text={disclaimer} />}
       {time && (
         <span className="pl-0.5 text-[9px]" style={{ color: C.textTertiary }}>
           {time}
@@ -1094,6 +1117,8 @@ function LoadingDots() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function MoodTrackerPage() {
+  // Isolated builds for the other two features must not expose this page.
+  if (isBlocked("mood")) notFound();
   const router = useRouter();
   const { lang } = useLang();
   const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
@@ -1648,6 +1673,8 @@ export default function MoodTrackerPage() {
     }
 
     if (msg.type === "contentLink") {
+      // Isolated builds have no health-content route to link into — hide the card.
+      if (isIsolated) return null;
       return (
         <SakhiRow key={i}>
           <ContentLinkCard
@@ -1700,6 +1727,7 @@ export default function MoodTrackerPage() {
       <HubHeader
         title={t("मूड ट्रैकर", "Mood Tracker")}
         backHref="/womens-health"
+        hideBack={isIsolated}
         scrolled={false}
       />
       <HubChatInput

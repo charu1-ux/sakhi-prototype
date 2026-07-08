@@ -21,6 +21,8 @@ type Props = {
   onBack?: () => void;
   /** Custom right-side content (e.g. a text "Skip" button) — takes precedence over rightIconSrc. */
   rightSlot?: ReactNode;
+  /** Hides the back button entirely (e.g. isolated single-feature builds with no landing to return to). */
+  hideBack?: boolean;
 };
 
 /**
@@ -44,6 +46,7 @@ export function HubHeader({
   onRightIconClick,
   onBack,
   rightSlot,
+  hideBack = false,
 }: Props) {
   const router = useRouter();
   const isTransparent = pageBg === "transparent";
@@ -79,22 +82,24 @@ export function HubHeader({
         className="pointer-events-auto relative flex items-center gap-3 px-4 pb-3"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 16px)" }}
       >
-        <button
-          type="button"
-          onClick={() => {
-            if (onBack) {
-              onBack();
-            } else if (backHref === "/" && window.parent !== window) {
-              window.parent.postMessage({ type: "jobs:navigate", href: "/" }, "*");
-            } else {
-              router.push(backHref);
-            }
-          }}
-          className={`focus-visible:ring-dock-accent flex size-10 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full ring-0 outline-none focus-visible:ring-2 ${btnBg}`}
-          aria-label="Back"
-        >
-          <ChevronLeftIcon className="size-5" />
-        </button>
+        {!hideBack && (
+          <button
+            type="button"
+            onClick={() => {
+              if (onBack) {
+                onBack();
+              } else if (backHref === "/" && window.parent !== window) {
+                window.parent.postMessage({ type: "jobs:navigate", href: "/" }, "*");
+              } else {
+                router.push(backHref);
+              }
+            }}
+            className={`focus-visible:ring-dock-accent flex size-10 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full ring-0 outline-none focus-visible:ring-2 ${btnBg}`}
+            aria-label="Back"
+          >
+            <ChevronLeftIcon className="size-5" />
+          </button>
+        )}
         {titleSlot ? (
           <div className="flex min-w-0 flex-1">{titleSlot}</div>
         ) : (

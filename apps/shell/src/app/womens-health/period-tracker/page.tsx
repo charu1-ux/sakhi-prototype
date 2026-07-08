@@ -1,15 +1,17 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
+import { isBlocked, isIsolated } from "@/lib/sakhi-feature";
 import {
   askSakhi,
   getHomeRemedies,
   isMaleIdentifier,
   MALE_RESPONSE,
   MALE_RESPONSE_EN,
+  splitDisclaimer,
   type Remedy,
 } from "@/lib/sakhi";
 import { useLang } from "../LangContext";
@@ -1261,6 +1263,40 @@ function ContentLinkCard({ onTap }: { onTap: () => void }) {
   );
 }
 
+// Doctor disclaimer — rendered as a distinct, muted footnote (not blended into
+// the answer text) so it reads clearly as a standing note, not as content.
+function DisclaimerNote({ text }: { text: string }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: 6,
+        marginTop: 4,
+        marginLeft: 34,
+        padding: "6px 10px",
+        maxWidth: "82%",
+        borderRadius: 10,
+        background: "#FFFBEB",
+        border: "1px solid #FDE68A",
+      }}
+    >
+      <span style={{ fontSize: 11, lineHeight: "15px", flexShrink: 0 }}>ⓘ</span>
+      <span
+        style={{
+          fontSize: 10,
+          lineHeight: 1.5,
+          fontStyle: "italic",
+          color: "#92400E",
+          fontFamily: "JioType, sans-serif",
+        }}
+      >
+        {text}
+      </span>
+    </div>
+  );
+}
+
 // ── Continue touchpoint card ───────────────────────────────────────────────────
 function ContinuePromptCard({
   label,
@@ -1357,6 +1393,8 @@ function getCurrentPhaseFromStorage(): string | null {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function PeriodTrackerPage() {
+  // Isolated builds for the other two features must not expose this page.
+  if (isBlocked("period")) notFound();
   const router = useRouter();
   const { lang } = useLang();
   const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
@@ -1913,6 +1951,7 @@ export default function PeriodTrackerPage() {
       <HubHeader
         title={t("पीरियड ट्रैकर", "Period Tracker")}
         backHref="/womens-health"
+        hideBack={isIsolated}
         scrolled={false}
       />
       <main
@@ -2119,7 +2158,8 @@ export default function PeriodTrackerPage() {
               );
 
             if (m.type === "contentLink")
-              return (
+              // Isolated builds have no health-content route to link into — hide the card.
+              return isIsolated ? null : (
                 <div key={i} style={{ display: "flex", alignItems: "flex-start" }}>
                   {avatar}
                   <ContentLinkCard
@@ -2130,6 +2170,8 @@ export default function PeriodTrackerPage() {
                 </div>
               );
 
+            const { body, disclaimer } =
+              m.role === "sakhi" ? splitDisclaimer(m.text) : { body: m.text, disclaimer: null };
             return (
               <React.Fragment key={i}>
                 <div
@@ -2153,9 +2195,10 @@ export default function PeriodTrackerPage() {
                       boxShadow: m.role === "sakhi" ? `0 1px 4px ${C.border}` : "none",
                     }}
                   >
-                    {m.text}
+                    {body}
                   </div>
                 </div>
+                {m.role === "sakhi" && disclaimer && <DisclaimerNote text={disclaimer} />}
                 {m.role === "sakhi" && m.isLlm && (
                   <div
                     style={{

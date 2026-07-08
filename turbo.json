@@ -3,6 +3,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": ["GITHUB_PAGES", "SAKHI_FEATURE", "NEXT_PUBLIC_GROQ_API_KEY"],
       "outputs": [".next/**", "!.next/cache/**", "out/**"]
     },
     "dev": { "cache": false, "persistent": true },

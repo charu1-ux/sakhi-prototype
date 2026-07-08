@@ -2,11 +2,12 @@
 
 import { useCallback, useRef, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { withBasePath } from "@/lib/base-path";
+import { isBlocked } from "@/lib/sakhi-feature";
 import { useLang } from "./LangContext";
 
 // ─── Sakhi Avatar (simple illustrated, relatable) ────────────────────────────
@@ -196,6 +197,8 @@ function P0Tiles() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function WomensHealthPage() {
+  // Isolated single-feature builds must never show the shared 3-tile landing.
+  if (isBlocked("landing")) notFound();
   const { lang, setLang } = useLang();
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);

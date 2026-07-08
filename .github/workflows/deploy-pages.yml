@@ -30,11 +30,23 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      # Same workflow runs in every repo. The single-feature validation repos
+      # are named sakhi-<feature> (sakhi-health | sakhi-period | sakhi-mood);
+      # the combined site lives in sakhi-prototype and uses an empty feature.
+      - name: Derive feature from repo name
+        id: feat
+        run: |
+          repo="${GITHUB_REPOSITORY##*/}"
+          feature="${repo#sakhi-}"
+          if [ "$feature" = "prototype" ]; then feature=""; fi
+          echo "feature=$feature" >> "$GITHUB_OUTPUT"
+
       - name: Build
         working-directory: apps/shell
         env:
           NEXT_PUBLIC_GROQ_API_KEY: ${{ secrets.NEXT_PUBLIC_GROQ_API_KEY }}
           GITHUB_PAGES: "true"
+          SAKHI_FEATURE: ${{ steps.feat.outputs.feature }}
         run: npm run build
 
       - uses: actions/configure-pages@v4

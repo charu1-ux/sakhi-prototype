@@ -1,10 +1,11 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { notFound, useSearchParams } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
 import { askSakhi, splitDisclaimer } from "@/lib/sakhi";
+import { isBlocked, isIsolated } from "@/lib/sakhi-feature";
 import { useLang } from "../LangContext";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
@@ -225,6 +226,8 @@ const SUGGESTED_EN = [
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function HealthContentPage() {
+  // Isolated builds for the other two features must not expose this page.
+  if (isBlocked("health")) notFound();
   return (
     <Suspense>
       <HealthContentInner />
@@ -435,6 +438,7 @@ function HealthContentInner() {
       <HubHeader
         title={t("सेहत के सवालों के जवाब", "Your health queries, answered")}
         backHref="/womens-health"
+        hideBack={isIsolated}
         scrolled={false}
       />
       <HubChatInput
