@@ -4,7 +4,14 @@ import React, { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
-import { askSakhi, isMaleIdentifier, MALE_RESPONSE, MALE_RESPONSE_EN } from "@/lib/sakhi";
+import {
+  askSakhi,
+  getHomeRemedies,
+  isMaleIdentifier,
+  MALE_RESPONSE,
+  MALE_RESPONSE_EN,
+  type Remedy,
+} from "@/lib/sakhi";
 import { useLang } from "../LangContext";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
@@ -693,51 +700,6 @@ const SYMPTOMS = [
   { hi: "पीठ दर्द", en: "Back pain" },
 ];
 
-// Safe, non-medical home remedies, keyed by the symptom's Hindi label
-// (the stable key SymptomChipsCard emits regardless of UI language).
-const REMEDIES: Record<string, { hi: string; en: string }> = {
-  थकान: {
-    hi: "आराम करें और आयरन से भरपूर खाना लें — पालक, गुड़, खजूर, दालें। खूब पानी पिएँ।",
-    en: "Rest well and eat iron-rich foods — spinach, jaggery, dates, lentils. Drink plenty of water.",
-  },
-  "मूड बदलाव": {
-    hi: "थोड़ी देर टहलें, गहरी साँसें लें, और किसी अपने से बात करें। यह हॉर्मोन की वजह से है — आपकी गलती नहीं।",
-    en: "Take a short walk, breathe deeply, and talk to someone you trust. It's the hormones — not your fault.",
-  },
-  Bloating: {
-    hi: "गुनगुना पानी पिएँ, नमक कम करें, और अजवाइन या जीरे का पानी लें। हल्की walk मदद करती है।",
-    en: "Sip warm water, cut down on salt, and try ajwain or jeera water. A gentle walk helps.",
-  },
-  दर्द: {
-    hi: "पेट के निचले हिस्से पर गर्म पानी की बोतल रखें, गर्म तरल पिएँ, और हल्की stretching करें।",
-    en: "Place a hot water bottle on your lower belly, sip warm fluids, and do light stretching.",
-  },
-  Nausea: {
-    hi: "अदरक की चाय लें, थोड़ा-थोड़ा करके खाएँ, और ताज़ी हवा में बैठें।",
-    en: "Try ginger tea, eat small frequent bites, and get some fresh air.",
-  },
-  सिरदर्द: {
-    hi: "शांत, अँधेरे कमरे में थोड़ा आराम करें, पानी पिएँ, और माथे पर ठंडी पट्टी रखें।",
-    en: "Rest a little in a quiet, dark room, hydrate, and put a cool cloth on your forehead.",
-  },
-  Pimples: {
-    hi: "चेहरा हल्के से धोएँ, तैलीय खाना कम करें, दाने न छेड़ें, और खूब पानी पिएँ।",
-    en: "Cleanse gently, cut back on oily food, don't pick at them, and drink lots of water.",
-  },
-  "नींद कम": {
-    hi: "सोने का समय तय रखें, सोने से पहले फ़ोन न देखें, और गुनगुना दूध लें।",
-    en: "Keep a fixed bedtime, avoid your phone before sleep, and try warm milk.",
-  },
-  "भूख कम": {
-    hi: "थोड़ा-थोड़ा करके हल्का खाना खाएँ — फल, सूप, खिचड़ी। पानी पीती रहें।",
-    en: "Eat small, light meals often — fruit, soup, khichdi. Keep sipping water.",
-  },
-  "पीठ दर्द": {
-    hi: "पीठ पर गर्म सिकाई करें, हल्की stretching (cat-cow) करें, और सही मुद्रा में बैठें।",
-    en: "Use a warm compress on your back, do light stretches (cat-cow), and sit with good posture.",
-  },
-};
-
 function SymptomChipsCard({ onDone }: { onDone: (s: string[]) => void }) {
   const { lang } = useLang();
   const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
@@ -812,6 +774,66 @@ function SymptomChipsCard({ onDone }: { onDone: (s: string[]) => void }) {
       >
         {sel.length > 0 ? t("हो गया ✓", "Done ✓") : t("कुछ नहीं / आगे बढ़ें", "Nothing / Continue")}
       </button>
+    </div>
+  );
+}
+
+// ── Home remedies card — LLM-generated, kitchen/home-only, icon per remedy ─────
+function HomeRemediesCard({ remedies }: { remedies: Remedy[] }) {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
+  return (
+    <div
+      style={{
+        background: C.surface,
+        borderRadius: 16,
+        padding: "12px 14px",
+        boxShadow: `0 1px 6px ${C.border}`,
+      }}
+    >
+      <span
+        style={{
+          display: "block",
+          marginBottom: 10,
+          fontSize: 13,
+          fontWeight: 800,
+          color: C.raat,
+          fontFamily: "JioType, sans-serif",
+        }}
+      >
+        {t("घर पर आज़माएं 🏡", "Try at home 🏡")}
+      </span>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {remedies.map((r, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: "50%",
+                background: C.chaiLight,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 15,
+                flexShrink: 0,
+              }}
+            >
+              {r.icon}
+            </div>
+            <span
+              style={{
+                fontSize: 12,
+                color: C.textSecondary,
+                fontFamily: "JioType, sans-serif",
+                lineHeight: 1.4,
+              }}
+            >
+              {r.text}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1312,7 +1334,26 @@ type MessageKind =
   | { type: "phaseInsight"; day: number; cycleLength: number }
   | { type: "continuePrompt"; label: string; buttonLabel: string; onContinue: () => void }
   | { type: "symptoms"; onDone: (s: string[]) => void }
+  | { type: "homeRemedies"; remedies: Remedy[] }
+  | { type: "remediesLoading" }
   | { type: "contentLink"; query: string };
+
+// Reads the last saved cycle from localStorage (written by onCyclePick) to work
+// out the current phase for the home-remedies LLM call.
+function getCurrentPhaseFromStorage(): string | null {
+  try {
+    const raw = localStorage.getItem("sakhi_period");
+    if (!raw) return null;
+    const { lastPeriod, cycleLength } = JSON.parse(raw) as {
+      lastPeriod: string;
+      cycleLength: number;
+    };
+    const day = getCycleDay(new Date(lastPeriod));
+    return getPhase(day, cycleLength);
+  } catch {
+    return null;
+  }
+}
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function PeriodTrackerPage() {
@@ -1356,15 +1397,6 @@ export default function PeriodTrackerPage() {
       const s = SYMPTOMS.find((x) => x.hi === k);
       return s ? t(s.hi, s.en) : k;
     });
-    const remedyLines = selected
-      .map((k) => {
-        const s = SYMPTOMS.find((x) => x.hi === k);
-        const r = REMEDIES[k];
-        if (!r) return null;
-        return `• ${s ? t(s.hi, s.en) : k} — ${t(r.hi, r.en)}`;
-      })
-      .filter(Boolean)
-      .join("\n");
 
     setMessages((prev) => [
       ...prev.filter((m) => m.type !== "symptoms"),
@@ -1376,18 +1408,27 @@ export default function PeriodTrackerPage() {
           `I understand. 💜 The symptoms you shared (${names.join(", ")}) are common for many women in this phase — you're not alone. Here are some simple home remedies that may help:`,
         ),
       },
-      { type: "text", role: "sakhi", text: remedyLines },
-      {
-        type: "text",
-        role: "sakhi",
-        text: t(
-          "अगर कोई तकलीफ़ बहुत ज़्यादा हो या कई दिन बनी रहे, तो डॉक्टर से ज़रूर मिलें।",
-          "If any symptom feels very severe or lasts several days, please do see a doctor.",
-        ),
-      },
-      anyOtherQuestions(),
+      { type: "remediesLoading" },
     ]);
     scroll();
+
+    const phase = getCurrentPhaseFromStorage() ?? "Menstrual";
+    getHomeRemedies(phase, names, lang).then((remedies) => {
+      setMessages((prev) => [
+        ...prev.filter((m) => m.type !== "remediesLoading"),
+        { type: "homeRemedies", remedies },
+        {
+          type: "text",
+          role: "sakhi",
+          text: t(
+            "अगर कोई तकलीफ़ बहुत ज़्यादा हो या कई दिन बनी रहे, तो डॉक्टर से ज़रूर मिलें।",
+            "If any symptom feels very severe or lasts several days, please do see a doctor.",
+          ),
+        },
+        anyOtherQuestions(),
+      ]);
+      scroll();
+    });
   }
 
   function onCyclePick(
@@ -2028,6 +2069,51 @@ export default function PeriodTrackerPage() {
                   {avatar}
                   <div style={{ flex: 1, maxWidth: "92%" }}>
                     <SymptomChipsCard onDone={m.onDone} />
+                  </div>
+                </div>
+              );
+
+            if (m.type === "homeRemedies")
+              return (
+                <div key={i} style={{ display: "flex", alignItems: "flex-start" }}>
+                  {avatar}
+                  <div style={{ flex: 1, maxWidth: "92%" }}>
+                    <HomeRemediesCard remedies={m.remedies} />
+                  </div>
+                </div>
+              );
+
+            if (m.type === "remediesLoading")
+              return (
+                <div
+                  key={i}
+                  style={{ display: "flex", justifyContent: "flex-start", width: "100%" }}
+                >
+                  {avatar}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 5,
+                      padding: "10px 14px",
+                      borderRadius: "18px 18px 18px 4px",
+                      background: C.surface,
+                      boxShadow: `0 1px 4px ${C.border}`,
+                    }}
+                  >
+                    {[0, 1, 2].map((j) => (
+                      <span
+                        key={j}
+                        style={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: "50%",
+                          background: C.textTertiary,
+                          display: "inline-block",
+                          animation: `pulse 1.2s ease-in-out ${j * 0.2}s infinite`,
+                        }}
+                      />
+                    ))}
                   </div>
                 </div>
               );
