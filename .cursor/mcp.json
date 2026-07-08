@@ -4,7 +4,7 @@
       "command": "npx",
       "args": ["-y", "figma-developer-mcp", "--stdio"],
       "env": {
-        "FIGMA_API_KEY": "figd_-rLZc-hXD1prUBgdAuzspxX0WCu55m2jZsTufa7b"
+        "FIGMA_API_KEY": "${env:FIGMA_API_KEY}"
       }
     },
     "context7": {
