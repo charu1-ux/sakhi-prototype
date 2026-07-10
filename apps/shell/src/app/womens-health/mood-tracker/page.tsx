@@ -241,6 +241,107 @@ const CHIPS = [
   },
 ];
 
+// ─── Voice/text parsing for the tap pickers (Stage-1, keyword based) ──────────
+// Spoken (or typed) answers to the pickers must drive the SAME picker actions,
+// otherwise they fall through to the LLM and break the on-rail flow.
+function parseForWhomVoice(text: string): ForWhom | null {
+  const t = text.toLowerCase();
+  const other = [
+    "किसी और",
+    "किसी",
+    "उनके",
+    "उनका",
+    "for someone",
+    "someone else",
+    "other",
+    "kisi aur",
+    "kisi",
+    "unke",
+    "unka",
+    "wife",
+    "biwi",
+    "patni",
+    "sister",
+    "behen",
+    "didi",
+    "maa",
+    "mummy",
+    "beti",
+    "friend",
+    "saheli",
+    "husband",
+  ];
+  const self = [
+    "मेरे लिए",
+    "मेरे",
+    "खुद",
+    "अपने",
+    "अपनी",
+    "for me",
+    "myself",
+    "self",
+    "mere liye",
+    "mujhe",
+    "apne",
+    "apni",
+  ];
+  if (other.some((k) => t.includes(k))) return "other";
+  if (self.some((k) => t.includes(k))) return "self";
+  return null;
+}
+
+function parseMoodVoice(text: string): (typeof MOODS)[number] | null {
+  const t = text.toLowerCase();
+  const byScore = (s: number) => MOODS.find((m) => m.score === s) ?? null;
+  const neg = /(नहीं|nahi|nhi|\bnot\b|मत)/.test(t);
+  // "theek nahi" / "accha nahi" / "not good" → she's not okay → stressed
+  if (neg && /(अच्छा|accha|theek|thik|good|okay|ठीक|fine)/.test(t)) return byScore(2);
+  if (
+    /(बहुत अच्छा|bahut accha|bahut badhiya|very good|great|बढ़िया|badhiya|खुश|khush|excellent)/.test(
+      t,
+    )
+  )
+    return byScore(5);
+  if (
+    /(बुरा|bura|उदास|udaas|udas|\bsad\b|\blow\b|दुखी|dukhi|depress|रोना|rona|मन नहीं|mann nahi)/.test(
+      t,
+    )
+  )
+    return byScore(1);
+  if (
+    /(तनाव|tanav|stress|tension|परेशान|pareshan|चिंता|chinta|irritable|चिड़चिड़|गुस्सा|gussa)/.test(
+      t,
+    )
+  )
+    return byScore(2);
+  if (/(ठीक|theek|thik|okay|\bok\b|normal|chalega|so so|ठीक ठाक|thik thak)/.test(t))
+    return byScore(3);
+  if (/(अच्छा|accha|good|badhiya|fine|happy|खुश)/.test(t)) return byScore(4);
+  return null;
+}
+
+function parseChipVoice(text: string): (typeof CHIPS)[number] | null {
+  const t = text.toLowerCase();
+  const map: Record<string, string[]> = {
+    sleep: ["नींद", "neend", "nind", "sleep", "सोना", "sona", "नहीं सो"],
+    work: ["काम", "kaam", "work", "job", "office", "naukri", "नौकरी", "दफ्तर", "daftar"],
+    home: ["घर", "ghar", "home", "family", "parivaar", "परिवार", "gharwale"],
+    alone: ["अकेला", "अकेली", "akela", "akeli", "alone", "lonely", "tanha", "तन्हा", "akelapan"],
+    skip: [
+      "बताना नहीं",
+      "nahi batana",
+      "batana nahi",
+      "prefer not",
+      "skip",
+      "छोड़",
+      "chhod",
+      "नहीं बताना",
+    ],
+  };
+  for (const c of CHIPS) if (map[c.id]?.some((k) => t.includes(k))) return c;
+  return null;
+}
+
 // ─── Comfort options (she chooses — never auto-pushed at her) ──────────────────
 // Letting her pick respects her feeling; a joke forced on a low day feels dismissive.
 type ComfortId = "breathing" | "music" | "funny" | "talk";
@@ -1420,6 +1521,67 @@ export default function MoodTrackerPage() {
     if (isMaleIdentifier(q)) {
       push({ type: "text", role: "user", text: q });
       push({ type: "text", role: "sakhi", text: lang === "en" ? MALE_RESPONSE_EN : MALE_RESPONSE });
+      return;
+    }
+
+    // ── Voice/typed answers to the tap pickers ──────────────────────────────
+    // The onboarding flow is a sequence of pickers (for-whom → mood → context
+    // chip). While one is still open, route the answer to that picker's own
+    // action so voice stays on-rail. Only after all are done do we fall through
+    // to the free-chat / LLM logic below. A matched picker handler pushes its
+    // own user bubble, so we don't echo `q` here.
+    if (!forWhomLocked) {
+      const who = parseForWhomVoice(q);
+      if (who) {
+        handleForWhomPick(who);
+        return;
+      }
+      push({ type: "text", role: "user", text: q });
+      push({
+        type: "text",
+        role: "sakhi",
+        text: t(
+          "कोई बात नहीं 🙏 ऊपर दिए बटन दबाएँ, या बोलिए — 'मेरे लिए' या 'किसी और के लिए'।",
+          "No problem 🙏 Tap a button above, or say — 'For me' or 'For someone else'.",
+        ),
+      });
+      scroll();
+      return;
+    }
+    if (!moodLocked) {
+      const mood = parseMoodVoice(q);
+      if (mood) {
+        handleMoodPick(mood);
+        return;
+      }
+      push({ type: "text", role: "user", text: q });
+      push({
+        type: "text",
+        role: "sakhi",
+        text: t(
+          "ऊपर दिए चेहरों में से एक चुनें 👆 — या बोलिए, जैसे 'अच्छा', 'ठीक है', या 'तनाव'।",
+          "Tap one of the faces above 👆 — or say something like 'Good', 'Okay', or 'Stressed'.",
+        ),
+      });
+      scroll();
+      return;
+    }
+    if (!chipLocked) {
+      const chip = parseChipVoice(q);
+      if (chip) {
+        handleChipPick(chip);
+        return;
+      }
+      push({ type: "text", role: "user", text: q });
+      push({
+        type: "text",
+        role: "sakhi",
+        text: t(
+          "ऊपर दिए विकल्पों में से चुनें 👆 — जैसे नींद, काम, घर, या 'बताना नहीं चाहती'।",
+          "Pick one above 👆 — like Sleep, Work, Home, or 'Prefer not to say'.",
+        ),
+      });
+      scroll();
       return;
     }
 
