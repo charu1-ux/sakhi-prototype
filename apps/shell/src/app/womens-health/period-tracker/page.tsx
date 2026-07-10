@@ -146,6 +146,169 @@ function parseCycleLength(text: string): number | null {
   return n >= 15 && n <= 45 ? n : null;
 }
 
+// ── Spoken-date parsing (Stage-1 voice, confident cases only) ─────────────────
+// Numbers 1–15 in Devanagari + common Hinglish spellings; larger days almost
+// always come back from speech as digits.
+const NUM_WORDS: Record<string, number> = {
+  ek: 1,
+  do: 2,
+  teen: 3,
+  char: 4,
+  chaar: 4,
+  paanch: 5,
+  panch: 5,
+  chhe: 6,
+  che: 6,
+  chah: 6,
+  saat: 7,
+  aath: 8,
+  nau: 9,
+  das: 10,
+  gyarah: 11,
+  gyaarah: 11,
+  barah: 12,
+  baarah: 12,
+  terah: 13,
+  chaudah: 14,
+  pandrah: 15,
+  pandhrah: 15,
+  एक: 1,
+  दो: 2,
+  तीन: 3,
+  चार: 4,
+  पाँच: 5,
+  पांच: 5,
+  छह: 6,
+  छे: 6,
+  सात: 7,
+  आठ: 8,
+  नौ: 9,
+  दस: 10,
+  ग्यारह: 11,
+  बारह: 12,
+  तेरह: 13,
+  चौदह: 14,
+  पंद्रह: 15,
+};
+const EN_ABBR = [
+  "jan",
+  "feb",
+  "mar",
+  "apr",
+  "may",
+  "jun",
+  "jul",
+  "aug",
+  "sep",
+  "oct",
+  "nov",
+  "dec",
+];
+
+function normalizeDigits(s: string): string {
+  const dev = "०१२३४५६७८९";
+  return s.replace(/[०-९]/g, (d) => String(dev.indexOf(d)));
+}
+
+function extractNumber(text: string): number | null {
+  for (const tok of text.split(/\s+/)) {
+    if (/^\d+$/.test(tok)) return parseInt(tok, 10);
+    if (NUM_WORDS[tok] != null) return NUM_WORDS[tok];
+  }
+  const m = text.match(/\d+/); // e.g. "5th", "5tarikh"
+  return m ? parseInt(m[0], 10) : null;
+}
+
+function findMonthIndex(text: string): number | null {
+  for (let i = 0; i < 12; i++) {
+    if (
+      text.includes(MONTHS_HI[i]) ||
+      text.includes(MONTHS_EN[i].toLowerCase()) ||
+      text.includes(EN_ABBR[i])
+    )
+      return i;
+  }
+  return null;
+}
+
+function isDontRemember(text: string): boolean {
+  const t = normalizeDigits(text.toLowerCase());
+  return [
+    "yaad nahi",
+    "yaad nhi",
+    "pata nahi",
+    "nahi pata",
+    "याद नहीं",
+    "पता नहीं",
+    "don't remember",
+    "dont remember",
+    "not sure",
+    "bhool",
+    "भूल",
+    "skip",
+    "छोड़",
+  ].some((k) => t.includes(k));
+}
+
+// Returns a confidently-understood date (never in the future — it's a past
+// period), or null when unsure so the caller keeps the tap calendar. `ref` is
+// the month the active calendar is anchored to (for prior-month questions).
+function parseSpokenDate(
+  raw: string,
+  lang: "hi" | "en",
+  ref?: Date,
+): { date: Date; label: string } | null {
+  const text = normalizeDigits(raw.toLowerCase().trim());
+  const MONTHS = lang === "hi" ? MONTHS_HI : MONTHS_EN;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const refDate = ref ? new Date(ref) : today;
+  const mk = (d: Date) => {
+    d.setHours(0, 0, 0, 0);
+    return { date: d, label: `${d.getDate()} ${MONTHS[d.getMonth()]}` };
+  };
+
+  if (/\b(aaj|today)\b/.test(text) || text.includes("आज")) return mk(new Date(today));
+  if (/\b(parso|parson|day before yesterday)\b/.test(text) || text.includes("परसों"))
+    return mk(addDays(today, -2));
+  if (/\b(kal|yesterday)\b/.test(text) || text.includes("कल")) return mk(addDays(today, -1));
+
+  const hasWeeks = /(hafte|hafta|haftey|weeks?|saptah|हफ्ते|हफ्ता|सप्ताह)/.test(text);
+  const hasDays = /(din|dino|days?|roz|दिन)/.test(text);
+  if (hasWeeks) {
+    const n = extractNumber(text);
+    if (n != null) return mk(addDays(today, -n * 7));
+  }
+  if (hasDays) {
+    const n = extractNumber(text);
+    if (n != null) return mk(addDays(today, -n));
+  }
+
+  const monthIdx = findMonthIndex(text);
+  if (monthIdx != null) {
+    const day = extractNumber(text);
+    if (day == null || day < 1 || day > 31) return null;
+    const yearM = text.match(/\b(20\d{2})\b/);
+    const year = yearM ? parseInt(yearM[1], 10) : today.getFullYear();
+    let d = new Date(year, monthIdx, day);
+    if (!yearM && d > today) d = new Date(year - 1, monthIdx, day);
+    if (d.getMonth() !== monthIdx) return null; // day invalid for month
+    return mk(d);
+  }
+
+  // Bare day-of-month — anchored to the calendar's month (or the current month;
+  // if that would be in the future, the most recent past occurrence).
+  const dayOnly = extractNumber(text);
+  if (dayOnly != null && dayOnly >= 1 && dayOnly <= 31) {
+    let d = new Date(refDate.getFullYear(), refDate.getMonth(), dayOnly);
+    if (d.getMonth() !== refDate.getMonth()) return null;
+    if (!ref && d > today) d = new Date(today.getFullYear(), today.getMonth() - 1, dayOnly);
+    return mk(d);
+  }
+
+  return null;
+}
+
 // ── Phase arc ─────────────────────────────────────────────────────────────────
 function PhaseArc({ day, len }: { day: number; len: number }) {
   const { lang } = useLang();
@@ -1111,6 +1274,55 @@ function ReminderAskCard({ onYes, onNo }: { onYes: () => void; onNo: () => void 
   );
 }
 
+function VoiceDateConfirmCard({
+  onConfirm,
+  onReject,
+}: {
+  onConfirm: () => void;
+  onReject: () => void;
+}) {
+  const { lang } = useLang();
+  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
+  return (
+    <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+      <button
+        onClick={onConfirm}
+        style={{
+          flex: 1,
+          borderRadius: 20,
+          padding: "10px 0",
+          fontSize: 13,
+          fontWeight: 600,
+          color: "#fff",
+          background: C.gulabi,
+          border: "none",
+          cursor: "pointer",
+          fontFamily: "JioType, sans-serif",
+        }}
+      >
+        {t("हां, सही है ✓", "Yes, that's right ✓")}
+      </button>
+      <button
+        onClick={onReject}
+        style={{
+          flex: 1,
+          borderRadius: 20,
+          padding: "10px 0",
+          fontSize: 13,
+          fontWeight: 600,
+          color: C.raatMid,
+          background: C.raatLight,
+          border: "none",
+          cursor: "pointer",
+          fontFamily: "JioType, sans-serif",
+        }}
+      >
+        {t("नहीं, कैलेंडर खोलूँ", "No, use calendar")}
+      </button>
+    </div>
+  );
+}
+
 function ReminderDaysCard({ options, onPick }: { options: number[]; onPick: (n: number) => void }) {
   const { lang } = useLang();
   const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
@@ -1365,6 +1577,7 @@ type MessageKind =
     }
   | { type: "cycleLength"; lastPeriod: Date; onPick: (days: number, unsure?: boolean) => void }
   | { type: "cycleOverview"; lastPeriod: Date; cycleLength: number; unsure?: boolean }
+  | { type: "voiceDateConfirm"; label: string; onConfirm: () => void; onReject: () => void }
   | { type: "reminderAsk"; onYes: () => void; onNo: () => void }
   | { type: "reminderDays"; options: number[]; onPick: (n: number) => void }
   | { type: "phaseInsight"; day: number; cycleLength: number }
@@ -1660,7 +1873,7 @@ export default function PeriodTrackerPage() {
       onDatePick: (label, date) => {
         setLastPeriodDate(date);
         setMessages((prev) => [
-          ...prev.filter((m) => m.type !== "calendar"),
+          ...prev.filter((m) => m.type !== "calendar" && m.type !== "voiceDateConfirm"),
           {
             type: "text",
             role: "user",
@@ -1720,7 +1933,7 @@ export default function PeriodTrackerPage() {
     if (step === 1) {
       // Move on to the month before that.
       setMessages((prev) => [
-        ...prev.filter((m) => m.type !== "calendar"),
+        ...prev.filter((m) => m.type !== "calendar" && m.type !== "voiceDateConfirm"),
         { type: "text", role: "user", text: userText },
         ...prevMonthMessages(lmp, next, 2),
       ]);
@@ -1732,14 +1945,14 @@ export default function PeriodTrackerPage() {
     const cycle = computeCycle(next);
     if (cycle) {
       setMessages((prev) => [
-        ...prev.filter((m) => m.type !== "calendar"),
+        ...prev.filter((m) => m.type !== "calendar" && m.type !== "voiceDateConfirm"),
         { type: "text", role: "user", text: userText },
       ]);
       onCyclePick(cycle, lmp, { userText: null });
     } else {
       // Not enough to compute — fall back to a gentle rough estimate.
       setMessages((prev) => [
-        ...prev.filter((m) => m.type !== "calendar"),
+        ...prev.filter((m) => m.type !== "calendar" && m.type !== "voiceDateConfirm"),
         { type: "text", role: "user", text: userText },
         {
           type: "text",
@@ -1843,6 +2056,59 @@ export default function PeriodTrackerPage() {
     }
 
     if (step === "date") {
+      // The date step is a calendar (the main last-period one, then two prior-
+      // month ones). Voice acts on whichever calendar is currently shown.
+      const activeCal = [...messages]
+        .reverse()
+        .find((m): m is Extract<MessageKind, { type: "calendar" }> => m.type === "calendar");
+
+      // "I don't remember" → skip, when this calendar allows it.
+      if (activeCal?.onSkip && isDontRemember(q)) {
+        setMessages((prev) => [...prev, { type: "text", role: "user", text: q }]);
+        activeCal.onSkip();
+        return;
+      }
+
+      // Confident spoken date → echo it back and let her confirm before locking.
+      const parsed = activeCal ? parseSpokenDate(q, lang, activeCal.initialDate) : null;
+      if (activeCal && parsed) {
+        const { date, label } = parsed;
+        setMessages((prev) => [
+          ...prev,
+          { type: "text", role: "user", text: q },
+          {
+            type: "text",
+            role: "sakhi",
+            text: t(`मैंने समझा — ${label}। क्या यह सही है?`, `I heard — ${label}. Is that right?`),
+          },
+          {
+            type: "voiceDateConfirm",
+            label,
+            onConfirm: () => {
+              setMessages((prev) => prev.filter((m) => m.type !== "voiceDateConfirm"));
+              activeCal.onDatePick(label, date);
+            },
+            onReject: () => {
+              setMessages((prev) => [
+                ...prev.filter((m) => m.type !== "voiceDateConfirm"),
+                {
+                  type: "text",
+                  role: "sakhi",
+                  text: t(
+                    "कोई बात नहीं 🙏 कृपया ऊपर कैलेंडर में सही तारीख टैप करें 📅",
+                    "No problem 🙏 Please tap the correct date in the calendar above 📅",
+                  ),
+                },
+              ]);
+              scroll();
+            },
+          },
+        ]);
+        scroll();
+        return;
+      }
+
+      // Not confident — keep the calendar tap as the reliable way.
       setMessages((prev) => [
         ...prev,
         { type: "text", role: "user", text: q },
@@ -1850,8 +2116,8 @@ export default function PeriodTrackerPage() {
           type: "text",
           role: "sakhi",
           text: t(
-            "कृपया ऊपर दिए गए कैलेंडर में तारीख पर टैप करें 📅",
-            "Please tap a date in the calendar above 📅",
+            "इस तारीख के लिए ऊपर कैलेंडर में तारीख पर टैप करना सबसे आसान है 📅",
+            "For the date, tapping it in the calendar above is easiest 📅",
           ),
         },
       ]);
@@ -2036,6 +2302,16 @@ export default function PeriodTrackerPage() {
                       {t("Cycle की लंबाई चुनें", "Choose cycle length")}
                     </p>
                     <CycleLengthCard onPick={m.onPick} />
+                  </div>
+                </div>
+              );
+
+            if (m.type === "voiceDateConfirm")
+              return (
+                <div key={i} style={{ display: "flex", alignItems: "flex-start" }}>
+                  {avatar}
+                  <div style={{ flex: 1, maxWidth: "92%" }}>
+                    <VoiceDateConfirmCard onConfirm={m.onConfirm} onReject={m.onReject} />
                   </div>
                 </div>
               );
