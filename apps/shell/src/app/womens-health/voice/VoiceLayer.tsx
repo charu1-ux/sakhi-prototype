@@ -23,6 +23,7 @@ import { useLang } from "../LangContext";
 import { isTtsSupported, playClip, speak, stopSpeech, type Lang } from "./tts";
 import { isRecognitionSupported, startRecognition, type RecognitionSession } from "./recognition";
 import { matchIntent } from "./intents";
+import { getVoiceTarget } from "./voiceBus";
 
 // ─── Copy ───────────────────────────────────────────────────────────────────
 // Home walkthrough. Hindi is the production script; English is a simple
@@ -264,13 +265,24 @@ export function VoiceLayer() {
   const dispatch = useCallback(() => {
     const text = transcript.trim();
     if (!text) return;
-    const intent = matchIntent(text);
     stopSpeech();
     sessionRef.current?.abort();
     sessionRef.current = null;
     setSheetOpen(false);
     setListening(false);
     setTranscript("");
+
+    // On a chat screen (Content Hub / Period / Mood) the mic feeds that screen's
+    // own chat — voice = typing, so the user stays in the current flow and is
+    // never yanked to another page. Only the home launcher (no target) routes
+    // by intent.
+    const target = getVoiceTarget();
+    if (target) {
+      target(text);
+      return;
+    }
+
+    const intent = matchIntent(text);
     if (intent.kind === "period") router.push(ROUTES.period);
     else if (intent.kind === "mood") router.push(ROUTES.mood);
     else if (intent.kind === "ask")

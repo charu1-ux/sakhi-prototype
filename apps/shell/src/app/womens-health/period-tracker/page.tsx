@@ -15,6 +15,7 @@ import {
   type Remedy,
 } from "@/lib/sakhi";
 import { useLang } from "../LangContext";
+import { useVoiceTarget } from "../voice/voiceBus";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -76,8 +77,7 @@ function buildCells(year: number, month: number) {
   const first = new Date(year, month, 1).getDay();
   const total = new Date(year, month + 1, 0).getDate();
   return [...Array(first).fill(null), ...Array.from({ length: total }, (_, i) => i + 1)] as (
-    | number
-    | null
+    number | null
   )[];
 }
 function addDays(d: Date, n: number) {
@@ -1404,6 +1404,10 @@ export default function PeriodTrackerPage() {
   const scroll = () =>
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
 
+  // Voice input on this screen goes straight into the chat (same as typing), so
+  // it stays in the period flow instead of navigating away.
+  useVoiceTarget((text) => handleSubmit(text));
+
   const anyOtherQuestions = (): MessageKind => ({
     type: "text",
     role: "sakhi",
@@ -1955,7 +1959,7 @@ export default function PeriodTrackerPage() {
         scrolled={false}
       />
       <main
-        className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="min-h-0 flex-1 [scrollbar-width:none] overflow-y-auto px-4 pb-4 [&::-webkit-scrollbar]:hidden"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 76px)" }}
       >
         <div className="mx-auto flex w-full max-w-md flex-col gap-3">

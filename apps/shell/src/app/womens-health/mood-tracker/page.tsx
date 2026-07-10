@@ -14,6 +14,7 @@ import {
   splitDisclaimer,
 } from "@/lib/sakhi";
 import { useLang } from "../LangContext";
+import { useVoiceTarget } from "../voice/voiceBus";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -1127,6 +1128,10 @@ export default function MoodTrackerPage() {
   const scroll = () =>
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
 
+  // Voice input on this screen goes straight into the chat (same as typing), so
+  // it stays in the mood flow instead of navigating away.
+  useVoiceTarget((text) => handleSubmit(text));
+
   const [forWhomLocked, setForWhomLocked] = useState(false);
   const [selectedForWhom, setSelectedForWhom] = useState<ForWhom | undefined>();
   const [moodLocked, setMoodLocked] = useState(false);
@@ -1692,7 +1697,7 @@ export default function MoodTrackerPage() {
   return (
     <div className="relative flex h-full flex-col" style={{ background: C.chatBg }}>
       <main
-        className="min-h-0 flex-1 overflow-y-auto px-3 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="min-h-0 flex-1 [scrollbar-width:none] overflow-y-auto px-3 pb-4 [&::-webkit-scrollbar]:hidden"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 76px + 40px)" }}
       >
         <div className="mx-auto flex w-full max-w-md flex-col gap-3">

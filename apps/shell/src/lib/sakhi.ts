@@ -1735,6 +1735,8 @@ function findResponse(
       return sourcedResult(r, lang);
     }
   }
+  // DEFAULT is a sentinel for "no match" — callers detect it and fall through to
+  // the LLM (which replies in the selected language). It is never shown as-is.
   return { answer: DEFAULT };
 }
 

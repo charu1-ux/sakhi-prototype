@@ -7,6 +7,7 @@ import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
 import { askSakhi, splitDisclaimer } from "@/lib/sakhi";
 import { isBlocked, isIsolated } from "@/lib/sakhi-feature";
 import { useLang } from "../LangContext";
+import { useVoiceTarget } from "../voice/voiceBus";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -261,6 +262,9 @@ function HealthContentInner() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const autoSubmittedRef = useRef(false);
 
+  // Voice input on this screen goes straight into the chat (same as typing).
+  useVoiceTarget((text) => handleSubmit(text));
+
   const scroll = () =>
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
 
@@ -317,7 +321,7 @@ function HealthContentInner() {
   return (
     <div className="bg-canvas-grey relative flex h-full flex-col">
       <main
-        className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="min-h-0 flex-1 [scrollbar-width:none] overflow-y-auto px-4 pb-4 [&::-webkit-scrollbar]:hidden"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 76px)" }}
       >
         <div className="mx-auto flex w-full max-w-md flex-col gap-3">
