@@ -238,7 +238,7 @@ export default function HealthContentPage() {
 
 function HealthContentInner() {
   const searchParams = useSearchParams();
-  const { lang } = useLang();
+  const { lang, ready } = useLang();
   const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   const assistantName = t("सखी", "Health Companion");
   const disclaimerHi =
@@ -268,14 +268,17 @@ function HealthContentInner() {
   const scroll = () =>
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
 
+  // Wait for the saved language to be applied before auto-submitting a `?q=`
+  // deep link — otherwise askSakhi runs with the default "hi" and the answer
+  // (and its disclaimer) come back in Hindi even when the user is in English.
   useEffect(() => {
+    if (!ready) return;
     const q = searchParams.get("q");
     if (q && !autoSubmittedRef.current) {
       autoSubmittedRef.current = true;
       handleSubmit(decodeURIComponent(q));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [ready]);
 
   async function handleSubmit(question: string) {
     if (!question.trim() || loading) return;
