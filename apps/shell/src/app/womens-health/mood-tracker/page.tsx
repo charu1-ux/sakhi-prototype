@@ -9,6 +9,7 @@ import {
   askSakhi,
   isBlockerResponse,
   isMaleIdentifier,
+  looksLikeQuestion,
   MALE_RESPONSE,
   MALE_RESPONSE_EN,
   splitDisclaimer,
@@ -1518,6 +1519,56 @@ export default function MoodTrackerPage() {
     if (!text.trim() || loading) return;
     const q = text.trim();
 
+    // Answer a free-text query via the LLM (askSakhi). Shared by the general
+    // chat fall-through AND the pickers below, so a real question typed while a
+    // picker is open is answered instead of getting a canned "pick above" reply.
+    const runLlm = async (query: string) => {
+      const history: SakhiTurn[] = messages
+        .filter((m): m is Extract<MessageKind, { type: "text" }> => m.type === "text")
+        .map((m) => ({ role: m.role === "user" ? "user" : "assistant", content: m.text }));
+      push({ type: "text", role: "user", text: query });
+      setLoading(true);
+      scroll();
+      try {
+        const data = await askSakhi(query, history, lang);
+        if (data.video || data.article) {
+          push({
+            type: "text",
+            role: "sakhi",
+            text: t(
+              "समझ गई। इस बारे में कुछ verified जानकारी है — यहाँ देखें:",
+              "Understood. There is some verified information on this — see here:",
+            ),
+          });
+          push({ type: "contentLink", query });
+        } else if (!isBlockerResponse(data.answer)) {
+          push({ type: "text", role: "sakhi", text: data.answer, isLlm: data.isLlm });
+        } else {
+          push({
+            type: "text",
+            role: "sakhi",
+            text: t(
+              "समझ गई। मूड और मानसिक स्वास्थ्य के बारे में यहाँ कुछ verified जानकारी है:",
+              "Understood. Here is some verified information on mood and mental health:",
+            ),
+          });
+          push({ type: "contentLink", query: "low mood mann udaas kyun hota hai" });
+        }
+      } catch {
+        push({
+          type: "text",
+          role: "sakhi",
+          text: t(
+            "नेटवर्क में थोड़ी समस्या है। दोबारा कोशिश करें। 💜",
+            "There's a small network issue. Please try again. 💜",
+          ),
+        });
+      } finally {
+        setLoading(false);
+        scroll();
+      }
+    };
+
     if (isMaleIdentifier(q)) {
       push({ type: "text", role: "user", text: q });
       push({ type: "text", role: "sakhi", text: lang === "en" ? MALE_RESPONSE_EN : MALE_RESPONSE });
@@ -1534,6 +1585,10 @@ export default function MoodTrackerPage() {
       const who = parseForWhomVoice(q);
       if (who) {
         handleForWhomPick(who);
+        return;
+      }
+      if (looksLikeQuestion(q)) {
+        await runLlm(q);
         return;
       }
       push({ type: "text", role: "user", text: q });
@@ -1554,6 +1609,10 @@ export default function MoodTrackerPage() {
         handleMoodPick(mood);
         return;
       }
+      if (looksLikeQuestion(q)) {
+        await runLlm(q);
+        return;
+      }
       push({ type: "text", role: "user", text: q });
       push({
         type: "text",
@@ -1570,6 +1629,10 @@ export default function MoodTrackerPage() {
       const chip = parseChipVoice(q);
       if (chip) {
         handleChipPick(chip);
+        return;
+      }
+      if (looksLikeQuestion(q)) {
+        await runLlm(q);
         return;
       }
       push({ type: "text", role: "user", text: q });
@@ -1660,51 +1723,8 @@ export default function MoodTrackerPage() {
       return;
     }
 
-    const history: SakhiTurn[] = messages
-      .filter((m): m is Extract<MessageKind, { type: "text" }> => m.type === "text")
-      .map((m) => ({ role: m.role === "user" ? "user" : "assistant", content: m.text }));
-    push({ type: "text", role: "user", text: q });
-    setLoading(true);
-    scroll();
-    try {
-      const data = await askSakhi(q, history, lang);
-      if (data.video || data.article) {
-        push({
-          type: "text",
-          role: "sakhi",
-          text: t(
-            "समझ गई। इस बारे में कुछ verified जानकारी है — यहाँ देखें:",
-            "Understood. There is some verified information on this — see here:",
-          ),
-        });
-        push({ type: "contentLink", query: q });
-      } else if (!isBlockerResponse(data.answer)) {
-        // LLM gave a meaningful response (e.g. clarification) — show it
-        push({ type: "text", role: "sakhi", text: data.answer, isLlm: data.isLlm });
-      } else {
-        push({
-          type: "text",
-          role: "sakhi",
-          text: t(
-            "समझ गई। मूड और मानसिक स्वास्थ्य के बारे में यहाँ कुछ verified जानकारी है:",
-            "Understood. Here is some verified information on mood and mental health:",
-          ),
-        });
-        push({ type: "contentLink", query: "low mood mann udaas kyun hota hai" });
-      }
-    } catch {
-      push({
-        type: "text",
-        role: "sakhi",
-        text: t(
-          "नेटवर्क में थोड़ी समस्या है। दोबारा कोशिश करें। 💜",
-          "There's a small network issue. Please try again. 💜",
-        ),
-      });
-    } finally {
-      setLoading(false);
-      scroll();
-    }
+    // General chat (logging done, no special pattern matched) — answer via LLM.
+    await runLlm(q);
   }
 
   // Render messages

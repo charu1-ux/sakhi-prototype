@@ -9,6 +9,7 @@ import {
   askSakhi,
   getHomeRemedies,
   isMaleIdentifier,
+  looksLikeQuestion,
   MALE_RESPONSE,
   MALE_RESPONSE_EN,
   splitDisclaimer,
@@ -2023,6 +2024,61 @@ export default function PeriodTrackerPage() {
     if (!text.trim() || loading) return;
     const q = text.trim();
 
+    // Answer a free-text query via the LLM (askSakhi). Shared by the general
+    // chat fall-through AND the guided steps below, so a real question typed
+    // mid-setup is answered instead of getting a canned "pick above" reprompt.
+    const runLlm = async (query: string) => {
+      const history: SakhiTurn[] = messages
+        .filter((m): m is Extract<MessageKind, { type: "text" }> => m.type === "text")
+        .map((m) => ({ role: m.role === "user" ? "user" : "assistant", content: m.text }));
+      setMessages((prev) => [...prev, { type: "text", role: "user", text: query }]);
+      setLoading(true);
+      scroll();
+      try {
+        const data = await askSakhi(query, history, lang);
+        if (data.video || data.article) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              type: "text",
+              role: "sakhi",
+              text: t(
+                "इस विषय पर मेरे पास verified जानकारी है — वीडियो और लेख दोनों उपलब्ध हैं:",
+                "I have verified information on this topic — both videos and articles are available:",
+              ),
+            },
+            { type: "contentLink", query },
+          ]);
+        } else {
+          setMessages((prev) => [
+            ...prev,
+            {
+              type: "text",
+              role: "sakhi",
+              text:
+                data.answer || t("सखी अभी उपलब्ध नहीं है।", "Sakhi is not available right now."),
+              isLlm: data.isLlm,
+            },
+          ]);
+        }
+      } catch {
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: "text",
+            role: "sakhi",
+            text: t(
+              "नेटवर्क में समस्या है। कृपया पुनः प्रयास करें।",
+              "There is a network issue. Please try again.",
+            ),
+          },
+        ]);
+      } finally {
+        setLoading(false);
+        scroll();
+      }
+    };
+
     if (isMaleIdentifier(q)) {
       setMessages((prev) => [
         ...prev,
@@ -2037,6 +2093,9 @@ export default function PeriodTrackerPage() {
       const parsed = parseForWhom(q);
       if (parsed) {
         handleForWhom(parsed, q);
+      } else if (looksLikeQuestion(q)) {
+        // A real question during setup — answer it; the buttons stay above.
+        await runLlm(q);
       } else {
         setMessages((prev) => [
           ...prev,
@@ -2108,6 +2167,12 @@ export default function PeriodTrackerPage() {
         return;
       }
 
+      // A real question instead of a date — answer it; the calendar stays above.
+      if (looksLikeQuestion(q)) {
+        await runLlm(q);
+        return;
+      }
+
       // Not confident — keep the calendar tap as the reliable way.
       setMessages((prev) => [
         ...prev,
@@ -2129,6 +2194,9 @@ export default function PeriodTrackerPage() {
       const days = parseCycleLength(q);
       if (days) {
         onCyclePick(days, lastPeriodDate ?? new Date());
+      } else if (looksLikeQuestion(q)) {
+        // A real question instead of a number — answer it; options stay above.
+        await runLlm(q);
       } else {
         setMessages((prev) => [
           ...prev,
@@ -2147,54 +2215,8 @@ export default function PeriodTrackerPage() {
       return;
     }
 
-    const history: SakhiTurn[] = messages
-      .filter((m): m is Extract<MessageKind, { type: "text" }> => m.type === "text")
-      .map((m) => ({ role: m.role === "user" ? "user" : "assistant", content: m.text }));
-    setMessages((prev) => [...prev, { type: "text", role: "user", text: q }]);
-    setLoading(true);
-    scroll();
-    try {
-      const data = await askSakhi(q, history, lang);
-      if (data.video || data.article) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            type: "text",
-            role: "sakhi",
-            text: t(
-              "इस विषय पर मेरे पास verified जानकारी है — वीडियो और लेख दोनों उपलब्ध हैं:",
-              "I have verified information on this topic — both videos and articles are available:",
-            ),
-          },
-          { type: "contentLink", query: q },
-        ]);
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          {
-            type: "text",
-            role: "sakhi",
-            text: data.answer || t("सखी अभी उपलब्ध नहीं है।", "Sakhi is not available right now."),
-            isLlm: data.isLlm,
-          },
-        ]);
-      }
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          type: "text",
-          role: "sakhi",
-          text: t(
-            "नेटवर्क में समस्या है। कृपया पुनः प्रयास करें।",
-            "There is a network issue. Please try again.",
-          ),
-        },
-      ]);
-    } finally {
-      setLoading(false);
-      scroll();
-    }
+    // General chat (setup done) — answer via the LLM.
+    await runLlm(q);
   }
 
   const avatar = (

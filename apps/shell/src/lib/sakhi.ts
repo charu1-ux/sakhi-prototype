@@ -1570,6 +1570,70 @@ export function isMaleIdentifier(q: string): boolean {
   return MALE_IDENTIFIERS.some((p) => ql.includes(p));
 }
 
+/**
+ * Heuristic: does this text read like a general question the LLM should answer,
+ * rather than an attempt at a guided-step input (a date, a cycle-length number,
+ * or a picker word like "for me" / "good")? The trackers use this so a real
+ * question typed DURING setup falls through to askSakhi instead of hitting a
+ * canned "please pick above" reprompt. A mistyped date/number (no question
+ * markers, short) stays with the helpful reprompt.
+ */
+export function looksLikeQuestion(q: string): boolean {
+  const s = q.toLowerCase().trim();
+  if (s.length < 3) return false;
+  if (s.includes("?") || s.includes("？")) return true;
+  const markers = [
+    // Hinglish
+    "kya",
+    "kyu",
+    "kyon",
+    "kaise",
+    "kaisa",
+    "kab",
+    "kahan",
+    "kaun",
+    "matlab",
+    "batao",
+    "bata do",
+    "sakti",
+    "sakta",
+    "hota hai",
+    "hoti hai",
+    "normal hai",
+    // English
+    "why",
+    "what",
+    "how",
+    "when",
+    "where",
+    "which",
+    "can i",
+    "can we",
+    "is it",
+    "should",
+    "does",
+    "do i",
+    "mean",
+    "explain",
+    "tell me",
+    // Hindi (Devanagari)
+    "क्या",
+    "क्यों",
+    "कैसे",
+    "कब",
+    "कहाँ",
+    "कौन",
+    "मतलब",
+    "बताओ",
+    "सकती",
+    "सकता",
+    "नॉर्मल",
+  ];
+  if (markers.some((m) => s.includes(m))) return true;
+  // Longer free text (5+ words) is almost never a picker token, date, or number.
+  return s.split(/\s+/).length >= 5;
+}
+
 const OFF_TOPIC_WORDS = [
   "मौसम",
   "weather",
