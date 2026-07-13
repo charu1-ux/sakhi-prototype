@@ -7,7 +7,8 @@ import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
 import { askSakhi, splitDisclaimer } from "@/lib/sakhi";
 import { isBlocked, isIsolated } from "@/lib/sakhi-feature";
 import { useLang } from "../LangContext";
-import { useVoiceTarget } from "../voice/voiceBus";
+import { consumeVoiceQuery, useVoiceTarget } from "../voice/voiceBus";
+import { speak, stopSpeech } from "../voice/tts";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -282,6 +283,8 @@ function HealthContentInner() {
 
   async function handleSubmit(question: string) {
     if (!question.trim() || loading) return;
+    // If this query arrived by voice, speak Sakhi's answer back.
+    const viaVoice = consumeVoiceQuery();
     const q = question.trim();
     const history: SakhiTurn[] = messages.map((m) => ({
       role: m.role === "user" ? "user" : "assistant",
@@ -292,18 +295,24 @@ function HealthContentInner() {
     scroll();
     try {
       const data = await askSakhi(q, history, lang);
+      const answerText =
+        data.answer ||
+        t("सखी अभी उपलब्ध नहीं है।", "Your Health Companion is unavailable right now.");
       setMessages((prev) => [
         ...prev,
         {
           role: "sakhi",
-          text:
-            data.answer ||
-            t("सखी अभी उपलब्ध नहीं है।", "Your Health Companion is unavailable right now."),
+          text: answerText,
           video: data.video,
           article: data.article,
           isLlm: data.isLlm,
         },
       ]);
+      // Speak the answer body (not the doctor disclaimer) when asked by voice.
+      if (viaVoice) {
+        stopSpeech();
+        speak(splitDisclaimer(answerText).body, { lang });
+      }
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -337,6 +346,13 @@ function HealthContentInner() {
                 key={i}
                 className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
               >
+                {/* Video first — the clip is shown before any text answer. */}
+                {m.role === "sakhi" && m.video && (
+                  <>
+                    <ValueNote text={t(VALUE_VIDEO_HI, VALUE_VIDEO_EN)} />
+                    <VideoCard video={m.video} />
+                  </>
+                )}
                 <div
                   className={`flex ${m.role === "user" ? "justify-end" : "justify-start"} w-full`}
                 >
@@ -374,12 +390,6 @@ function HealthContentInner() {
                       निर्णय लेने से पहले अपनी डॉक्टर से अवश्य परामर्श करें।
                     </span>
                   </div>
-                )}
-                {m.role === "sakhi" && m.video && (
-                  <>
-                    <ValueNote text={t(VALUE_VIDEO_HI, VALUE_VIDEO_EN)} />
-                    <VideoCard video={m.video} />
-                  </>
                 )}
                 {m.role === "sakhi" && !m.video && m.article && (
                   <>
