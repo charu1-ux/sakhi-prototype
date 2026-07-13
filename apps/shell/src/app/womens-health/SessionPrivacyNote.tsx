@@ -3,54 +3,51 @@
 /**
  * End-of-conversation privacy note (all Women's Health chat features).
  *
- * Once per browser session, after a real exchange has happened and the chat has
- * been idle for a short while (≈ "the conversation has ended"), Sakhi gently
- * explains that — to protect the user's privacy — this chat clears itself when
- * she reopens the app, and asks whether that's okay or she'd like to see her
- * previous chats. Choosing "show previous chats" just records the preference
- * for now (actual restore is wired later).
+ * Triggered by the BACK button — leaving a feature is the one unambiguous
+ * "the conversation has ended" signal (an idle timer was too fuzzy). Once per
+ * browser session, when the user taps back, Sakhi first explains that — to
+ * protect her privacy — this chat clears itself when she reopens the app, and
+ * asks whether that's okay or she'd like to see her previous chats. After she
+ * answers, the app navigates back. "Show previous chats" just records the
+ * preference for now (actual restore is wired later).
  *
- * Scoped to the CHAT conversation only — the message never claims the saved
- * period/mood data is cleared (that persists, by design), so the promise stays
- * honest.
+ * Scoped to the CHAT conversation only — it never claims the saved period/mood
+ * data is cleared (that persists, by design), so the promise stays honest.
  *
- * Mount inside each chat screen's `relative` frame:
- *   <SessionPrivacyNote lang={lang} messageCount={messages.length} />
+ * Usage in a chat screen: gate the header's back through the session flag.
+ *   const [privacyOpen, setPrivacyOpen] = useState(false);
+ *   const goHome = () => router.push("/womens-health");
+ *   const handleBack = () =>
+ *     hasShownPrivacyNote() ? goHome() : setPrivacyOpen(true);
+ *   <HubHeader onBack={handleBack} ... />
+ *   <SessionPrivacyNote lang={lang} open={privacyOpen} onResolved={goHome} />
  */
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 const SESSION_FLAG = "sakhi_privacy_note_shown"; // once per browser session
 const HISTORY_PREF = "sakhi_history_pref"; // "keep" if she opted to retain chats
 
+/** Has the privacy note already been shown this browser session? */
+export function hasShownPrivacyNote(): boolean {
+  try {
+    return sessionStorage.getItem(SESSION_FLAG) === "1";
+  } catch {
+    return false;
+  }
+}
+
 export function SessionPrivacyNote({
   lang,
-  messageCount,
-  idleMs = 40000,
+  open,
+  onResolved,
 }: {
   lang: "hi" | "en";
-  messageCount: number;
-  idleMs?: number;
+  open: boolean;
+  /** Called once the user has answered — the screen then navigates back. */
+  onResolved: () => void;
 }) {
   const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
-  const [open, setOpen] = useState(false);
   const [chose, setChose] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Arm/reset an idle timer whenever a new message arrives. Only after a real
-  // exchange (≥ 2 messages) and only once per session.
-  useEffect(() => {
-    if (messageCount < 2) return;
-    if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(SESSION_FLAG)) return;
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(SESSION_FLAG)) return;
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setOpen(true);
-    }, idleMs);
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [messageCount, idleMs]);
 
   if (!open) return null;
 
@@ -61,9 +58,9 @@ export function SessionPrivacyNote({
       /* ignore storage errors */
     }
   };
-  const dismiss = () => {
+  const acknowledge = () => {
     markShown();
-    setOpen(false);
+    onResolved();
   };
   const keepHistory = () => {
     try {
@@ -82,7 +79,7 @@ export function SessionPrivacyNote({
       aria-label={t("आपकी निजता", "Your privacy")}
       className="absolute inset-0 z-50 flex flex-col justify-end"
       style={{ background: "rgba(24,10,20,0.45)" }}
-      onClick={dismiss}
+      onClick={acknowledge}
     >
       <div
         className="rounded-t-3xl bg-white px-5 pt-5"
@@ -119,7 +116,7 @@ export function SessionPrivacyNote({
             <div className="mt-4 flex flex-col gap-2.5">
               <button
                 type="button"
-                onClick={dismiss}
+                onClick={acknowledge}
                 className="rounded-full py-3 text-[14px] font-bold text-white transition-transform active:scale-95"
                 style={{ background: "#E11D48", fontFamily: "JioType, sans-serif" }}
               >
@@ -148,7 +145,7 @@ export function SessionPrivacyNote({
             </p>
             <button
               type="button"
-              onClick={() => setOpen(false)}
+              onClick={onResolved}
               className="mt-4 w-full rounded-full py-3 text-[14px] font-bold text-white transition-transform active:scale-95"
               style={{ background: "#E11D48", fontFamily: "JioType, sans-serif" }}
             >

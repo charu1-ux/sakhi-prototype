@@ -17,7 +17,7 @@ import {
 import { useLang } from "../LangContext";
 import { consumeVoiceQuery, useVoiceTarget } from "../voice/voiceBus";
 import { speak, stopSpeech } from "../voice/tts";
-import { SessionPrivacyNote } from "../SessionPrivacyNote";
+import { hasShownPrivacyNote, SessionPrivacyNote } from "../SessionPrivacyNote";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -1232,6 +1232,11 @@ export default function MoodTrackerPage() {
   const scroll = () =>
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
 
+  // Back-button gate: show the privacy note once per session, then navigate.
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const goHome = () => router.push("/womens-health");
+  const handleBack = () => (hasShownPrivacyNote() ? goHome() : setPrivacyOpen(true));
+
   // Voice input on this screen goes straight into the chat (same as typing), so
   // it stays in the mood flow instead of navigating away.
   useVoiceTarget((text) => handleSubmit(text));
@@ -1921,6 +1926,7 @@ export default function MoodTrackerPage() {
       <HubHeader
         title={t("मूड ट्रैकर", "Mood Tracker")}
         backHref="/womens-health"
+        onBack={handleBack}
         hideBack={isIsolated}
         scrolled={false}
       />
@@ -1929,7 +1935,7 @@ export default function MoodTrackerPage() {
         placeholder={t("कुछ और बताना चाहती हैं...", "Anything else you'd like to share...")}
         onSubmit={handleSubmit}
       />
-      <SessionPrivacyNote lang={lang} messageCount={messages.length} />
+      <SessionPrivacyNote lang={lang} open={privacyOpen} onResolved={goHome} />
     </div>
   );
 }

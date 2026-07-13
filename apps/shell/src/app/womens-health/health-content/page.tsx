@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { notFound, useSearchParams } from "next/navigation";
+import { notFound, useRouter, useSearchParams } from "next/navigation";
 import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { HubChatInput } from "@/app/jobs/design-prototype/HubChatInput";
 import { askSakhi, splitDisclaimer } from "@/lib/sakhi";
@@ -9,7 +9,7 @@ import { isBlocked, isIsolated } from "@/lib/sakhi-feature";
 import { useLang } from "../LangContext";
 import { consumeVoiceQuery, useVoiceTarget } from "../voice/voiceBus";
 import { speak, stopSpeech } from "../voice/tts";
-import { SessionPrivacyNote } from "../SessionPrivacyNote";
+import { hasShownPrivacyNote, SessionPrivacyNote } from "../SessionPrivacyNote";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -240,8 +240,14 @@ export default function HealthContentPage() {
 
 function HealthContentInner() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { lang, ready } = useLang();
   const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
+
+  // Back-button gate: show the privacy note once per session, then navigate.
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const goHome = () => router.push("/womens-health");
+  const handleBack = () => (hasShownPrivacyNote() ? goHome() : setPrivacyOpen(true));
   const assistantName = t("सखी", "Health Companion");
   const disclaimerHi =
     "नमस्ते! मैं सखी हूँ — आपकी स्वास्थ्य सहेली। 💜\n\nआपका राज़ मेरा राज़ है। जो भी आप मुझसे पूछेंगी — वो सिर्फ हमारे बीच रहेगा। कोई विज्ञापन नहीं, कोई जानकारी किसी के साथ साझा नहीं।\n\nकोई भी सवाल पूछिए — बिना झिझक।";
@@ -456,6 +462,7 @@ function HealthContentInner() {
       <HubHeader
         title={t("सेहत के सवालों के जवाब", "Your health queries, answered")}
         backHref="/womens-health"
+        onBack={handleBack}
         hideBack={isIsolated}
         scrolled={false}
       />
@@ -464,7 +471,7 @@ function HealthContentInner() {
         placeholder={t("सखी से पूछें...", `Ask ${assistantName}...`)}
         onSubmit={handleSubmit}
       />
-      <SessionPrivacyNote lang={lang} messageCount={messages.length} />
+      <SessionPrivacyNote lang={lang} open={privacyOpen} onResolved={goHome} />
     </div>
   );
 }
