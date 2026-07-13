@@ -60,9 +60,11 @@ const FEMALE_NAMES =
 const MALE_NAMES = /(male|hemant|rishi|ravi|prabhat|madhur|ravindra)/i;
 
 /**
- * Pick the best available voice for a locale, preferring a FEMALE voice.
- * Order: female + region (hi-IN) → female + language → any non-male + region →
- * region → language. Falls back gracefully so we always return something usable.
+ * Pick the best available voice for a locale, preferring an INDIAN-ACCENT
+ * (…-IN) FEMALE voice. Region is prioritised over gender so English speaks in an
+ * Indian accent (en-IN) rather than a US/UK female, per the design ask:
+ *   en-IN female → en-IN non-male → any English female → any en-IN → any English.
+ * Falls back gracefully so we always return something usable.
  */
 function pickVoice(voices: SpeechSynthesisVoice[], lang: Lang): SpeechSynthesisVoice | undefined {
   const prefix = lang === "hi" ? "hi" : "en";
@@ -72,8 +74,8 @@ function pickVoice(voices: SpeechSynthesisVoice[], lang: Lang): SpeechSynthesisV
   const notMale = (v: SpeechSynthesisVoice) => !MALE_NAMES.test(v.name);
   return (
     voices.find((v) => inRegion(v) && isFemale(v)) ||
-    voices.find((v) => inLang(v) && isFemale(v)) ||
     voices.find((v) => inRegion(v) && notMale(v)) ||
+    voices.find((v) => inLang(v) && isFemale(v)) ||
     voices.find((v) => inRegion(v)) ||
     voices.find((v) => inLang(v)) ||
     undefined
