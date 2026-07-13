@@ -6,7 +6,14 @@ const withSerwist = withSerwistInit({
   swDest: "public/sw.js",
   cacheOnNavigation: true,
   reloadOnOnline: true,
-  disable: process.env.NODE_ENV === "development" || !!process.env.CAPACITOR,
+  // PWA precaching is DISABLED. On GitHub Pages the Serwist runtime cache served
+  // stale JS after every deploy (users kept running old code — e.g. the LLM
+  // tracker fix "not working"), and the precache manifest also missed the
+  // basePath. Offline support isn't needed for this prototype, and every visit
+  // must show the latest deploy. `public/sw.js` is now a tiny self-destruct
+  // worker that unregisters any previously-installed SW and clears its caches,
+  // so already-affected browsers auto-recover on their next update check.
+  disable: true,
 });
 
 const isPagesDeployment = process.env.GITHUB_PAGES === "true";
