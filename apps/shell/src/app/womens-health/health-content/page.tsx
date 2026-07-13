@@ -9,6 +9,7 @@ import { isBlocked, isIsolated } from "@/lib/sakhi-feature";
 import { useLang } from "../LangContext";
 import { consumeVoiceQuery, useVoiceTarget } from "../voice/voiceBus";
 import { speak, stopSpeech } from "../voice/tts";
+import { SessionPrivacyNote } from "../SessionPrivacyNote";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -463,6 +464,7 @@ function HealthContentInner() {
         placeholder={t("सखी से पूछें...", `Ask ${assistantName}...`)}
         onSubmit={handleSubmit}
       />
+      <SessionPrivacyNote lang={lang} messageCount={messages.length} />
     </div>
   );
 }

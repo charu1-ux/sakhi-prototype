@@ -18,6 +18,7 @@ import {
 import { useLang } from "../LangContext";
 import { consumeVoiceQuery, useVoiceTarget } from "../voice/voiceBus";
 import { speak, stopSpeech } from "../voice/tts";
+import { SessionPrivacyNote } from "../SessionPrivacyNote";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -2569,6 +2570,7 @@ export default function PeriodTrackerPage() {
         placeholder={t("पीरियड के बारे में पूछें...", "Ask about your period...")}
         onSubmit={handleSubmit}
       />
+      <SessionPrivacyNote lang={lang} messageCount={messages.length} />
     </div>
   );
 }

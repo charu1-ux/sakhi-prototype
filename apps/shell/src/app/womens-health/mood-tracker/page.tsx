@@ -17,6 +17,7 @@ import {
 import { useLang } from "../LangContext";
 import { consumeVoiceQuery, useVoiceTarget } from "../voice/voiceBus";
 import { speak, stopSpeech } from "../voice/tts";
+import { SessionPrivacyNote } from "../SessionPrivacyNote";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -1928,6 +1929,7 @@ export default function MoodTrackerPage() {
         placeholder={t("कुछ और बताना चाहती हैं...", "Anything else you'd like to share...")}
         onSubmit={handleSubmit}
       />
+      <SessionPrivacyNote lang={lang} messageCount={messages.length} />
     </div>
   );
 }
