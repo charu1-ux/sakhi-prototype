@@ -23,7 +23,7 @@ import { useLang } from "../LangContext";
 import { speak, stopSpeech, type Lang } from "./tts";
 import { isRecognitionSupported, startRecognition, type RecognitionSession } from "./recognition";
 import { matchIntent } from "./intents";
-import { getVoiceTarget } from "./voiceBus";
+import { getVoiceTarget, markVoiceQuery } from "./voiceBus";
 
 const ROUTES = {
   period: "/womens-health/period-tracker",
@@ -202,6 +202,8 @@ export function VoiceLayer() {
     // by intent.
     const target = getVoiceTarget();
     if (target) {
+      // Tell the screen this query came by voice so it speaks the answer back.
+      markVoiceQuery();
       target(text);
       return;
     }

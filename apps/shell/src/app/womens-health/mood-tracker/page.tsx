@@ -15,7 +15,8 @@ import {
   splitDisclaimer,
 } from "@/lib/sakhi";
 import { useLang } from "../LangContext";
-import { useVoiceTarget } from "../voice/voiceBus";
+import { consumeVoiceQuery, useVoiceTarget } from "../voice/voiceBus";
+import { speak, stopSpeech } from "../voice/tts";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -1518,6 +1519,8 @@ export default function MoodTrackerPage() {
   async function handleSubmit(text: string) {
     if (!text.trim() || loading) return;
     const q = text.trim();
+    // If this query arrived by voice, speak Sakhi's answer back.
+    const viaVoice = consumeVoiceQuery();
 
     // Answer a free-text query via the LLM (askSakhi). Shared by the general
     // chat fall-through AND the pickers below, so a real question typed while a
@@ -1531,28 +1534,31 @@ export default function MoodTrackerPage() {
       scroll();
       try {
         const data = await askSakhi(query, history, lang);
+        let spokenText: string;
         if (data.video || data.article) {
-          push({
-            type: "text",
-            role: "sakhi",
-            text: t(
-              "समझ गई। इस बारे में कुछ verified जानकारी है — यहाँ देखें:",
-              "Understood. There is some verified information on this — see here:",
-            ),
-          });
+          const intro = t(
+            "समझ गई। इस बारे में कुछ verified जानकारी है — यहाँ देखें:",
+            "Understood. There is some verified information on this — see here:",
+          );
+          push({ type: "text", role: "sakhi", text: intro });
           push({ type: "contentLink", query });
+          spokenText = intro;
         } else if (!isBlockerResponse(data.answer)) {
           push({ type: "text", role: "sakhi", text: data.answer, isLlm: data.isLlm });
+          spokenText = splitDisclaimer(data.answer).body;
         } else {
-          push({
-            type: "text",
-            role: "sakhi",
-            text: t(
-              "समझ गई। मूड और मानसिक स्वास्थ्य के बारे में यहाँ कुछ verified जानकारी है:",
-              "Understood. Here is some verified information on mood and mental health:",
-            ),
-          });
+          const intro = t(
+            "समझ गई। मूड और मानसिक स्वास्थ्य के बारे में यहाँ कुछ verified जानकारी है:",
+            "Understood. Here is some verified information on mood and mental health:",
+          );
+          push({ type: "text", role: "sakhi", text: intro });
           push({ type: "contentLink", query: "low mood mann udaas kyun hota hai" });
+          spokenText = intro;
+        }
+        // Voice query → speak the answer back (body only, not the disclaimer).
+        if (viaVoice) {
+          stopSpeech();
+          speak(spokenText, { lang });
         }
       } catch {
         push({

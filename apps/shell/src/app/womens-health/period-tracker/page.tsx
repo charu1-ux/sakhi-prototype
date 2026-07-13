@@ -16,7 +16,8 @@ import {
   type Remedy,
 } from "@/lib/sakhi";
 import { useLang } from "../LangContext";
-import { useVoiceTarget } from "../voice/voiceBus";
+import { consumeVoiceQuery, useVoiceTarget } from "../voice/voiceBus";
+import { speak, stopSpeech } from "../voice/tts";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -2023,6 +2024,8 @@ export default function PeriodTrackerPage() {
   async function handleSubmit(text: string) {
     if (!text.trim() || loading) return;
     const q = text.trim();
+    // If this query arrived by voice, speak Sakhi's answer back.
+    const viaVoice = consumeVoiceQuery();
 
     // Answer a free-text query via the LLM (askSakhi). Shared by the general
     // chat fall-through AND the guided steps below, so a real question typed
@@ -2036,30 +2039,31 @@ export default function PeriodTrackerPage() {
       scroll();
       try {
         const data = await askSakhi(query, history, lang);
+        let spokenText: string;
         if (data.video || data.article) {
+          const intro = t(
+            "इस विषय पर मेरे पास verified जानकारी है — वीडियो और लेख दोनों उपलब्ध हैं:",
+            "I have verified information on this topic — both videos and articles are available:",
+          );
           setMessages((prev) => [
             ...prev,
-            {
-              type: "text",
-              role: "sakhi",
-              text: t(
-                "इस विषय पर मेरे पास verified जानकारी है — वीडियो और लेख दोनों उपलब्ध हैं:",
-                "I have verified information on this topic — both videos and articles are available:",
-              ),
-            },
+            { type: "text", role: "sakhi", text: intro },
             { type: "contentLink", query },
           ]);
+          spokenText = intro;
         } else {
+          const answerText =
+            data.answer || t("सखी अभी उपलब्ध नहीं है।", "Sakhi is not available right now.");
           setMessages((prev) => [
             ...prev,
-            {
-              type: "text",
-              role: "sakhi",
-              text:
-                data.answer || t("सखी अभी उपलब्ध नहीं है।", "Sakhi is not available right now."),
-              isLlm: data.isLlm,
-            },
+            { type: "text", role: "sakhi", text: answerText, isLlm: data.isLlm },
           ]);
+          spokenText = splitDisclaimer(answerText).body;
+        }
+        // Voice query → speak the answer back (body only, not the disclaimer).
+        if (viaVoice) {
+          stopSpeech();
+          speak(spokenText, { lang });
         }
       } catch {
         setMessages((prev) => [

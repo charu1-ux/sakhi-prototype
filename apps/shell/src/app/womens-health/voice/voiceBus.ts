@@ -26,6 +26,24 @@ export function getVoiceTarget(): VoiceTarget | null {
 }
 
 /**
+ * One-shot flag: set by VoiceLayer right before it feeds a SPOKEN transcript to
+ * the current screen, so the screen knows the query came by voice and should
+ * speak Sakhi's answer back. `consumeVoiceQuery` reads and clears it, so a
+ * subsequent typed query (which doesn't set it) is never spoken.
+ */
+let spokenQuery = false;
+
+export function markVoiceQuery(): void {
+  spokenQuery = true;
+}
+
+export function consumeVoiceQuery(): boolean {
+  const was = spokenQuery;
+  spokenQuery = false;
+  return was;
+}
+
+/**
  * Register the current screen's text handler for the lifetime of the component.
  * Uses a ref so the latest handler is always called without re-registering on
  * every render.
