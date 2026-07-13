@@ -20,11 +20,11 @@ export type SpeechHandle = { stop: () => void };
  * To swap in a real recording later, add its URL here — nothing else changes:
  *   home_walkthrough: { hi: withBasePath("/voice/home-walkthrough-hi.mp3") },
  */
-const AUDIO_CLIPS: Record<string, Partial<Record<Lang, string>>> = {};
-
-// Keep a reference so `withBasePath` stays imported for the swap-in example
-// above; it is the helper a real clip URL must use on GitHub Pages.
-void withBasePath;
+const AUDIO_CLIPS: Record<string, Partial<Record<Lang, string>>> = {
+  // Recorded female voice-over for the home walkthrough (Hindi). English has no
+  // recording yet, so `en` falls back to TTS automatically.
+  home_walkthrough: { hi: withBasePath("/voice/home-walkthrough-hi.mp3") },
+};
 
 export function isTtsSupported(): boolean {
   return typeof window !== "undefined" && "speechSynthesis" in window;
@@ -50,12 +50,32 @@ function ensureVoices(): Promise<SpeechSynthesisVoice[]> {
   });
 }
 
-/** Pick the best available voice for a locale, falling back gracefully. */
+// Sakhi is a woman, so we always want a female voice. The Web Speech API does
+// not expose a gender field, so we match on known female voice names across the
+// common engines (Google / Apple / Microsoft). MALE_NAMES lets us actively skip
+// the default male voices (e.g. hi-IN "Hemant", en-IN "Rishi"/"Ravi") when no
+// explicitly-female voice is present.
+const FEMALE_NAMES =
+  /(female|kalpana|lekha|swara|kanya|heera|veena|aditi|raveena|neerja|priya|google हिन्दी|google हिंदी|samantha|victoria|karen|moira|tessa|fiona|zira|susan|hazel)/i;
+const MALE_NAMES = /(male|hemant|rishi|ravi|prabhat|madhur|ravindra)/i;
+
+/**
+ * Pick the best available voice for a locale, preferring a FEMALE voice.
+ * Order: female + region (hi-IN) → female + language → any non-male + region →
+ * region → language. Falls back gracefully so we always return something usable.
+ */
 function pickVoice(voices: SpeechSynthesisVoice[], lang: Lang): SpeechSynthesisVoice | undefined {
   const prefix = lang === "hi" ? "hi" : "en";
+  const inRegion = (v: SpeechSynthesisVoice) => v.lang?.toLowerCase().startsWith(prefix + "-in");
+  const inLang = (v: SpeechSynthesisVoice) => v.lang?.toLowerCase().startsWith(prefix);
+  const isFemale = (v: SpeechSynthesisVoice) => FEMALE_NAMES.test(v.name);
+  const notMale = (v: SpeechSynthesisVoice) => !MALE_NAMES.test(v.name);
   return (
-    voices.find((v) => v.lang?.toLowerCase().startsWith(prefix + "-in")) ||
-    voices.find((v) => v.lang?.toLowerCase().startsWith(prefix)) ||
+    voices.find((v) => inRegion(v) && isFemale(v)) ||
+    voices.find((v) => inLang(v) && isFemale(v)) ||
+    voices.find((v) => inRegion(v) && notMale(v)) ||
+    voices.find((v) => inRegion(v)) ||
+    voices.find((v) => inLang(v)) ||
     undefined
   );
 }
