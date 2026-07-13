@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { notFound, useRouter } from "next/navigation";
 
@@ -9,6 +9,23 @@ import { HubHeader } from "@/app/jobs/design-prototype/HubHeader";
 import { withBasePath } from "@/lib/base-path";
 import { isBlocked } from "@/lib/sakhi-feature";
 import { useLang } from "./LangContext";
+import { playClip, stopSpeech, type Lang, type SpeechHandle } from "./voice/tts";
+
+// Sakhi's spoken home walkthrough. Hindi is the production script (played from a
+// recorded female voice-over); English is written natively — not translated —
+// and spoken via the female TTS voice. Both keep a warm, unhurried Sakhi tone.
+const WALKTHROUGH_HI =
+  "नमस्ते! मैं सखी हूँ — आपकी अपनी सहेली। यहाँ आप बिना किसी झिझक, बिना किसी जल्दी के " +
+  "अपने मन की बात कह सकती हैं। आपका अगला पीरियड कब आ सकता है, मैं आराम से बता दूँगी। " +
+  "आजकल आपका मन कैसा रहता है — ये हम हफ्ते-दर-हफ्ते साथ मिलकर देखेंगे। और पीरियड, सेहत " +
+  "या रोज़मर्रा की कोई भी बात मन में हो, तो बेझिझक पूछिए — कोई सवाल छोटा नहीं होता, कोई " +
+  "सवाल गलत नहीं होता। मैं यहीं हूँ, आपके साथ। बताइए, मैं सुन रही हूँ।";
+const WALKTHROUGH_EN =
+  "Hi, I'm Sakhi — think of me as a friend you can talk to. There's no need to feel shy here, and " +
+  "no need to rush. Ask me when your next period might come, and I'll let you know. If your mood " +
+  "has been changing a lot lately, we can follow it together, week by week. And anything else on " +
+  "your mind — your period, your health, or everyday life — just ask. No question is too small, " +
+  "and none is wrong. I'm here with you. So go ahead — I'm listening.";
 
 // ─── Sakhi Avatar (simple illustrated, relatable) ────────────────────────────
 
@@ -53,16 +70,47 @@ function SakhiAvatar({ speaking }: { speaking: boolean }) {
 function SakhiCard() {
   const { lang } = useLang();
   const [speaking, setSpeaking] = useState(false);
+  const handleRef = useRef<SpeechHandle | null>(null);
   const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
+  const ttsLang: Lang = lang === "en" ? "en" : "hi";
+
+  // Stop Sakhi if the card unmounts (e.g. tapping through to a tile).
+  useEffect(
+    () => () => {
+      handleRef.current?.stop();
+      stopSpeech();
+    },
+    [],
+  );
+
+  // Tap Sakhi to hear her walkthrough (female voice); tap again to stop. The tap
+  // is the user gesture browsers require before speech is allowed to play, so
+  // the walkthrough plays reliably here — no autoplay, no full-screen takeover.
+  const toggleWalkthrough = () => {
+    if (speaking) {
+      handleRef.current?.stop();
+      stopSpeech();
+      setSpeaking(false);
+      return;
+    }
+    setSpeaking(true);
+    handleRef.current = playClip(
+      "home_walkthrough",
+      { hi: WALKTHROUGH_HI, en: WALKTHROUGH_EN },
+      { lang: ttsLang, onEnd: () => setSpeaking(false), onError: () => setSpeaking(false) },
+    );
+  };
 
   return (
     <div className="rounded-2xl bg-white p-4" style={{ border: "1px solid #F3F4F6" }}>
       <div className="flex items-center gap-3">
         <button
           type="button"
-          onClick={() => setSpeaking((v) => !v)}
+          onClick={toggleWalkthrough}
           className="shrink-0 cursor-pointer touch-manipulation border-none bg-transparent p-0 transition-transform duration-150 active:scale-95"
-          aria-label={t("सखी से बात करें", "Talk to Health Companion")}
+          aria-label={
+            speaking ? t("सखी को रोकें", "Stop Sakhi") : t("सखी को सुनें", "Hear Sakhi speak")
+          }
         >
           <SakhiAvatar speaking={speaking} />
         </button>
@@ -81,10 +129,10 @@ function SakhiCard() {
             style={{ fontFamily: "JioType, sans-serif" }}
           >
             {speaking
-              ? t("हाँ बताओ, मैं सुन रही हूँ...", "Yes, tell me, I'm listening...")
+              ? t("मैं बता रही हूँ… (रोकने के लिए दबाएँ)", "I'm speaking… (tap to stop)")
               : t(
-                  "नमस्ते! कोई भी सवाल पूछें — बेझिझक।",
-                  "Your private space. Ask me about your health, without hesitation.",
+                  "नमस्ते! जानने के लिए मुझ पर टैप करें कि मैं कैसे मदद कर सकती हूँ।",
+                  "Hello! Tap me to hear how I can help you.",
                 )}
           </p>
         </div>
@@ -238,7 +286,7 @@ export default function WomensHealthPage() {
   return (
     <div className="bg-canvas-grey text-fg relative flex h-full flex-col">
       <main
-        className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="min-h-0 flex-1 [scrollbar-width:none] overflow-x-hidden overflow-y-auto px-4 pb-6 [&::-webkit-scrollbar]:hidden"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 76px)" }}
         onScroll={handleScroll}
       >

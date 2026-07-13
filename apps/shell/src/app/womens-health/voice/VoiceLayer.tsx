@@ -1,15 +1,15 @@
 "use client";
 
 /**
- * Sakhi voice layer (Stage 1) — mounted once in the Women's Health layout so it
+ * Sakhi voice INPUT layer — mounted once in the Women's Health layout so the mic
  * lives on EVERY screen. Purely additive: tap / swipe / toggle stay exactly as
  * they were. Voice never replaces them, it sits on top.
  *
- * Three parts:
- *   1. Home walkthrough — Sakhi's spoken intro auto-plays on the landing screen,
- *      with a visible mute / skip control.
- *   2. Mic FAB — a floating button on every screen that starts listening.
- *   3. Listening sheet — a live "I'm listening" state with waveform + the
+ * The spoken home walkthrough lives on the home screen itself (the Sakhi card in
+ * page.tsx — tap Sakhi to hear her, in a female voice). This layer is only about
+ * voice INPUT:
+ *   1. Mic FAB — a floating button on every screen that starts listening.
+ *   2. Listening sheet — a live "I'm listening" state with waveform + the
  *      transcript shown as it is captured, so the user confirms before sending.
  *
  * Spoken input is matched to existing actions (see intents.ts) and routed with
@@ -17,27 +17,13 @@
  * the "for me / for someone else" proxy question — voice never skips it).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import { useLang } from "../LangContext";
-import { isTtsSupported, playClip, speak, stopSpeech, type Lang } from "./tts";
+import { speak, stopSpeech, type Lang } from "./tts";
 import { isRecognitionSupported, startRecognition, type RecognitionSession } from "./recognition";
 import { matchIntent } from "./intents";
 import { getVoiceTarget } from "./voiceBus";
-
-// ─── Copy ───────────────────────────────────────────────────────────────────
-// Home walkthrough. Hindi is the production script; English is a simple
-// (~class 8) mirror. Both keep "aap" + female verb forms.
-const WALKTHROUGH_HI =
-  "नमस्ते! मैं आपकी सखी हूँ। यहाँ आप अपनी सेहत से जुड़ी बातें जान सकती हैं — " +
-  "आपका अगला पीरियड कब आएगा, ये मैं आपको बता सकती हूँ। आपका मन कैसा जा रहा है, " +
-  "हफ्ते-दर-हफ्ते, वो भी हम साथ में देख सकते हैं। और अगर आपके मन में कोई सवाल है — " +
-  "पीरियड, सेहत, या रोज़मर्रा की कोई भी बात — आप मुझसे बेझिझक पूछ सकती हैं। बोलिए, मैं सुन रही हूँ।";
-const WALKTHROUGH_EN =
-  "Hello! I am your Sakhi. Here you can learn about your health — I can tell you when your " +
-  "next period is likely to come. We can also look at how your mood is doing, week by week. " +
-  "And if you have any question — about periods, health, or daily life — you can ask me without " +
-  "hesitation. Go ahead, I'm listening.";
 
 const ROUTES = {
   period: "/womens-health/period-tracker",
@@ -63,25 +49,6 @@ function MicIcon({ size = 26 }: { size?: number }) {
       <path d="M5 11a7 7 0 0 0 14 0" />
       <line x1="12" y1="18" x2="12" y2="21" />
       <line x1="8" y1="21" x2="16" y2="21" />
-    </svg>
-  );
-}
-
-function SpeakerIcon({ size = 18 }: { size?: number }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      width={size}
-      height={size}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M4 9v6h4l5 4V5L8 9H4z" />
-      <path d="M16.5 8.5a5 5 0 0 1 0 7" />
     </svg>
   );
 }
@@ -128,65 +95,23 @@ function Waveform() {
 // ─── Component ────────────────────────────────────────────────────────────────
 export function VoiceLayer() {
   const router = useRouter();
-  const pathname = usePathname();
   const { lang } = useLang();
   const t = useCallback((hi: string, en: string) => (lang === "hi" ? hi : en), [lang]);
   const ttsLang: Lang = lang === "en" ? "en" : "hi";
-
-  // usePathname strips the basePath, so the landing screen is exactly this.
-  const isHome = pathname === "/womens-health";
 
   // Render nothing until mounted — the Web Speech APIs are client-only, and
   // this avoids any server/client hydration mismatch.
   const [mounted, setMounted] = useState(false);
   const [recSupported, setRecSupported] = useState(false);
-  const [ttsOk, setTtsOk] = useState(false);
   useEffect(() => {
     // One-time feature detection after mount (Web Speech APIs are client-only).
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
     setRecSupported(isRecognitionSupported());
-    setTtsOk(isTtsSupported());
   }, []);
 
-  // ── Home walkthrough ────────────────────────────────────────────────────────
-  const [walkthrough, setWalkthrough] = useState<"idle" | "playing" | "ended">("idle");
-  const walkHandleRef = useRef<{ stop: () => void } | null>(null);
-
-  const playWalkthrough = useCallback(() => {
-    walkHandleRef.current?.stop();
-    setWalkthrough("playing");
-    walkHandleRef.current = playClip(
-      "home_walkthrough",
-      { hi: WALKTHROUGH_HI, en: WALKTHROUGH_EN },
-      {
-        lang: ttsLang,
-        onEnd: () => setWalkthrough("ended"),
-        onError: () => setWalkthrough("ended"),
-      },
-    );
-  }, [ttsLang]);
-
-  const stopWalkthrough = useCallback(() => {
-    walkHandleRef.current?.stop();
-    stopSpeech();
-    setWalkthrough("ended");
-  }, []);
-
-  // Auto-play once per browser session when landing on the home screen.
-  useEffect(() => {
-    if (!mounted || !isHome || !ttsOk) return;
-    const KEY = "sakhi_voice_walkthrough_played";
-    if (sessionStorage.getItem(KEY)) return;
-    sessionStorage.setItem(KEY, "1");
-    // Auto-play the intro once per session (playWalkthrough sets state).
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    playWalkthrough();
-    return () => {
-      walkHandleRef.current?.stop();
-      stopSpeech();
-    };
-  }, [mounted, isHome, ttsOk, playWalkthrough]);
+  // Always stop any speech when the voice layer unmounts (e.g. navigation away).
+  useEffect(() => () => stopSpeech(), []);
 
   // ── Voice input ─────────────────────────────────────────────────────────────
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -207,7 +132,6 @@ export function VoiceLayer() {
 
   const startListening = useCallback(() => {
     stopSpeech(); // never talk over the user
-    walkHandleRef.current?.stop();
     setTranscript("");
     setErrorMsg(null);
     const session = startRecognition(ttsLang, {
@@ -290,56 +214,13 @@ export function VoiceLayer() {
     else speakApology(); // "none" — nothing usable; tap UI stays available
   }, [transcript, router, speakApology]);
 
-  // Only the mount gate is hard. The mic UI is gated on recognition support
-  // (recSupported) separately, so browsers without STT but WITH speech (e.g.
-  // Firefox) still get the spoken home walkthrough.
+  // The mic UI is gated on recognition support (recSupported).
   if (!mounted) return null;
 
   const showRetry = !listening && (transcript.trim().length > 0 || errorMsg);
 
   return (
     <>
-      {/* ── Home walkthrough banner (mute / skip) ── */}
-      {isHome && walkthrough === "playing" && (
-        <div
-          className="absolute right-3 left-3 z-30 flex items-center gap-2.5 rounded-2xl px-3.5 py-2.5"
-          style={{
-            top: "calc(env(safe-area-inset-top, 0px) + 84px)",
-            background: "#FFF1F2",
-            border: "1px solid #FECDD3",
-            boxShadow: "0 4px 16px rgba(225,29,72,0.12)",
-          }}
-        >
-          {/* Tap to (re)play — some browsers block auto-play until a gesture. */}
-          <button
-            type="button"
-            onClick={playWalkthrough}
-            aria-label={t("फिर से सुनें", "Play again")}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-            style={{ background: "#FFE4E6", color: "#E11D48" }}
-          >
-            <SpeakerIcon />
-          </button>
-          <p
-            className="min-w-0 flex-1 text-[13px] leading-snug text-zinc-700"
-            style={{ fontFamily: "JioType, sans-serif" }}
-          >
-            {t(
-              "सखी आपसे बात कर रही है… (सुनने के लिए 🔊 दबाएँ)",
-              "Sakhi is talking to you… (tap 🔊 to hear)",
-            )}
-          </p>
-          <button
-            type="button"
-            onClick={stopWalkthrough}
-            className="shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold"
-            style={{ background: "#E11D48", color: "white", fontFamily: "JioType, sans-serif" }}
-          >
-            {t("बंद करें", "Skip")}
-          </button>
-        </div>
-      )}
-
       {/* ── Mic FAB (every screen; only where voice input is supported) ── */}
       {recSupported && !sheetOpen && (
         <button
