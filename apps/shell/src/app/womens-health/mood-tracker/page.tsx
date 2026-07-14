@@ -17,7 +17,7 @@ import {
 import { useLang } from "../LangContext";
 import { consumeVoiceQuery, useVoiceTarget } from "../voice/voiceBus";
 import { speak, stopSpeech } from "../voice/tts";
-import { hasShownPrivacyNote, SessionPrivacyNote } from "../SessionPrivacyNote";
+import { SessionPrivacyNote } from "../SessionPrivacyNote";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -1235,7 +1235,7 @@ export default function MoodTrackerPage() {
   // Back-button gate: show the privacy note once per session, then navigate.
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const goHome = () => router.push("/womens-health");
-  const handleBack = () => (hasShownPrivacyNote() ? goHome() : setPrivacyOpen(true));
+  const handleBack = () => setPrivacyOpen(true);
 
   // Voice input on this screen goes straight into the chat (same as typing), so
   // it stays in the mood flow instead of navigating away.

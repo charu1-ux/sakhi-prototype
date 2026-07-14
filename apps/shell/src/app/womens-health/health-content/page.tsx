@@ -9,7 +9,7 @@ import { isBlocked, isIsolated } from "@/lib/sakhi-feature";
 import { useLang } from "../LangContext";
 import { consumeVoiceQuery, useVoiceTarget } from "../voice/voiceBus";
 import { speak, stopSpeech } from "../voice/tts";
-import { hasShownPrivacyNote, SessionPrivacyNote } from "../SessionPrivacyNote";
+import { SessionPrivacyNote } from "../SessionPrivacyNote";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -247,7 +247,7 @@ function HealthContentInner() {
   // Back-button gate: show the privacy note once per session, then navigate.
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const goHome = () => router.push("/womens-health");
-  const handleBack = () => (hasShownPrivacyNote() ? goHome() : setPrivacyOpen(true));
+  const handleBack = () => setPrivacyOpen(true);
   const assistantName = t("सखी", "Health Companion");
   const disclaimerHi =
     "नमस्ते! मैं सखी हूँ — आपकी स्वास्थ्य सहेली। 💜\n\nआपका राज़ मेरा राज़ है। जो भी आप मुझसे पूछेंगी — वो सिर्फ हमारे बीच रहेगा। कोई विज्ञापन नहीं, कोई जानकारी किसी के साथ साझा नहीं।\n\nकोई भी सवाल पूछिए — बिना झिझक।";

@@ -14,27 +14,17 @@
  * Scoped to the CHAT conversation only — it never claims the saved period/mood
  * data is cleared (that persists, by design), so the promise stays honest.
  *
- * Usage in a chat screen: gate the header's back through the session flag.
+ * Usage in a chat screen: route the header's back through the note. It shows at
+ * the end of EVERY conversation (every feature), then navigates once she answers.
  *   const [privacyOpen, setPrivacyOpen] = useState(false);
  *   const goHome = () => router.push("/womens-health");
- *   const handleBack = () =>
- *     hasShownPrivacyNote() ? goHome() : setPrivacyOpen(true);
+ *   const handleBack = () => setPrivacyOpen(true);
  *   <HubHeader onBack={handleBack} ... />
  *   <SessionPrivacyNote lang={lang} open={privacyOpen} onResolved={goHome} />
  */
 import { useState } from "react";
 
-const SESSION_FLAG = "sakhi_privacy_note_shown"; // once per browser session
 const HISTORY_PREF = "sakhi_history_pref"; // "keep" if she opted to retain chats
-
-/** Has the privacy note already been shown this browser session? */
-export function hasShownPrivacyNote(): boolean {
-  try {
-    return sessionStorage.getItem(SESSION_FLAG) === "1";
-  } catch {
-    return false;
-  }
-}
 
 export function SessionPrivacyNote({
   lang,
@@ -51,24 +41,13 @@ export function SessionPrivacyNote({
 
   if (!open) return null;
 
-  const markShown = () => {
-    try {
-      sessionStorage.setItem(SESSION_FLAG, "1");
-    } catch {
-      /* ignore storage errors */
-    }
-  };
-  const acknowledge = () => {
-    markShown();
-    onResolved();
-  };
+  const acknowledge = () => onResolved();
   const keepHistory = () => {
     try {
       localStorage.setItem(HISTORY_PREF, "keep");
     } catch {
       /* ignore storage errors */
     }
-    markShown();
     setChose(true);
   };
 
