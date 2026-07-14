@@ -27,11 +27,51 @@ type Message = {
 
 function VideoCard({ video }: { video: Video }) {
   const [expanded, setExpanded] = useState(false);
+  const [thumbFailed, setThumbFailed] = useState(false);
+  const showThumb = !expanded && video.embedId && !thumbFailed;
   return (
     <div
       className="mt-1.5 ml-9 overflow-hidden rounded-xl"
       style={{ maxWidth: "82%", border: "1px solid #FECACA", background: "#FEF2F2" }}
     >
+      {/* Preview: tapping the thumbnail expands into the inline player. */}
+      {showThumb && (
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="relative block w-full transition-opacity active:opacity-90"
+          style={{ aspectRatio: "16/9" }}
+        >
+          {/* hqdefault is 4:3 with letterbox bars; object-cover crops them to 16:9. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`https://img.youtube.com/vi/${video.embedId}/hqdefault.jpg`}
+            alt={video.label}
+            onError={() => setThumbFailed(true)}
+            className="h-full w-full object-cover"
+          />
+          {/* Play button overlay */}
+          <span className="absolute inset-0 flex items-center justify-center">
+            <span
+              className="flex h-11 w-11 items-center justify-center rounded-full shadow-md"
+              style={{ background: "rgba(239,68,68,0.92)" }}
+            >
+              <span style={{ color: "white", fontSize: 16, marginLeft: 2 }}>▶</span>
+            </span>
+          </span>
+        </button>
+      )}
+      {expanded && video.embedId && (
+        <div className="w-full" style={{ aspectRatio: "16/9" }}>
+          <iframe
+            src={`https://www.youtube.com/embed/${video.embedId}?rel=0&autoplay=1`}
+            title={video.label}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+            allowFullScreen
+            className="h-full w-full border-0"
+          />
+        </div>
+      )}
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
@@ -58,17 +98,6 @@ function VideoCard({ video }: { video: Video }) {
           {expanded ? "बंद करें" : "देखें"}
         </span>
       </button>
-      {expanded && video.embedId && (
-        <div className="w-full" style={{ aspectRatio: "16/9" }}>
-          <iframe
-            src={`https://www.youtube.com/embed/${video.embedId}?rel=0`}
-            title={video.label}
-            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-            allowFullScreen
-            className="h-full w-full border-0"
-          />
-        </div>
-      )}
     </div>
   );
 }
