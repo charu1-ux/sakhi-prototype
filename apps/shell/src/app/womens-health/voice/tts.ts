@@ -21,9 +21,11 @@ export type SpeechHandle = { stop: () => void };
  *   home_walkthrough: { hi: withBasePath("/voice/home-walkthrough-hi.mp3") },
  */
 const AUDIO_CLIPS: Record<string, Partial<Record<Lang, string>>> = {
-  // Recorded female voice-over for the home walkthrough (Hindi). English has no
-  // recording yet, so `en` falls back to TTS automatically.
-  home_walkthrough: { hi: withBasePath("/voice/home-walkthrough-hi.mp3") },
+  // Recorded female voice-over for the home walkthrough, in both languages.
+  home_walkthrough: {
+    hi: withBasePath("/voice/home-walkthrough-hi.mp3"),
+    en: withBasePath("/voice/home-walkthrough-en.mp3"),
+  },
 };
 
 export function isTtsSupported(): boolean {

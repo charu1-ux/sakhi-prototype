@@ -11,15 +11,17 @@ import { isBlocked } from "@/lib/sakhi-feature";
 import { useLang } from "./LangContext";
 import { playClip, stopSpeech, type Lang, type SpeechHandle } from "./voice/tts";
 
-// Sakhi's spoken home walkthrough. Hindi is the production script (played from a
-// recorded female voice-over); English is written natively — not translated —
-// and spoken via the female TTS voice. Both keep a warm, unhurried Sakhi tone.
+// Sakhi's spoken home walkthrough. Both languages play from a recorded female
+// voice-over; English is written natively — not translated. The text below is
+// kept in sync with the recordings and used as the TTS fallback. Both keep a
+// warm, unhurried Sakhi tone.
 const WALKTHROUGH_HI =
-  "नमस्ते! मैं सखी हूँ — आपकी अपनी सहेली। यहाँ आप बिना किसी झिझक, बिना किसी जल्दी के " +
-  "अपने मन की बात कह सकती हैं। आपका अगला पीरियड कब आ सकता है, मैं आराम से बता दूँगी। " +
-  "आजकल आपका मन कैसा रहता है — ये हम हफ्ते-दर-हफ्ते साथ मिलकर देखेंगे। और पीरियड, सेहत " +
-  "या रोज़मर्रा की कोई भी बात मन में हो, तो बेझिझक पूछिए — कोई सवाल छोटा नहीं होता, कोई " +
-  "सवाल गलत नहीं होता। मैं यहीं हूँ, आपके साथ। बताइए, मैं सुन रही हूँ।";
+  "नमस्ते। मैं सखी हूं — आपकी अपनी सहेली। " +
+  "यहां जल्दी की कोई बात नहीं, झिझक की भी नहीं। जो मन में हो, वो बोलिए। " +
+  "आपका अगला period कब आ सकता है — यह मैं बता दूंगी। आजकल मन कैसा रहता है — यह हम " +
+  "हफ्ते-दर-हफ्ते साथ देखेंगे, और हर हफ्ते थोड़ा और साफ होता जाएगा। " +
+  "Period हो, सेहत हो, या रोज़मर्रा की कोई भी बात — बेझिझक पूछिए। कोई सवाल छोटा नहीं होता। " +
+  "मैं यहीं हूं। बताइए — मैं सुन रही हूं।";
 const WALKTHROUGH_EN =
   "Hi, I'm Sakhi — think of me as a friend you can talk to. There's no need to feel shy here, and " +
   "no need to rush. Ask me when your next period might come, and I'll let you know. If your mood " +
