@@ -357,6 +357,49 @@ function parseChipVoice(text: string): (typeof CHIPS)[number] | null {
   return null;
 }
 
+// A short, standalone "no / nothing / that's all" reply. Exact-match (not
+// substring) so "no sleep" etc. still reach the LLM. These get a warm sign-off
+// rather than being treated as "show me more" or hitting the off-topic blocker.
+function isClosingReply(text: string): boolean {
+  const t = text
+    .toLowerCase()
+    .trim()
+    .replace(/[.!।]+$/, "");
+  if (t.length > 20) return false;
+  const closers = [
+    "no",
+    "nope",
+    "no thanks",
+    "no thank you",
+    "nothing",
+    "nothing else",
+    "that's all",
+    "thats all",
+    "no more",
+    "nahi",
+    "nahin",
+    "nhi",
+    "na",
+    "bas",
+    "kuch nahi",
+    "kuch nahin",
+    "aur nahi",
+    "नहीं",
+    "नही",
+    "ना",
+    "बस",
+    "कुछ नहीं",
+    "और नहीं",
+    "bye",
+    "thanks",
+    "thank you",
+    "shukriya",
+    "धन्यवाद",
+    "शुक्रिया",
+  ];
+  return closers.includes(t);
+}
+
 // ─── Comfort options (she chooses — never auto-pushed at her) ──────────────────
 // Letting her pick respects her feeling; a joke forced on a low day feels dismissive.
 type ComfortId = "breathing" | "music" | "funny" | "talk";
@@ -1749,6 +1792,21 @@ export default function MoodTrackerPage() {
         text: t(
           "आज आप कैसा महसूस कर रही हैं? खुशी, उदासी, थकान, गुस्सा — जो भी हो, बता सकती हैं। 💜",
           "How are you feeling today? Happiness, sadness, fatigue, anger — whatever it is, you can tell me. 💜",
+        ),
+      });
+      return;
+    }
+
+    // A "no / that's all" gets a warm sign-off — not a "here's more info" card
+    // or the off-topic blocker the LLM would return for a bare "No".
+    if (hasSakhiHistory && isClosingReply(q)) {
+      push({ type: "text", role: "user", text: q });
+      push({
+        type: "text",
+        role: "sakhi",
+        text: t(
+          "ठीक है! अपना ख्याल रखना 💜 जब भी ज़रूरत हो, मैं यहीं हूँ — कभी भी वापस आ सकती हैं।",
+          "Okay! Take care of yourself 💜 I'm right here whenever you need me — come back anytime.",
         ),
       });
       return;
