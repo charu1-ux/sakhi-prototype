@@ -10,7 +10,7 @@ import { useLang } from "../LangContext";
 import { consumeVoiceQuery, useVoiceTarget } from "../voice/voiceBus";
 import { speak, stopSpeech } from "../voice/tts";
 import { SessionPrivacyNote } from "../SessionPrivacyNote";
-import { pickSuggestions, type Suggestion } from "./suggestions";
+import { pickSuggestions, relatedSuggestions, type Suggestion } from "./suggestions";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -294,6 +294,8 @@ function HealthContentInner() {
   useEffect(() => {
     setSuggestions(pickSuggestions());
   }, []);
+  // 1-2 follow-ups related to the last answer — a natural next step, not a menu.
+  const [followUps, setFollowUps] = useState<Suggestion[]>([]);
 
   // Voice input on this screen goes straight into the chat (same as typing).
   useVoiceTarget((text) => handleSubmit(text));
@@ -323,6 +325,7 @@ function HealthContentInner() {
       content: m.text,
     }));
     setMessages((prev) => [...prev, { role: "user", text: q }]);
+    setFollowUps([]);
     setLoading(true);
     scroll();
     try {
@@ -340,6 +343,8 @@ function HealthContentInner() {
           isLlm: data.isLlm,
         },
       ]);
+      // Offer 1-2 related follow-ups drawn from the same vetted pool.
+      setFollowUps(relatedSuggestions(q, 2));
       // Speak the answer body (not the doctor disclaimer) when asked by voice.
       if (viaVoice) {
         stopSpeech();
@@ -455,6 +460,39 @@ function HealthContentInner() {
                   </button>
                 );
               })}
+            </div>
+          )}
+
+          {/* Contextual follow-ups — 1-2 prompts related to the last answer */}
+          {!loading && followUps.length > 0 && messages[messages.length - 1]?.role === "sakhi" && (
+            <div className="flex flex-col gap-1.5 px-1 pb-1">
+              <span
+                className="text-[11px] font-medium"
+                style={{ color: "#9E8BB0", fontFamily: "JioType, sans-serif" }}
+              >
+                {t("आप यह भी पूछ सकती हैं", "You could also ask")}
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {followUps.map((s) => {
+                  const label = lang === "en" ? s.en : s.hi;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => handleSubmit(label)}
+                      className="rounded-full border px-3 py-1.5 text-left text-[12px] font-medium transition-all active:scale-95"
+                      style={{
+                        background: "#FDF2F4",
+                        borderColor: "#F4B8C1",
+                        color: "#C0415A",
+                        fontFamily: "JioType, sans-serif",
+                      }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 

@@ -375,3 +375,102 @@ function hashId(id: string): number {
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
   return Math.abs(h);
 }
+
+// ── Contextual follow-ups ──────────────────────────────────────────────────────
+// After an answer, offer 1-2 related prompts drawn from the same pool — matched
+// to the topic of what she just asked, so they read as a natural next step (not
+// a random menu). Words that hint at each topic:
+const TOPIC_HINTS: Record<Topic, string[]> = {
+  periods: [
+    "period",
+    "पीरियड",
+    "menstru",
+    "cycle",
+    "साइकल",
+    "bleeding",
+    "खून",
+    "cramp",
+    "dard",
+    "दर्द",
+    "irregular",
+    "अनियमित",
+    "flow",
+  ],
+  fertility: [
+    "pregnan",
+    "conceive",
+    "गर्भधारण",
+    "fertile",
+    "ovulation",
+    "ओव्यूलेशन",
+    "contracep",
+    "गर्भ रोक",
+  ],
+  pregnancy: ["pregnan", "गर्भ", "delivery", "डिलीवरी", "postpartum", "प्रसव"],
+  hormones: [
+    "pcos",
+    "pmos",
+    "hormon",
+    "हॉर्मोन",
+    "thyroid",
+    "थायराइड",
+    "menopause",
+    "मेनोपॉज़",
+    "perimenopause",
+  ],
+  "mental-wellbeing": [
+    "stress",
+    "तनाव",
+    "tension",
+    "mood",
+    "मूड",
+    "anxiety",
+    "चिंता",
+    "depress",
+    "udaas",
+    "उदास",
+    "sad",
+    "sleep",
+    "नींद",
+    "irritable",
+    "चिड़चिड़",
+  ],
+  nutrition: [
+    "anaemia",
+    "anemia",
+    "एनीमिया",
+    "iron",
+    "आयरन",
+    "khoon",
+    "diet",
+    "आहार",
+    "nutrition",
+    "पोषण",
+    "vitamin",
+    "विटामिन",
+    "calcium",
+  ],
+  general: [],
+};
+
+// Returns up to `count` pool prompts related to `askedText`, excluding the exact
+// question just asked. Empty when the topic can't be told (better than random).
+export function relatedSuggestions(askedText: string, count = 2): Suggestion[] {
+  const q = askedText.toLowerCase();
+  const topics = (Object.keys(TOPIC_HINTS) as Topic[]).filter((topic) =>
+    TOPIC_HINTS[topic].some((k) => q.includes(k)),
+  );
+  if (topics.length === 0) return [];
+  const candidates = SUGGESTION_POOL.filter(
+    (s) =>
+      s.topics.some((topic) => topics.includes(topic)) &&
+      s.en.toLowerCase() !== q &&
+      s.hi !== askedText.trim(),
+  );
+  // Shuffle so the follow-ups vary from turn to turn, then take a few.
+  for (let i = candidates.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+  }
+  return candidates.slice(0, count);
+}
