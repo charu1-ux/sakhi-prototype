@@ -253,6 +253,47 @@ function isDontRemember(text: string): boolean {
   ].some((k) => t.includes(k));
 }
 
+// A short, standalone "no / nothing / that's all" reply to the "anything else?"
+// prompt. Exact-match (not substring) so we don't catch "no pain" etc. These get
+// a warm sign-off instead of being sent to the LLM, which would treat a bare
+// "No" as off-topic and show the women's-health-only blocker.
+function isClosingReply(text: string): boolean {
+  const t = normalizeDigits(text.toLowerCase().trim()).replace(/[.!।]+$/, "");
+  if (t.length > 20) return false;
+  const closers = [
+    "no",
+    "nope",
+    "no thanks",
+    "no thank you",
+    "nothing",
+    "nothing else",
+    "that's all",
+    "thats all",
+    "no more",
+    "nahi",
+    "nahin",
+    "nhi",
+    "na",
+    "bas",
+    "kuch nahi",
+    "kuch nahin",
+    "aur nahi",
+    "नहीं",
+    "नही",
+    "ना",
+    "बस",
+    "कुछ नहीं",
+    "और नहीं",
+    "bye",
+    "thanks",
+    "thank you",
+    "shukriya",
+    "धन्यवाद",
+    "शुक्रिया",
+  ];
+  return closers.includes(t);
+}
+
 // Returns a confidently-understood date (never in the future — it's a past
 // period), or null when unsure so the caller keeps the tap calendar. `ref` is
 // the month the active calendar is anchored to (for prior-month questions).
@@ -2481,6 +2522,25 @@ export default function PeriodTrackerPage() {
         ]);
         scroll();
       }
+      return;
+    }
+
+    // A "no / that's all" after the "anything else?" prompt gets a warm sign-off
+    // — not the off-topic blocker the LLM would return for a bare "No".
+    if (isClosingReply(q)) {
+      setMessages((prev) => [
+        ...prev,
+        { type: "text", role: "user", text: q },
+        {
+          type: "text",
+          role: "sakhi",
+          text: t(
+            "ठीक है! अपना ख्याल रखना 💜 जब भी ज़रूरत हो, मैं यहीं हूँ — कभी भी वापस आ सकती हैं।",
+            "Okay! Take care of yourself 💜 I'm right here whenever you need me — come back anytime.",
+          ),
+        },
+      ]);
+      scroll();
       return;
     }
 
