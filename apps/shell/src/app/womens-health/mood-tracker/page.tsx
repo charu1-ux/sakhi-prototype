@@ -124,6 +124,18 @@ const PHASE_DEFAULT = {
   hintEn: "Add your dates in Period Tracker to see your cycle",
 };
 
+// ─── "Show my last entry on open" preference (shared with period tracker) ──────
+// Off by default — safer on a shared phone. When off, the cycle-day phase banner
+// stays hidden until she actually logs today (or turns this on for her own phone).
+const SHOW_LAST_KEY = "sakhi_show_last_entry";
+function getShowLastOnOpen(): boolean {
+  try {
+    return typeof window !== "undefined" && localStorage.getItem(SHOW_LAST_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 // ─── Mood log persistence (private, on-device only) ────────────────────────────
 type MoodLogEntry = { date: string; mood: number; chip: string | null };
 const MOOD_LOG_KEY = "sakhi_mood_log";
@@ -1228,6 +1240,11 @@ export default function MoodTrackerPage() {
   const { lang } = useLang();
   const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   const [PHASE] = useState(() => loadPhase() ?? PHASE_DEFAULT);
+  // Returning user? (used only for a warmer greeting — never to show her data.)
+  const [returning] = useState(() => loadMoodLog().length > 0);
+  // The phase banner is cycle-derived data. Keep it hidden on a neutral open;
+  // reveal it after she logs today, or if she's turned on "show on open".
+  const [showPhase, setShowPhase] = useState(() => getShowLastOnOpen());
   const bottomRef = useRef<HTMLDivElement>(null);
   const scroll = () =>
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
@@ -1329,6 +1346,8 @@ export default function MoodTrackerPage() {
       const days = dedupeByDay([...loadMoodLog(), today]);
       const reflection = buildReflection(days, period, t);
       saveMoodLog(today);
+      // She's logged now, so the cycle-day banner is fine to reveal.
+      setShowPhase(true);
 
       push({ type: "confirmation", mood: selectedMood!, isReturning: days.length > 1 });
       if (reflection) push({ type: "text", role: "sakhi", text: reflection });
@@ -1745,10 +1764,17 @@ export default function MoodTrackerPage() {
       return (
         <SakhiRow key={i}>
           <Bubble
-            text={t(
-              "नमस्ते! मैं सखी हूँ — आपकी स्वास्थ्य सहेली। 💜\n\nआपका राज़ मेरा राज़ है। जो भी आप मुझसे कहें — वो सिर्फ हमारे बीच रहेगा। कोई विज्ञापन नहीं, कोई जानकारी किसी के साथ साझा नहीं।",
-              "Hi! I'm your Health Companion. 💜\n\nYour privacy is my priority. Everything you share stays between us. No ads, no data shared with anyone.",
-            )}
+            text={
+              returning
+                ? t(
+                    "फिर से स्वागत है! 💜 आज कैसा महसूस हो रहा है?",
+                    "Welcome back! 💜 How are you feeling today?",
+                  )
+                : t(
+                    "नमस्ते! मैं सखी हूँ — आपकी स्वास्थ्य सहेली। 💜\n\nआपका राज़ मेरा राज़ है। जो भी आप मुझसे कहें — वो सिर्फ हमारे बीच रहेगा। कोई विज्ञापन नहीं, कोई जानकारी किसी के साथ साझा नहीं।",
+                    "Hi! I'm your Health Companion. 💜\n\nYour privacy is my priority. Everything you share stays between us. No ads, no data shared with anyone.",
+                  )
+            }
           />
         </SakhiRow>
       );
@@ -1915,16 +1941,19 @@ export default function MoodTrackerPage() {
         </div>
       </main>
 
-      {/* Phase banner sits just below the HubHeader */}
-      <div
-        className="fixed right-0 left-0 z-10"
-        style={{ top: "calc(env(safe-area-inset-top, 0px) + 76px)" }}
-      >
-        <PhaseBanner phase={PHASE} />
-      </div>
+      {/* Phase banner sits just below the HubHeader — cycle-derived, so it's
+          hidden on a neutral open and revealed only once she logs today. */}
+      {showPhase && (
+        <div
+          className="fixed right-0 left-0 z-10"
+          style={{ top: "calc(env(safe-area-inset-top, 0px) + 76px)" }}
+        >
+          <PhaseBanner phase={PHASE} />
+        </div>
+      )}
 
       <HubHeader
-        title={t("मूड ट्रैकर", "Mood Tracker")}
+        title={t("सखी", "Sakhi")}
         backHref="/womens-health"
         onBack={handleBack}
         hideBack={isIsolated}
