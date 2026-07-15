@@ -171,8 +171,8 @@ const P0_TILES = [
     iconBg: "#F0FDF4",
     label: "सेहत के सवालों के जवाब",
     labelEn: "Your health queries, answered",
-    desc: "PCOS, पीरियड दर्द, एनीमिया — विशेषज्ञों द्वारा सत्यापित लेख और वीडियो",
-    descEn: "PCOS, period pain, anaemia — articles & videos verified by experts",
+    desc: "PCOS, पीरियड, एनीमिया — विशेषज्ञों द्वारा सत्यापित",
+    descEn: "PCOS, periods, anaemia — verified by experts",
     href: "/womens-health/health-content",
   },
   {
