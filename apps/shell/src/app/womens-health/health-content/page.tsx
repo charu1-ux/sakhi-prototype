@@ -291,9 +291,27 @@ function HealthContentInner() {
   // language only re-labels the same four, and reads localStorage after mount
   // to avoid a hydration mismatch. See ./suggestions.ts.
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  // Ids already offered, so each refresh shows a different set. When the pool
+  // runs low, we reset and start the rotation over.
+  const shownIdsRef = useRef<string[]>([]);
   useEffect(() => {
-    setSuggestions(pickSuggestions());
+    const initial = pickSuggestions();
+    shownIdsRef.current = initial.map((s) => s.id);
+    setSuggestions(initial);
   }, []);
+
+  // Pick a fresh set (a new seed each call → reshuffled) that avoids anything
+  // shown before. If too few remain, reset the rotation instead of showing none.
+  const refreshSuggestions = () => {
+    let next = pickSuggestions({ exclude: shownIdsRef.current });
+    if (next.length < 4) {
+      next = pickSuggestions();
+      shownIdsRef.current = next.map((s) => s.id);
+    } else {
+      shownIdsRef.current = [...shownIdsRef.current, ...next.map((s) => s.id)];
+    }
+    setSuggestions(next);
+  };
 
   // Voice input on this screen goes straight into the chat (same as typing).
   useVoiceTarget((text) => handleSubmit(text));
@@ -358,6 +376,8 @@ function HealthContentInner() {
       ]);
     } finally {
       setLoading(false);
+      // Offer a fresh, non-repeating set of prompts after each answer.
+      refreshSuggestions();
       scroll();
     }
   }
@@ -433,30 +453,43 @@ function HealthContentInner() {
             );
           })}
 
-          {/* Suggested pills — shown after disclaimer, until user asks something */}
-          {!messages.some((m) => m.role === "user") && suggestions.length > 0 && (
-            <div className="flex flex-wrap gap-2 px-1 pb-1">
-              {suggestions.map((s) => {
-                const label = lang === "en" ? s.en : s.hi;
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => handleSubmit(label)}
-                    className="rounded-full border px-3 py-1.5 text-left text-[12px] font-medium transition-all active:scale-95"
-                    style={{
-                      background: "#FDF2F4",
-                      borderColor: "#F4B8C1",
-                      color: "#C0415A",
-                      fontFamily: "JioType, sans-serif",
-                    }}
+          {/* Suggested pills — shown after the greeting and again after each
+              answer, freshly rotated so they differ every turn. */}
+          {!loading &&
+            suggestions.length > 0 &&
+            messages[messages.length - 1]?.role === "sakhi" && (
+              <div className="flex flex-col gap-1.5 px-1 pb-1">
+                {messages.some((m) => m.role === "user") && (
+                  <span
+                    className="text-[11px] font-medium"
+                    style={{ color: "#9E8BB0", fontFamily: "JioType, sans-serif" }}
                   >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+                    {t("आप यह भी पूछ सकती हैं", "You could also ask")}
+                  </span>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  {suggestions.map((s) => {
+                    const label = lang === "en" ? s.en : s.hi;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => handleSubmit(label)}
+                        className="rounded-full border px-3 py-1.5 text-left text-[12px] font-medium transition-all active:scale-95"
+                        style={{
+                          background: "#FDF2F4",
+                          borderColor: "#F4B8C1",
+                          color: "#C0415A",
+                          fontFamily: "JioType, sans-serif",
+                        }}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
           {/* Loading dots */}
           {loading && (

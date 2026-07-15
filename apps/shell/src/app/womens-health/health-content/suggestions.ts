@@ -311,6 +311,10 @@ type PickOptions = {
   moodLow?: boolean;
   seed?: number;
   count?: number;
+  // Suggestion ids to leave out — used so each turn shows a fresh set that
+  // doesn't repeat ones already offered. When the remaining pool is too small,
+  // the caller resets and starts over.
+  exclude?: string[];
 };
 
 // Returns `count` suggestions (default 4) tailored to profile + signals, freshly
@@ -322,32 +326,37 @@ export function pickSuggestions(opts: PickOptions = {}): Suggestion[] {
   const moodLow = opts.moodLow !== undefined ? opts.moodLow : recentMoodIsLow();
   const seed = opts.seed ?? nextVisitSeed();
   const count = opts.count ?? 4;
+  const exclude = opts.exclude ?? [];
 
-  const scored = SUGGESTION_POOL.map((s) => {
-    let score = 1; // base — every item is a valid choice
+  const pool = SUGGESTION_POOL.filter((s) => !exclude.includes(s.id));
 
-    // Life stage: strong match if tagged for her band; small penalty if it is
-    // tagged for other bands only (still allowed, just less likely).
-    if (s.ageBands.length === 0) score += 1;
-    else if (s.ageBands.includes(profile.ageBand)) score += 4;
-    else score -= 1;
+  const scored = pool
+    .map((s) => {
+      let score = 1; // base — every item is a valid choice
 
-    // Declared interests.
-    if (profile.interests.length > 0) {
-      if (s.topics.some((t) => profile.interests.includes(t))) score += 3;
-    }
+      // Life stage: strong match if tagged for her band; small penalty if it is
+      // tagged for other bands only (still allowed, just less likely).
+      if (s.ageBands.length === 0) score += 1;
+      else if (s.ageBands.includes(profile.ageBand)) score += 4;
+      else score -= 1;
 
-    // Cycle phase relevance.
-    if (phase && s.phases?.includes(phase)) score += 3;
+      // Declared interests.
+      if (profile.interests.length > 0) {
+        if (s.topics.some((t) => profile.interests.includes(t))) score += 3;
+      }
 
-    // Mood: lift wellbeing-oriented items when recent mood is low.
-    if (moodLow && s.moodSensitive) score += 3;
+      // Cycle phase relevance.
+      if (phase && s.phases?.includes(phase)) score += 3;
 
-    // Per-visit jitter so ties break differently on each return.
-    score += seeded(seed * 97 + hashId(s.id)) * 1.5;
+      // Mood: lift wellbeing-oriented items when recent mood is low.
+      if (moodLow && s.moodSensitive) score += 3;
 
-    return { s, score };
-  }).sort((a, b) => b.score - a.score);
+      // Per-visit jitter so ties break differently on each return.
+      score += seeded(seed * 97 + hashId(s.id)) * 1.5;
+
+      return { s, score };
+    })
+    .sort((a, b) => b.score - a.score);
 
   // Take the top items but keep topic variety — avoid four near-identical pills.
   const chosen: Suggestion[] = [];
