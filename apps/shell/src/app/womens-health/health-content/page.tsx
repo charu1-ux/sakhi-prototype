@@ -10,6 +10,7 @@ import { useLang } from "../LangContext";
 import { consumeVoiceQuery, useVoiceTarget } from "../voice/voiceBus";
 import { speak, stopSpeech } from "../voice/tts";
 import { SessionPrivacyNote } from "../SessionPrivacyNote";
+import { pickSuggestions, type Suggestion } from "./suggestions";
 
 type SakhiTurn = { role: "user" | "assistant"; content: string };
 
@@ -240,21 +241,6 @@ function ValueNote({ text }: { text: string }) {
   );
 }
 
-// ── Suggested prompts ─────────────────────────────────────────────────────────
-
-const SUGGESTED_HI = [
-  "पीरियड में बहुत दर्द — क्या यह सामान्य है?",
-  "अनियमित पीरियड क्यों होते हैं?",
-  "खून की कमी के लक्षण क्या हैं?",
-  "PCOS क्या होता है?",
-];
-const SUGGESTED_EN = [
-  "Very painful periods — is this normal?",
-  "Why do irregular periods happen?",
-  "What are the symptoms of anaemia?",
-  "What is PCOS?",
-];
-
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function HealthContentPage() {
@@ -298,6 +284,16 @@ function HealthContentInner() {
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const autoSubmittedRef = useRef(false);
+
+  // Suggested pills — chosen fresh on each return to suit her profile (life
+  // stage + interests, backend-provided in the real product) and her real
+  // signals (cycle phase, recent mood). Picked once per mount so toggling the
+  // language only re-labels the same four, and reads localStorage after mount
+  // to avoid a hydration mismatch. See ./suggestions.ts.
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  useEffect(() => {
+    setSuggestions(pickSuggestions());
+  }, []);
 
   // Voice input on this screen goes straight into the chat (same as typing).
   useVoiceTarget((text) => handleSubmit(text));
@@ -438,24 +434,27 @@ function HealthContentInner() {
           })}
 
           {/* Suggested pills — shown after disclaimer, until user asks something */}
-          {!messages.some((m) => m.role === "user") && (
+          {!messages.some((m) => m.role === "user") && suggestions.length > 0 && (
             <div className="flex flex-wrap gap-2 px-1 pb-1">
-              {(lang === "en" ? SUGGESTED_EN : SUGGESTED_HI).map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => handleSubmit(s)}
-                  className="rounded-full border px-3 py-1.5 text-left text-[12px] font-medium transition-all active:scale-95"
-                  style={{
-                    background: "#FDF2F4",
-                    borderColor: "#F4B8C1",
-                    color: "#C0415A",
-                    fontFamily: "JioType, sans-serif",
-                  }}
-                >
-                  {s}
-                </button>
-              ))}
+              {suggestions.map((s) => {
+                const label = lang === "en" ? s.en : s.hi;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => handleSubmit(label)}
+                    className="rounded-full border px-3 py-1.5 text-left text-[12px] font-medium transition-all active:scale-95"
+                    style={{
+                      background: "#FDF2F4",
+                      borderColor: "#F4B8C1",
+                      color: "#C0415A",
+                      fontFamily: "JioType, sans-serif",
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
           )}
 
