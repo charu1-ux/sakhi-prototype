@@ -855,6 +855,33 @@ const RESPONSES: {
       "Let's do one thing right now — deep belly breathing. This is the easiest and best way:\n\n🫁 Breathe in — count to 4\nLet your belly move out, not your chest — this is important\n\n🫁 Breathe out — count to 4\nLet your belly move in\n\nDon't hold your breath in between at all — just breathe in and out. Do this 5-6 times — you'll feel the change. 💜",
   },
 
+  // ── Stress management (ways to lower stress — tools, not a PMS diagnosis) ──
+  // Must sit BEFORE the mood/PMS entry: a "ways to lower stress" question should
+  // get practical tools, not the premenstrual-syndrome explainer.
+  {
+    keywords: [
+      "lower stress",
+      "reduce stress",
+      "manage stress",
+      "stress management",
+      "less stress",
+      "handle stress",
+      "control stress",
+      "ways to relax",
+      "stress kam",
+      "stress kaise kam",
+      "tanav kam",
+      "तनाव कम",
+      "तनाव कैसे कम",
+      "तनाव कम करने",
+      "तनाव घटाने",
+    ],
+    answer:
+      "तनाव महसूस होना आम बात है, और रोज़ की छोटी आदतें बहुत मदद करती हैं। WHO के अनुसार, ये आसान तरीके ज़्यादातर लोगों का तनाव कम करते हैं:\n\n• धीरे-धीरे साँस लें — 4 गिनती तक अंदर, 4 गिनती तक बाहर, कुछ बार।\n• थोड़ी देर टहलें या हल्की एक्सरसाइज़ करें — 10 मिनट भी काफी है।\n• पूरी नींद लें — रोज़ एक ही समय पर सोएँ और उठें।\n• जिस पर भरोसा हो, उससे अपने मन की बात कहें।\n• चाय, कॉफ़ी और सोने से पहले स्क्रीन कम करें।\n\nआज जो आसान लगे, वही चुनें। अगर तनाव कई दिन तक ज़्यादा रहे या रोज़मर्रा मुश्किल कर दे, तो डॉक्टर या काउंसलर से ज़रूर बात करें। 💜",
+    answerEn:
+      "Feeling stressed is common, and small daily habits can help a lot. According to WHO, these simple steps lower stress for most people:\n\n• Slow breathing — breathe in for 4 counts, out for 4 counts, a few times.\n• A short walk or light exercise — even 10 minutes helps.\n• Enough sleep — try to sleep and wake at the same time each day.\n• Talk to someone you trust about how you feel.\n• Cut down tea, coffee, and screen time before bed.\n\nPick the one that feels easy today. If stress stays high for many days, or makes daily life hard, please talk to a doctor or counsellor. 💜",
+  },
+
   // ── Mental health / mood / stress ─────────────────────────────────────────
   {
     keywords: [
