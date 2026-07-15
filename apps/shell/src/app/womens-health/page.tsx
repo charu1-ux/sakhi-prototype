@@ -180,8 +180,8 @@ const P0_TILES = [
     iconBg: "#FFF1F2",
     label: "अगले पीरियड की तारीख जानें",
     labelEn: "Know your next period date",
-    desc: "पीरियड लॉग करें, अगला पीरियड कब — सखी याद रखती है",
-    descEn: "Log your period, know when next — your Health Companion remembers",
+    desc: "पीरियड ट्रैक करें, चाहें तो रिमाइंडर पाएं",
+    descEn: "Keep track of periods, get reminders if you wish",
     href: "/womens-health/period-tracker",
   },
   {
@@ -189,8 +189,8 @@ const P0_TILES = [
     iconBg: "#F5F3FF",
     label: "मूड के उतार-चढ़ाव समझें",
     labelEn: "Understand your mood swings",
-    desc: "मासिक धर्म से पहले मूड खराब, चिड़चिड़ापन — हॉर्मोन से जोड़कर समझें",
-    descEn: "Low mood, irritability before periods — understand the hormone link",
+    desc: "अपने साइकल के हिसाब से मूड बदलाव समझें",
+    descEn: "Understand your mood changes basis your cycle",
     href: "/womens-health/mood-tracker",
   },
 ];
