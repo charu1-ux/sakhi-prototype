@@ -1629,43 +1629,7 @@ type MessageKind =
   | { type: "symptoms"; onDone: (s: string[]) => void }
   | { type: "homeRemedies"; remedies: Remedy[] }
   | { type: "remediesLoading" }
-  | { type: "contentLink"; query: string }
-  | { type: "returningOpen"; lastPeriod: Date; cycleLength: number };
-
-// ── Returning-user helpers ────────────────────────────────────────────────────
-// "Show my last entry on open" is off by default — safer on a shared phone. When
-// off, a returning user gets a neutral welcome and the saved date is only shown
-// after she taps. When on, we reveal it straight away.
-const SHOW_LAST_KEY = "sakhi_show_last_entry";
-function loadSavedPeriod(): { lastPeriod: Date; cycleLength: number } | null {
-  try {
-    const raw = typeof window === "undefined" ? null : localStorage.getItem("sakhi_period");
-    if (!raw) return null;
-    const { lastPeriod, cycleLength } = JSON.parse(raw) as {
-      lastPeriod: string;
-      cycleLength: number;
-    };
-    const d = new Date(lastPeriod);
-    if (Number.isNaN(d.getTime()) || !cycleLength) return null;
-    return { lastPeriod: d, cycleLength };
-  } catch {
-    return null;
-  }
-}
-function getShowLastOnOpen(): boolean {
-  try {
-    return typeof window !== "undefined" && localStorage.getItem(SHOW_LAST_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-function setShowLastOnOpen(v: boolean) {
-  try {
-    if (typeof window !== "undefined") localStorage.setItem(SHOW_LAST_KEY, v ? "1" : "0");
-  } catch {
-    // best effort — the setting is a convenience, never blocks the flow
-  }
-}
+  | { type: "contentLink"; query: string };
 
 // Reads the last saved cycle from localStorage (written by onCyclePick) to work
 // out the current phase for the home-remedies LLM call.
@@ -1684,111 +1648,6 @@ function getCurrentPhaseFromStorage(): string | null {
   }
 }
 
-// ── Returning-user opening (neutral — reveals the saved date only on tap) ─────
-function ReturningOpenCard({
-  onLogToday,
-  onSeeLast,
-  onDifferent,
-  showLast,
-  onToggleShowLast,
-}: {
-  onLogToday: () => void;
-  onSeeLast: () => void;
-  onDifferent: () => void;
-  showLast: boolean;
-  onToggleShowLast: (v: boolean) => void;
-}) {
-  const { lang } = useLang();
-  const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
-  const chip = (label: string, onClick: () => void, primary?: boolean) => (
-    <button
-      onClick={onClick}
-      style={{
-        padding: "8px 14px",
-        borderRadius: 20,
-        fontSize: 12,
-        fontWeight: 600,
-        cursor: "pointer",
-        background: primary ? C.gulabi : C.raatLight,
-        color: primary ? "#fff" : C.raat,
-        border: primary ? "none" : `1px solid ${C.border}`,
-        fontFamily: "JioType, sans-serif",
-      }}
-    >
-      {label}
-    </button>
-  );
-  return (
-    <div
-      style={{
-        background: C.surface,
-        borderRadius: 16,
-        padding: "12px 14px",
-        boxShadow: `0 1px 6px ${C.border}`,
-      }}
-    >
-      <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 8 }}>
-        {chip(t("आज लॉग करें", "Log today"), onLogToday, true)}
-        {chip(t("पिछली entry देखें", "See last entry"), onSeeLast)}
-        {chip(t("कुछ अलग लगा", "Something felt different"), onDifferent)}
-      </div>
-      {/* Off by default — safer on a shared phone. She can opt in on her own device. */}
-      <button
-        onClick={() => onToggleShowLast(!showLast)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          marginTop: 12,
-          padding: 0,
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          textAlign: "left",
-        }}
-      >
-        <span
-          style={{
-            position: "relative",
-            width: 34,
-            height: 20,
-            borderRadius: 10,
-            flexShrink: 0,
-            background: showLast ? C.gulabi : "rgba(45,27,78,0.15)",
-            transition: "background 0.15s",
-          }}
-        >
-          <span
-            style={{
-              position: "absolute",
-              top: 2,
-              left: showLast ? 16 : 2,
-              width: 16,
-              height: 16,
-              borderRadius: "50%",
-              background: "#fff",
-              transition: "left 0.15s",
-            }}
-          />
-        </span>
-        <span
-          style={{
-            fontSize: 11,
-            color: C.textTertiary,
-            fontFamily: "JioType, sans-serif",
-            lineHeight: 1.4,
-          }}
-        >
-          {t(
-            "खोलते ही पिछली entry दिखाएँ (साझा फ़ोन पर बंद रखना बेहतर)",
-            "Show my last entry when I open (better off on a shared phone)",
-          )}
-        </span>
-      </button>
-    </div>
-  );
-}
-
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function PeriodTrackerPage() {
   // Isolated builds for the other two features must not expose this page.
@@ -1797,13 +1656,7 @@ export default function PeriodTrackerPage() {
   const { lang } = useLang();
   const t = (hi: string, en: string) => (lang === "hi" ? hi : en);
   const [lastPeriodDate, setLastPeriodDate] = useState<Date | null>(null);
-  // Returning user? Read the saved cycle once. If present, we open on a neutral
-  // "welcome back" instead of the first-time setup.
-  const [savedPeriod] = useState(() => loadSavedPeriod());
-  const [showLast, setShowLast] = useState(() => getShowLastOnOpen());
-  const [step, setStep] = useState<"forWhom" | "date" | "cycleLength" | "chat" | "returning">(
-    savedPeriod ? (getShowLastOnOpen() ? "chat" : "returning") : "forWhom",
-  );
+  const [step, setStep] = useState<"forWhom" | "date" | "cycleLength" | "chat">("forWhom");
   const bottomRef = useRef<HTMLDivElement>(null);
   const scroll = () =>
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
@@ -2201,132 +2054,21 @@ export default function PeriodTrackerPage() {
     scroll();
   }
 
-  const fmtDate = (d: Date) =>
-    `${d.getDate()} ${(lang === "hi" ? MONTHS_HI : MONTHS_EN)[d.getMonth()]}`;
-
-  const [messages, setMessages] = useState<MessageKind[]>(() => {
-    // Returning user, "show on open" ON → reveal the saved cycle straight away.
-    if (savedPeriod && getShowLastOnOpen()) {
-      return [
-        {
-          type: "text",
-          role: "sakhi",
-          text: t(
-            `फिर से स्वागत है! 💜 पिछली बार आपका पीरियड लगभग ${fmtDate(savedPeriod.lastPeriod)} को शुरू हुआ था।`,
-            `Welcome back! 💜 Last time your period started around ${fmtDate(savedPeriod.lastPeriod)}.`,
-          ),
-        },
-        {
-          type: "cycleOverview",
-          lastPeriod: savedPeriod.lastPeriod,
-          cycleLength: savedPeriod.cycleLength,
-        },
-        anyOtherQuestions(),
-      ];
-    }
-    // Returning user, default (OFF) → neutral welcome; the date shows only on tap.
-    if (savedPeriod) {
-      return [
-        {
-          type: "text",
-          role: "sakhi",
-          text: t(
-            "फिर से स्वागत है! 💜 पीरियड लॉग करना है, या जहाँ छोड़ा था वहीं से आगे बढ़ें?",
-            "Welcome back! 💜 Want to log your period, or pick up where we left off?",
-          ),
-        },
-        {
-          type: "returningOpen",
-          lastPeriod: savedPeriod.lastPeriod,
-          cycleLength: savedPeriod.cycleLength,
-        },
-      ];
-    }
-    // First-time user → the original setup flow.
-    return [
-      {
-        type: "text",
-        role: "sakhi",
-        text:
-          lang === "en"
-            ? "Hi! I'm your Health Companion. 💜\n\nYour privacy is my priority. Everything you share stays between us. No ads, no data shared with anyone.\n\nFirst, tell me —"
-            : "नमस्ते! मैं सखी हूँ — आपकी स्वास्थ्य सहेली। 💜\n\nआपका राज़ मेरा राज़ है। जो भी आप मुझसे कहेंगी — वो सिर्फ हमारे बीच रहेगा। कोई विज्ञापन नहीं, कोई जानकारी किसी के साथ साझा नहीं।\n\nपहले बताइए —",
-      },
-      { type: "forWhomPicker" },
-    ];
-  });
+  const [messages, setMessages] = useState<MessageKind[]>(() => [
+    {
+      type: "text",
+      role: "sakhi",
+      text:
+        lang === "en"
+          ? "Hi! I'm your Health Companion. 💜\n\nYour privacy is my priority. Everything you share stays between us. No ads, no data shared with anyone.\n\nFirst, tell me —"
+          : "नमस्ते! मैं सखी हूँ — आपकी स्वास्थ्य सहेली। 💜\n\nआपका राज़ मेरा राज़ है। जो भी आप मुझसे कहेंगी — वो सिर्फ हमारे बीच रहेगा। कोई विज्ञापन नहीं, कोई जानकारी किसी के साथ साझा नहीं।\n\nपहले बताइए —",
+    },
+    { type: "forWhomPicker" },
+  ]);
 
   const [loading, setLoading] = useState(false);
 
   // ── Returning-user actions (each reveals the saved date only now, on tap) ────
-  function onSeeLastEntry() {
-    if (!savedPeriod) return;
-    setMessages((prev) => [
-      ...prev.filter((m) => m.type !== "returningOpen"),
-      { type: "text", role: "user", text: t("पिछली entry देखें", "See last entry") },
-      {
-        type: "text",
-        role: "sakhi",
-        text: t(
-          `पिछली बार आपका पीरियड लगभग ${fmtDate(savedPeriod.lastPeriod)} को शुरू हुआ था।`,
-          `Last time your period started around ${fmtDate(savedPeriod.lastPeriod)}.`,
-        ),
-      },
-      {
-        type: "cycleOverview",
-        lastPeriod: savedPeriod.lastPeriod,
-        cycleLength: savedPeriod.cycleLength,
-      },
-      anyOtherQuestions(),
-    ]);
-    setStep("chat");
-    scroll();
-  }
-
-  function onLogTodayNew() {
-    const cyc = savedPeriod?.cycleLength ?? 28;
-    setMessages((prev) => [
-      ...prev.filter((m) => m.type !== "returningOpen"),
-      { type: "text", role: "user", text: t("आज लॉग करें", "Log today") },
-      ...(savedPeriod
-        ? [
-            {
-              type: "text",
-              role: "sakhi",
-              text: t(
-                `पिछली बार लगभग ${fmtDate(savedPeriod.lastPeriod)} को शुरू हुआ था। मैं आज की तारीख नए पीरियड के तौर पर नोट कर रही हूँ।`,
-                `Last time it started around ${fmtDate(savedPeriod.lastPeriod)}. I'll note today as the start of a new one.`,
-              ),
-            } as MessageKind,
-          ]
-        : []),
-    ]);
-    // Reuse the existing flow: log today as the new start with the known cycle.
-    onCyclePick(cyc, new Date(), { userText: null });
-  }
-
-  function onSomethingDifferent() {
-    setMessages((prev) => [
-      ...prev.filter((m) => m.type !== "returningOpen"),
-      { type: "text", role: "user", text: t("कुछ अलग लगा", "Something felt different") },
-      {
-        type: "text",
-        role: "sakhi",
-        text: t(
-          "ठीक है। बताइए इस बार क्या अलग लगा — मैं अंदाज़ा नहीं लगाऊँगी, बस आपकी बात नोट करूँगी।",
-          "Okay. Tell me what felt different this time — I won't guess, I'll just note what you share.",
-        ),
-      },
-    ]);
-    setStep("chat");
-    scroll();
-  }
-
-  function onToggleShowLast(v: boolean) {
-    setShowLast(v);
-    setShowLastOnOpen(v);
-  }
-
   async function handleSubmit(text: string) {
     if (!text.trim() || loading) return;
     const q = text.trim();
@@ -2582,22 +2324,6 @@ export default function PeriodTrackerPage() {
       >
         <div className="mx-auto flex w-full max-w-md flex-col gap-3">
           {messages.map((m, i) => {
-            if (m.type === "returningOpen")
-              return (
-                <div key={i} style={{ display: "flex", alignItems: "flex-start" }}>
-                  {avatar}
-                  <div style={{ flex: 1, maxWidth: "92%" }}>
-                    <ReturningOpenCard
-                      onLogToday={onLogTodayNew}
-                      onSeeLast={onSeeLastEntry}
-                      onDifferent={onSomethingDifferent}
-                      showLast={showLast}
-                      onToggleShowLast={onToggleShowLast}
-                    />
-                  </div>
-                </div>
-              );
-
             if (m.type === "forWhomPicker")
               return (
                 <div key={i} style={{ display: "flex", alignItems: "flex-start" }}>
